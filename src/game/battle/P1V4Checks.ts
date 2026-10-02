@@ -63,6 +63,8 @@ function unit(
     currentHp,
     maxHp,
     damage: 10,
+    positionX: row === 'Front' ? -1 : row === 'Mid' ? -2 : -3,
+    positionLane: 1,
   };
 }
 
@@ -85,6 +87,8 @@ function snapshot(input: {
       currentHp: input.enemyHp,
       maxHp: 100,
       damage: 15,
+      positionX: 1,
+      positionLane: 1,
     }],
   };
 }
