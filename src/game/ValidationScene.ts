@@ -10,7 +10,13 @@ import { runP1V2Checks } from './combo/P1V2Checks';
 import { runP1V3Checks } from './combo/P1V3Checks';
 import { BattleFormation } from './battle/BattleFormation';
 import { runP1S2Checks } from './battle/P1S2Checks';
-import { AutonomousBattleModel, P1V9_AUTONOMOUS_MOVEMENT_RULES } from './battle/AutonomousBattleModel';
+import {
+  AutonomousBattleModel,
+  P1V9_AUTONOMOUS_MOVEMENT_RULES,
+  P1V11A_TIMELINE_RULES,
+  P1V11B_ENGAGEMENT_RULES,
+  SIMULATION_STEP,
+} from './battle/AutonomousBattleModel';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
 import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
@@ -19,6 +25,8 @@ import { runP1V5Checks } from './battle/P1V5Checks';
 import { P1V7_ENEMY_FIXTURES, runP1V7Checks } from './battle/P1V7Checks';
 import { runP1V8Checks } from './battle/P1V8Checks';
 import { runP1V9Checks } from './battle/P1V9Checks';
+import { runP1V11AChecks } from './battle/P1V11AChecks';
+import { runP1V11BChecks } from './battle/P1V11BChecks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -112,6 +120,8 @@ export class ValidationScene extends Phaser.Scene {
       runP1V7Checks();
       runP1V8Checks();
       runP1V9Checks();
+      runP1V11AChecks();
+      runP1V11BChecks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
@@ -218,10 +228,11 @@ export class ValidationScene extends Phaser.Scene {
     ) {
       this.battleTickAccumulator += delta;
       let ticked = false;
-      while (this.battleTickAccumulator >= 1000 && this.battleModel.snapshot.status === 'Running') {
-        this.battleTickAccumulator -= 1000;
+      const STEP_MS = SIMULATION_STEP * 1000;
+      while (this.battleTickAccumulator >= STEP_MS && this.battleModel.snapshot.status === 'Running') {
+        this.battleTickAccumulator -= STEP_MS;
         const before = this.battleModel.snapshot;
-        const after = this.battleModel.tick();
+        const after = this.battleModel.step(SIMULATION_STEP);
         this.battleActionView?.render(after);
         this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
         ticked = true;
@@ -384,7 +395,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterBattle(): void {
     if (!this.formation) return;
-    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V9_AUTONOMOUS_MOVEMENT_RULES);
+    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V11B_ENGAGEMENT_RULES);
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
     this.battleActionView.render(this.battleModel.snapshot);

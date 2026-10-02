@@ -357,9 +357,11 @@ export class BattleActionView {
 
     const ratio = enemy.maxHp > 0 ? enemy.currentHp / enemy.maxHp : 0;
     visual.hpFill.width = 46 * clamp01(ratio);
+    const engagedText = enemy.engagedTargetId ? '\n[ENGAGED]' : '';
     visual.label.setText(
-      `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}`,
+      `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}${engagedText}`,
     );
+    visual.body.setStrokeStyle(2, enemy.engagedTargetId ? 0xf59e0b : 0x450a0a);
 
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     if (enemy.currentHp > 0) {
@@ -447,8 +449,8 @@ export class BattleActionView {
       targets: container,
       x,
       y,
-      duration: 280,
-      ease: 'Sine.InOut',
+      duration: 100,
+      ease: 'Linear',
     });
   }
 

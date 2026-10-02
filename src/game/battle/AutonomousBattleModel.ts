@@ -5,6 +5,22 @@ import type { EnergyQueue } from '../energy/EnergyQueue';
 export type BattleStatus = 'Running' | 'Win' | 'Lose';
 export type BattleRow = 'Front' | 'Mid' | 'Back';
 export type PlayerActionKind = 'GuardStrike' | 'Dive' | 'Snipe' | 'ArcaneBurst';
+export type CombatActionState = 'Moving' | 'Windup' | 'Recovering' | 'Idle' | 'Dead';
+
+export interface ActionTimingProfile {
+  attackInterval: number;
+  windup: number;
+}
+
+export const P1V11A_ACTION_TIMING_FIXTURE: Readonly<Record<BeastRole | 'Enemy', ActionTimingProfile>> = {
+  Tanker: { attackInterval: 1.4, windup: 0.30 },
+  Assassin: { attackInterval: 1.0, windup: 0.18 },
+  Ranger: { attackInterval: 1.25, windup: 0.20 },
+  Mage: { attackInterval: 1.8, windup: 0.40 },
+  Enemy: { attackInterval: 1.4, windup: 0.30 },
+};
+
+export const SIMULATION_STEP = 0.1;
 
 export interface CombatUnit {
   unitId: string;
@@ -20,6 +36,15 @@ export interface CombatUnit {
   positionX: number;
   positionLane: number;
   targetEnemyId?: string;
+
+  // P1-V11A Timeline fields
+  actionState?: CombatActionState;
+  attackCooldownRemaining?: number;
+  attackWindupRemaining?: number;
+  recoveryRemaining?: number;
+
+  // P1-V11B Engagement field
+  engagedById?: string;
 }
 
 export interface EnemyFixture {
@@ -36,6 +61,15 @@ export interface EnemyCombatUnit extends EnemyFixture {
   positionX: number;
   positionLane: number;
   targetUnitId?: string;
+
+  // P1-V11A Timeline fields
+  actionState?: CombatActionState;
+  attackCooldownRemaining?: number;
+  attackWindupRemaining?: number;
+  recoveryRemaining?: number;
+
+  // P1-V11B Engagement field
+  engagedTargetId?: string;
 }
 
 export interface PlayerCombatHit {
@@ -53,6 +87,8 @@ export interface PlayerCombatAction {
 export interface BattleCombatRules {
   rolePositioning: boolean;
   movement: boolean;
+  timeline?: boolean;
+  engagement?: boolean;
 }
 
 export const LEGACY_BATTLE_COMBAT_RULES: Readonly<BattleCombatRules> = {
@@ -70,15 +106,58 @@ export const P1V9_AUTONOMOUS_MOVEMENT_RULES: Readonly<BattleCombatRules> = {
   movement: true,
 };
 
+export const P1V11A_TIMELINE_RULES: Readonly<BattleCombatRules> = {
+  rolePositioning: true,
+  movement: true,
+  timeline: true,
+};
+
+export interface EngagementFixture {
+  tankGuardRadius: number;
+  meleeEngageRange: number;
+  disengagePadding: number;
+}
+
+export const P1V11B_ENGAGEMENT_FIXTURE: Readonly<EngagementFixture> = {
+  tankGuardRadius: 1.25,
+  meleeEngageRange: 0.72,
+  disengagePadding: 0.25,
+};
+
+export const P1V11B_ENGAGEMENT_RULES: Readonly<BattleCombatRules> = {
+  rolePositioning: true,
+  movement: true,
+  timeline: true,
+  engagement: true,
+};
+
+export interface EngagementBattleEvent {
+  type: 'EngagementStarted' | 'EngagementEnded';
+  enemyId: string;
+  tankId: string;
+  time: number;
+}
+
+export interface FormationConsequenceMetrics {
+  interceptCount: number;
+  firstBacklineHitTime?: number;
+  attacksResolvedByUnit: Record<string, number>;
+  damageTakenByUnit: Record<string, number>;
+  timeEngaged: Record<string, number>;
+}
+
 export interface AutonomousBattleSnapshot {
   status: BattleStatus;
   enemyHp: number;
   enemyMaxHp: number;
   enemyDamage: number;
   elapsedTicks: number;
+  elapsedTime?: number;
   units: CombatUnit[];
   enemies: EnemyCombatUnit[];
   lastPlayerActions?: PlayerCombatAction[];
+  engagementEvents?: EngagementBattleEvent[];
+  consequenceMetrics?: FormationConsequenceMetrics;
 }
 
 export const EXPERIMENTAL_FRONTLINE_HEAL_HP = 30;
@@ -155,6 +234,14 @@ const COMBAT_DISTANCE_EPSILON = 0.001;
  */
 export class AutonomousBattleModel {
   private state: AutonomousBattleSnapshot;
+  private engagementEvents: EngagementBattleEvent[] = [];
+  private consequenceMetrics: FormationConsequenceMetrics = {
+    interceptCount: 0,
+    firstBacklineHitTime: undefined,
+    attacksResolvedByUnit: {},
+    damageTakenByUnit: {},
+    timeEngaged: {},
+  };
 
   constructor(
     formation: BattleFormation,
@@ -167,12 +254,22 @@ export class AutonomousBattleModel {
         .map((slot) => [slot.slotId, slot]),
     );
 
-    const enemies: EnemyCombatUnit[] = enemyFixtures.map((fixture) => ({
-      ...fixture,
-      currentHp: fixture.maxHp,
-      positionX: ENEMY_SPAWN_X[fixture.row],
-      positionLane: fixture.column,
-    }));
+    const enemies: EnemyCombatUnit[] = enemyFixtures.map((fixture, index) => {
+      const profile = P1V11A_ACTION_TIMING_FIXTURE.Enemy;
+      const initialCooldown = this.combatRules.timeline
+        ? (index * 0.1) % profile.attackInterval
+        : 0;
+      return {
+        ...fixture,
+        currentHp: fixture.maxHp,
+        positionX: ENEMY_SPAWN_X[fixture.row],
+        positionLane: fixture.column,
+        actionState: 'Idle',
+        attackCooldownRemaining: initialCooldown,
+        attackWindupRemaining: 0,
+        recoveryRemaining: initialCooldown,
+      };
+    });
 
     this.state = {
       status: 'Running',
@@ -180,9 +277,10 @@ export class AutonomousBattleModel {
       enemyMaxHp: 0,
       enemyDamage: 0,
       elapsedTicks: 0,
+      elapsedTime: 0,
       units: formation.units
         .filter((unit): unit is FormationUnit & { slotId: string } => unit.slotId !== null)
-        .map((unit) => this.createUnit(unit, slots.get(unit.slotId)!)),
+        .map((unit, index) => this.createUnit(unit, slots.get(unit.slotId)!, index)),
       enemies,
       lastPlayerActions: [],
     };
@@ -202,11 +300,64 @@ export class AutonomousBattleModel {
         ...action,
         hits: action.hits.map((hit) => ({ ...hit })),
       })),
+      engagementEvents: this.engagementEvents.map((e) => ({ ...e })),
+      consequenceMetrics: {
+        interceptCount: this.consequenceMetrics.interceptCount,
+        firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
+        attacksResolvedByUnit: { ...this.consequenceMetrics.attacksResolvedByUnit },
+        damageTakenByUnit: { ...this.consequenceMetrics.damageTakenByUnit },
+        timeEngaged: { ...this.consequenceMetrics.timeEngaged },
+      },
     };
+  }
+
+  getConsequenceMetrics(): FormationConsequenceMetrics {
+    return {
+      interceptCount: this.consequenceMetrics.interceptCount,
+      firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
+      attacksResolvedByUnit: { ...this.consequenceMetrics.attacksResolvedByUnit },
+      damageTakenByUnit: { ...this.consequenceMetrics.damageTakenByUnit },
+      timeEngaged: { ...this.consequenceMetrics.timeEngaged },
+    };
+  }
+
+  step(deltaSeconds = SIMULATION_STEP): AutonomousBattleSnapshot {
+    if (this.state.status !== 'Running') return this.snapshot;
+
+    this.state.elapsedTicks += 1;
+    this.state.elapsedTime = Math.round(((this.state.elapsedTime ?? 0) + deltaSeconds) * 1000) / 1000;
+    this.state.lastPlayerActions = [];
+
+    this.resolveTimelinePlayerUnits(deltaSeconds);
+    this.syncEnemyAggregates();
+
+    if (this.state.enemyHp === 0) {
+      this.state.status = 'Win';
+      this.freezeOnTerminal();
+      return this.snapshot;
+    }
+
+    this.resolveTimelineEnemies(deltaSeconds);
+
+    if (!this.state.units.some((unit) => unit.currentHp > 0)) {
+      this.state.status = 'Lose';
+      this.freezeOnTerminal();
+    }
+
+    this.syncEnemyAggregates();
+    return this.snapshot;
   }
 
   tick(): AutonomousBattleSnapshot {
     if (this.state.status !== 'Running') return this.snapshot;
+
+    if (this.combatRules.timeline) {
+      const stepCount = Math.round(1.0 / SIMULATION_STEP);
+      for (let i = 0; i < stepCount && this.state.status === 'Running'; i++) {
+        this.step(SIMULATION_STEP);
+      }
+      return this.snapshot;
+    }
 
     this.state.elapsedTicks += 1;
     this.state.lastPlayerActions = [];
@@ -223,7 +374,7 @@ export class AutonomousBattleModel {
 
   target(): CombatUnit | undefined {
     const living = this.state.units.filter((unit) => unit.currentHp > 0);
-    if (this.combatRules.movement) {
+    if (this.combatRules.movement || this.combatRules.timeline) {
       return living.sort(
         (a, b) =>
           b.positionX - a.positionX ||
@@ -239,7 +390,7 @@ export class AutonomousBattleModel {
 
   enemyTarget(): EnemyCombatUnit | undefined {
     const living = this.state.enemies.filter((enemy) => enemy.currentHp > 0);
-    if (this.combatRules.movement) {
+    if (this.combatRules.movement || this.combatRules.timeline) {
       return living.sort(
         (a, b) =>
           a.positionX - b.positionX ||
@@ -441,7 +592,7 @@ export class AutonomousBattleModel {
       .sort(
         (a, b) =>
           Math.abs(a.positionLane - primary.positionLane) -
-            Math.abs(b.positionLane - primary.positionLane) ||
+          Math.abs(b.positionLane - primary.positionLane) ||
           a.positionX - b.positionX,
       );
 
@@ -705,10 +856,15 @@ export class AutonomousBattleModel {
   private createUnit(
     unit: FormationUnit & { slotId: string },
     slot: { row: CombatUnit['row']; column: number },
+    index = 0,
   ): CombatUnit {
     const base = baseStats[unit.role];
     const multiplier = starMultiplier[unit.star];
     const maxHp = base.hp * multiplier;
+    const profile = P1V11A_ACTION_TIMING_FIXTURE[unit.role];
+    const initialCooldown = this.combatRules.timeline
+      ? (index * 0.1) % profile.attackInterval
+      : 0;
 
     return {
       unitId: unit.unitId,
@@ -723,7 +879,428 @@ export class AutonomousBattleModel {
       damage: base.damage * multiplier,
       positionX: PLAYER_SPAWN_X[slot.row],
       positionLane: slot.column,
+      actionState: 'Idle',
+      attackCooldownRemaining: initialCooldown,
+      attackWindupRemaining: 0,
+      recoveryRemaining: initialCooldown,
     };
+  }
+
+  private resolveTimelinePlayerUnits(deltaSeconds: number): void {
+    const attackers = this.state.units
+      .filter((unit) => unit.currentHp > 0)
+      .sort((a, b) => b.positionX - a.positionX || a.positionLane - b.positionLane);
+
+    for (const unit of attackers) {
+      if (this.state.enemies.every((enemy) => enemy.currentHp <= 0)) {
+        unit.actionState = 'Idle';
+        continue;
+      }
+
+      // 1. Target retention or acquisition
+      let target: EnemyCombatUnit | undefined;
+      if (unit.targetEnemyId) {
+        target = this.state.enemies.find((e) => e.enemyId === unit.targetEnemyId && e.currentHp > 0);
+        if (!target) {
+          unit.targetEnemyId = undefined;
+        }
+      }
+      if (!unit.targetEnemyId) {
+        target = this.acquirePlayerTarget(unit);
+        if (target) {
+          unit.targetEnemyId = target.enemyId;
+        }
+      }
+
+      if (!target || target.currentHp <= 0) {
+        unit.actionState = 'Idle';
+        continue;
+      }
+
+      // 2. Cooldown / recovery progression
+      if ((unit.attackCooldownRemaining ?? 0) > 0) {
+        unit.attackCooldownRemaining = Math.max(0, (unit.attackCooldownRemaining ?? 0) - deltaSeconds);
+      }
+      if ((unit.recoveryRemaining ?? 0) > 0) {
+        unit.recoveryRemaining = Math.max(0, (unit.recoveryRemaining ?? 0) - deltaSeconds);
+        if (unit.recoveryRemaining <= COMBAT_DISTANCE_EPSILON && unit.actionState === 'Recovering') {
+          unit.actionState = 'Idle';
+        }
+      }
+
+      // 3. Windup resolution
+      if (unit.actionState === 'Windup') {
+        unit.attackWindupRemaining = (unit.attackWindupRemaining ?? 0) - deltaSeconds;
+        if (unit.attackWindupRemaining <= COMBAT_DISTANCE_EPSILON) {
+          this.resolvePlayerDamage(unit, target);
+          const timing = P1V11A_ACTION_TIMING_FIXTURE[unit.role];
+          unit.actionState = 'Recovering';
+          unit.attackWindupRemaining = 0;
+          unit.recoveryRemaining = Math.max(0, timing.attackInterval - timing.windup);
+          unit.attackCooldownRemaining = unit.recoveryRemaining;
+        }
+        continue;
+      }
+
+      // 4. Movement / windup initiation
+      const profile = movementProfile[unit.role];
+      const distance = this.distance(
+        unit.positionX,
+        unit.positionLane,
+        target.positionX,
+        target.positionLane,
+      );
+
+      if (unit.role === 'Tanker' || unit.role === 'Assassin') {
+        if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+          unit.actionState = 'Moving';
+          this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange);
+        } else {
+          if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+            unit.actionState = 'Windup';
+            unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
+          } else {
+            if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+          }
+        }
+      } else {
+        // Ranger or Mage
+        if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+          unit.actionState = 'Moving';
+          this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange - 0.15);
+        } else if (distance < profile.minRange - COMBAT_DISTANCE_EPSILON) {
+          unit.actionState = 'Moving';
+          this.retreatPlayerUnit(unit, profile.speed * deltaSeconds);
+        } else {
+          if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+            unit.actionState = 'Windup';
+            unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
+          } else {
+            if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+          }
+        }
+      }
+    }
+  }
+
+  private resolveTimelineEnemies(deltaSeconds: number): void {
+    const livingEnemies = this.state.enemies
+      .filter((enemy) => enemy.currentHp > 0)
+      .sort((a, b) => a.positionX - b.positionX || a.positionLane - b.positionLane);
+
+    const currentTime = this.state.elapsedTime ?? (this.state.elapsedTicks * deltaSeconds);
+
+    for (const enemy of livingEnemies) {
+      if (!this.state.units.some((u) => u.currentHp > 0)) {
+        enemy.actionState = 'Idle';
+        continue;
+      }
+
+      // Check existing engagement validity
+      if (this.combatRules.engagement && enemy.engagedTargetId) {
+        const engagedTank = this.state.units.find(
+          (u) => u.unitId === enemy.engagedTargetId && u.currentHp > 0 && u.role === 'Tanker',
+        );
+        if (!engagedTank) {
+          this.recordEngagementEvent('EngagementEnded', enemy.enemyId, enemy.engagedTargetId, currentTime);
+          enemy.engagedTargetId = undefined;
+          enemy.targetUnitId = undefined;
+        } else {
+          const dist = this.distance(
+            enemy.positionX,
+            enemy.positionLane,
+            engagedTank.positionX,
+            engagedTank.positionLane,
+          );
+          const disengageLimit =
+            P1V11B_ENGAGEMENT_FIXTURE.tankGuardRadius + P1V11B_ENGAGEMENT_FIXTURE.disengagePadding;
+          if (dist > disengageLimit) {
+            this.recordEngagementEvent('EngagementEnded', enemy.enemyId, engagedTank.unitId, currentTime);
+            enemy.engagedTargetId = undefined;
+            engagedTank.engagedById = undefined;
+            enemy.targetUnitId = undefined;
+          } else {
+            enemy.targetUnitId = engagedTank.unitId;
+            engagedTank.engagedById = enemy.enemyId;
+            this.consequenceMetrics.timeEngaged[engagedTank.unitId] =
+              (this.consequenceMetrics.timeEngaged[engagedTank.unitId] ?? 0) + deltaSeconds;
+          }
+        }
+      }
+
+      // 1. Target retention or acquisition
+      let target: CombatUnit | undefined;
+      if (enemy.targetUnitId) {
+        target = this.state.units.find((u) => u.unitId === enemy.targetUnitId && u.currentHp > 0);
+        if (!target) {
+          enemy.targetUnitId = undefined;
+        }
+      }
+      if (!enemy.targetUnitId) {
+        target = this.acquireEnemyTarget(enemy);
+        if (target) {
+          enemy.targetUnitId = target.unitId;
+        }
+      }
+
+      if (!target || target.currentHp <= 0) {
+        enemy.actionState = 'Idle';
+        continue;
+      }
+
+      // If not engaged, test for interception by living player Tanks
+      if (this.combatRules.engagement && !enemy.engagedTargetId) {
+        const interceptor = this.findTankInterceptor(enemy, target);
+        if (interceptor) {
+          enemy.engagedTargetId = interceptor.unitId;
+          interceptor.engagedById = enemy.enemyId;
+          enemy.targetUnitId = interceptor.unitId;
+          target = interceptor;
+          this.consequenceMetrics.interceptCount += 1;
+          this.recordEngagementEvent('EngagementStarted', enemy.enemyId, interceptor.unitId, currentTime);
+        }
+      }
+
+      // 2. Cooldown / recovery progression
+      if ((enemy.attackCooldownRemaining ?? 0) > 0) {
+        enemy.attackCooldownRemaining = Math.max(0, (enemy.attackCooldownRemaining ?? 0) - deltaSeconds);
+      }
+      if ((enemy.recoveryRemaining ?? 0) > 0) {
+        enemy.recoveryRemaining = Math.max(0, (enemy.recoveryRemaining ?? 0) - deltaSeconds);
+        if (enemy.recoveryRemaining <= COMBAT_DISTANCE_EPSILON && enemy.actionState === 'Recovering') {
+          enemy.actionState = 'Idle';
+        }
+      }
+
+      // 3. Windup resolution
+      if (enemy.actionState === 'Windup') {
+        enemy.attackWindupRemaining = (enemy.attackWindupRemaining ?? 0) - deltaSeconds;
+        if (enemy.attackWindupRemaining <= COMBAT_DISTANCE_EPSILON) {
+          const appliedDamage = Math.min(target.currentHp, enemy.damage);
+          target.currentHp = Math.max(0, target.currentHp - appliedDamage);
+
+          this.consequenceMetrics.damageTakenByUnit[target.unitId] =
+            (this.consequenceMetrics.damageTakenByUnit[target.unitId] ?? 0) + appliedDamage;
+
+          if (
+            (target.role === 'Ranger' || target.role === 'Mage') &&
+            this.consequenceMetrics.firstBacklineHitTime === undefined
+          ) {
+            this.consequenceMetrics.firstBacklineHitTime = currentTime;
+          }
+
+          if (target.currentHp <= 0) {
+            target.actionState = 'Dead';
+            if (enemy.engagedTargetId === target.unitId) {
+              this.recordEngagementEvent('EngagementEnded', enemy.enemyId, target.unitId, currentTime);
+              enemy.engagedTargetId = undefined;
+              target.engagedById = undefined;
+            }
+            enemy.targetUnitId = undefined;
+          }
+          const timing = P1V11A_ACTION_TIMING_FIXTURE.Enemy;
+          enemy.actionState = 'Recovering';
+          enemy.attackWindupRemaining = 0;
+          enemy.recoveryRemaining = Math.max(0, timing.attackInterval - timing.windup);
+          enemy.attackCooldownRemaining = enemy.recoveryRemaining;
+        }
+        continue;
+      }
+
+      // 4. Movement / windup initiation
+      const distance = this.distance(
+        enemy.positionX,
+        enemy.positionLane,
+        target.positionX,
+        target.positionLane,
+      );
+
+      const attackRange = ENEMY_ATTACK_RANGE;
+
+      if (distance > attackRange + COMBAT_DISTANCE_EPSILON) {
+        enemy.actionState = 'Moving';
+        this.moveTowardEnemy(enemy, target, ENEMY_MOVE_SPEED * deltaSeconds, attackRange);
+        if (this.combatRules.engagement && enemy.engagedTargetId === target.unitId) {
+          const minAllowedX = target.positionX + attackRange * 0.5;
+          if (enemy.positionX < minAllowedX) {
+            enemy.positionX = minAllowedX;
+          }
+        }
+      } else {
+        if ((enemy.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+          enemy.actionState = 'Windup';
+          enemy.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE.Enemy.windup;
+        } else {
+          if (enemy.actionState !== 'Recovering') enemy.actionState = 'Idle';
+        }
+      }
+    }
+  }
+
+  private findTankInterceptor(
+    enemy: EnemyCombatUnit,
+    intendedTarget: CombatUnit,
+  ): CombatUnit | undefined {
+    const candidateTanks = this.state.units.filter(
+      (unit) => unit.currentHp > 0 && unit.role === 'Tanker',
+    );
+    if (!candidateTanks.length) return undefined;
+
+    const fixture = P1V11B_ENGAGEMENT_FIXTURE;
+    const eligible: Array<{ tank: CombatUnit; distance: number }> = [];
+
+    for (const tank of candidateTanks) {
+      const distToTank = this.distance(
+        enemy.positionX,
+        enemy.positionLane,
+        tank.positionX,
+        tank.positionLane,
+      );
+
+      if (distToTank > fixture.tankGuardRadius) continue;
+
+      const enemyAheadOfTank = enemy.positionX >= tank.positionX - COMBAT_DISTANCE_EPSILON;
+      const targetBehindOrAtTank =
+        intendedTarget.positionX <= tank.positionX + 0.35 || intendedTarget.unitId === tank.unitId;
+      if (!enemyAheadOfTank || !targetBehindOrAtTank) continue;
+
+      const minLane = Math.min(enemy.positionLane, intendedTarget.positionLane) - 0.5;
+      const maxLane = Math.max(enemy.positionLane, intendedTarget.positionLane) + 0.5;
+      const inLaneCorridor = tank.positionLane >= minLane && tank.positionLane <= maxLane;
+      const laneDiffToEnemy = Math.abs(tank.positionLane - enemy.positionLane);
+      if (!inLaneCorridor || laneDiffToEnemy > 1.05) continue;
+
+      eligible.push({ tank, distance: distToTank });
+    }
+
+    if (!eligible.length) return undefined;
+
+    eligible.sort((a, b) => {
+      if (Math.abs(a.distance - b.distance) > COMBAT_DISTANCE_EPSILON) {
+        return a.distance - b.distance;
+      }
+      if (Math.abs(b.tank.positionX - a.tank.positionX) > COMBAT_DISTANCE_EPSILON) {
+        return b.tank.positionX - a.tank.positionX;
+      }
+      return a.tank.unitId.localeCompare(b.tank.unitId);
+    });
+
+    return eligible[0].tank;
+  }
+
+  private recordEngagementEvent(
+    type: 'EngagementStarted' | 'EngagementEnded',
+    enemyId: string,
+    tankId: string,
+    time: number,
+  ): void {
+    this.engagementEvents.push({ type, enemyId, tankId, time });
+  }
+
+  private acquirePlayerTarget(unit: CombatUnit): EnemyCombatUnit | undefined {
+    if (unit.role === 'Tanker') {
+      return this.nearestEnemyByRowPriority(unit.positionLane, ['Front', 'Mid', 'Back']);
+    } else if (unit.role === 'Assassin') {
+      return this.nearestEnemyByRowPriority(unit.positionLane, ['Back', 'Mid', 'Front']);
+    } else {
+      return this.deepEnemyInOrNearLane(unit.positionLane);
+    }
+  }
+
+  private acquireEnemyTarget(enemy: EnemyCombatUnit): CombatUnit | undefined {
+    const living = this.state.units.filter((unit) => unit.currentHp > 0);
+    if (!living.length) return undefined;
+
+    if (this.combatRules.engagement) {
+      return living.sort((a, b) => {
+        const laneDiffA = Math.abs(a.positionLane - enemy.positionLane);
+        const laneDiffB = Math.abs(b.positionLane - enemy.positionLane);
+        if (Math.abs(laneDiffA - laneDiffB) >= 1.5) {
+          return laneDiffA - laneDiffB;
+        }
+
+        const dx = b.positionX - a.positionX;
+        if (Math.abs(dx) > 0.4) {
+          return dx;
+        }
+
+        if (Math.abs(laneDiffA - laneDiffB) > COMBAT_DISTANCE_EPSILON) {
+          return laneDiffA - laneDiffB;
+        }
+
+        const distA = this.distance(enemy.positionX, enemy.positionLane, a.positionX, a.positionLane);
+        const distB = this.distance(enemy.positionX, enemy.positionLane, b.positionX, b.positionLane);
+        if (Math.abs(distA - distB) > COMBAT_DISTANCE_EPSILON) {
+          return distA - distB;
+        }
+
+        return a.unitId.localeCompare(b.unitId);
+      })[0];
+    }
+
+    return this.target();
+  }
+
+  private resolvePlayerDamage(unit: CombatUnit, target: EnemyCombatUnit): void {
+    if (target.currentHp <= 0) return;
+
+    this.consequenceMetrics.attacksResolvedByUnit[unit.unitId] =
+      (this.consequenceMetrics.attacksResolvedByUnit[unit.unitId] ?? 0) + 1;
+
+    if (unit.role === 'Tanker') {
+      const damage = this.applyDamage(target, unit.damage);
+      if (damage > 0) this.recordAction(unit, 'GuardStrike', [{ enemyId: target.enemyId, damage }]);
+    } else if (unit.role === 'Assassin') {
+      const damage = this.applyDamage(target, unit.damage);
+      if (damage > 0) this.recordAction(unit, 'Dive', [{ enemyId: target.enemyId, damage }]);
+    } else if (unit.role === 'Ranger') {
+      const damage = this.applyDamage(target, unit.damage);
+      if (damage > 0) this.recordAction(unit, 'Snipe', [{ enemyId: target.enemyId, damage }]);
+    } else {
+      // Mage
+      const hits: PlayerCombatHit[] = [];
+      const appliedPrimary = this.applyDamage(target, unit.damage);
+      if (appliedPrimary > 0) hits.push({ enemyId: target.enemyId, damage: appliedPrimary });
+
+      const secondaryTargets = this.state.enemies
+        .filter(
+          (enemy) =>
+            enemy.currentHp > 0 &&
+            enemy.enemyId !== target.enemyId &&
+            Math.abs(enemy.positionLane - target.positionLane) <= 1.05,
+        )
+        .sort(
+          (a, b) =>
+            Math.abs(a.positionLane - target.positionLane) -
+              Math.abs(b.positionLane - target.positionLane) ||
+            a.positionX - b.positionX,
+        );
+
+      for (const enemy of secondaryTargets) {
+        const applied = this.applyDamage(enemy, unit.damage * 0.5);
+        if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
+      }
+
+      if (hits.length) this.recordAction(unit, 'ArcaneBurst', hits);
+    }
+
+    if (target.currentHp <= 0) {
+      target.actionState = 'Dead';
+      unit.targetEnemyId = undefined;
+    }
+  }
+
+  private freezeOnTerminal(): void {
+    this.state.units.forEach((u) => {
+      if (u.currentHp <= 0) u.actionState = 'Dead';
+      else u.actionState = 'Idle';
+      u.engagedById = undefined;
+    });
+    this.state.enemies.forEach((e) => {
+      if (e.currentHp <= 0) e.actionState = 'Dead';
+      else e.actionState = 'Idle';
+      e.engagedTargetId = undefined;
+    });
   }
 }
 
