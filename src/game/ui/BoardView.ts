@@ -14,6 +14,8 @@ export class BoardView {
   private selected: BoardPosition[] = [];
   private inputLocked = false;
   private inputEnabled = true;
+  private pendingMatch?: Phaser.Time.TimerEvent;
+  private destroyed = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -30,6 +32,7 @@ export class BoardView {
   }
 
   render(): void {
+    if (this.destroyed) return;
     this.container.removeAll(true);
     const totalSize = this.board.size * this.cellSize + (this.board.size - 1) * this.gap;
     this.board.forEachPosition((position) => {
@@ -43,7 +46,9 @@ export class BoardView {
         .setStrokeStyle(selected ? 5 : 2, stroke, 1);
       this.container.add(cell);
       if (!contentId) return;
-      cell.setInteractive({ useHandCursor: true }).on('pointerup', () => this.select(position));
+      if (this.inputEnabled && !this.inputLocked) {
+        cell.setInteractive({ useHandCursor: true }).on('pointerup', () => this.select(position));
+      }
       const label = this.scene.add.text(x, y, displayLabel(contentId.contentId), {
         fontFamily: 'Arial, sans-serif', fontSize: `${Math.round(this.cellSize * 0.46)}px`, color: this.inputEnabled ? '#18212b' : '#6b675f', fontStyle: 'bold',
       }).setOrigin(0.5);
@@ -53,11 +58,28 @@ export class BoardView {
   }
 
   destroy(): void {
+    if (this.destroyed) return;
+    this.pendingMatch?.remove(false);
+    this.pendingMatch = undefined;
+    this.destroyed = true;
     this.container.destroy();
     this.pathGraphics.destroy();
   }
 
-  setInputEnabled(enabled: boolean): void { this.inputEnabled = enabled; this.selected = []; this.render(); }
+  setInputEnabled(enabled: boolean): void {
+    if (this.destroyed) return;
+    this.inputEnabled = enabled;
+    this.selected = [];
+    if (!enabled) {
+      this.inputLocked = true;
+      this.pendingMatch?.remove(false);
+      this.pendingMatch = undefined;
+      this.pathGraphics.clear();
+    } else {
+      this.inputLocked = false;
+    }
+    this.render();
+  }
 
   get isInputEnabled(): boolean { return this.inputEnabled; }
 
@@ -87,7 +109,9 @@ export class BoardView {
     if (!matchedContent) return;
     this.inputLocked = true;
     this.drawPath(result.pathPoints);
-    this.scene.time.delayedCall(260, () => {
+    this.pendingMatch = this.scene.time.delayedCall(260, () => {
+      this.pendingMatch = undefined;
+      if (this.destroyed || !this.inputEnabled) return;
       this.board.remove(first);
       this.board.remove(second);
       this.selected = [];
