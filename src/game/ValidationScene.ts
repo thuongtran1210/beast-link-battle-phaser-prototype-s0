@@ -352,29 +352,21 @@ export class ValidationScene extends Phaser.Scene {
     this.flowPanel?.render(
       'AUTONOMOUS BATTLE',
       [
-        `STATUS: ${battle.status}    Tick: ${battle.elapsedTicks}`,
-        `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}    Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
-        '',
-        'CURRENT FRONTLINE',
+        `STATUS: ${battle.status} · Tick ${battle.elapsedTicks} · Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
+        `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
         frontline
-          ? `${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)} / ${formatNumber(frontline.maxHp)}`
-          : 'No alive player unit.',
-        '',
-        'LOCKED FORMATION (READ-ONLY)',
-        ...battle.units.map(
-          (unit) =>
-            `${unit.slotId}: ${(unit.beastId.split('-').at(-1) ?? unit.beastId).toUpperCase()} · ${unit.role} · ${unit.star}★ — HP ${formatNumber(unit.currentHp)} / ${formatNumber(unit.maxHp)}`
-        ),
+          ? `FRONTLINE: ${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)}`
+          : 'FRONTLINE: No alive player unit.',
         '',
         'STORED ENERGY (TIMED CAST)',
-        '',
-        isRunning
-          ? energyEntries.length > 0
-            ? 'Each Energy ID has its own aligned Frontline Heal action.'
-            : 'No stored Energy charges to cast.'
-          : 'Battle ended.',
+        'Each Energy ID casts a Frontline Heal.',
         `Enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick.`,
         'Battle ticks automatically every 1.0 second.',
+        ...(isRunning
+          ? energyEntries.length > 0
+            ? []
+            : ['No stored Energy charges to cast.']
+          : ['Battle ended.']),
       ],
       null,
       undefined,

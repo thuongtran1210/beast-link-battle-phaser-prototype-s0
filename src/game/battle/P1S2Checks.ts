@@ -32,6 +32,7 @@ export function runP1S2Checks(): void {
   const setupView = new BattleSetupView(
     dummyScene,
     setupFormation,
+    [],
     () => 'Total: 0',
     () => {},
     () => {}
