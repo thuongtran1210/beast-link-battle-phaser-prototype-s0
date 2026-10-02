@@ -199,3 +199,26 @@ Current immediate task:
 - do not retune between sessions unless a severe blocker prevents completion.
 
 Do not present V3–V8 as adopted Current Gameplay Spec until the evidence decision is recorded.
+
+
+## Active Experimental Gate — P1-V9 Autonomous Movement & Formation Deployment
+
+P03 is paused while P1-V9 is verified.
+
+P1-V9 validation rules:
+- BattleSetup grid defines deployment/spawn positions only.
+- Battle units/enemies use model-space movement after combat starts.
+- Deployment grid fades after Battle begins.
+- Tanker/Assassin close distance before melee attacks.
+- Ranger/Mage use range movement; Back Ranger should gain natural attack uptime without row damage multipliers.
+- Enemy squad moves toward the actual player frontline and attacks only in melee range.
+- Frontline Heal targets the actual forward living unit in movement combat.
+- P1-V7 enemy fixture remains active.
+- Historical legacy/V8 combat modes remain available for regression.
+
+Do not present P1-V9 as adopted Current Gameplay Spec.
+
+Current immediate task:
+- run full regression checks and production build,
+- live verify deployment continuity, grid fade, movement/range behavior, actual-position Heal, battle duration, and Result → Restart,
+- resume P03 only after P1-V9 passes.
