@@ -58,18 +58,58 @@ export class BattleActionView {
       const visual = this.units.get(attacker.unitId);
       if (!visual || visual.container.alpha <= 0.1) return;
 
-      const delay = index * 55;
-      if (attacker.role === 'Tanker' || attacker.role === 'Assassin') {
+      const delay = index * 70;
+      const primaryTarget = attacker.targetEnemyIds[0]
+        ? this.enemies.get(attacker.targetEnemyIds[0])
+        : undefined;
+
+      if (attacker.kind === 'Dive' && primaryTarget) {
+        const originX = visual.container.x;
+        const originY = visual.container.y;
+        this.scene.tweens.add({
+          targets: visual.container,
+          x: primaryTarget.container.x - 18,
+          y: primaryTarget.container.y,
+          duration: 150,
+          yoyo: true,
+          hold: 50,
+          ease: 'Quad.InOut',
+          delay,
+          onYoyo: () => this.flash(primaryTarget.body, 0xf97316),
+          onComplete: () => visual.container.setPosition(originX, originY),
+        });
+      } else if (attacker.kind === 'GuardStrike' && primaryTarget) {
         this.scene.tweens.add({
           targets: visual.container,
           x: visual.container.x + 14,
-          duration: 90,
+          duration: 100,
           yoyo: true,
           ease: 'Quad.Out',
           delay,
         });
-      } else {
-        this.scene.time.delayedCall(delay, () => this.projectileToEnemy(visual.container));
+      } else if ((attacker.kind === 'Snipe' || attacker.role === 'Ranger') && primaryTarget) {
+        this.scene.time.delayedCall(delay, () => this.projectileToTarget(
+          visual.container,
+          primaryTarget.container,
+          0x38bdf8,
+        ));
+      } else if (attacker.kind === 'ArcaneBurst' && primaryTarget) {
+        this.scene.time.delayedCall(delay, () => {
+          attacker.targetEnemyIds.forEach((enemyId, hitIndex) => {
+            const target = this.enemies.get(enemyId);
+            if (!target) return;
+            this.scene.time.delayedCall(hitIndex * 45, () => {
+              this.projectileToTarget(visual.container, target.container, 0xa78bfa);
+              this.scene.time.delayedCall(160, () => this.flash(target.body, 0xa855f7));
+            });
+          });
+        });
+      } else if (primaryTarget) {
+        this.scene.time.delayedCall(delay, () => this.projectileToTarget(
+          visual.container,
+          primaryTarget.container,
+          0x38bdf8,
+        ));
       }
     });
 
@@ -353,20 +393,18 @@ export class BattleActionView {
     return { container, body, hpFill, label };
   }
 
-  private projectileToEnemy(source: Phaser.GameObjects.Container): void {
-    const target = [...this.enemies.values()]
-      .filter((enemy) => enemy.container.alpha > 0.3)
-      .sort((a, b) => a.container.x - b.container.x)[0];
-
-    if (!target) return;
-
-    const projectile = this.scene.add.circle(source.x + 16, source.y, 5, 0x38bdf8);
+  private projectileToTarget(
+    source: Phaser.GameObjects.Container,
+    target: Phaser.GameObjects.Container,
+    color: number,
+  ): void {
+    const projectile = this.scene.add.circle(source.x + 16, source.y, 5, color);
     this.objects.push(projectile);
 
     this.scene.tweens.add({
       targets: projectile,
-      x: target.container.x - 16,
-      y: target.container.y,
+      x: target.x - 16,
+      y: target.y,
       duration: 180,
       ease: 'Quad.In',
       onComplete: () => {
