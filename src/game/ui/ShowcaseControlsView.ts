@@ -82,7 +82,7 @@ export class ShowcaseControlsView {
       .setStrokeStyle(1, 0xffffff, 0.15)
       .setInteractive({ useHandCursor: true });
 
-    const container = this.scene.add.container(rightX - width / 2, y, [bg, text]);
+    const container = this.scene.add.container(rightX - width / 2, y, [bg, text]).setSize(width, 30);
     bg.on('pointerdown', handler);
     text.setInteractive({ useHandCursor: true }).on('pointerdown', handler);
     this.objects.push(container);
