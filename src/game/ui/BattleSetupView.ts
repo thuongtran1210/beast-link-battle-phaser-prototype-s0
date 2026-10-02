@@ -37,6 +37,10 @@ export class BattleSetupView {
     private readonly onArrangementChanged: () => void,
     private readonly fixtureName?: string,
     private readonly onCycleFixture?: () => void,
+    private readonly threatSummary?: string,
+    private readonly activePresetKey?: 'A' | 'B',
+    private readonly onSelectPresetA?: () => void,
+    private readonly onSelectPresetB?: () => void,
   ) {}
 
   static computeLayout(viewportHeight = 720): BattleSetupLayoutMetrics {
@@ -111,6 +115,43 @@ export class BattleSetupView {
     if (this.onCycleFixture) {
       enemyLabel.setInteractive({ useHandCursor: true });
       enemyLabel.on('pointerdown', () => this.onCycleFixture!());
+    }
+
+    // V11D Threat summary badge
+    if (this.threatSummary) {
+      this.text(
+        layout.enemyFrontX + 24,
+        layout.topLaneY - 32,
+        `⚠ ${this.threatSummary}`,
+        10,
+        '#f59e0b',
+        'bold',
+      );
+    }
+
+    // V11D Formation Presets Quick Select
+    if (this.onSelectPresetA && this.onSelectPresetB) {
+      const presetALabel = this.text(
+        layout.playerFrontX - 160,
+        layout.topLaneY - 32,
+        `[A] Response A`,
+        10,
+        this.activePresetKey === 'A' ? '#22c55e' : '#94a3b8',
+        'bold',
+      );
+      presetALabel.setInteractive({ useHandCursor: true });
+      presetALabel.on('pointerdown', () => this.onSelectPresetA!());
+
+      const presetBLabel = this.text(
+        layout.playerFrontX - 50,
+        layout.topLaneY - 32,
+        `[B] Response B`,
+        10,
+        this.activePresetKey === 'B' ? '#22c55e' : '#94a3b8',
+        'bold',
+      );
+      presetBLabel.setInteractive({ useHandCursor: true });
+      presetBLabel.on('pointerdown', () => this.onSelectPresetB!());
     }
 
     // Central Divider

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { SessionMetricSnapshot } from '../metrics/SessionMetrics';
+import type { FormationValidationMetrics, FormationRunDelta } from '../battle/FormationValidationHarness';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 
@@ -16,6 +17,10 @@ export class SessionSummaryView {
   private showingDetails = false;
   private cachedMetrics?: SessionMetricSnapshot;
   private cachedOutcome?: 'Win' | 'Lose';
+  private cachedValidationMetrics?: FormationValidationMetrics;
+  private cachedComparison?: FormationRunDelta;
+  private cachedRunA?: FormationValidationMetrics;
+  private cachedRunB?: FormationValidationMetrics;
 
   constructor(scene: Phaser.Scene, centerX: number, centerY: number, onRestart: () => void) {
     this.scene = scene;
@@ -23,9 +28,20 @@ export class SessionSummaryView {
     this.container = scene.add.container(centerX, centerY).setDepth(1000).setVisible(false);
   }
 
-  render(metrics: Readonly<SessionMetricSnapshot>, outcome?: 'Win' | 'Lose'): void {
+  render(
+    metrics: Readonly<SessionMetricSnapshot>,
+    outcome?: 'Win' | 'Lose',
+    validationMetrics?: FormationValidationMetrics,
+    comparison?: FormationRunDelta,
+    runA?: FormationValidationMetrics,
+    runB?: FormationValidationMetrics,
+  ): void {
     this.cachedMetrics = { ...metrics };
     this.cachedOutcome = outcome;
+    this.cachedValidationMetrics = validationMetrics;
+    this.cachedComparison = comparison;
+    this.cachedRunA = runA;
+    this.cachedRunB = runB;
     this.restartArmed = true;
     this.rebuildDisplay();
   }
@@ -233,17 +249,55 @@ export class SessionSummaryView {
         `Setup Time: ${duration(metrics?.timeInBattleSetup ?? null)}  |  Battle Duration: ${duration(metrics?.battleDuration ?? null)}`,
         `Casts Used: ${metrics?.castsUsed ?? 0}  |  First Cast: ${duration(metrics?.firstCastTime ?? null)}`,
         `Army HP at First Cast: ${metrics?.armyHpAtFirstCast ?? '—'}  |  Enemy HP at First Cast: ${metrics?.enemyHpAtFirstCast ?? '—'}`,
-      ].join('\n\n');
+      ];
+
+      if (this.cachedComparison && this.cachedRunA && this.cachedRunB) {
+        rawLines.push(
+          '-------------------------------------------------------',
+          'V11D FORMATION COMPARISON (Run A vs Run B)',
+          `Backline 1st Hit:  A: ${this.cachedRunA.firstBacklineHitTime !== undefined ? this.cachedRunA.firstBacklineHitTime.toFixed(1) + 's' : 'Unhit'} | B: ${this.cachedRunB.firstBacklineHitTime !== undefined ? this.cachedRunB.firstBacklineHitTime.toFixed(1) + 's' : 'Unhit'}  (Delta: ${this.cachedComparison.firstBacklineHitDelta !== undefined ? (this.cachedComparison.firstBacklineHitDelta >= 0 ? '+' : '') + this.cachedComparison.firstBacklineHitDelta.toFixed(1) + 's' : 'N/A'})`,
+          `Ranger Attacks:    A: ${this.cachedRunA.rangerAttacksResolved} | B: ${this.cachedRunB.rangerAttacksResolved}  (Delta: ${this.cachedComparison.rangerAttacksDelta >= 0 ? '+' : ''}${this.cachedComparison.rangerAttacksDelta})`,
+          `Mage Casts:        A: ${this.cachedRunA.mageCastsResolved} | B: ${this.cachedRunB.mageCastsResolved}  (Delta: ${this.cachedComparison.mageCastsDelta >= 0 ? '+' : ''}${this.cachedComparison.mageCastsDelta})`,
+          `Assassin Contact:  A: ${this.cachedRunA.firstAssassinContactTime !== undefined ? this.cachedRunA.firstAssassinContactTime.toFixed(1) + 's' : '—'} | B: ${this.cachedRunB.firstAssassinContactTime !== undefined ? this.cachedRunB.firstAssassinContactTime.toFixed(1) + 's' : '—'}`,
+          `Carry Damage:      A: ${this.cachedRunA.carryDamageTaken} | B: ${this.cachedRunB.carryDamageTaken}  (Delta: ${this.cachedComparison.carryDamageDelta})`,
+          `Diver Intercepts:  A: ${this.cachedRunA.diverInterceptionCount} | B: ${this.cachedRunB.diverInterceptionCount}`,
+          ...this.cachedComparison.statements.map((s) => `• ${s}`),
+        );
+      } else if (this.cachedValidationMetrics) {
+        rawLines.push(
+          '-------------------------------------------------------',
+          'V11D FORMATION METRICS',
+          `1st Backline Hit: ${this.cachedValidationMetrics.firstBacklineHitTime !== undefined ? this.cachedValidationMetrics.firstBacklineHitTime.toFixed(1) + 's' : 'Unhit'}  |  1st Assassin Contact: ${this.cachedValidationMetrics.firstAssassinContactTime !== undefined ? this.cachedValidationMetrics.firstAssassinContactTime.toFixed(1) + 's' : '—'}`,
+          `Ranger Attacks: ${this.cachedValidationMetrics.rangerAttacksResolved}  |  Mage Casts: ${this.cachedValidationMetrics.mageCastsResolved}  |  Assassin Attacks: ${this.cachedValidationMetrics.assassinAttacksResolved}`,
+          `Tank Dmg: ${this.cachedValidationMetrics.tankDamageTaken}  |  Carry Dmg: ${this.cachedValidationMetrics.carryDamageTaken}  |  Diver Intercepts: ${this.cachedValidationMetrics.diverInterceptionCount}`,
+        );
+      }
 
       const detailsText = this.scene.add
-        .text(-detailsW / 2 + 16, detailsY - detailsH / 2 + 20, rawLines, {
+        .text(-detailsW / 2 + 16, detailsY - detailsH / 2 + 14, rawLines.join('\n'), {
           fontFamily: HudTokens.fonts.mono,
-          fontSize: '12px',
+          fontSize: '11px',
           color: HudTokens.colors.textSecondary,
-          lineSpacing: 4,
+          lineSpacing: 3,
         });
 
       this.container.add([detailsBg, detailsText]);
+    }
+
+    if (!this.showingDetails && this.cachedComparison) {
+      const compBox = this.scene.add
+        .rectangle(0, 168, panelW - 40, 36, 0x0f172a, 0.9)
+        .setStrokeStyle(1, 0x3b82f6);
+      const compSummary = this.cachedComparison.statements.slice(0, 2).join('  |  ');
+      const compText = this.scene.add
+        .text(0, 168, `⚡ COMPARISON: ${compSummary}`, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '11px',
+          color: '#67e8f9',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5);
+      this.container.add([compBox, compText]);
     }
 
     // BOTTOM CONTROLS

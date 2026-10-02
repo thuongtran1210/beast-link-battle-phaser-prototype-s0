@@ -1,6 +1,7 @@
 import { type BattleFormation, type FormationUnit } from './BattleFormation';
 import type { BeastRole } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
+import type { FormationValidationMetrics } from './FormationValidationHarness';
 
 export type BattleStatus = 'Running' | 'Win' | 'Lose';
 export type BattleRow = 'Front' | 'Mid' | 'Back';
@@ -235,11 +236,18 @@ export interface EngagementBattleEvent {
 
 export interface FormationConsequenceMetrics {
   interceptCount: number;
+  diverInterceptionCount: number;
+  frontlineInterceptionCount: number;
+  firstPlayerContactTime?: number;
   firstBacklineHitTime?: number;
+  firstCarryHitTime?: number;
   firstAssassinContactTime?: number;
   attacksResolvedByUnit: Record<string, number>;
   damageTakenByUnit: Record<string, number>;
   timeEngaged: Record<string, number>;
+  rangerForcedKiteCount: number;
+  mageForcedRepositionCount: number;
+  unitDeathTimes: Record<string, number>;
 }
 
 export interface AutonomousBattleSnapshot {
@@ -366,10 +374,18 @@ export class AutonomousBattleModel {
   private engagementEvents: EngagementBattleEvent[] = [];
   private consequenceMetrics: FormationConsequenceMetrics = {
     interceptCount: 0,
+    diverInterceptionCount: 0,
+    frontlineInterceptionCount: 0,
+    firstPlayerContactTime: undefined,
     firstBacklineHitTime: undefined,
+    firstCarryHitTime: undefined,
+    firstAssassinContactTime: undefined,
     attacksResolvedByUnit: {},
     damageTakenByUnit: {},
     timeEngaged: {},
+    rangerForcedKiteCount: 0,
+    mageForcedRepositionCount: 0,
+    unitDeathTimes: {},
   };
 
   constructor(
@@ -439,11 +455,18 @@ export class AutonomousBattleModel {
       engagementEvents: this.engagementEvents.map((e) => ({ ...e })),
       consequenceMetrics: {
         interceptCount: this.consequenceMetrics.interceptCount,
+        diverInterceptionCount: this.consequenceMetrics.diverInterceptionCount,
+        frontlineInterceptionCount: this.consequenceMetrics.frontlineInterceptionCount,
+        firstPlayerContactTime: this.consequenceMetrics.firstPlayerContactTime,
         firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
+        firstCarryHitTime: this.consequenceMetrics.firstCarryHitTime,
         firstAssassinContactTime: this.consequenceMetrics.firstAssassinContactTime,
         attacksResolvedByUnit: { ...this.consequenceMetrics.attacksResolvedByUnit },
         damageTakenByUnit: { ...this.consequenceMetrics.damageTakenByUnit },
         timeEngaged: { ...this.consequenceMetrics.timeEngaged },
+        rangerForcedKiteCount: this.consequenceMetrics.rangerForcedKiteCount,
+        mageForcedRepositionCount: this.consequenceMetrics.mageForcedRepositionCount,
+        unitDeathTimes: { ...this.consequenceMetrics.unitDeathTimes },
       },
     };
   }
@@ -451,11 +474,72 @@ export class AutonomousBattleModel {
   getConsequenceMetrics(): FormationConsequenceMetrics {
     return {
       interceptCount: this.consequenceMetrics.interceptCount,
+      diverInterceptionCount: this.consequenceMetrics.diverInterceptionCount,
+      frontlineInterceptionCount: this.consequenceMetrics.frontlineInterceptionCount,
+      firstPlayerContactTime: this.consequenceMetrics.firstPlayerContactTime,
       firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
+      firstCarryHitTime: this.consequenceMetrics.firstCarryHitTime,
       firstAssassinContactTime: this.consequenceMetrics.firstAssassinContactTime,
       attacksResolvedByUnit: { ...this.consequenceMetrics.attacksResolvedByUnit },
       damageTakenByUnit: { ...this.consequenceMetrics.damageTakenByUnit },
       timeEngaged: { ...this.consequenceMetrics.timeEngaged },
+      rangerForcedKiteCount: this.consequenceMetrics.rangerForcedKiteCount,
+      mageForcedRepositionCount: this.consequenceMetrics.mageForcedRepositionCount,
+      unitDeathTimes: { ...this.consequenceMetrics.unitDeathTimes },
+    };
+  }
+
+  public getValidationMetrics(): FormationValidationMetrics {
+    const elapsed = this.state.elapsedTime ?? (this.state.elapsedTicks * 0.1);
+    const units = this.state.units;
+
+    const tankUnits = units.filter((u) => u.role === 'Tanker');
+    const rangerUnits = units.filter((u) => u.role === 'Ranger');
+    const mageUnits = units.filter((u) => u.role === 'Mage');
+    const assassinUnits = units.filter((u) => u.role === 'Assassin');
+
+    const sumDamage = (group: CombatUnit[]) =>
+      group.reduce((sum, u) => sum + (this.consequenceMetrics.damageTakenByUnit[u.unitId] ?? 0), 0);
+
+    const sumAttacks = (group: CombatUnit[]) =>
+      group.reduce((sum, u) => sum + (this.consequenceMetrics.attacksResolvedByUnit[u.unitId] ?? 0), 0);
+
+    const calcSurvival = (group: CombatUnit[]) => {
+      if (!group.length) return elapsed;
+      return Math.min(
+        ...group.map((u) => this.consequenceMetrics.unitDeathTimes[u.unitId] ?? elapsed),
+      );
+    };
+
+    const rangerDamage = sumDamage(rangerUnits);
+    const mageDamage = sumDamage(mageUnits);
+
+    return {
+      firstPlayerContactTime: this.consequenceMetrics.firstPlayerContactTime,
+      firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
+      firstCarryHitTime: this.consequenceMetrics.firstCarryHitTime ?? this.consequenceMetrics.firstBacklineHitTime,
+      firstAssassinContactTime: this.consequenceMetrics.firstAssassinContactTime,
+
+      tankDamageTaken: sumDamage(tankUnits),
+      rangerDamageTaken: rangerDamage,
+      mageDamageTaken: mageDamage,
+      carryDamageTaken: rangerDamage + mageDamage,
+
+      rangerAttacksResolved: sumAttacks(rangerUnits),
+      mageCastsResolved: sumAttacks(mageUnits),
+      assassinAttacksResolved: sumAttacks(assassinUnits),
+
+      rangerForcedKiteCount: this.consequenceMetrics.rangerForcedKiteCount,
+      mageForcedRepositionCount: this.consequenceMetrics.mageForcedRepositionCount,
+
+      diverInterceptionCount: this.consequenceMetrics.diverInterceptionCount,
+      frontlineInterceptionCount: this.consequenceMetrics.frontlineInterceptionCount,
+
+      rangerSurvivalTime: Number(calcSurvival(rangerUnits).toFixed(2)),
+      mageSurvivalTime: Number(calcSurvival(mageUnits).toFixed(2)),
+
+      battleDuration: Number(elapsed.toFixed(2)),
+      battleResult: this.state.status,
     };
   }
 
@@ -1240,6 +1324,13 @@ export class AutonomousBattleModel {
       : closestEnemyDist < triggerThreshold - COMBAT_DISTANCE_EPSILON;
 
     if (shouldKite) {
+      if (!wasKiting) {
+        if (unit.role === 'Ranger') {
+          this.consequenceMetrics.rangerForcedKiteCount += 1;
+        } else if (unit.role === 'Mage') {
+          this.consequenceMetrics.mageForcedRepositionCount += 1;
+        }
+      }
       unit.actionState = 'Moving';
       unit.movementPolicyState = 'Kite';
       const retreated = this.retreatPlayerUnit(unit, profile.speed * deltaSeconds);
@@ -1411,6 +1502,11 @@ export class AutonomousBattleModel {
           enemy.targetUnitId = interceptor.unitId;
           target = interceptor;
           this.consequenceMetrics.interceptCount += 1;
+          if (enemy.archetype === 'Diver') {
+            this.consequenceMetrics.diverInterceptionCount += 1;
+          } else {
+            this.consequenceMetrics.frontlineInterceptionCount += 1;
+          }
           this.recordEngagementEvent('EngagementStarted', enemy.enemyId, interceptor.unitId, currentTime);
         }
       }
@@ -1438,6 +1534,10 @@ export class AutonomousBattleModel {
           const appliedDamage = Math.min(target.currentHp, enemy.damage);
           target.currentHp = Math.max(0, target.currentHp - appliedDamage);
 
+          if (this.consequenceMetrics.firstPlayerContactTime === undefined) {
+            this.consequenceMetrics.firstPlayerContactTime = currentTime;
+          }
+
           this.consequenceMetrics.damageTakenByUnit[target.unitId] =
             (this.consequenceMetrics.damageTakenByUnit[target.unitId] ?? 0) + appliedDamage;
 
@@ -1446,9 +1546,13 @@ export class AutonomousBattleModel {
             this.consequenceMetrics.firstBacklineHitTime === undefined
           ) {
             this.consequenceMetrics.firstBacklineHitTime = currentTime;
+            this.consequenceMetrics.firstCarryHitTime = currentTime;
           }
 
           if (target.currentHp <= 0) {
+            if (this.consequenceMetrics.unitDeathTimes[target.unitId] === undefined) {
+              this.consequenceMetrics.unitDeathTimes[target.unitId] = currentTime;
+            }
             target.actionState = 'Dead';
             if (enemy.engagedTargetId === target.unitId) {
               this.recordEngagementEvent('EngagementEnded', enemy.enemyId, target.unitId, currentTime);

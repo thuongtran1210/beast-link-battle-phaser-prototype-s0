@@ -35,6 +35,7 @@ import { runP1V11AChecks } from './battle/P1V11AChecks';
 import { runP1V11BChecks } from './battle/P1V11BChecks';
 import { runP1V11B1Checks } from './battle/P1V11B1Checks';
 import { runP1V11CChecks } from './battle/P1V11CChecks';
+import { runP1V11DChecks } from './battle/P1V11DChecks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -62,10 +63,46 @@ import { ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { getIconDefinition } from './ui/icons/UnitIconRegistry';
 
-const ENEMY_FIXTURE_PRESETS: ReadonlyArray<{ name: string; tag: string; fixtures: ReadonlyArray<EnemyFixture> }> = [
-  { name: 'Frontline Pressure', tag: '3x Front', fixtures: P1V11C_FIXTURE_A_FRONTLINE },
-  { name: 'Backline Dive', tag: '1 Front, 2 Diver', fixtures: P1V11C_FIXTURE_B_DIVERS },
-  { name: 'Protected Ranged', tag: '2 Front, 2 Ranged', fixtures: P1V11C_FIXTURE_C_PROTECTED_RANGED },
+import {
+  V11D_PRESETS,
+  applyFormationPreset,
+  compareFormationRuns,
+  type FormationValidationMetrics,
+  type FormationRunDelta,
+} from './battle/FormationValidationHarness';
+
+const ENEMY_FIXTURE_PRESETS: ReadonlyArray<{
+  id: string;
+  name: string;
+  tag: string;
+  threatType: string;
+  presetKey: 'frontline-pressure' | 'backline-dive' | 'protected-ranged';
+  fixtures: ReadonlyArray<EnemyFixture>;
+}> = [
+  {
+    id: 'frontline-pressure',
+    name: 'Frontline Pressure',
+    tag: '3x Front',
+    threatType: 'FRONTLINE PRESSURE',
+    presetKey: 'frontline-pressure',
+    fixtures: P1V11C_FIXTURE_A_FRONTLINE,
+  },
+  {
+    id: 'backline-dive',
+    name: 'Backline Dive',
+    tag: '1 Front, 2 Diver',
+    threatType: 'BACKLINE DIVE',
+    presetKey: 'backline-dive',
+    fixtures: P1V11C_FIXTURE_B_DIVERS,
+  },
+  {
+    id: 'protected-ranged',
+    name: 'Protected Ranged',
+    tag: '2 Front, 2 Ranged',
+    threatType: 'PROTECTED RANGED',
+    presetKey: 'protected-ranged',
+    fixtures: P1V11C_FIXTURE_C_PROTECTED_RANGED,
+  },
 ];
 
 /**
@@ -74,6 +111,11 @@ const ENEMY_FIXTURE_PRESETS: ReadonlyArray<{ name: string; tag: string; fixtures
  */
 export class ValidationScene extends Phaser.Scene {
   private enemyFixturePresetIndex = 0;
+  private activePresetKey?: 'A' | 'B';
+  private readonly fixtureRunHistory = new Map<
+    string,
+    { runA?: FormationValidationMetrics; runB?: FormationValidationMetrics }
+  >();
   private readonly phaseController = new PhaseController();
   private readonly boardGenerator = new BoardGenerator();
   private readonly matcher = new OnetMatcher();
@@ -139,6 +181,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V11BChecks();
       runP1V11B1Checks();
       runP1V11CChecks();
+      runP1V11DChecks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
@@ -190,6 +233,8 @@ export class ValidationScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ONE', () => this.setEnemyFixturePreset(0));
     this.input.keyboard?.on('keydown-TWO', () => this.setEnemyFixturePreset(1));
     this.input.keyboard?.on('keydown-THREE', () => this.setEnemyFixturePreset(2));
+    this.input.keyboard?.on('keydown-A', () => this.loadFormationPreset('A'));
+    this.input.keyboard?.on('keydown-B', () => this.loadFormationPreset('B'));
 
     // When BeastRush combo ends: disable puzzle input immediately & start transition cue
     this.comboSystem.onEnded(() => {
@@ -402,6 +447,12 @@ export class ValidationScene extends Phaser.Scene {
       }
       this.formation = new BattleFormation(converted);
     }
+    this.renderBattleSetup();
+  }
+
+  private renderBattleSetup(): void {
+    if (!this.formation) return;
+    this.battleSetupView?.destroy();
     const activePreset = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
     this.battleSetupView = new BattleSetupView(
       this,
@@ -409,12 +460,31 @@ export class ValidationScene extends Phaser.Scene {
       activePreset.fixtures,
       () => this.storedEnergyLines(),
       () => this.startBattle(),
-      () => this.metrics.arrangementChanged(),
+      () => {
+        this.activePresetKey = undefined;
+        this.metrics.arrangementChanged();
+      },
       activePreset.name,
       () => this.cycleEnemyFixture(),
+      activePreset.threatType,
+      this.activePresetKey,
+      () => this.loadFormationPreset('A'),
+      () => this.loadFormationPreset('B'),
     );
     this.battleSetupView.render();
     this.syncTopHud();
+  }
+
+  private loadFormationPreset(key: 'A' | 'B'): void {
+    if (this.phaseController.phase !== GamePhase.BattleSetup || !this.formation) return;
+    const activeFixture = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
+    const presets = V11D_PRESETS[activeFixture.presetKey];
+    if (!presets) return;
+    const preset = key === 'A' ? presets.presetA : presets.presetB;
+    applyFormationPreset(this.formation, preset);
+    this.activePresetKey = key;
+    this.metrics.arrangementChanged();
+    this.renderBattleSetup();
   }
 
   private setEnemyFixturePreset(index: number): void {
@@ -422,19 +492,7 @@ export class ValidationScene extends Phaser.Scene {
       ((index % ENEMY_FIXTURE_PRESETS.length) + ENEMY_FIXTURE_PRESETS.length) %
       ENEMY_FIXTURE_PRESETS.length;
     if (this.phaseController.phase === GamePhase.BattleSetup && this.formation) {
-      this.battleSetupView?.destroy();
-      const activePreset = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
-      this.battleSetupView = new BattleSetupView(
-        this,
-        this.formation,
-        activePreset.fixtures,
-        () => this.storedEnergyLines(),
-        () => this.startBattle(),
-        () => this.metrics.arrangementChanged(),
-        activePreset.name,
-        () => this.cycleEnemyFixture(),
-      );
-      this.battleSetupView.render();
+      this.renderBattleSetup();
     }
   }
 
@@ -458,7 +516,35 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterResult(): void {
-    this.summary?.render(this.metrics.snapshot, this.battleOutcome);
+    const validationMetrics = this.battleModel?.getValidationMetrics();
+    const activeFixture = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
+    let history = this.fixtureRunHistory.get(activeFixture.id);
+    if (!history) {
+      history = {};
+      this.fixtureRunHistory.set(activeFixture.id, history);
+    }
+
+    if (validationMetrics) {
+      if (this.activePresetKey === 'B') {
+        history.runB = validationMetrics;
+      } else {
+        history.runA = validationMetrics;
+      }
+    }
+
+    let comparison: FormationRunDelta | undefined;
+    if (history.runA && history.runB) {
+      comparison = compareFormationRuns(history.runA, history.runB);
+    }
+
+    this.summary?.render(
+      this.metrics.snapshot,
+      this.battleOutcome,
+      validationMetrics,
+      comparison,
+      history.runA,
+      history.runB,
+    );
     this.summary?.setVisible(true);
     this.syncTopHud();
   }
@@ -788,6 +874,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleModel = undefined;
     this.battleOutcome = undefined;
     this.metrics.reset();
+    this.activePresetKey = undefined;
     this.cycleEnemyFixture();
     this.phaseController.setPhase(GamePhase.BeastRush);
   }
