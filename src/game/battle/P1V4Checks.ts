@@ -63,7 +63,7 @@ function unit(
     currentHp,
     maxHp,
     damage: 10,
-    positionX: row === 'Front' ? -1 : row === 'Mid' ? -2 : -3,
+    positionX: -1,
     positionLane: 1,
   };
 }
