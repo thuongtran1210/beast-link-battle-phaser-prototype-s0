@@ -314,10 +314,8 @@ export class BattleActionView {
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    this.scene.add.rectangle(0, 27, 46, 6, 0x334155).setOrigin(0.5);
-    const hpFill = this.scene.add.rectangle(-23, 27, 46, 6, 0x16a34a).setOrigin(0, 0.5);
-
     const hpBg = this.scene.add.rectangle(0, 27, 46, 6, 0x334155).setOrigin(0.5);
+    const hpFill = this.scene.add.rectangle(-23, 27, 46, 6, 0x16a34a).setOrigin(0, 0.5);
     const container = this.scene.add.container(
       position.x,
       position.y,
