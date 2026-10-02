@@ -159,3 +159,26 @@ Current immediate task:
 - specifically evaluate formation/frontline readability and whether longer Battle duration creates meaningful Energy Heal timing,
 - do not reuse conclusions from earlier blocked/insufficient builds,
 - do not retune during the session unless a new severe blocker prevents completion.
+
+
+## Active Experimental Gate — P1-V8 Role Identity & Positional Combat
+
+P03 is paused while P1-V8 is verified.
+
+P1-V8 rules are opt-in for the validation scene:
+- Tanker: Guard Strike only from Front.
+- Assassin: Dive from Front/Mid, prioritizing deepest living enemy row.
+- Ranger: Snipe from all rows with output Front 60% / Mid 80% / Back 100%, preferring deep same-lane targets.
+- Mage: Arcane Burst, Front 70% / Mid-Back 100%, with adjacent-lane secondary damage at 50%.
+- Battle presentation must animate attacks toward actual model-selected targets.
+- P1-V7 enemy fixture / duration pressure remains active.
+- Historical aggregate-combat default remains unchanged for legacy P1-S3/S4/V7 regression.
+
+Do not present P1-V8 as adopted Current Gameplay Spec.
+
+Current immediate task:
+- run full regression checks and production build,
+- live verify role identity and positional consequences,
+- confirm Assassin dive / Ranger target / Mage burst are visually readable,
+- confirm P1-V7 battle duration and Result → Restart remain valid,
+- resume P03 only after this gate passes.
