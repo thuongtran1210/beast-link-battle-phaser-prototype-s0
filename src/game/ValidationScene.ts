@@ -36,6 +36,7 @@ import { runP1V11BChecks } from './battle/P1V11BChecks';
 import { runP1V11B1Checks } from './battle/P1V11B1Checks';
 import { runP1V11CChecks } from './battle/P1V11CChecks';
 import { runP1V11DChecks } from './battle/P1V11DChecks';
+import { runP1V12AChecks } from './ui/P1V12AChecks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -182,6 +183,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V11B1Checks();
       runP1V11CChecks();
       runP1V11DChecks();
+      runP1V12AChecks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
@@ -510,6 +512,7 @@ export class ValidationScene extends Phaser.Scene {
     );
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
+    this.battleActionView.setShowcaseMode(this.showcaseMode);
     this.battleActionView.render(this.battleModel.snapshot);
     this.renderBattle();
     this.syncTopHud();
@@ -570,6 +573,7 @@ export class ValidationScene extends Phaser.Scene {
     const isRunning = battle.status === 'Running';
     const energyEntries = this.energyQueue.getAll().filter((entry) => entry.charges > 0);
     const frontline = this.battleModel?.frontmostAliveUnit();
+    this.battleActionView?.setShowcaseMode(this.showcaseMode);
     this.battleActionView?.render(battle);
 
     const frontlineDisplay = frontline
@@ -627,6 +631,7 @@ export class ValidationScene extends Phaser.Scene {
     this.showcaseMode = !this.showcaseMode;
     this.showcasePaused = false;
     this.showcaseCleanFrame = false;
+    this.battleActionView?.setShowcaseMode(this.showcaseMode);
     if (this.phaseController.phase === GamePhase.Battle) {
       this.renderBattle();
     }

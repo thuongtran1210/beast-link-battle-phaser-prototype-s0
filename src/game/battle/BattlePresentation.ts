@@ -1,6 +1,7 @@
 import type {
   AutonomousBattleSnapshot,
   PlayerActionKind,
+  EnemyArchetype,
 } from './AutonomousBattleModel';
 import type { BeastRole } from './BeastRoles';
 
@@ -15,6 +16,31 @@ export interface EnemyDamagePresentation {
   enemyId: string;
   damage: number;
   defeated: boolean;
+  hpBefore?: number;
+  hpAfter?: number;
+}
+
+export interface UnitDamagePresentation {
+  unitId: string;
+  damage: number;
+  defeated: boolean;
+  hpBefore: number;
+  hpAfter: number;
+}
+
+export interface AttackWindupPresentation {
+  unitId: string;
+  isPlayer: boolean;
+  targetId?: string;
+  role?: BeastRole;
+  archetype?: EnemyArchetype;
+}
+
+export interface UnitHpBarPresentation {
+  ratio: number;
+  isDead: boolean;
+  currentHp: number;
+  maxHp: number;
 }
 
 export interface BattleTickPresentation {
@@ -23,6 +49,8 @@ export interface BattleTickPresentation {
   enemyDamages: EnemyDamagePresentation[];
   enemyTargetId?: string;
   targetDamage: number;
+  unitDamages: UnitDamagePresentation[];
+  attackWindups: AttackWindupPresentation[];
   defeatedUnitIds: string[];
   defeatedEnemyIds: string[];
   enemyDefeated: boolean;
@@ -31,6 +59,19 @@ export interface BattleTickPresentation {
 export interface BattleHealPresentation {
   unitId?: string;
   amount: number;
+  hpBefore?: number;
+  hpAfter?: number;
+}
+
+export function deriveHpBarPresentation(currentHp: number, maxHp: number): UnitHpBarPresentation {
+  const safeMax = Math.max(1, maxHp);
+  const clampedHp = Math.max(0, Math.min(safeMax, currentHp));
+  return {
+    ratio: Math.max(0, Math.min(1, clampedHp / safeMax)),
+    isDead: clampedHp <= 0,
+    currentHp: clampedHp,
+    maxHp: safeMax,
+  };
 }
 
 export function deriveBattleTickPresentation(
@@ -53,7 +94,7 @@ export function deriveBattleTickPresentation(
         targetEnemyIds: action?.hits.map((hit) => hit.enemyId) ?? [],
       };
     })
-    .filter((attacker) => hasExplicitActions ? attacker.targetEnemyIds.length > 0 : true);
+    .filter((attacker) => (hasExplicitActions ? attacker.targetEnemyIds.length > 0 : true));
 
   const enemyDamage = Math.max(0, before.enemyHp - after.enemyHp);
   const enemyDamages: EnemyDamagePresentation[] = [];
@@ -65,13 +106,20 @@ export function deriveBattleTickPresentation(
     const damage = Math.max(0, beforeEnemy.currentHp - afterEnemy.currentHp);
     const defeated = beforeEnemy.currentHp > 0 && afterEnemy.currentHp === 0;
     if (damage > 0 || defeated) {
-      enemyDamages.push({ enemyId: beforeEnemy.enemyId, damage, defeated });
+      enemyDamages.push({
+        enemyId: beforeEnemy.enemyId,
+        damage,
+        defeated,
+        hpBefore: beforeEnemy.currentHp,
+        hpAfter: afterEnemy.currentHp,
+      });
     }
     if (defeated) defeatedEnemyIds.push(beforeEnemy.enemyId);
   }
 
   let enemyTargetId: string | undefined;
   let targetDamage = 0;
+  const unitDamages: UnitDamagePresentation[] = [];
   const defeatedUnitIds: string[] = [];
 
   for (const beforeUnit of before.units) {
@@ -79,12 +127,53 @@ export function deriveBattleTickPresentation(
     if (!afterUnit) continue;
 
     const damage = Math.max(0, beforeUnit.currentHp - afterUnit.currentHp);
-    if (damage > 0) {
+    const defeated = beforeUnit.currentHp > 0 && afterUnit.currentHp === 0;
+    if (damage > 0 || defeated) {
+      unitDamages.push({
+        unitId: beforeUnit.unitId,
+        damage,
+        defeated,
+        hpBefore: beforeUnit.currentHp,
+        hpAfter: afterUnit.currentHp,
+      });
       enemyTargetId = beforeUnit.unitId;
       targetDamage = damage;
     }
-    if (beforeUnit.currentHp > 0 && afterUnit.currentHp === 0) {
+    if (defeated) {
       defeatedUnitIds.push(beforeUnit.unitId);
+    }
+  }
+
+  const attackWindups: AttackWindupPresentation[] = [];
+  for (const afterUnit of after.units) {
+    const beforeUnit = before.units.find((candidate) => candidate.unitId === afterUnit.unitId);
+    if (
+      afterUnit.currentHp > 0 &&
+      afterUnit.actionState === 'Windup' &&
+      beforeUnit?.actionState !== 'Windup'
+    ) {
+      attackWindups.push({
+        unitId: afterUnit.unitId,
+        isPlayer: true,
+        targetId: afterUnit.targetEnemyId,
+        role: afterUnit.role,
+      });
+    }
+  }
+
+  for (const afterEnemy of after.enemies) {
+    const beforeEnemy = before.enemies.find((candidate) => candidate.enemyId === afterEnemy.enemyId);
+    if (
+      afterEnemy.currentHp > 0 &&
+      afterEnemy.actionState === 'Windup' &&
+      beforeEnemy?.actionState !== 'Windup'
+    ) {
+      attackWindups.push({
+        unitId: afterEnemy.enemyId,
+        isPlayer: false,
+        targetId: afterEnemy.targetUnitId,
+        archetype: afterEnemy.archetype,
+      });
     }
   }
 
@@ -94,6 +183,8 @@ export function deriveBattleTickPresentation(
     enemyDamages,
     enemyTargetId,
     targetDamage,
+    unitDamages,
+    attackWindups,
     defeatedUnitIds,
     defeatedEnemyIds,
     enemyDefeated: before.enemyHp > 0 && after.enemyHp === 0,
@@ -108,7 +199,14 @@ export function deriveBattleHealPresentation(
     const afterUnit = after.units.find((candidate) => candidate.unitId === beforeUnit.unitId);
     if (!afterUnit) continue;
     const amount = Math.max(0, afterUnit.currentHp - beforeUnit.currentHp);
-    if (amount > 0) return { unitId: beforeUnit.unitId, amount };
+    if (amount > 0) {
+      return {
+        unitId: beforeUnit.unitId,
+        amount,
+        hpBefore: beforeUnit.currentHp,
+        hpAfter: afterUnit.currentHp,
+      };
+    }
   }
   return { amount: 0 };
 }
