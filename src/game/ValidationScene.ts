@@ -103,7 +103,7 @@ export class ValidationScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold',
     });
-    this.add.text(28, 50, 'P1-V3 Beast Rush 12s · Gameplay Validation Prototype', {
+    this.add.text(28, 50, 'P1-V5 Enemy Squad Battle Grid · P1-V3 Timing', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#cbd5e1',
@@ -124,7 +124,7 @@ export class ValidationScene extends Phaser.Scene {
       .text(
         width / 2,
         height - 36,
-        'P1-V3: Experimental Beast Rush 12.0s (+0.3s/cap 12.0s) + Energy Rush 12.0s + 1.0s Cue.',
+        'P1-V5 Experimental: P1-V3 timing + 4-enemy mirrored Battle Grid (65 HP / 6 DMG each).',
         { fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#66737f' }
       )
       .setOrigin(0.5, 1);
