@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { type BattleFormation, type FormationSlot, type FormationUnit } from '../battle/BattleFormation';
+import type { EnemyFixture } from '../battle/AutonomousBattleModel';
 import { recommendedRows } from '../battle/BeastRoles';
+import { createBattleFieldLayout, enemySlotPosition, playerSlotPosition } from './BattleFieldLayout';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -12,7 +14,10 @@ export interface BattleSetupLayoutMetrics {
   viewportHeight: number;
 }
 
-/** P1-S2 presentation for the Experimental 3×6 formation fixture. */
+/**
+ * P1-V6 integrated Battle Setup preview:
+ * player placement and enemy preview share the same battlefield used by Battle.
+ */
 export class BattleSetupView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private selectedUnitId: string | null = null;
@@ -22,17 +27,17 @@ export class BattleSetupView {
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly formation: BattleFormation,
+    private readonly enemies: ReadonlyArray<EnemyFixture>,
     private readonly storedEnergy: () => string,
     private readonly startBattle: () => void,
     private readonly onArrangementChanged: () => void
   ) {}
 
-  /** Pure layout metrics calculation for verification and deterministic testing. */
   static computeLayout(viewportHeight = 760): BattleSetupLayoutMetrics {
-    const panelX = 660;
-    const storedEnergyY = 148;
-    const unplacedHeadingY = 250;
-    const listStartY = 278;
+    const panelX = 620;
+    const storedEnergyY = 132;
+    const unplacedHeadingY = 236;
+    const listStartY = 264;
     const startBattleY = Math.min(680, viewportHeight - 80);
     return {
       panelX,
@@ -45,70 +50,73 @@ export class BattleSetupView {
     };
   }
 
-  /** Returns only units that have not yet been placed in a slot. */
   getUnplacedUnits(): FormationUnit[] {
     return this.formation.units.filter((unit) => unit.slotId === null);
   }
 
   render(): void {
     this.destroy();
-    this.text(30, 104, 'BATTLE SETUP', 21, '#18212b', 'bold');
-    this.text(30, 136, 'Select a unit, then select an empty slot. The 3×6 grid is Experimental / prototype-only.', 13, '#66737f');
-    this.renderGrid();
+
+    this.text(30, 104, 'BATTLE SETUP · PREVIEW', 21, '#18212b', 'bold');
+    this.text(
+      30,
+      134,
+      'Arrange your Beasts while previewing the opposing enemy formation.',
+      13,
+      '#66737f'
+    );
+
+    this.renderBattleField();
 
     const layout = BattleSetupView.computeLayout(this.scene.scale.height || 760);
     const panelX = layout.panelX;
 
-    // 1. STORED ENERGY (bounded top section)
     this.text(panelX, layout.storedEnergyY, 'STORED ENERGY', 15, '#18212b', 'bold');
     this.text(panelX, layout.storedEnergyY + 22, this.storedEnergy(), 13, '#44525f');
 
-    // 2. UNPLACED UNITS (only units with slotId === null)
     const unplacedUnits = this.getUnplacedUnits();
     const totalUnplaced = unplacedUnits.length;
     const maxPages = Math.max(1, Math.ceil(totalUnplaced / this.maxCardsPerPage));
-    if (this.unplacedPage >= maxPages) {
-      this.unplacedPage = Math.max(0, maxPages - 1);
-    }
+    if (this.unplacedPage >= maxPages) this.unplacedPage = Math.max(0, maxPages - 1);
 
-    const unplacedTitle = totalUnplaced > 0
-      ? `UNPLACED UNITS (${totalUnplaced})`
-      : 'UNPLACED UNITS';
-    this.text(panelX, layout.unplacedHeadingY, unplacedTitle, 15, '#18212b', 'bold');
+    this.text(
+      panelX,
+      layout.unplacedHeadingY,
+      totalUnplaced > 0 ? `UNPLACED UNITS (${totalUnplaced})` : 'UNPLACED UNITS',
+      15,
+      '#18212b',
+      'bold'
+    );
 
     let currentY = layout.listStartY;
-
     if (totalUnplaced === 0) {
-      if (!this.formation.units.length) {
-        this.text(panelX, currentY, 'No converted units available.', 13, '#66737f');
-      } else {
-        this.text(panelX, currentY, 'All converted units are placed in grid.', 13, '#15803d', 'bold');
-      }
+      this.text(
+        panelX,
+        currentY,
+        this.formation.units.length ? 'All units placed. Review matchup, then start.' : 'No converted units available.',
+        13,
+        this.formation.units.length ? '#15803d' : '#66737f',
+        this.formation.units.length ? 'bold' : ''
+      );
     } else {
       const startIndex = this.unplacedPage * this.maxCardsPerPage;
       const pageUnits = unplacedUnits.slice(startIndex, startIndex + this.maxCardsPerPage);
-
       pageUnits.forEach((unit) => {
-        const cardHeight = this.renderUnitCard(unit, panelX, currentY);
-        currentY += cardHeight + 6;
+        currentY += this.renderUnitCard(unit, panelX, currentY) + 6;
       });
 
-      // Pagination controls if more units than one page
       if (maxPages > 1) {
-        const pageLabel = `Page ${this.unplacedPage + 1}/${maxPages}`;
-        this.text(panelX + 76, currentY + 4, pageLabel, 12, '#44525f');
-
+        this.text(panelX + 76, currentY + 4, `Page ${this.unplacedPage + 1}/${maxPages}`, 12, '#44525f');
         if (this.unplacedPage > 0) {
-          const prevBtn = this.text(panelX, currentY, '◀ PREV', 12, '#ffffff', 'bold', '#475569', { x: 8, y: 4 });
-          prevBtn.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+          const prev = this.text(panelX, currentY, '◀ PREV', 12, '#ffffff', 'bold', '#475569', { x: 8, y: 4 });
+          prev.setInteractive({ useHandCursor: true }).on('pointerup', () => {
             this.unplacedPage -= 1;
             this.render();
           });
         }
-
         if (this.unplacedPage < maxPages - 1) {
-          const nextBtn = this.text(panelX + 180, currentY, 'NEXT ▶', 12, '#ffffff', 'bold', '#475569', { x: 8, y: 4 });
-          nextBtn.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+          const next = this.text(panelX + 180, currentY, 'NEXT ▶', 12, '#ffffff', 'bold', '#475569', { x: 8, y: 4 });
+          next.setInteractive({ useHandCursor: true }).on('pointerup', () => {
             this.unplacedPage += 1;
             this.render();
           });
@@ -116,20 +124,14 @@ export class BattleSetupView {
       }
     }
 
-    // 3. FIXED BOTTOM ACTION AREA (START BATTLE)
-    // Docked at fixed layout.startBattleY regardless of unplaced card count
     const allPlaced = this.formation.allPlaced;
-    const actionY = layout.startBattleY;
-
-    if (!this.formation.units.length) {
-      this.text(panelX, actionY - 22, 'No units: Start Battle disabled.', 12, '#b91c1c');
-    } else if (!allPlaced) {
-      this.text(panelX, actionY - 20, `${totalUnplaced} unplaced unit(s) remaining`, 12, '#9a3412');
+    if (!allPlaced && this.formation.units.length) {
+      this.text(panelX, layout.startBattleY - 20, `${totalUnplaced} unplaced unit(s) remaining`, 12, '#9a3412');
     }
 
     const start = this.text(
       panelX,
-      actionY,
+      layout.startBattleY,
       allPlaced ? 'START BATTLE' : 'START BATTLE — PLACE ALL UNITS',
       15,
       allPlaced ? '#ffffff' : '#66737f',
@@ -137,6 +139,7 @@ export class BattleSetupView {
       allPlaced ? '#b45309' : '#d1d5db',
       { x: 14, y: 10 }
     );
+
     if (allPlaced) {
       let started = false;
       start.setInteractive({ useHandCursor: true }).on('pointerup', () => {
@@ -151,11 +154,109 @@ export class BattleSetupView {
     this.objects.splice(0).forEach((object) => object.destroy());
   }
 
+  private renderBattleField(): void {
+    const layout = createBattleFieldLayout(18, 105);
+
+    this.text(layout.baseX + 12, layout.baseY + 72, 'BATTLE FIELD · SETUP PREVIEW', 14, '#475569', 'bold');
+    this.text(layout.playerFirstX - 20, layout.baseY + 102, 'PLAYER FORMATION', 12, '#2563eb', 'bold');
+    this.text(layout.enemyFirstX - 210, layout.baseY + 102, 'ENEMY FORMATION', 12, '#b91c1c', 'bold');
+
+    const divider = this.scene.add.rectangle(
+      layout.dividerX,
+      layout.dividerY,
+      3,
+      layout.dividerHeight,
+      0x94a3b8,
+      0.9
+    );
+    this.objects.push(divider);
+
+    const rows: Array<FormationSlot['row']> = ['Front', 'Mid', 'Back'];
+    rows.forEach((row) => {
+      this.text(layout.playerFirstX - 22, playerSlotPosition(layout, row, 1).y - 44, row.toUpperCase(), 10, '#64748b', 'bold');
+      this.text(layout.enemyFirstX - 210, enemySlotPosition(layout, row, 6).y - 44, row.toUpperCase(), 10, '#991b1b', 'bold');
+
+      for (let column = 1; column <= 6; column += 1) {
+        const playerPos = playerSlotPosition(layout, row, column);
+        const enemyPos = enemySlotPosition(layout, row, column);
+
+        const playerSlot = this.scene.add.rectangle(
+          playerPos.x,
+          playerPos.y,
+          layout.slotWidth,
+          layout.slotHeight,
+          0xeff6ff,
+          0.42
+        ).setStrokeStyle(2, 0x93c5fd);
+        this.objects.push(playerSlot);
+
+        const enemySlot = this.scene.add.rectangle(
+          enemyPos.x,
+          enemyPos.y,
+          layout.slotWidth,
+          layout.slotHeight,
+          0xfef2f2,
+          0.42
+        ).setStrokeStyle(2, 0xfca5a5);
+        this.objects.push(enemySlot);
+
+        const formationSlot = this.formation.slots.find((slot) => slot.row === row && slot.column === column);
+        if (formationSlot) this.renderPlayerSlot(formationSlot, playerPos.x, playerPos.y);
+      }
+    });
+
+    this.enemies.forEach((enemy) => {
+      const pos = enemySlotPosition(layout, enemy.row, enemy.column);
+      const body = this.scene.add.rectangle(pos.x, pos.y, 38, 48, 0x7f1d1d).setStrokeStyle(2, 0x450a0a);
+      const label = this.text(
+        pos.x,
+        pos.y,
+        `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${enemy.maxHp} HP\nDMG ${enemy.damage}`,
+        9,
+        '#ffffff',
+        'bold'
+      ).setOrigin(0.5);
+      this.objects.push(body);
+    });
+  }
+
+  private renderPlayerSlot(slot: FormationSlot, x: number, y: number): void {
+    const unit = slot.unitId
+      ? this.formation.units.find((candidate) => candidate.unitId === slot.unitId)
+      : undefined;
+
+    if (unit) {
+      const fill = roleFill(unit.role);
+      const body = this.scene.add.rectangle(x, y, 38, 48, fill).setStrokeStyle(2, 0x475569);
+      const label = this.text(
+        x,
+        y,
+        `${displayBeast(unit.beastId)}\n${unit.role}\n${unit.star}★`,
+        9,
+        '#0f172a',
+        'bold'
+      ).setOrigin(0.5);
+      body.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+        this.selectedUnitId = unit.unitId;
+        this.render();
+      });
+      label.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+        this.selectedUnitId = unit.unitId;
+        this.render();
+      });
+      this.objects.push(body);
+      return;
+    }
+
+    const hit = this.scene.add.rectangle(x, y, 38, 48, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+    hit.on('pointerup', () => this.placeSelected(slot.slotId));
+    this.objects.push(hit);
+  }
+
   private renderUnitCard(unit: FormationUnit, x: number, y: number): number {
     const selected = unit.unitId === this.selectedUnitId;
     const cardWidth = 260;
     const cardHeight = 46;
-
     const card = this.scene.add
       .rectangle(x + cardWidth / 2, y + cardHeight / 2, cardWidth, cardHeight, selected ? 0xdbeafe : 0xffffff)
       .setStrokeStyle(2, selected ? 0x2563eb : 0x8c8273);
@@ -168,39 +269,17 @@ export class BattleSetupView {
       this.selectedUnitId = unit.unitId;
       this.render();
     };
-
     card.setInteractive({ useHandCursor: true }).on('pointerup', selectHandler);
     text.setInteractive({ useHandCursor: true }).on('pointerup', selectHandler);
-
     return cardHeight;
   }
 
-  private renderGrid(): void {
-    this.text(30, 188, 'FORMATION GRID', 15, '#18212b', 'bold');
-    const rows: Array<FormationSlot['row']> = ['Front', 'Mid', 'Back'];
-    rows.forEach((row, rowIndex) => {
-      const y = 220 + rowIndex * 94;
-      this.text(30, y + 29, row.toUpperCase(), 13, '#44525f', 'bold');
-      this.formation.slots
-        .filter((slot) => slot.row === row)
-        .forEach((slot) => this.slot(slot, 120 + (slot.column - 1) * 88, y));
-    });
-  }
-
-  private slot(slot: FormationSlot, x: number, y: number): void {
-    const unit = slot.unitId ? this.formation.units.find((candidate) => candidate.unitId === slot.unitId) : undefined;
-    const fill = unit ? 0xfef3c7 : 0xf8fafc;
-    const box = this.scene.add.rectangle(x + 35, y + 31, 70, 62, fill).setStrokeStyle(2, 0x8c8273);
-    const label = unit ? `${displayBeast(unit.beastId)}\n${unit.role}\n${unit.star}★` : `${slot.row[0]}${slot.column}\nempty`;
-    const text = this.text(x + 35, y + 31, label, 12, unit ? '#18212b' : '#94a3b8', unit ? 'bold' : '').setOrigin(0.5);
-    box.setInteractive({ useHandCursor: true }).on('pointerup', () => this.placeSelected(slot.slotId));
-    text.setInteractive({ useHandCursor: true }).on('pointerup', () => this.placeSelected(slot.slotId));
-    this.objects.push(box);
-  }
-
   private placeSelected(slotId: string): void {
-    const unit = this.selectedUnitId ? this.formation.units.find((candidate) => candidate.unitId === this.selectedUnitId) : undefined;
+    const unit = this.selectedUnitId
+      ? this.formation.units.find((candidate) => candidate.unitId === this.selectedUnitId)
+      : undefined;
     const wasPlaced = unit?.slotId !== null && unit?.slotId !== slotId;
+
     if (this.selectedUnitId && this.formation.place(this.selectedUnitId, slotId)) {
       if (wasPlaced) this.onArrangementChanged();
       this.selectedUnitId = null;
@@ -226,6 +305,7 @@ export class BattleSetupView {
       backgroundColor,
       padding,
       lineSpacing: 3,
+      align: 'center',
     });
     this.objects.push(text);
     return text;
@@ -234,4 +314,11 @@ export class BattleSetupView {
 
 function displayBeast(beastId: string): string {
   return (beastId.split('-').at(-1) ?? beastId).toUpperCase();
+}
+
+function roleFill(role: FormationUnit['role']): number {
+  if (role === 'Tanker') return 0xfacc15;
+  if (role === 'Assassin') return 0xf97316;
+  if (role === 'Ranger') return 0x22c55e;
+  return 0xa78bfa;
 }
