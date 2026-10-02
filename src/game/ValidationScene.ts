@@ -55,6 +55,8 @@ export class ValidationScene extends Phaser.Scene {
   // P1-V1/V3 Transition state
   private transitionCueTimer = 0;
   private isShowingTransitionCue = false;
+  private battleSetupCueTimer = 0;
+  private isShowingBattleSetupCue = false;
 
   private phaseText?: Phaser.GameObjects.Text;
   private statusText?: Phaser.GameObjects.Text;
@@ -136,7 +138,18 @@ export class ValidationScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const deltaSeconds = delta / 1000;
 
-    // Handle transition cue countdown
+    // Hide the Battle Setup cue after a short visual-only confirmation window.
+    // BattleSetup is already the active phase underneath; this does not alter gameplay timing.
+    if (this.isShowingBattleSetupCue) {
+      this.battleSetupCueTimer -= deltaSeconds;
+      if (this.battleSetupCueTimer <= 0) {
+        this.isShowingBattleSetupCue = false;
+        this.battleSetupCueTimer = 0;
+        this.transitionCue?.hide();
+      }
+    }
+
+    // Handle Beast Rush → Energy Rush transition cue countdown
     if (this.isShowingTransitionCue) {
       this.transitionCueTimer -= deltaSeconds;
       if (this.transitionCueTimer <= 0) {
@@ -183,22 +196,31 @@ export class ValidationScene extends Phaser.Scene {
     // 2. Start 1.0s transition cue
     this.isShowingTransitionCue = true;
     this.transitionCueTimer = 1.0;
-    this.transitionCue?.show();
+    this.transitionCue?.show('ENERGY RUSH', 'Collect Energy for Battle');
     this.statusText?.setText('Beast Rush ended. Preparing Energy Rush...');
   }
 
   private finishTransitionCue(): void {
     this.isShowingTransitionCue = false;
     this.transitionCueTimer = 0;
+    this.isShowingBattleSetupCue = false;
+    this.battleSetupCueTimer = 0;
     this.transitionCue?.hide();
     // Transition to EnergyRush
     this.phaseController.setPhase(GamePhase.EnergyRush);
   }
 
   private handleEnergyRushEnded(): void {
-    // Disable puzzle input immediately and move to BattleSetup exactly once
+    // Hard-lock Energy puzzle input before leaving the phase.
     this.boardView?.setInputEnabled(false);
-    this.phaseController.setPhase(GamePhase.BattleSetup);
+
+    // Enter BattleSetup immediately, then show a short visual-only phase cue over it.
+    // This preserves the automatic timeout rule while making the phase change readable.
+    if (this.phaseController.setPhase(GamePhase.BattleSetup)) {
+      this.isShowingBattleSetupCue = true;
+      this.battleSetupCueTimer = 0.8;
+      this.transitionCue?.show('BATTLE SETUP', 'Arrange your Beasts');
+    }
   }
 
   private onPhaseChanged(phase: GamePhase): void {
