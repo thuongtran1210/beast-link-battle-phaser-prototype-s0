@@ -16,22 +16,26 @@ export interface BattleFieldLayout {
   panelX: number;
 }
 
-export function createBattleFieldLayout(baseX = 18, baseY = 105): BattleFieldLayout {
-  const dividerX = baseX + 292;
+/**
+ * Creates the landscape 16:9 battlefield layout.
+ * Optimized for ~1280×720 resolution.
+ */
+export function createBattleFieldLayout(baseX = 20, baseY = 80): BattleFieldLayout {
+  const dividerX = baseX + 420;
   return {
     baseX,
     baseY,
     dividerX,
-    dividerY: baseY + 360,
-    dividerHeight: 390,
-    playerFrontX: dividerX - 52,
-    enemyFrontX: dividerX + 52,
-    topLaneY: baseY + 190,
-    depthGap: 72,
-    laneGap: 58,
-    slotWidth: 52,
-    slotHeight: 46,
-    panelX: 620,
+    dividerY: baseY + 265,
+    dividerHeight: 440,
+    playerFrontX: dividerX - 74,
+    enemyFrontX: dividerX + 74,
+    topLaneY: baseY + 96,
+    depthGap: 96,
+    laneGap: 66,
+    slotWidth: 62,
+    slotHeight: 52,
+    panelX: 910,
   };
 }
 
@@ -70,7 +74,6 @@ export function enemySlotPosition(
     y: layout.topLaneY + (column - 1) * layout.laneGap,
   };
 }
-
 
 /**
  * Convert P1-V9 model-space coordinates to battlefield pixels.

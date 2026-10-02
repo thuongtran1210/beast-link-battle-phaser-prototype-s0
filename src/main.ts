@@ -5,9 +5,9 @@ import './styles/prototype.css';
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game-shell',
-  width: 960,
-  height: 760,
-  backgroundColor: '#f4f1e8',
+  width: 1280,
+  height: 720,
+  backgroundColor: '#0b0f17',
   scene: [ValidationScene],
   render: {
     antialias: true,

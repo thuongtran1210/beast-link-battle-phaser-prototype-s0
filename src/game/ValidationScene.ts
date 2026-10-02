@@ -32,17 +32,21 @@ import { GamePhase } from './state/GamePhase';
 import { PhaseController } from './state/PhaseController';
 import { runP1S0Checks } from './state/P1S0Checks';
 import { BoardView } from './ui/BoardView';
-import { HUDView } from './ui/HUDView';
-import { EnergyHUDView } from './ui/EnergyHUDView';
 import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
 import { SessionSummaryView } from './ui/SessionSummaryView';
 import { BattleActionView } from './ui/BattleActionView';
 import { ShowcaseBattleHUDView } from './ui/ShowcaseBattleHUDView';
-import { ShowcaseControlsView } from './ui/ShowcaseControlsView';
+import { GameTopHUD } from './ui/GameTopHUD';
+import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
+import { LandscapeLayout } from './ui/layout/LandscapeLayout';
+import { HudTokens } from './ui/layout/HudTokens';
 
-/** P1-V3: Experimental Variant — Beast Rush 12s / Energy Rush 12s Timing. */
+/**
+ * Landscape-First Beast Link Battle Validation Scene.
+ * Reference resolution: 1280×720 (16:9).
+ */
 export class ValidationScene extends Phaser.Scene {
   private readonly phaseController = new PhaseController();
   private readonly boardGenerator = new BoardGenerator();
@@ -61,30 +65,30 @@ export class ValidationScene extends Phaser.Scene {
   private battleOutcome?: 'Win' | 'Lose';
   private readonly metrics = new SessionMetrics();
 
-  // P1-V1/V3 Transition state
+  // Transition state
   private transitionCueTimer = 0;
   private isShowingTransitionCue = false;
   private battleSetupCueTimer = 0;
   private isShowingBattleSetupCue = false;
 
-  private phaseText?: Phaser.GameObjects.Text;
-  private statusText?: Phaser.GameObjects.Text;
-  private boardTitle?: Phaser.GameObjects.Text;
+  private layout!: LandscapeLayout;
+  private topHud?: GameTopHUD;
+  private phaseStatusPanel?: PhaseStatusPanel;
   private board?: BoardModel;
   private boardView?: BoardView;
-  private hud?: HUDView;
-  private energyHud?: EnergyHUDView;
+  private boardTitle?: Phaser.GameObjects.Text;
+  private boardSubtitle?: Phaser.GameObjects.Text;
   private transitionCue?: TransitionCueView;
   private flowPanel?: PrototypeFlowPanel;
   private battleSetupView?: BattleSetupView;
   private battleActionView?: BattleActionView;
   private summary?: SessionSummaryView;
   private showcaseBattleHud?: ShowcaseBattleHUDView;
-  private showcaseControls?: ShowcaseControlsView;
+
   private showcaseMode = false;
   private showcasePaused = false;
   private showcaseCleanFrame = false;
-  private footerText?: Phaser.GameObjects.Text;
+  private recentActionText = 'Awaiting first match...';
 
   constructor() {
     super('ValidationScene');
@@ -114,52 +118,43 @@ export class ValidationScene extends Phaser.Scene {
     }
 
     const { width, height } = this.scale;
-    this.add.rectangle(width / 2, 42, width, 84, 0x18212b).setOrigin(0.5);
-    this.add.text(28, 18, 'Beast Link Battle', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '25px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    });
-    this.add.text(28, 50, 'P1-V10 Showcase UI · P1-V9 Autonomous Movement', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '14px',
-      color: '#cbd5e1',
-    });
-    this.phaseText = this.add.text(650, 26, '', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '23px',
-      color: '#fbbf24',
-      fontStyle: 'bold',
+    this.layout = new LandscapeLayout(width, height);
+
+    // Global Top HUD
+    this.topHud = new GameTopHUD(this, {
+      onToggleShowcase: () => this.toggleShowcaseMode(),
+      onTogglePause: () => this.toggleShowcasePause(),
+      onToggleCleanFrame: () => this.toggleShowcaseCleanFrame(),
     });
 
-    this.hud = new HUDView(this, 600, 145);
-    this.energyHud = new EnergyHUDView(this, 600, 145);
-    this.transitionCue = new TransitionCueView(this, width / 2, height / 2);
-    this.flowPanel = new PrototypeFlowPanel(this, 600, 145);
-    this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.restartRun());
-    this.showcaseBattleHud = new ShowcaseBattleHUDView(this, 620, 118);
-    this.showcaseControls = new ShowcaseControlsView(
+    // Reusable views
+    this.phaseStatusPanel = new PhaseStatusPanel(
       this,
-      () => this.toggleShowcaseMode(),
-      () => this.toggleShowcasePause(),
-      () => this.toggleShowcaseCleanFrame(),
+      this.layout.rightX,
+      this.layout.rightY,
+      this.layout.rightWidth,
     );
-    this.footerText = this.add
-      .text(
-        width / 2,
-        height - 36,
-        'P1-V10 Experimental: Showcase/Validation presentation toggle over P1-V9.',
-        { fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#66737f' }
-      )
-      .setOrigin(0.5, 1);
+    this.transitionCue = new TransitionCueView(this, width / 2, height / 2);
+    this.flowPanel = new PrototypeFlowPanel(
+      this,
+      this.layout.rightX,
+      this.layout.rightY,
+      this.layout.rightWidth,
+    );
+    this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.restartRun());
+    this.showcaseBattleHud = new ShowcaseBattleHUDView(
+      this,
+      this.layout.rightX,
+      this.layout.rightY,
+      this.layout.rightWidth,
+    );
 
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
+    // Keyboard shortcuts
     this.input.keyboard?.on('keydown-F1', () => this.toggleShowcaseMode());
     this.input.keyboard?.on('keydown-SPACE', () => this.toggleShowcasePause());
     this.input.keyboard?.on('keydown-H', () => this.toggleShowcaseCleanFrame());
-    this.renderShowcaseControls();
 
     // When BeastRush combo ends: disable puzzle input immediately & start transition cue
     this.comboSystem.onEnded(() => {
@@ -170,13 +165,17 @@ export class ValidationScene extends Phaser.Scene {
     this.energyTimer.onEnded(() => {
       this.handleEnergyRushEnded();
     });
+
+    // Listen to resize
+    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      this.layout = new LandscapeLayout(gameSize.width, gameSize.height);
+    });
   }
 
   update(_time: number, delta: number): void {
     const deltaSeconds = delta / 1000;
 
-    // Hide the Battle Setup cue after a short visual-only confirmation window.
-    // BattleSetup is already the active phase underneath; this does not alter gameplay timing.
+    // Hide the Battle Setup cue after short confirmation window
     if (this.isShowingBattleSetupCue) {
       this.battleSetupCueTimer -= deltaSeconds;
       if (this.battleSetupCueTimer <= 0) {
@@ -207,7 +206,7 @@ export class ValidationScene extends Phaser.Scene {
       this.refreshEnergyHUD();
     }
 
-    // Autonomous Battle ticking. Showcase pause freezes model ticking only.
+    // Autonomous Battle ticking
     if (
       this.phaseController.phase === GamePhase.Battle &&
       this.battleModel?.snapshot.status === 'Running' &&
@@ -242,14 +241,14 @@ export class ValidationScene extends Phaser.Scene {
       .setStrokeStyle(3, 0xfca5a5);
 
     this.add.text(70, height / 2 - 100, 'VALIDATION STARTUP CHECK FAILED', {
-      fontFamily: 'Arial, sans-serif',
+      fontFamily: HudTokens.fonts.family,
       fontSize: '24px',
       color: '#ffffff',
       fontStyle: 'bold',
     });
 
     this.add.text(70, height / 2 - 52, message, {
-      fontFamily: 'monospace',
+      fontFamily: HudTokens.fonts.mono,
       fontSize: '14px',
       color: '#fee2e2',
       wordWrap: { width: width - 140 },
@@ -257,7 +256,7 @@ export class ValidationScene extends Phaser.Scene {
     });
 
     this.add.text(70, height / 2 + 70, 'The scene was stopped intentionally so a failed regression cannot contaminate validation.', {
-      fontFamily: 'Arial, sans-serif',
+      fontFamily: HudTokens.fonts.family,
       fontSize: '13px',
       color: '#fecaca',
       wordWrap: { width: width - 140 },
@@ -265,13 +264,12 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private handleBeastRushEnded(): void {
-    // 1. Disable Beast puzzle input immediately
     this.boardView?.setInputEnabled(false);
-    // 2. Start 1.0s transition cue
     this.isShowingTransitionCue = true;
     this.transitionCueTimer = 1.0;
     this.transitionCue?.show('ENERGY RUSH', 'Collect Energy for Battle');
-    this.statusText?.setText('Beast Rush ended. Preparing Energy Rush...');
+    this.recentActionText = 'Beast Rush ended. Preparing Energy Rush...';
+    this.refreshBeastHUD();
   }
 
   private finishTransitionCue(): void {
@@ -280,16 +278,11 @@ export class ValidationScene extends Phaser.Scene {
     this.isShowingBattleSetupCue = false;
     this.battleSetupCueTimer = 0;
     this.transitionCue?.hide();
-    // Transition to EnergyRush
     this.phaseController.setPhase(GamePhase.EnergyRush);
   }
 
   private handleEnergyRushEnded(): void {
-    // Hard-lock Energy puzzle input before leaving the phase.
     this.boardView?.setInputEnabled(false);
-
-    // Enter BattleSetup immediately, then show a short visual-only phase cue over it.
-    // This preserves the automatic timeout rule while making the phase change readable.
     if (this.phaseController.setPhase(GamePhase.BattleSetup)) {
       this.isShowingBattleSetupCue = true;
       this.battleSetupCueTimer = 0.8;
@@ -298,10 +291,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private onPhaseChanged(phase: GamePhase): void {
-    this.phaseText?.setText(`Current Phase: ${phase}`);
     this.clearPuzzlePresentation();
-    this.hud?.setVisible(false);
-    this.energyHud?.setVisible(false);
+    this.phaseStatusPanel?.setVisible(false);
     this.transitionCue?.hide();
     this.flowPanel?.destroy();
     this.showcaseBattleHud?.setVisible(false);
@@ -310,8 +301,8 @@ export class ValidationScene extends Phaser.Scene {
     this.battleActionView = undefined;
     this.summary?.setVisible(false);
     this.showcasePaused = false;
-    this.footerText?.setVisible(!this.showcaseMode && phase !== GamePhase.Result);
-    this.renderShowcaseControls();
+
+    this.syncTopHud();
 
     if (phase === GamePhase.BeastRush) this.enterBeastRush();
     else if (phase === GamePhase.EnergyRush) this.enterEnergyRush();
@@ -320,30 +311,48 @@ export class ValidationScene extends Phaser.Scene {
     else this.enterResult();
   }
 
+  private syncTopHud(): void {
+    const beastCount = this.battleQueue.entries().reduce((s, e) => s + e.count, 0);
+    const energyCount = this.energyQueue.getTotalCharges();
+    const canPause = this.phaseController.phase === GamePhase.Battle && this.battleModel?.snapshot.status === 'Running';
+    this.topHud?.update(
+      this.phaseController.phase,
+      beastCount,
+      energyCount,
+      this.showcaseMode,
+      this.showcasePaused,
+      canPause,
+      this.showcaseCleanFrame,
+    );
+  }
+
   private enterBeastRush(): void {
+    this.recentActionText = 'Match identical Beast pairs with ≤ 2 turns.';
     this.createPuzzleBoard(
-      'Beast Rush',
+      'BEAST RUSH',
+      'Match 6×6 Beast pairs to recruit combat units into your battle queue.',
       ['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f'],
       'Beast',
-      (contentId, turns) => this.onBeastMatch(contentId, turns)
+      (contentId, turns) => this.onBeastMatch(contentId, turns),
     );
-    this.hud?.setVisible(true);
+    this.phaseStatusPanel?.setVisible(true);
     this.refreshBeastHUD();
+    this.syncTopHud();
   }
 
   private enterEnergyRush(): void {
-    // Create fresh Energy-only 6x6 board
+    this.recentActionText = 'Match identical Energy pairs. 12.0s countdown started!';
     this.createPuzzleBoard(
-      'Energy Rush',
+      'ENERGY RUSH',
+      'Match 6×6 Energy pairs to store Frontline Heal charges for battle.',
       ['energy-a', 'energy-b', 'energy-c', 'energy-d', 'energy-e', 'energy-f'],
       'Energy',
-      (contentId) => this.onEnergyMatch(contentId)
+      (contentId) => this.onEnergyMatch(contentId),
     );
-    // Start visible 12.0s countdown & enable Energy puzzle input
     this.energyTimer.start();
-    this.energyHud?.setVisible(true);
+    this.phaseStatusPanel?.setVisible(true);
     this.refreshEnergyHUD();
-    this.statusText?.setText('Match Energy pairs! 12.0s countdown started.');
+    this.syncTopHud();
   }
 
   private enterBattleSetup(): void {
@@ -363,24 +372,26 @@ export class ValidationScene extends Phaser.Scene {
       P1V7_ENEMY_FIXTURES,
       () => this.storedEnergyLines(),
       () => this.startBattle(),
-      () => this.metrics.arrangementChanged()
+      () => this.metrics.arrangementChanged(),
     );
     this.battleSetupView.render();
+    this.syncTopHud();
   }
 
   private enterBattle(): void {
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V9_AUTONOMOUS_MOVEMENT_RULES);
     this.battleTickAccumulator = 0;
-    this.battleActionView = new BattleActionView(this, 18, 105);
+    this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
     this.battleActionView.render(this.battleModel.snapshot);
     this.renderBattle();
-    this.renderShowcaseControls();
+    this.syncTopHud();
   }
 
   private enterResult(): void {
     this.summary?.render(this.metrics.snapshot, this.battleOutcome);
     this.summary?.setVisible(true);
+    this.syncTopHud();
   }
 
   private castEnergy(energyId: string): void {
@@ -394,6 +405,7 @@ export class ValidationScene extends Phaser.Scene {
       this.battleActionView?.render(after);
       this.battleActionView?.playHeal(deriveBattleHealPresentation(before, after));
       this.renderBattle();
+      this.syncTopHud();
     }
   }
 
@@ -402,16 +414,12 @@ export class ValidationScene extends Phaser.Scene {
     if (!battle) return;
     const isRunning = battle.status === 'Running';
     const energyEntries = this.energyQueue.getAll().filter((entry) => entry.charges > 0);
-    const energyRows =
-      isRunning && energyEntries.length > 0
-        ? energyEntries.map((entry) => ({
-            label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
-            actionLabel: 'CAST HEAL',
-            onAction: () => this.castEnergy(entry.energyId),
-          }))
-        : undefined;
     const frontline = this.battleModel?.frontmostAliveUnit();
     this.battleActionView?.render(battle);
+
+    const frontlineDisplay = frontline
+      ? `${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)} HP`
+      : 'No living frontline unit';
 
     if (this.showcaseMode) {
       this.flowPanel?.destroy();
@@ -419,26 +427,31 @@ export class ValidationScene extends Phaser.Scene {
       this.showcaseBattleHud?.render(
         battle,
         energyEntries,
-        frontline
-          ? `FRONTLINE  ${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)} HP`
-          : 'FRONTLINE  —',
+        frontlineDisplay,
         (energyId) => this.castEnergy(energyId),
         this.showcasePaused,
       );
     } else {
       this.showcaseBattleHud?.setVisible(false);
+      const energyRows =
+        isRunning && energyEntries.length > 0
+          ? energyEntries.map((entry) => ({
+              label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
+              actionLabel: 'CAST HEAL',
+              onAction: () => this.castEnergy(entry.energyId),
+            }))
+          : undefined;
+
       this.flowPanel?.render(
         'AUTONOMOUS BATTLE',
         [
           `STATUS: ${battle.status} · Tick ${battle.elapsedTicks} · Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
           `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
-          frontline
-            ? `FRONTLINE: ${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)}`
-            : 'FRONTLINE: No alive player unit.',
+          `FRONTLINE: ${frontlineDisplay}`,
           '',
           'STORED ENERGY (TIMED CAST)',
           'Each Energy ID casts a Frontline Heal.',
-          `Potential enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick when in range.`,
+          `Enemy pressure: ${formatNumber(battle.enemyDamage)} total dmg / tick.`,
           'Battle ticks automatically every 1.0 second.',
           ...(isRunning
             ? energyEntries.length > 0
@@ -449,79 +462,80 @@ export class ValidationScene extends Phaser.Scene {
         null,
         undefined,
         undefined,
-        energyRows
+        energyRows,
       );
     }
-    this.renderShowcaseControls();
+    this.syncTopHud();
   }
 
   private toggleShowcaseMode(): void {
     this.showcaseMode = !this.showcaseMode;
     this.showcasePaused = false;
     this.showcaseCleanFrame = false;
-    this.footerText?.setVisible(!this.showcaseMode && this.phaseController.phase !== GamePhase.Result);
     if (this.phaseController.phase === GamePhase.Battle) {
       this.renderBattle();
     }
-    this.renderShowcaseControls();
+    this.syncTopHud();
   }
 
   private toggleShowcasePause(): void {
     if (!this.showcaseMode || this.phaseController.phase !== GamePhase.Battle) return;
     this.showcasePaused = !this.showcasePaused;
     this.renderBattle();
-    this.renderShowcaseControls();
+    this.syncTopHud();
   }
 
   private toggleShowcaseCleanFrame(): void {
     if (!this.showcaseMode) return;
     this.showcaseCleanFrame = !this.showcaseCleanFrame;
-    this.renderShowcaseControls();
-  }
-
-  private renderShowcaseControls(): void {
-    this.showcaseControls?.render({
-      showcaseMode: this.showcaseMode,
-      paused: this.showcasePaused,
-      cleanFrame: this.showcaseCleanFrame,
-      canPause:
-        this.phaseController.phase === GamePhase.Battle &&
-        this.battleModel?.snapshot.status === 'Running',
-    });
+    this.syncTopHud();
   }
 
   private createPuzzleBoard(
     title: string,
+    subtitle: string,
     contentIds: string[],
     type: 'Beast' | 'Energy',
-    onMatch: (contentId: string, turns: number) => void
+    onMatch: (contentId: string, turns: number) => void,
   ): void {
-    const cellSize = 68,
-      gap = 7;
-    const totalSize = RuleConfig.boardSize * cellSize + (RuleConfig.boardSize - 1) * gap;
-    const startX = 300 - totalSize / 2,
-      startY = 150;
-    this.boardTitle = this.add.text(startX, startY - 34, title, {
-      fontFamily: 'Arial, sans-serif',
+    const placement = this.layout.getPuzzleBoardPlacement(RuleConfig.boardSize);
+
+    this.boardTitle = this.add.text(placement.startX, placement.startY - 38, title, {
+      fontFamily: HudTokens.fonts.family,
       fontSize: '20px',
-      color: '#18212b',
+      color: HudTokens.colors.textPrimary,
       fontStyle: 'bold',
     });
-    this.statusText = this.add.text(
-      startX,
-      startY + totalSize + 14,
-      type === 'Beast' ? 'Match identical Beasts.' : 'Match identical Energy.',
-      { fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#44525f' }
-    );
-    this.board = this.boardGenerator.generate(RuleConfig.boardSize, contentIds, Math.random, type);
-    this.boardView = new BoardView(this, this.board, this.matcher, startX, startY, cellSize, gap, {
-      onInvalidSelection: () => {
-        if (this.phaseController.phase === (type === 'Beast' ? GamePhase.BeastRush : GamePhase.EnergyRush)) {
-          this.metrics.invalid();
-        }
+
+    this.boardSubtitle = this.add.text(
+      placement.startX,
+      placement.startY + placement.totalSize + 14,
+      subtitle,
+      {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '12px',
+        color: HudTokens.colors.textMuted,
       },
-      onMatchRemoved: (result, contentId) => onMatch(contentId, result.turnCount),
-    });
+    );
+
+    this.board = this.boardGenerator.generate(RuleConfig.boardSize, contentIds, Math.random, type);
+    this.boardView = new BoardView(
+      this,
+      this.board,
+      this.matcher,
+      placement.startX,
+      placement.startY,
+      placement.cellSize,
+      placement.gap,
+      {
+        onInvalidSelection: () => {
+          if (this.phaseController.phase === (type === 'Beast' ? GamePhase.BeastRush : GamePhase.EnergyRush)) {
+            this.metrics.invalid();
+          }
+        },
+        onMatchRemoved: (result, contentId) => onMatch(contentId, result.turnCount),
+      },
+    );
     this.boardView.render();
   }
 
@@ -532,11 +546,13 @@ export class ValidationScene extends Phaser.Scene {
     this.battleQueue.addBeastMatch(contentId);
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
+
+    const shortId = contentId.split('-').at(-1)?.toUpperCase() ?? contentId;
+    const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
+    this.recentActionText = `Matched ${shortId} in ${turns} turn(s). Queue +1.${reshuffle}`;
+
     this.refreshBeastHUD();
-    const reshuffle = recovery.reshuffled ? ` Board reshuffled after ${recovery.attempts} attempt(s).` : '';
-    this.statusText?.setText(
-      `Matched ${contentId.split('-').at(-1)?.toUpperCase() ?? contentId} in ${turns} turn(s). Queue +1.${reshuffle}`
-    );
+    this.syncTopHud();
   }
 
   private onEnergyMatch(contentId: string): void {
@@ -545,11 +561,13 @@ export class ValidationScene extends Phaser.Scene {
     this.metrics.energyMatch();
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
+
+    const shortId = contentId.split('-').at(-1)?.toUpperCase() ?? contentId;
+    const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
+    this.recentActionText = `Matched ${shortId}. Stored charge +1.${reshuffle}`;
+
     this.refreshEnergyHUD();
-    const reshuffle = recovery.reshuffled ? ` Board reshuffled after ${recovery.attempts} attempt(s).` : '';
-    this.statusText?.setText(
-      `Matched ${contentId.split('-').at(-1)?.toUpperCase() ?? contentId}. Stored charge +1.${reshuffle}`
-    );
+    this.syncTopHud();
   }
 
   private storedEnergyLines(): string {
@@ -559,15 +577,51 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private refreshBeastHUD(): void {
-    if (this.phaseController.phase === GamePhase.BeastRush) {
-      this.hud?.render(this.comboSystem.snapshot, this.battleQueue.entries());
-    }
+    if (this.phaseController.phase !== GamePhase.BeastRush) return;
+    const combo = this.comboSystem.snapshot;
+    this.phaseStatusPanel?.render({
+      phaseTitle: 'BEAST RUSH',
+      phaseSubtitle: 'Match 6×6 Beast pairs with ≤ 2 turns to recruit combat units',
+      timerSeconds: combo.remainingSeconds,
+      timerLabel: 'Combo Timer',
+      timerSubtext: '+0.3s per match · 12.0s cap',
+      statusBadge: {
+        text: combo.active ? 'ACTIVE' : 'READY',
+        active: combo.active,
+      },
+      matchCount: combo.count,
+      queueTitle: 'Beast Queue',
+      queueItems: this.battleQueue.entries().map((e) => ({
+        id: e.contentId,
+        name: `Beast ${(e.contentId.split('-').at(-1) ?? e.contentId).toUpperCase()}`,
+        count: e.count,
+      })),
+      recentAction: this.recentActionText,
+    });
   }
 
   private refreshEnergyHUD(): void {
-    if (this.phaseController.phase === GamePhase.EnergyRush) {
-      this.energyHud?.render(this.energyTimer.snapshot.remainingSeconds, this.storedEnergyLines());
-    }
+    if (this.phaseController.phase !== GamePhase.EnergyRush) return;
+    const remaining = this.energyTimer.snapshot.remainingSeconds;
+    this.phaseStatusPanel?.render({
+      phaseTitle: 'ENERGY RUSH',
+      phaseSubtitle: 'Match 6×6 Energy pairs to collect Frontline Heal charges',
+      timerSeconds: remaining,
+      timerLabel: 'Countdown',
+      timerSubtext: '12.0s timed lock · Prepare for battle',
+      statusBadge: {
+        text: 'COUNTDOWN',
+        active: true,
+      },
+      matchCount: this.metrics.snapshot.energyMatches,
+      queueTitle: 'Stored Energy',
+      queueItems: this.energyQueue.getAll().map((e) => ({
+        id: e.energyId,
+        name: e.energyId.toUpperCase(),
+        count: e.charges,
+      })),
+      recentAction: this.recentActionText,
+    });
   }
 
   private startBattle(): void {
@@ -583,14 +637,13 @@ export class ValidationScene extends Phaser.Scene {
     this.board = undefined;
     this.boardTitle?.destroy();
     this.boardTitle = undefined;
-    this.statusText?.destroy();
-    this.statusText = undefined;
+    this.boardSubtitle?.destroy();
+    this.boardSubtitle = undefined;
   }
 
   private restartRun(): void {
     if (this.phaseController.phase !== GamePhase.Result) return;
 
-    // Give immediate visual feedback that Restart was accepted.
     this.summary?.setVisible(false);
     this.battleTickAccumulator = 0;
     this.showcasePaused = false;

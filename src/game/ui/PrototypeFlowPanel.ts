@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { HudTokens, drawCard } from './layout/HudTokens';
 
 export interface FlowPanelAction {
   label: string;
@@ -10,83 +11,142 @@ export interface FlowPanelEnergyRow {
   onAction: () => void;
 }
 
-/** P1-S0 navigation-only panel. It is deliberately not a gameplay rule surface. */
+/** P1-S0 navigation/validation panel updated for 16:9 landscape right panel. */
 export class PrototypeFlowPanel {
   private readonly objects: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text | Phaser.GameObjects.Container> = [];
 
-  constructor(private readonly scene: Phaser.Scene, private readonly x: number, private readonly y: number) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly x = 910,
+    private readonly y = 82,
+    private readonly panelWidth = 340,
+  ) {}
 
-  render(title: string, lines: string[], actionLabel: string | null, onAction?: () => void, actions?: FlowPanelAction[], energyRows?: FlowPanelEnergyRow[]): void {
+  render(
+    title: string,
+    lines: string[],
+    actionLabel: string | null,
+    onAction?: () => void,
+    actions?: FlowPanelAction[],
+    energyRows?: FlowPanelEnergyRow[],
+  ): void {
     this.destroy();
-    const actionCount = (actionLabel && onAction ? 1 : 0) + (actions ? actions.length : 0);
-    const panelWidth = 340;
-    const maxAvailableHeight = 560; // keeps within viewport (y: 145 + 560 = 705 < 760)
+    const w = this.panelWidth;
+    const maxAvailableHeight = 610;
 
-    const panel = this.scene.add.rectangle(this.x + panelWidth / 2, this.y + 190, panelWidth, 380, 0xe7e2d7).setStrokeStyle(2, 0xb9ae9d);
-    const heading = this.scene.add.text(this.x, this.y, title, { fontFamily: 'Arial, sans-serif', fontSize: '20px', color: '#18212b', fontStyle: 'bold' });
-    const body = this.scene.add.text(this.x, this.y + 36, lines.join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#44525f', lineSpacing: 4, wordWrap: { width: 320 } });
-    
+    const heading = this.scene.add.text(this.x + 16, this.y + 14, title, {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '16px',
+      color: HudTokens.colors.textPrimary,
+      fontStyle: 'bold',
+    });
+
+    const body = this.scene.add.text(this.x + 16, this.y + 42, lines.join('\n'), {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '11px',
+      color: HudTokens.colors.textSecondary,
+      lineSpacing: 4,
+      wordWrap: { width: w - 32 },
+    });
+
+    const actionCount = (actionLabel && onAction ? 1 : 0) + (actions ? actions.length : 0);
     const energyRowCount = energyRows?.length ?? 0;
     const computedHeight = Math.min(
       maxAvailableHeight,
-      Math.max(360, body.height + 70 + actionCount * 38 + energyRowCount * 34)
+      Math.max(280, body.y - this.y + body.height + 24 + actionCount * 38 + energyRowCount * 36),
     );
-    panel.setSize(panelWidth, computedHeight).setPosition(this.x + panelWidth / 2, this.y + computedHeight / 2);
+
+    const panel = drawCard(this.scene, this.x, this.y, w, computedHeight, HudTokens.colors.bgSurface, 0.94);
     this.objects.push(panel, heading, body);
 
     let nextActionY = body.y + body.height + 12;
 
     if (actionLabel && onAction) {
-      const action = this.scene.add.text(this.x, nextActionY, actionLabel, {
-        fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#ffffff', fontStyle: 'bold', backgroundColor: '#b45309', padding: { x: 14, y: 8 }, wordWrap: { width: 300 },
-      }).setInteractive({ useHandCursor: true });
-      action.on('pointerup', onAction);
-      this.objects.push(action);
-      nextActionY += 42;
+      const actionBtnBg = this.scene.add
+        .rectangle(this.x + w / 2, nextActionY + 16, w - 32, 34, HudTokens.colors.goldDark, 1)
+        .setStrokeStyle(1, HudTokens.colors.gold)
+        .setInteractive({ useHandCursor: true });
+      const actionText = this.scene.add
+        .text(this.x + w / 2, nextActionY + 16, actionLabel, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '12px',
+          color: '#ffffff',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+      actionBtnBg.on('pointerup', onAction);
+      actionText.on('pointerup', onAction);
+      this.objects.push(actionBtnBg, actionText);
+      nextActionY += 40;
     }
 
     if (actions && actions.length > 0) {
       actions.forEach((act) => {
-        const btn = this.scene.add.text(this.x, nextActionY, act.label, {
-          fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#ffffff', fontStyle: 'bold', backgroundColor: '#1e3a5f', padding: { x: 10, y: 6 }, wordWrap: { width: 310 },
-        }).setInteractive({ useHandCursor: true });
-        btn.on('pointerup', act.onAction);
-        this.objects.push(btn);
+        const btnBg = this.scene.add
+          .rectangle(this.x + w / 2, nextActionY + 14, w - 32, 30, 0x1e3a5f, 1)
+          .setStrokeStyle(1, 0x3b82f6)
+          .setInteractive({ useHandCursor: true });
+        const btnText = this.scene.add
+          .text(this.x + w / 2, nextActionY + 14, act.label, {
+            fontFamily: HudTokens.fonts.family,
+            fontSize: '11px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+          })
+          .setOrigin(0.5)
+          .setInteractive({ useHandCursor: true });
+
+        btnBg.on('pointerup', act.onAction);
+        btnText.on('pointerup', act.onAction);
+        this.objects.push(btnBg, btnText);
         nextActionY += 34;
       });
     }
 
     if (energyRows && energyRows.length > 0) {
-      const rowHeight = 30;
+      const rowHeight = 32;
       energyRows.forEach((row) => {
-        // Background strip for clean, readable contrast
-        const rowBg = this.scene.add.rectangle(this.x + 160, nextActionY + rowHeight / 2, 320, rowHeight, 0xf4f1e8).setStrokeStyle(1, 0xcfc8ba);
-        
-        // Single row label: "ENERGY-E · 2 charges"
-        const label = this.scene.add.text(this.x + 10, nextActionY + 7, row.label, {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '12px',
-          color: '#18212b',
+        const rowBg = this.scene.add
+          .rectangle(this.x + w / 2, nextActionY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
+          .setStrokeStyle(1, 0x334155);
+
+        const label = this.scene.add.text(this.x + 24, nextActionY + 9, row.label, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '11px',
+          color: '#f8fafc',
           fontStyle: 'bold',
         });
 
-        // Clearly visible & clickable CAST HEAL button
-        const button = this.scene.add.text(this.x + 225, nextActionY + 4, row.actionLabel, {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '11px',
-          color: '#ffffff',
-          fontStyle: 'bold',
-          backgroundColor: '#0284c7',
-          padding: { x: 10, y: 5 },
-        }).setInteractive({ useHandCursor: true });
-        
-        button.on('pointerup', row.onAction);
-        this.objects.push(rowBg, label, button);
+        const buttonBg = this.scene.add
+          .rectangle(this.x + w - 54, nextActionY + rowHeight / 2, 64, 24, 0x0284c7, 1)
+          .setStrokeStyle(1, 0x38bdf8)
+          .setInteractive({ useHandCursor: true });
+
+        const buttonText = this.scene.add
+          .text(this.x + w - 54, nextActionY + rowHeight / 2, row.actionLabel, {
+            fontFamily: HudTokens.fonts.family,
+            fontSize: '10px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+          })
+          .setOrigin(0.5)
+          .setInteractive({ useHandCursor: true });
+
+        buttonBg.on('pointerup', row.onAction);
+        buttonText.on('pointerup', row.onAction);
+        this.objects.push(rowBg, label, buttonBg, buttonText);
         nextActionY += rowHeight + 4;
       });
     }
   }
 
-  destroy(): void { this.objects.splice(0).forEach((object) => object.destroy()); }
-  setVisible(visible: boolean): void { this.objects.forEach((object) => object.setVisible(visible)); }
+  destroy(): void {
+    this.objects.splice(0).forEach((object) => object.destroy());
+  }
+
+  setVisible(visible: boolean): void {
+    this.objects.forEach((object) => object.setVisible(visible));
+  }
 }
