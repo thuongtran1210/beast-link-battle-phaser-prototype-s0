@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { SessionMetricSnapshot } from '../metrics/SessionMetrics';
 import { HudTokens, drawCard } from './layout/HudTokens';
+import { createIconImage } from './icons/IconFactory';
 
 /**
  * Landscape Game Result Screen:
@@ -145,7 +146,11 @@ export class SessionSummaryView {
             color: HudTokens.colors.textMuted,
           },
         );
-      this.container.add([c2Bg, c2Title, c2Val, c2Sub]);
+      const beastTypes = ['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f'];
+      const beastIcons = beastTypes.map((id, idx) => {
+        return createIconImage(this.scene, id, rightColX + gridW / 2 - 130 + idx * 22, row1Y - 12, 19);
+      });
+      this.container.add([c2Bg, c2Title, c2Val, c2Sub, ...beastIcons]);
 
       // Card 3: ENERGY RUSH & CASTS
       const c3Bg = this.scene.add
@@ -176,7 +181,12 @@ export class SessionSummaryView {
             color: HudTokens.colors.textMuted,
           },
         );
-      this.container.add([c3Bg, c3Title, c3Val, c3Sub]);
+
+      const energyTypes = ['energy-a', 'energy-b', 'energy-c', 'energy-d', 'energy-e', 'energy-f'];
+      const energyIcons = energyTypes.map((id, idx) => {
+        return createIconImage(this.scene, id, leftColX + gridW / 2 - 130 + idx * 22, row2Y - 12, 19);
+      });
+      this.container.add([c3Bg, c3Title, c3Val, c3Sub, ...energyIcons]);
 
       // Card 4: FORMATION & ROLES
       const roleStr = metrics?.roleCounts

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { AutonomousBattleSnapshot } from '../battle/AutonomousBattleModel';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { HudTokens, drawCard } from './layout/HudTokens';
+import { createIconImage } from './icons/IconFactory';
 
 export class ShowcaseBattleHUDView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -164,10 +165,12 @@ export class ShowcaseBattleHUDView {
           .rectangle(this.x + w / 2, rowY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
           .setStrokeStyle(1, 0x334155);
 
+        const tokenIcon = createIconImage(this.scene, entry.energyId, this.x + 32, rowY + rowHeight / 2, 24);
+
         const label = this.scene.add.text(
-          this.x + 26,
-          rowY + 10,
-          `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
+          this.x + 48,
+          rowY + 11,
+          `${entry.energyId.replace('energy-', '').toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
           {
             fontFamily: HudTokens.fonts.family,
             fontSize: '11px',
@@ -195,7 +198,7 @@ export class ShowcaseBattleHUDView {
         healBtnBg.on('pointerdown', castAction);
         healBtnText.on('pointerdown', castAction);
 
-        this.objects.push(rowBg, label, healBtnBg, healBtnText);
+        this.objects.push(rowBg, tokenIcon, label, healBtnBg, healBtnText);
         rowY += rowHeight + 4;
       });
     }

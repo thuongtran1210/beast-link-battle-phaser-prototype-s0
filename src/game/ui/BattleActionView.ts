@@ -17,9 +17,12 @@ import {
   type BattleFieldLayout,
 } from './BattleFieldLayout';
 
+import { createIconImage } from './icons/IconFactory';
+
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
   body: Phaser.GameObjects.Rectangle;
+  icon: Phaser.GameObjects.Image;
   hpFill: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
 }
@@ -320,7 +323,7 @@ export class BattleActionView {
     const ratio = unit.maxHp > 0 ? unit.currentHp / unit.maxHp : 0;
     visual.hpFill.width = 46 * clamp01(ratio);
     visual.label.setText(
-      `${shortBeast(unit.beastId)}\n${unit.role}\n${unit.star}★ · ${formatNumber(unit.currentHp)} HP`,
+      `${'★'.repeat(unit.star)} ${formatNumber(unit.currentHp)}`,
     );
 
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
@@ -353,27 +356,29 @@ export class BattleActionView {
   private createUnit(unit: CombatUnit): UnitVisual {
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     const body = this.scene.add
-      .rectangle(0, 0, 48, 42, roleFill(unit.role))
-      .setStrokeStyle(2, 0x475569);
+      .rectangle(0, 0, 52, 46, 0x1e293b, 0.95)
+      .setStrokeStyle(2, roleFill(unit.role));
 
-    const label = this.scene.add.text(0, -1, '', {
+    const icon = createIconImage(this.scene, unit.beastId, 0, -6, 32);
+
+    const label = this.scene.add.text(0, 13, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '8px',
-      color: '#0f172a',
+      fontSize: '9px',
+      color: '#fbbf24',
       align: 'center',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    const hpBg = this.scene.add.rectangle(0, 27, 46, 6, 0x334155).setOrigin(0.5);
-    const hpFill = this.scene.add.rectangle(-23, 27, 46, 6, 0x16a34a).setOrigin(0, 0.5);
+    const hpBg = this.scene.add.rectangle(0, 26, 46, 5, 0x111827).setOrigin(0.5);
+    const hpFill = this.scene.add.rectangle(-23, 26, 46, 5, 0x16a34a).setOrigin(0, 0.5);
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [body, label, hpBg, hpFill],
+      [body, icon, label, hpBg, hpFill],
     );
 
     this.objects.push(container);
-    return { container, body, hpFill, label };
+    return { container, body, icon, hpFill, label };
   }
 
   private createEnemy(enemy: EnemyCombatUnit): EnemyVisual {

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BoardModel, type BoardPosition } from '../puzzle/BoardModel';
 import { type MatchResult, OnetMatcher } from '../puzzle/OnetMatcher';
 import { HudTokens } from './layout/HudTokens';
+import { createIconImage } from './icons/IconFactory';
 
 export interface BoardViewEvents {
   onMatchRemoved: (result: MatchResult, contentId: string) => void;
@@ -100,33 +101,39 @@ export class BoardView {
         cell.setInteractive({ useHandCursor: true }).on('pointerup', () => this.select(position));
       }
 
-      // Letter label
-      const fontSize = Math.round(this.cellSize * 0.44);
-      const label = this.scene.add
-        .text(x, y + 2, letter, {
+      // Center Icon Badge
+      const iconSize = Math.round(this.cellSize * 0.62);
+      const iconImage = createIconImage(this.scene, contentId.contentId, x, y - 2, iconSize);
+      if (!this.inputEnabled) {
+        iconImage.setAlpha(0.45);
+      }
+      this.container.add(iconImage);
+
+      // Top-right corner small fallback ID letter
+      const idTag = this.scene.add
+        .text(x + this.cellSize / 2 - 7, y - this.cellSize / 2 + 6, letter, {
           fontFamily: HudTokens.fonts.family,
-          fontSize: `${fontSize}px`,
-          color: selected ? '#ffffff' : this.inputEnabled ? '#f8fafc' : '#64748b',
+          fontSize: `${Math.max(9, Math.round(this.cellSize * 0.13))}px`,
+          color: selected ? '#fbbf24' : '#94a3b8',
           fontStyle: 'bold',
         })
-        .setOrigin(0.5);
+        .setOrigin(1, 0);
+      this.container.add(idTag);
 
       if (this.inputEnabled && !this.inputLocked) {
-        label.setInteractive({ useHandCursor: true }).on('pointerup', () => this.select(position));
+        iconImage.setInteractive({ useHandCursor: true }).on('pointerup', () => this.select(position));
       }
 
       // Subtle type subscript
-      const roleText = isEnergy ? 'ENR' : beastSubscript(letter);
+      const roleText = isEnergy ? 'ENERGY' : beastSubscript(letter);
       const subLabel = this.scene.add
-        .text(x, y + this.cellSize * 0.32, roleText, {
+        .text(x, y + this.cellSize * 0.35, roleText, {
           fontFamily: HudTokens.fonts.family,
-          fontSize: `${Math.max(9, Math.round(this.cellSize * 0.13))}px`,
-          color: selected ? '#93c5fd' : '#94a3b8',
+          fontSize: `${Math.max(8, Math.round(this.cellSize * 0.11))}px`,
+          color: selected ? '#93c5fd' : '#cbd5e1',
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
-
-      this.container.add(label);
       this.container.add(subLabel);
     });
 

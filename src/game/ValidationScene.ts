@@ -42,6 +42,8 @@ import { GameTopHUD } from './ui/GameTopHUD';
 import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
 import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
+import { ensureIconTextures } from './ui/icons/IconFactory';
+import { getIconDefinition } from './ui/icons/UnitIconRegistry';
 
 /**
  * Landscape-First Beast Link Battle Validation Scene.
@@ -119,6 +121,7 @@ export class ValidationScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     this.layout = new LandscapeLayout(width, height);
+    ensureIconTextures(this);
 
     // Global Top HUD
     this.topHud = new GameTopHUD(this, {
@@ -547,9 +550,9 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const shortId = contentId.split('-').at(-1)?.toUpperCase() ?? contentId;
+    const def = getIconDefinition(contentId);
     const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
-    this.recentActionText = `Matched ${shortId} in ${turns} turn(s). Queue +1.${reshuffle}`;
+    this.recentActionText = `Matched ${def.name} (${def.letter}) in ${turns} turn(s). Queue +1.${reshuffle}`;
 
     this.refreshBeastHUD();
     this.syncTopHud();
@@ -562,9 +565,9 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const shortId = contentId.split('-').at(-1)?.toUpperCase() ?? contentId;
+    const def = getIconDefinition(contentId);
     const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
-    this.recentActionText = `Matched ${shortId}. Stored charge +1.${reshuffle}`;
+    this.recentActionText = `Matched ${def.name} (${def.letter}). Stored charge +1.${reshuffle}`;
 
     this.refreshEnergyHUD();
     this.syncTopHud();
@@ -591,11 +594,14 @@ export class ValidationScene extends Phaser.Scene {
       },
       matchCount: combo.count,
       queueTitle: 'Beast Queue',
-      queueItems: this.battleQueue.entries().map((e) => ({
-        id: e.contentId,
-        name: `Beast ${(e.contentId.split('-').at(-1) ?? e.contentId).toUpperCase()}`,
-        count: e.count,
-      })),
+      queueItems: this.battleQueue.entries().map((e) => {
+        const def = getIconDefinition(e.contentId);
+        return {
+          id: e.contentId,
+          name: `${def.name} (${def.letter})`,
+          count: e.count,
+        };
+      }),
       recentAction: this.recentActionText,
     });
   }
@@ -615,11 +621,14 @@ export class ValidationScene extends Phaser.Scene {
       },
       matchCount: this.metrics.snapshot.energyMatches,
       queueTitle: 'Stored Energy',
-      queueItems: this.energyQueue.getAll().map((e) => ({
-        id: e.energyId,
-        name: e.energyId.toUpperCase(),
-        count: e.charges,
-      })),
+      queueItems: this.energyQueue.getAll().map((e) => {
+        const def = getIconDefinition(e.energyId);
+        return {
+          id: e.energyId,
+          name: `${def.name} (${def.letter})`,
+          count: e.charges,
+        };
+      }),
       recentAction: this.recentActionText,
     });
   }

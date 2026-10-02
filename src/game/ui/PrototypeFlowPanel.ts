@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { HudTokens, drawCard } from './layout/HudTokens';
+import { createIconImage } from './icons/IconFactory';
 
 export interface FlowPanelAction {
   label: string;
@@ -13,7 +14,7 @@ export interface FlowPanelEnergyRow {
 
 /** P1-S0 navigation/validation panel updated for 16:9 landscape right panel. */
 export class PrototypeFlowPanel {
-  private readonly objects: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text | Phaser.GameObjects.Container> = [];
+  private readonly objects: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text | Phaser.GameObjects.Container | Phaser.GameObjects.Image> = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -112,7 +113,11 @@ export class PrototypeFlowPanel {
           .rectangle(this.x + w / 2, nextActionY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
           .setStrokeStyle(1, 0x334155);
 
-        const label = this.scene.add.text(this.x + 24, nextActionY + 9, row.label, {
+        const match = row.label.match(/(ENERGY-[A-F])/i);
+        const energyId = match ? match[1].toLowerCase() : 'energy-a';
+        const tokenIcon = createIconImage(this.scene, energyId, this.x + 30, nextActionY + rowHeight / 2, 22);
+
+        const label = this.scene.add.text(this.x + 46, nextActionY + 9, row.label, {
           fontFamily: HudTokens.fonts.family,
           fontSize: '11px',
           color: '#f8fafc',
@@ -136,7 +141,7 @@ export class PrototypeFlowPanel {
 
         buttonBg.on('pointerup', row.onAction);
         buttonText.on('pointerup', row.onAction);
-        this.objects.push(rowBg, label, buttonBg, buttonText);
+        this.objects.push(rowBg, tokenIcon, label, buttonBg, buttonText);
         nextActionY += rowHeight + 4;
       });
     }

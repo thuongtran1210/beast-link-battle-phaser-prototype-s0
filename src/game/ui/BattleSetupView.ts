@@ -4,6 +4,7 @@ import type { EnemyFixture } from '../battle/AutonomousBattleModel';
 import { recommendedRows } from '../battle/BeastRoles';
 import { createBattleFieldLayout, enemySlotPosition, playerSlotPosition } from './BattleFieldLayout';
 import { HudTokens, drawCard } from './layout/HudTokens';
+import { createIconImage } from './icons/IconFactory';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -165,18 +166,20 @@ export class BattleSetupView {
       : undefined;
 
     if (unit) {
-      const fill = roleFill(unit.role);
       const isSelected = unit.unitId === this.selectedUnitId;
       const body = this.scene.add
-        .rectangle(x, y, 48, 44, fill, 0.95)
-        .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xfbbf24 : 0xffffff);
+        .rectangle(x, y, 54, 48, 0x1e293b, 0.95)
+        .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xfbbf24 : roleFill(unit.role));
 
-      const label = this.text(
+      const icon = createIconImage(this.scene, unit.beastId, x, y - 5, 34);
+
+      const stars = '★'.repeat(unit.star);
+      const starBadge = this.text(
         x,
-        y - 1,
-        `${displayBeast(unit.beastId)}\n${unit.role}\n${unit.star}★`,
-        9,
-        '#0f172a',
+        y + 16,
+        stars,
+        10,
+        HudTokens.colors.textGold,
         'bold',
       ).setOrigin(0.5);
 
@@ -185,8 +188,9 @@ export class BattleSetupView {
         this.render();
       };
       body.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
-      label.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
-      this.objects.push(body, label);
+      icon.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
+      starBadge.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
+      this.objects.push(body, icon, starBadge);
       return;
     }
 
@@ -338,17 +342,14 @@ export class BattleSetupView {
       .setStrokeStyle(selected ? 2 : 1, selected ? 0x38bdf8 : 0x334155);
     this.objects.push(card);
 
-    const roleColor = roleFill(unit.role);
-    const roleChip = this.scene.add
-      .rectangle(x + 20, y + cardHeight / 2, 28, 28, roleColor, 0.9)
-      .setStrokeStyle(1, 0xffffff, 0.2);
-    const chipText = this.text(x + 20, y + cardHeight / 2, unit.role.slice(0, 1), 11, '#0f172a', 'bold').setOrigin(0.5);
-    this.objects.push(roleChip, chipText);
+    const icon = createIconImage(this.scene, unit.beastId, x + 22, y + cardHeight / 2, 32);
+    this.objects.push(icon);
 
-    const label = `${displayBeast(unit.beastId)} · ${unit.role} · ${unit.star}★`;
+    const letter = displayBeast(unit.beastId);
+    const label = `Beast ${letter} · ${unit.role} · ${'★'.repeat(unit.star)}`;
     const sub = `Rec: ${recommendedRows(unit.role)} row`;
-    const text = this.text(x + 42, y + 6, label, 11, HudTokens.colors.textPrimary, selected ? 'bold' : '');
-    const subText = this.text(x + 42, y + 24, sub, 10, HudTokens.colors.textMuted);
+    const text = this.text(x + 44, y + 6, label, 11, HudTokens.colors.textPrimary, selected ? 'bold' : '');
+    const subText = this.text(x + 44, y + 24, sub, 10, HudTokens.colors.textMuted);
 
     const selectHandler = () => {
       this.selectedUnitId = unit.unitId;

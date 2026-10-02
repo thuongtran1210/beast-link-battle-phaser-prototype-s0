@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { HudTokens, drawCard } from './layout/HudTokens';
+import { createIconImage } from './icons/IconFactory';
 
 export interface StatusQueueItem {
   id: string;
@@ -128,7 +129,7 @@ export class PhaseStatusPanel {
     // CARD 4: QUEUE / STORED CHARGES CARD
     const maxItems = 6;
     const itemRows = Math.min(maxItems, data.queueItems.length);
-    const queueCardH = Math.max(105, 52 + itemRows * 26);
+    const queueCardH = Math.max(105, 52 + itemRows * 30);
     const queueBg = drawCard(this.scene, this.x, currY, w, queueCardH, HudTokens.colors.bgSurface, 0.94);
 
     const queueHeading = this.scene.add.text(this.x + 16, currY + 14, data.queueTitle.toUpperCase(), {
@@ -152,25 +153,27 @@ export class PhaseStatusPanel {
       let itemY = currY + 40;
       data.queueItems.slice(0, maxItems).forEach((item) => {
         const rowBg = this.scene.add
-          .rectangle(this.x + w / 2, itemY + 10, w - 32, 22, 0x111827, 0.6)
-          .setStrokeStyle(1, 0x334155, 0.6);
+          .rectangle(this.x + w / 2, itemY + 12, w - 32, 26, 0x111827, 0.7)
+          .setStrokeStyle(1, 0x334155, 0.7);
 
-        const itemName = this.scene.add.text(this.x + 24, itemY + 2, item.name, {
+        const icon = createIconImage(this.scene, item.id, this.x + 30, itemY + 12, 22);
+
+        const itemName = this.scene.add.text(this.x + 48, itemY + 5, item.name, {
           fontFamily: HudTokens.fonts.family,
           fontSize: '11px',
           color: HudTokens.colors.textPrimary,
           fontStyle: 'bold',
         });
 
-        const itemCount = this.scene.add.text(this.x + w - 24, itemY + 2, `×${item.count}`, {
+        const itemCount = this.scene.add.text(this.x + w - 24, itemY + 5, `×${item.count}`, {
           fontFamily: HudTokens.fonts.family,
           fontSize: '11px',
           color: HudTokens.colors.textGold,
           fontStyle: 'bold',
         }).setOrigin(1, 0);
 
-        this.objects.push(rowBg, itemName, itemCount);
-        itemY += 26;
+        this.objects.push(rowBg, icon, itemName, itemCount);
+        itemY += 30;
       });
     }
     currY += queueCardH + 10;
