@@ -41,6 +41,7 @@ export function deriveBattleTickPresentation(
     (after.lastPlayerActions ?? []).map((action) => [action.unitId, action]),
   );
 
+  const hasExplicitActions = after.lastPlayerActions !== undefined;
   const attackers = before.units
     .filter((unit) => unit.currentHp > 0)
     .map((unit) => {
@@ -52,7 +53,7 @@ export function deriveBattleTickPresentation(
         targetEnemyIds: action?.hits.map((hit) => hit.enemyId) ?? [],
       };
     })
-    .filter((attacker) => attacker.targetEnemyIds.length > 0 || !(after.lastPlayerActions?.length));
+    .filter((attacker) => hasExplicitActions ? attacker.targetEnemyIds.length > 0 : true);
 
   const enemyDamage = Math.max(0, before.enemyHp - after.enemyHp);
   const enemyDamages: EnemyDamagePresentation[] = [];
