@@ -95,3 +95,25 @@ For every implementation or validation slice:
 11. Update **00.0 — Current Project Handoff** with only milestone, latest verified state, blocker and next action.
 
 Do not mark a rule or variant verified merely because code exists. It must pass the required checks and, when applicable, the live validation flow.
+
+
+## Active Experimental Gate — P1-V5 Enemy Squad Battle Grid
+
+P03 is paused while P1-V5 is verified.
+
+Experimental P1-V5 fixture:
+- 4 enemies
+- 65 HP / 6 damage each
+- mirrored enemy formation grid opposite the player formation
+- aggregate incoming damage decreases as enemies die
+- player damage targets enemy Front → Mid → Back, then lower column priority
+- historical single-enemy default remains for P1-S3/P1-S4 regression checks
+
+Do not present P1-V5 as adopted Current Gameplay Spec.
+
+Current immediate task:
+- run regression checks and production build,
+- live verify mirrored battle grid,
+- verify 4 enemy pressure/death behavior,
+- verify Result → Restart,
+- resume P03 only after the gate passes.
