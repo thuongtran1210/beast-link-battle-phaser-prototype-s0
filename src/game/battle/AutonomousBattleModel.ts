@@ -145,6 +145,7 @@ const movementProfile: Readonly<Record<BeastRole, {
 
 const ENEMY_MOVE_SPEED = 0.58;
 const ENEMY_ATTACK_RANGE = 0.72;
+const COMBAT_DISTANCE_EPSILON = 0.001;
 
 /**
  * Pure deterministic combat model.
@@ -360,7 +361,7 @@ export class AutonomousBattleModel {
     const profile = movementProfile.Tanker;
     const distance = this.distance(unit.positionX, unit.positionLane, target.positionX, target.positionLane);
 
-    if (distance > profile.attackRange) {
+    if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
       this.moveTowardPlayerUnit(unit, target, profile.speed, profile.attackRange);
       return;
     }
@@ -377,7 +378,7 @@ export class AutonomousBattleModel {
     const profile = movementProfile.Assassin;
     const distance = this.distance(unit.positionX, unit.positionLane, target.positionX, target.positionLane);
 
-    if (distance > profile.attackRange) {
+    if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
       this.moveTowardPlayerUnit(unit, target, profile.speed, profile.attackRange);
       return;
     }
@@ -394,12 +395,12 @@ export class AutonomousBattleModel {
     const profile = movementProfile.Ranger;
     const distance = this.distance(unit.positionX, unit.positionLane, target.positionX, target.positionLane);
 
-    if (distance > profile.attackRange) {
+    if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
       this.moveTowardPlayerUnit(unit, target, profile.speed, profile.attackRange - 0.15);
       return;
     }
 
-    if (distance < profile.minRange) {
+    if (distance < profile.minRange - COMBAT_DISTANCE_EPSILON) {
       const retreated = this.retreatPlayerUnit(unit, profile.speed);
       if (retreated) return;
     }
@@ -416,12 +417,12 @@ export class AutonomousBattleModel {
     const profile = movementProfile.Mage;
     const distance = this.distance(unit.positionX, unit.positionLane, primary.positionX, primary.positionLane);
 
-    if (distance > profile.attackRange) {
+    if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
       this.moveTowardPlayerUnit(unit, primary, profile.speed, profile.attackRange - 0.15);
       return;
     }
 
-    if (distance < profile.minRange) {
+    if (distance < profile.minRange - COMBAT_DISTANCE_EPSILON) {
       const retreated = this.retreatPlayerUnit(unit, profile.speed);
       if (retreated) return;
     }
@@ -469,7 +470,7 @@ export class AutonomousBattleModel {
         target.positionLane,
       );
 
-      if (distance > ENEMY_ATTACK_RANGE) {
+      if (distance > ENEMY_ATTACK_RANGE + COMBAT_DISTANCE_EPSILON) {
         this.moveTowardEnemy(enemy, target, ENEMY_MOVE_SPEED, ENEMY_ATTACK_RANGE);
         continue;
       }
@@ -643,7 +644,7 @@ export class AutonomousBattleModel {
     const distance = Math.hypot(dx, dyScaled);
     const travel = Math.min(speed, Math.max(0, distance - stopRange));
 
-    if (distance <= 0.000001 || travel <= 0) {
+    if (distance <= COMBAT_DISTANCE_EPSILON || travel <= COMBAT_DISTANCE_EPSILON) {
       return { x: fromX, lane: fromLane };
     }
 
