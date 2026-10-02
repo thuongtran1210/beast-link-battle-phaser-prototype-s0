@@ -15,6 +15,7 @@ import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
 import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
 import { runP1V4Checks } from './battle/P1V4Checks';
+import { P1V5_ENEMY_FIXTURES, runP1V5Checks } from './battle/P1V5Checks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -89,6 +90,7 @@ export class ValidationScene extends Phaser.Scene {
     runP1S3Checks();
     runP1S4Checks();
     runP1V4Checks();
+    runP1V5Checks();
     runP1V1Checks();
     runP1V2Checks();
     runP1V3Checks();
@@ -300,7 +302,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterBattle(): void {
     if (!this.formation) return;
-    this.battleModel = new AutonomousBattleModel(this.formation);
+    this.battleModel = new AutonomousBattleModel(this.formation, P1V5_ENEMY_FIXTURES);
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, 18, 105);
     this.battleActionView.render(this.battleModel.snapshot);
@@ -346,7 +348,7 @@ export class ValidationScene extends Phaser.Scene {
       'AUTONOMOUS BATTLE',
       [
         `STATUS: ${battle.status}    Tick: ${battle.elapsedTicks}`,
-        `ENEMY HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
+        `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}    Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
         '',
         'CURRENT FRONTLINE',
         frontline
@@ -366,6 +368,7 @@ export class ValidationScene extends Phaser.Scene {
             ? 'Each Energy ID has its own aligned Frontline Heal action.'
             : 'No stored Energy charges to cast.'
           : 'Battle ended.',
+        `Enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick.`,
         'Battle ticks automatically every 1.0 second.',
       ],
       null,
