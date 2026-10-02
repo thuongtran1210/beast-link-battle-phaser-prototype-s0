@@ -22,7 +22,10 @@ export class BattleActionView {
   constructor(private readonly scene: Phaser.Scene, private readonly x: number, private readonly y: number) {}
 
   render(snapshot: AutonomousBattleSnapshot): void {
-    if (!this.enemyContainer) this.createEnemy(snapshot);
+    if (!this.enemyContainer) {
+      this.createBattleGrid();
+      this.createEnemy(snapshot);
+    }
     this.syncEnemy(snapshot);
     snapshot.units.forEach((unit) => this.syncUnit(unit));
   }
@@ -105,6 +108,66 @@ export class BattleActionView {
     this.enemyLabel = undefined;
   }
 
+  private createBattleGrid(): void {
+    const battlefieldX = this.x + 36;
+    const topY = this.y + 132;
+    const slotW = 70;
+    const slotH = 62;
+    const colGap = 82;
+    const rowGap = 112;
+
+    const title = this.scene.add.text(battlefieldX, this.y + 108, 'BATTLE FIELD', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '14px',
+      color: '#475569',
+      fontStyle: 'bold',
+    });
+    this.objects.push(title);
+
+    // Player formation rows.
+    ['FRONT', 'MID', 'BACK'].forEach((rowLabel, rowIndex) => {
+      const rowY = topY + rowIndex * rowGap;
+      const label = this.scene.add.text(battlefieldX - 4, rowY - 48, rowLabel, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '11px',
+        color: '#64748b',
+        fontStyle: 'bold',
+      });
+      this.objects.push(label);
+      for (let col = 0; col < 6; col += 1) {
+        const slot = this.scene.add.rectangle(
+          battlefieldX + 34 + col * colGap,
+          rowY,
+          slotW,
+          slotH,
+          0xf8fafc,
+          0.35,
+        ).setStrokeStyle(1, 0xcbd5e1);
+        this.objects.push(slot);
+      }
+    });
+
+    // Enemy side is intentionally one fixture in current P1 rules.
+    const enemyLabel = this.scene.add.text(this.x + 466, topY - 48, 'ENEMY FRONT', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '11px',
+      color: '#991b1b',
+      fontStyle: 'bold',
+    });
+    const enemySlot = this.scene.add.rectangle(
+      this.x + 500,
+      topY,
+      126,
+      90,
+      0xfef2f2,
+      0.55,
+    ).setStrokeStyle(2, 0xfca5a5);
+    this.objects.push(enemyLabel, enemySlot);
+
+    const divider = this.scene.add.rectangle(this.x + 458, this.y + 292, 2, 340, 0x94a3b8, 0.8);
+    this.objects.push(divider);
+  }
+
   private createEnemy(snapshot: AutonomousBattleSnapshot): void {
     const body = this.scene.add.rectangle(0, 0, 120, 82, 0x7f1d1d).setStrokeStyle(3, 0x450a0a);
     const label = this.scene.add.text(0, -2, 'ENEMY', {
@@ -112,7 +175,8 @@ export class BattleActionView {
     }).setOrigin(0.5);
     const hpBg = this.scene.add.rectangle(0, 54, 130, 12, 0x1f2937).setOrigin(0.5);
     const hpFill = this.scene.add.rectangle(-65, 54, 130, 12, 0xdc2626).setOrigin(0, 0.5);
-    const container = this.scene.add.container(this.x + 245, this.y + 70, [body, label, hpBg, hpFill]);
+    // Single current enemy fixture occupies an opposing frontline slot.
+    const container = this.scene.add.container(this.x + 500, this.y + 180, [body, label, hpBg, hpFill]);
     this.objects.push(container);
     this.enemyContainer = container;
     this.enemyBody = body;
