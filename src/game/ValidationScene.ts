@@ -15,7 +15,8 @@ import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
 import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
 import { runP1V4Checks } from './battle/P1V4Checks';
-import { P1V5_ENEMY_FIXTURES, runP1V5Checks } from './battle/P1V5Checks';
+import { runP1V5Checks } from './battle/P1V5Checks';
+import { P1V7_ENEMY_FIXTURES, runP1V7Checks } from './battle/P1V7Checks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -91,6 +92,7 @@ export class ValidationScene extends Phaser.Scene {
     runP1S4Checks();
     runP1V4Checks();
     runP1V5Checks();
+    runP1V7Checks();
     runP1V1Checks();
     runP1V2Checks();
     runP1V3Checks();
@@ -103,7 +105,7 @@ export class ValidationScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold',
     });
-    this.add.text(28, 50, 'P1-V6 Integrated Battle Setup Preview · P1-V5 Enemy Squad', {
+    this.add.text(28, 50, 'P1-V7 Combat Pressure · Integrated Battle Setup', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#cbd5e1',
@@ -124,7 +126,7 @@ export class ValidationScene extends Phaser.Scene {
       .text(
         width / 2,
         height - 36,
-        'P1-V6 Experimental: Integrated Setup/Battle field + P1-V5 4-enemy squad.',
+        'P1-V7 Experimental: 6-enemy pressure fixture (160 HP / 3 DMG each) + integrated Setup/Battle field.',
         { fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#66737f' }
       )
       .setOrigin(0.5, 1);
@@ -293,7 +295,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleSetupView = new BattleSetupView(
       this,
       this.formation,
-      P1V5_ENEMY_FIXTURES,
+      P1V7_ENEMY_FIXTURES,
       () => this.storedEnergyLines(),
       () => this.startBattle(),
       () => this.metrics.arrangementChanged()
@@ -303,7 +305,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterBattle(): void {
     if (!this.formation) return;
-    this.battleModel = new AutonomousBattleModel(this.formation, P1V5_ENEMY_FIXTURES);
+    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES);
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, 18, 105);
     this.battleActionView.render(this.battleModel.snapshot);
