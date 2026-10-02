@@ -474,6 +474,10 @@ export class ValidationScene extends Phaser.Scene {
 
   private restartRun(): void {
     if (this.phaseController.phase !== GamePhase.Result) return;
+
+    // Give immediate visual feedback that Restart was accepted.
+    this.summary?.setVisible(false);
+    this.battleTickAccumulator = 0;
     this.isShowingTransitionCue = false;
     this.transitionCueTimer = 0;
     this.isShowingBattleSetupCue = false;
