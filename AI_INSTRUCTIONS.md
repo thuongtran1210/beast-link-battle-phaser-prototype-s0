@@ -47,9 +47,9 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-**P03 fresh real-player validation is active on locked build `953df30d7d1d324c14e119a82534d2fbba7b48b8`.**
+**P03 is paused for Experimental P1-V4 Battle Action Readability implementation/verification.**
 
-Use locked build `953df30d7d1d324c14e119a82534d2fbba7b48b8` for a fresh P03 evidence run. Do not reuse evidence from the interrupted run. Do not retune during the session unless a new severe blocker prevents completion.
+Implement and verify P1-V4 as a presentation-only layer over the existing deterministic battle model: readable attack, hit, death, and heal feedback. Do not change combat math, tick cadence, targeting, Energy consumption, formation rules, or balance values. Resume P03 only after the live presentation gate passes.
 
 P03 must capture:
 
