@@ -13,6 +13,8 @@ import { runP1S2Checks } from './battle/P1S2Checks';
 import { AutonomousBattleModel } from './battle/AutonomousBattleModel';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
+import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
+import { runP1V4Checks } from './battle/P1V4Checks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -32,6 +34,7 @@ import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
 import { SessionSummaryView } from './ui/SessionSummaryView';
+import { BattleActionView } from './ui/BattleActionView';
 
 /** P1-V3: Experimental Variant — Beast Rush 12s / Energy Rush 12s Timing. */
 export class ValidationScene extends Phaser.Scene {
@@ -68,6 +71,7 @@ export class ValidationScene extends Phaser.Scene {
   private transitionCue?: TransitionCueView;
   private flowPanel?: PrototypeFlowPanel;
   private battleSetupView?: BattleSetupView;
+  private battleActionView?: BattleActionView;
   private summary?: SessionSummaryView;
   private footerText?: Phaser.GameObjects.Text;
 
@@ -84,6 +88,7 @@ export class ValidationScene extends Phaser.Scene {
     runP1S2Checks();
     runP1S3Checks();
     runP1S4Checks();
+    runP1V4Checks();
     runP1V1Checks();
     runP1V2Checks();
     runP1V3Checks();
@@ -176,7 +181,10 @@ export class ValidationScene extends Phaser.Scene {
       let ticked = false;
       while (this.battleTickAccumulator >= 1000 && this.battleModel.snapshot.status === 'Running') {
         this.battleTickAccumulator -= 1000;
-        this.battleModel.tick();
+        const before = this.battleModel.snapshot;
+        const after = this.battleModel.tick();
+        this.battleActionView?.render(after);
+        this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
         ticked = true;
       }
       if (ticked) this.renderBattle();
@@ -231,6 +239,8 @@ export class ValidationScene extends Phaser.Scene {
     this.transitionCue?.hide();
     this.flowPanel?.destroy();
     this.battleSetupView?.destroy();
+    this.battleActionView?.destroy();
+    this.battleActionView = undefined;
     this.summary?.setVisible(false);
     this.footerText?.setVisible(phase !== GamePhase.Result);
 
@@ -292,6 +302,8 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(this.formation);
     this.battleTickAccumulator = 0;
+    this.battleActionView = new BattleActionView(this, 18, 105);
+    this.battleActionView.render(this.battleModel.snapshot);
     this.renderBattle();
   }
 
@@ -306,7 +318,10 @@ export class ValidationScene extends Phaser.Scene {
     const armyHp = before.units.reduce((sum, unit) => sum + unit.currentHp, 0);
     const success = this.battleModel.castFrontlineHeal(energyId, this.energyQueue);
     if (success) {
+      const after = this.battleModel.snapshot;
       this.metrics.successfulCast(armyHp, before.enemyHp);
+      this.battleActionView?.render(after);
+      this.battleActionView?.playHeal(deriveBattleHealPresentation(before, after));
       this.renderBattle();
     }
   }
@@ -325,6 +340,7 @@ export class ValidationScene extends Phaser.Scene {
           }))
         : undefined;
     const frontline = this.battleModel?.frontmostAliveUnit();
+    this.battleActionView?.render(battle);
 
     this.flowPanel?.render(
       'AUTONOMOUS BATTLE',
@@ -468,6 +484,8 @@ export class ValidationScene extends Phaser.Scene {
     this.battleQueue.clear();
     this.energyQueue.reset();
     this.formation = undefined;
+    this.battleActionView?.destroy();
+    this.battleActionView = undefined;
     this.battleModel = undefined;
     this.battleOutcome = undefined;
     this.metrics.reset();
