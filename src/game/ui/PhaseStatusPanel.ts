@@ -214,27 +214,22 @@ export class PhaseStatusPanel {
   }
 
   pulseCombo(): void {
-    if (!this.stat2Val || !this.scene.tweens) return;
+    if (!this.stat2Val || !this.scene.tweens || !this.stat2Val.active) return;
     this.scene.tweens.killTweensOf(this.stat2Val);
     this.stat2Val.setScale(1.4);
-    this.stat2Val.setColor('#facc15');
     this.scene.tweens.add({
       targets: this.stat2Val,
       scaleX: 1,
       scaleY: 1,
       duration: 220,
       ease: 'Back.Out',
-      onComplete: () => {
-        this.stat2Val?.setColor(HudTokens.colors.textPrimary);
-      },
     });
   }
 
   pulseTimer(isBonus = true): void {
-    if (!this.timerValue || !this.scene.tweens) return;
+    if (!this.timerValue || !this.scene.tweens || !this.timerValue.active) return;
     this.scene.tweens.killTweensOf(this.timerValue);
-    this.timerValue.setScale(1.2);
-    if (isBonus) this.timerValue.setColor('#4ade80');
+    this.timerValue.setScale(isBonus ? 1.25 : 1.15);
     this.scene.tweens.add({
       targets: this.timerValue,
       scaleX: 1,
@@ -246,11 +241,13 @@ export class PhaseStatusPanel {
 
   pulseQueueRow(id: string): void {
     const row = this.queueRowMap.get(id);
-    if (!row || !this.scene.tweens) return;
+    if (!row || !this.scene.tweens || !row.count.active) return;
     this.scene.tweens.killTweensOf(row.count);
+    this.scene.tweens.killTweensOf(row.bg);
     row.count.setScale(1.45);
-    row.count.setColor('#ffffff');
-    row.bg.setStrokeStyle(1.5, 0xfbbf24);
+    if (row.bg.active) {
+      row.bg.setStrokeStyle(1.5, 0xfbbf24);
+    }
     this.scene.tweens.add({
       targets: row.count,
       scaleX: 1,
@@ -258,8 +255,9 @@ export class PhaseStatusPanel {
       duration: 260,
       ease: 'Back.Out',
       onComplete: () => {
-        row.count.setColor(HudTokens.colors.textGold);
-        row.bg.setStrokeStyle(1, 0x334155, 0.7);
+        if (row.bg.active && row.bg.scene) {
+          row.bg.setStrokeStyle(1, 0x334155, 0.7);
+        }
       },
     });
   }
@@ -278,6 +276,9 @@ export class PhaseStatusPanel {
   }
 
   destroy(): void {
+    if (this.scene.tweens) {
+      this.scene.tweens.killTweensOf(this.objects);
+    }
     this.queueRowMap.clear();
     this.stat2Val = undefined;
     this.timerValue = undefined;

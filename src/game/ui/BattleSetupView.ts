@@ -79,6 +79,9 @@ export class BattleSetupView {
   }
 
   destroy(): void {
+    if (this.scene.tweens) {
+      this.scene.tweens.killTweensOf(this.objects);
+    }
     this.objects.splice(0).forEach((object) => object.destroy());
   }
 

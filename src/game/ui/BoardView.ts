@@ -210,6 +210,10 @@ export class BoardView {
     this.pendingMatch?.remove(false);
     this.pendingMatch = undefined;
     this.destroyed = true;
+    if (this.scene.tweens) {
+      this.scene.tweens.killTweensOf(this.container);
+      this.tileMap.forEach((tile) => this.scene.tweens.killTweensOf(tile.container));
+    }
     this.container.destroy();
     this.pathGraphics.destroy();
     this.tileMap.clear();
