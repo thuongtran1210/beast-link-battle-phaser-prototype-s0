@@ -238,11 +238,11 @@ export class ValidationScene extends Phaser.Scene {
       'Energy',
       (contentId) => this.onEnergyMatch(contentId)
     );
-    // Start visible 8.0s countdown & enable Energy puzzle input
+    // Start visible 12.0s countdown & enable Energy puzzle input
     this.energyTimer.start();
     this.energyHud?.setVisible(true);
     this.refreshEnergyHUD();
-    this.statusText?.setText('Match Energy pairs! 8.0s countdown started.');
+    this.statusText?.setText('Match Energy pairs! 12.0s countdown started.');
   }
 
   private enterBattleSetup(): void {
