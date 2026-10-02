@@ -6,12 +6,20 @@ export interface BattleAttackerPresentation {
   role: BeastRole;
 }
 
+export interface EnemyDamagePresentation {
+  enemyId: string;
+  damage: number;
+  defeated: boolean;
+}
+
 export interface BattleTickPresentation {
   attackers: BattleAttackerPresentation[];
   enemyDamage: number;
+  enemyDamages: EnemyDamagePresentation[];
   enemyTargetId?: string;
   targetDamage: number;
   defeatedUnitIds: string[];
+  defeatedEnemyIds: string[];
   enemyDefeated: boolean;
 }
 
@@ -21,7 +29,6 @@ export interface BattleHealPresentation {
 }
 
 /**
- * P1-V4 presentation derivation only.
  * Converts deterministic model deltas into UI events without changing battle rules.
  */
 export function deriveBattleTickPresentation(
@@ -33,6 +40,19 @@ export function deriveBattleTickPresentation(
     .map((unit) => ({ unitId: unit.unitId, role: unit.role }));
 
   const enemyDamage = Math.max(0, before.enemyHp - after.enemyHp);
+  const enemyDamages: EnemyDamagePresentation[] = [];
+  const defeatedEnemyIds: string[] = [];
+
+  for (const beforeEnemy of before.enemies) {
+    const afterEnemy = after.enemies.find((candidate) => candidate.enemyId === beforeEnemy.enemyId);
+    if (!afterEnemy) continue;
+    const damage = Math.max(0, beforeEnemy.currentHp - afterEnemy.currentHp);
+    const defeated = beforeEnemy.currentHp > 0 && afterEnemy.currentHp === 0;
+    if (damage > 0 || defeated) {
+      enemyDamages.push({ enemyId: beforeEnemy.enemyId, damage, defeated });
+    }
+    if (defeated) defeatedEnemyIds.push(beforeEnemy.enemyId);
+  }
 
   let enemyTargetId: string | undefined;
   let targetDamage = 0;
@@ -55,14 +75,15 @@ export function deriveBattleTickPresentation(
   return {
     attackers,
     enemyDamage,
+    enemyDamages,
     enemyTargetId,
     targetDamage,
     defeatedUnitIds,
+    defeatedEnemyIds,
     enemyDefeated: before.enemyHp > 0 && after.enemyHp === 0,
   };
 }
 
-/** Presentation-only heal delta used by the P1-V4 UI layer. */
 export function deriveBattleHealPresentation(
   before: AutonomousBattleSnapshot,
   after: AutonomousBattleSnapshot,
