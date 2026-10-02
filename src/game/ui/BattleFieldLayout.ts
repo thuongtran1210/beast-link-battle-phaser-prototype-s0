@@ -70,3 +70,21 @@ export function enemySlotPosition(
     y: layout.topLaneY + (column - 1) * layout.laneGap,
   };
 }
+
+
+/**
+ * Convert P1-V9 model-space coordinates to battlefield pixels.
+ * x: player side negative, enemy side positive, center = 0.
+ * lane: 1..6 from top to bottom.
+ */
+export function battleModelPosition(
+  layout: BattleFieldLayout,
+  positionX: number,
+  positionLane: number,
+): { x: number; y: number } {
+  const pixelsPerDepth = layout.depthGap;
+  return {
+    x: layout.dividerX + positionX * pixelsPerDepth,
+    y: layout.topLaneY + (positionLane - 1) * layout.laneGap,
+  };
+}
