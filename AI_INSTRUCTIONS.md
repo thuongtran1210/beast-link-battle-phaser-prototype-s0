@@ -117,3 +117,22 @@ Current immediate task:
 - verify 4 enemy pressure/death behavior,
 - verify Result → Restart,
 - resume P03 only after the gate passes.
+
+
+## Active Experimental Gate — P1-V6 Integrated Battle Setup Preview
+
+P03 is paused while P1-V6 is verified.
+
+P1-V6 presentation direction:
+- Keep GamePhase.BattleSetup logically separate.
+- Render Battle Setup on the same mirrored battlefield layout used by Battle.
+- Show player formation and P1-V5 enemy squad simultaneously during setup.
+- Preserve placement/reposition and Start Battle gating.
+- Preserve P1-V5 combat math/fixtures and all prior P1 rules.
+- Do not present P1-V6 as adopted Current Gameplay Spec.
+
+Current immediate task:
+- run regression checks and production build,
+- live verify setup/battle layout continuity,
+- verify enemy preview, placement, gating, P1-V5 combat, and Result → Restart,
+- resume P03 only after this gate passes.
