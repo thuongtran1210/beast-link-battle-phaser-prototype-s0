@@ -47,9 +47,9 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-**P03 fresh run is pending Git sync of the owner-verified local blocker fixes.**
+**P03 fresh real-player validation is active on locked build `953df30d7d1d324c14e119a82534d2fbba7b48b8`.**
 
-The local blocker fixes are owner-confirmed complete, but remote `main` still lacks the final Battle Setup layout fix. Commit/push the verified local changes first, use the resulting SHA as the locked P03 build, then restart P03 from a fresh evidence run. Do not reuse evidence from the interrupted run.
+Use locked build `953df30d7d1d324c14e119a82534d2fbba7b48b8` for a fresh P03 evidence run. Do not reuse evidence from the interrupted run. Do not retune during the session unless a new severe blocker prevents completion.
 
 P03 must capture:
 
