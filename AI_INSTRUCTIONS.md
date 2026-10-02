@@ -47,9 +47,9 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-**P03 is paused. Verify the Energy Rush → Battle Setup blocker fix before resuming real-player evidence collection.**
+**P03 fresh run is pending Git sync of the owner-verified local blocker fixes.**
 
-Verify only the blocker fix first: Energy Rush timeout must hard-lock puzzle input and pending match resolution, transition to BattleSetup exactly once, preserve Stored Energy, and show the short visual-only `BATTLE SETUP / Arrange your Beasts` cue. Do not collect P03 evidence until this passes.
+The local blocker fixes are owner-confirmed complete, but remote `main` still lacks the final Battle Setup layout fix. Commit/push the verified local changes first, use the resulting SHA as the locked P03 build, then restart P03 from a fresh evidence run. Do not reuse evidence from the interrupted run.
 
 P03 must capture:
 
