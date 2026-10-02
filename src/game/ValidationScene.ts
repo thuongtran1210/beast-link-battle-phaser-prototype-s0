@@ -39,6 +39,8 @@ import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
 import { SessionSummaryView } from './ui/SessionSummaryView';
 import { BattleActionView } from './ui/BattleActionView';
+import { ShowcaseBattleHUDView } from './ui/ShowcaseBattleHUDView';
+import { ShowcaseControlsView } from './ui/ShowcaseControlsView';
 
 /** P1-V3: Experimental Variant — Beast Rush 12s / Energy Rush 12s Timing. */
 export class ValidationScene extends Phaser.Scene {
@@ -77,6 +79,11 @@ export class ValidationScene extends Phaser.Scene {
   private battleSetupView?: BattleSetupView;
   private battleActionView?: BattleActionView;
   private summary?: SessionSummaryView;
+  private showcaseBattleHud?: ShowcaseBattleHUDView;
+  private showcaseControls?: ShowcaseControlsView;
+  private showcaseMode = false;
+  private showcasePaused = false;
+  private showcaseCleanFrame = false;
   private footerText?: Phaser.GameObjects.Text;
 
   constructor() {
@@ -109,7 +116,7 @@ export class ValidationScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold',
     });
-    this.add.text(28, 50, 'P1-V9 Autonomous Movement · Formation Deployment', {
+    this.add.text(28, 50, 'P1-V10 Showcase UI · P1-V9 Autonomous Movement', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#cbd5e1',
@@ -126,16 +133,28 @@ export class ValidationScene extends Phaser.Scene {
     this.transitionCue = new TransitionCueView(this, width / 2, height / 2);
     this.flowPanel = new PrototypeFlowPanel(this, 600, 145);
     this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.restartRun());
+    this.showcaseBattleHud = new ShowcaseBattleHUDView(this, 620, 118);
+    this.showcaseControls = new ShowcaseControlsView(
+      this,
+      () => this.toggleShowcaseMode(),
+      () => this.toggleShowcasePause(),
+      () => this.toggleShowcaseCleanFrame(),
+    );
     this.footerText = this.add
       .text(
         width / 2,
         height - 36,
-        'P1-V9 Experimental: deployment grid → autonomous movement combat.',
+        'P1-V10 Experimental: Showcase/Validation presentation toggle over P1-V9.',
         { fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#66737f' }
       )
       .setOrigin(0.5, 1);
 
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
+
+    this.input.keyboard?.on('keydown-F1', () => this.toggleShowcaseMode());
+    this.input.keyboard?.on('keydown-SPACE', () => this.toggleShowcasePause());
+    this.input.keyboard?.on('keydown-H', () => this.toggleShowcaseCleanFrame());
+    this.renderShowcaseControls();
 
     // When BeastRush combo ends: disable puzzle input immediately & start transition cue
     this.comboSystem.onEnded(() => {
@@ -183,8 +202,12 @@ export class ValidationScene extends Phaser.Scene {
       this.refreshEnergyHUD();
     }
 
-    // Autonomous Battle ticking
-    if (this.phaseController.phase === GamePhase.Battle && this.battleModel?.snapshot.status === 'Running') {
+    // Autonomous Battle ticking. Showcase pause freezes model ticking only.
+    if (
+      this.phaseController.phase === GamePhase.Battle &&
+      this.battleModel?.snapshot.status === 'Running' &&
+      !(this.showcaseMode && this.showcasePaused)
+    ) {
       this.battleTickAccumulator += delta;
       let ticked = false;
       while (this.battleTickAccumulator >= 1000 && this.battleModel.snapshot.status === 'Running') {
@@ -246,11 +269,14 @@ export class ValidationScene extends Phaser.Scene {
     this.energyHud?.setVisible(false);
     this.transitionCue?.hide();
     this.flowPanel?.destroy();
+    this.showcaseBattleHud?.setVisible(false);
     this.battleSetupView?.destroy();
     this.battleActionView?.destroy();
     this.battleActionView = undefined;
     this.summary?.setVisible(false);
-    this.footerText?.setVisible(phase !== GamePhase.Result);
+    this.showcasePaused = false;
+    this.footerText?.setVisible(!this.showcaseMode && phase !== GamePhase.Result);
+    this.renderShowcaseControls();
 
     if (phase === GamePhase.BeastRush) this.enterBeastRush();
     else if (phase === GamePhase.EnergyRush) this.enterEnergyRush();
@@ -314,6 +340,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleActionView = new BattleActionView(this, 18, 105);
     this.battleActionView.render(this.battleModel.snapshot);
     this.renderBattle();
+    this.renderShowcaseControls();
   }
 
   private enterResult(): void {
@@ -351,30 +378,81 @@ export class ValidationScene extends Phaser.Scene {
     const frontline = this.battleModel?.frontmostAliveUnit();
     this.battleActionView?.render(battle);
 
-    this.flowPanel?.render(
-      'AUTONOMOUS BATTLE',
-      [
-        `STATUS: ${battle.status} · Tick ${battle.elapsedTicks} · Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
-        `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
+    if (this.showcaseMode) {
+      this.flowPanel?.destroy();
+      this.showcaseBattleHud?.setVisible(true);
+      this.showcaseBattleHud?.render(
+        battle,
+        energyEntries,
         frontline
-          ? `FRONTLINE: ${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)}`
-          : 'FRONTLINE: No alive player unit.',
-        '',
-        'STORED ENERGY (TIMED CAST)',
-        'Each Energy ID casts a Frontline Heal.',
-        `Potential enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick when in range.`,
-        'Battle ticks automatically every 1.0 second.',
-        ...(isRunning
-          ? energyEntries.length > 0
-            ? []
-            : ['No stored Energy charges to cast.']
-          : ['Battle ended.']),
-      ],
-      null,
-      undefined,
-      undefined,
-      energyRows
-    );
+          ? `FRONTLINE  ${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)} HP`
+          : 'FRONTLINE  —',
+        (energyId) => this.castEnergy(energyId),
+        this.showcasePaused,
+      );
+    } else {
+      this.showcaseBattleHud?.setVisible(false);
+      this.flowPanel?.render(
+        'AUTONOMOUS BATTLE',
+        [
+          `STATUS: ${battle.status} · Tick ${battle.elapsedTicks} · Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
+          `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
+          frontline
+            ? `FRONTLINE: ${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)}`
+            : 'FRONTLINE: No alive player unit.',
+          '',
+          'STORED ENERGY (TIMED CAST)',
+          'Each Energy ID casts a Frontline Heal.',
+          `Potential enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick when in range.`,
+          'Battle ticks automatically every 1.0 second.',
+          ...(isRunning
+            ? energyEntries.length > 0
+              ? []
+              : ['No stored Energy charges to cast.']
+            : ['Battle ended.']),
+        ],
+        null,
+        undefined,
+        undefined,
+        energyRows
+      );
+    }
+    this.renderShowcaseControls();
+  }
+
+  private toggleShowcaseMode(): void {
+    this.showcaseMode = !this.showcaseMode;
+    this.showcasePaused = false;
+    this.showcaseCleanFrame = false;
+    this.footerText?.setVisible(!this.showcaseMode && this.phaseController.phase !== GamePhase.Result);
+    if (this.phaseController.phase === GamePhase.Battle) {
+      this.renderBattle();
+    }
+    this.renderShowcaseControls();
+  }
+
+  private toggleShowcasePause(): void {
+    if (!this.showcaseMode || this.phaseController.phase !== GamePhase.Battle) return;
+    this.showcasePaused = !this.showcasePaused;
+    this.renderBattle();
+    this.renderShowcaseControls();
+  }
+
+  private toggleShowcaseCleanFrame(): void {
+    if (!this.showcaseMode) return;
+    this.showcaseCleanFrame = !this.showcaseCleanFrame;
+    this.renderShowcaseControls();
+  }
+
+  private renderShowcaseControls(): void {
+    this.showcaseControls?.render({
+      showcaseMode: this.showcaseMode,
+      paused: this.showcasePaused,
+      cleanFrame: this.showcaseCleanFrame,
+      canPause:
+        this.phaseController.phase === GamePhase.Battle &&
+        this.battleModel?.snapshot.status === 'Running',
+    });
   }
 
   private createPuzzleBoard(
@@ -480,6 +558,8 @@ export class ValidationScene extends Phaser.Scene {
     // Give immediate visual feedback that Restart was accepted.
     this.summary?.setVisible(false);
     this.battleTickAccumulator = 0;
+    this.showcasePaused = false;
+    this.showcaseCleanFrame = false;
     this.isShowingTransitionCue = false;
     this.transitionCueTimer = 0;
     this.isShowingBattleSetupCue = false;
