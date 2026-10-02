@@ -10,6 +10,7 @@ import type {
   BattleTickPresentation,
 } from '../battle/BattlePresentation';
 import {
+  battleModelPosition,
   createBattleFieldLayout,
   enemySlotPosition,
   playerSlotPosition,
@@ -32,6 +33,7 @@ interface EnemyVisual {
 
 export class BattleActionView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
+  private readonly gridObjects: Phaser.GameObjects.GameObject[] = [];
   private readonly units = new Map<string, UnitVisual>();
   private readonly enemies = new Map<string, EnemyVisual>();
   private readonly layout: BattleFieldLayout;
@@ -47,6 +49,7 @@ export class BattleActionView {
   render(snapshot: AutonomousBattleSnapshot): void {
     if (this.objects.length === 0) {
       this.createBattleGrid();
+      this.scheduleGridFade();
     }
 
     snapshot.units.forEach((unit) => this.syncUnit(unit));
@@ -199,6 +202,7 @@ export class BattleActionView {
   destroy(): void {
     this.scene.tweens.killTweensOf([...this.objects]);
     this.objects.splice(0).forEach((object) => object.destroy());
+    this.gridObjects.splice(0);
     this.units.clear();
     this.enemies.clear();
   }
@@ -206,7 +210,7 @@ export class BattleActionView {
   private createBattleGrid(): void {
     const layout = this.layout;
 
-    this.pushText(
+    this.pushGridText(
       layout.baseX + 12,
       layout.baseY + 72,
       'BATTLE FIELD · PLAYER vs ENEMY',
@@ -215,7 +219,7 @@ export class BattleActionView {
       'bold',
     );
 
-    this.pushText(
+    this.pushGridText(
       layout.playerFrontX - 145,
       layout.baseY + 105,
       'PLAYER  BACK  →  MID  →  FRONT',
@@ -224,7 +228,7 @@ export class BattleActionView {
       'bold',
     );
 
-    this.pushText(
+    this.pushGridText(
       layout.enemyFrontX + 12,
       layout.baseY + 105,
       'FRONT  ←  MID  ←  BACK  ENEMY',
@@ -242,13 +246,14 @@ export class BattleActionView {
       0.9,
     );
     this.objects.push(divider);
+    this.gridObjects.push(divider);
 
     const rows: BattleRow[] = ['Front', 'Mid', 'Back'];
     rows.forEach((row) => {
       const playerTop = playerSlotPosition(layout, row, 1);
       const enemyTop = enemySlotPosition(layout, row, 1);
 
-      this.pushText(
+      this.pushGridText(
         playerTop.x - 22,
         layout.topLaneY - 34,
         row.toUpperCase(),
@@ -256,7 +261,7 @@ export class BattleActionView {
         '#64748b',
         'bold',
       );
-      this.pushText(
+      this.pushGridText(
         enemyTop.x - 22,
         layout.topLaneY - 34,
         row.toUpperCase(),
@@ -288,12 +293,13 @@ export class BattleActionView {
         ).setStrokeStyle(2, 0xfca5a5);
 
         this.objects.push(playerSlot, enemySlot);
+        this.gridObjects.push(playerSlot, enemySlot);
       }
     });
 
     for (let column = 1; column <= 6; column += 1) {
       const lane = playerSlotPosition(layout, 'Front', column);
-      this.pushText(
+      this.pushGridText(
         layout.baseX + 6,
         lane.y - 7,
         `L${column}`,
@@ -317,8 +323,10 @@ export class BattleActionView {
       `${shortBeast(unit.beastId)}\n${unit.role}\n${unit.star}★ · ${formatNumber(unit.currentHp)} HP`,
     );
 
+    const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     if (unit.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
+      this.moveVisual(visual.container, position.x, position.y);
     }
   }
 
@@ -335,13 +343,15 @@ export class BattleActionView {
       `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}`,
     );
 
+    const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     if (enemy.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
+      this.moveVisual(visual.container, position.x, position.y);
     }
   }
 
   private createUnit(unit: CombatUnit): UnitVisual {
-    const position = playerSlotPosition(this.layout, unit.row, unit.column);
+    const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     const body = this.scene.add
       .rectangle(0, 0, 48, 42, roleFill(unit.role))
       .setStrokeStyle(2, 0x475569);
@@ -367,7 +377,7 @@ export class BattleActionView {
   }
 
   private createEnemy(enemy: EnemyCombatUnit): EnemyVisual {
-    const position = enemySlotPosition(this.layout, enemy.row, enemy.column);
+    const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     const body = this.scene.add
       .rectangle(0, 0, 48, 42, 0x7f1d1d)
       .setStrokeStyle(2, 0x450a0a);
@@ -391,6 +401,35 @@ export class BattleActionView {
 
     this.objects.push(container);
     return { container, body, hpFill, label };
+  }
+
+  private scheduleGridFade(): void {
+    this.scene.time.delayedCall(650, () => {
+      const liveGridObjects = this.gridObjects.filter((object) => object.active);
+      if (!liveGridObjects.length) return;
+      this.scene.tweens.add({
+        targets: liveGridObjects,
+        alpha: 0.08,
+        duration: 350,
+        ease: 'Sine.Out',
+      });
+    });
+  }
+
+  private moveVisual(
+    container: Phaser.GameObjects.Container,
+    x: number,
+    y: number,
+  ): void {
+    if (Math.abs(container.x - x) < 0.5 && Math.abs(container.y - y) < 0.5) return;
+    this.scene.tweens.killTweensOf(container);
+    this.scene.tweens.add({
+      targets: container,
+      x,
+      y,
+      duration: 280,
+      ease: 'Sine.InOut',
+    });
   }
 
   private projectileToTarget(
@@ -443,6 +482,19 @@ export class BattleActionView {
         text.destroy();
       },
     });
+  }
+
+  private pushGridText(
+    x: number,
+    y: number,
+    value: string,
+    size: number,
+    color: string,
+    fontStyle = '',
+  ): Phaser.GameObjects.Text {
+    const text = this.pushText(x, y, value, size, color, fontStyle);
+    this.gridObjects.push(text);
+    return text;
   }
 
   private pushText(
