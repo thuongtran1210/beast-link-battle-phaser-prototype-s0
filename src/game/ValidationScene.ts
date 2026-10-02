@@ -10,7 +10,7 @@ import { runP1V2Checks } from './combo/P1V2Checks';
 import { runP1V3Checks } from './combo/P1V3Checks';
 import { BattleFormation } from './battle/BattleFormation';
 import { runP1S2Checks } from './battle/P1S2Checks';
-import { AutonomousBattleModel, P1V8_ROLE_POSITIONING_RULES } from './battle/AutonomousBattleModel';
+import { AutonomousBattleModel, P1V9_AUTONOMOUS_MOVEMENT_RULES } from './battle/AutonomousBattleModel';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
 import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
@@ -18,6 +18,7 @@ import { runP1V4Checks } from './battle/P1V4Checks';
 import { runP1V5Checks } from './battle/P1V5Checks';
 import { P1V7_ENEMY_FIXTURES, runP1V7Checks } from './battle/P1V7Checks';
 import { runP1V8Checks } from './battle/P1V8Checks';
+import { runP1V9Checks } from './battle/P1V9Checks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -95,6 +96,7 @@ export class ValidationScene extends Phaser.Scene {
     runP1V5Checks();
     runP1V7Checks();
     runP1V8Checks();
+    runP1V9Checks();
     runP1V1Checks();
     runP1V2Checks();
     runP1V3Checks();
@@ -107,7 +109,7 @@ export class ValidationScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold',
     });
-    this.add.text(28, 50, 'P1-V8 Role Identity · P1-V7 Combat Pressure', {
+    this.add.text(28, 50, 'P1-V9 Autonomous Movement · Formation Deployment', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#cbd5e1',
@@ -128,7 +130,7 @@ export class ValidationScene extends Phaser.Scene {
       .text(
         width / 2,
         height - 36,
-        'P1-V8 Experimental: role-position combat + P1-V7 pressure fixture.',
+        'P1-V9 Experimental: deployment grid → autonomous movement combat.',
         { fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#66737f' }
       )
       .setOrigin(0.5, 1);
@@ -307,7 +309,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterBattle(): void {
     if (!this.formation) return;
-    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V8_ROLE_POSITIONING_RULES);
+    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V9_AUTONOMOUS_MOVEMENT_RULES);
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, 18, 105);
     this.battleActionView.render(this.battleModel.snapshot);
@@ -360,7 +362,7 @@ export class ValidationScene extends Phaser.Scene {
         '',
         'STORED ENERGY (TIMED CAST)',
         'Each Energy ID casts a Frontline Heal.',
-        `Enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick.`,
+        `Potential enemy pressure: ${formatNumber(battle.enemyDamage)} total damage / tick when in range.`,
         'Battle ticks automatically every 1.0 second.',
         ...(isRunning
           ? energyEntries.length > 0
