@@ -460,6 +460,8 @@ export class ValidationScene extends Phaser.Scene {
     if (this.phaseController.phase !== GamePhase.Result) return;
     this.isShowingTransitionCue = false;
     this.transitionCueTimer = 0;
+    this.isShowingBattleSetupCue = false;
+    this.battleSetupCueTimer = 0;
     this.transitionCue?.hide();
     this.comboSystem.reset();
     this.energyTimer.reset();
