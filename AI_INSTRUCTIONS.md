@@ -47,9 +47,9 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-Run **P03 real-player validation using P1-V3**.
+**P03 fresh run is pending Git sync of the owner-verified local blocker fixes.**
 
-Use the active Notion playtest protocol and keep the build unchanged during the session unless a severe blocker prevents completion.
+The local blocker fixes are owner-confirmed complete, but remote `main` still lacks the final Battle Setup layout fix. Commit/push the verified local changes first, use the resulting SHA as the locked P03 build, then restart P03 from a fresh evidence run. Do not reuse evidence from the interrupted run.
 
 P03 must capture:
 
