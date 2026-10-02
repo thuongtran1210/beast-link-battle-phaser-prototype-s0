@@ -3,33 +3,34 @@ import type { BattleRow } from '../battle/AutonomousBattleModel';
 export interface BattleFieldLayout {
   baseX: number;
   baseY: number;
-  playerFirstX: number;
-  enemyFirstX: number;
-  topY: number;
-  colGap: number;
-  rowGap: number;
-  slotWidth: number;
-  slotHeight: number;
   dividerX: number;
   dividerY: number;
   dividerHeight: number;
+  playerFrontX: number;
+  enemyFrontX: number;
+  topLaneY: number;
+  depthGap: number;
+  laneGap: number;
+  slotWidth: number;
+  slotHeight: number;
   panelX: number;
 }
 
 export function createBattleFieldLayout(baseX = 18, baseY = 105): BattleFieldLayout {
+  const dividerX = baseX + 292;
   return {
     baseX,
     baseY,
-    playerFirstX: baseX + 40,
-    enemyFirstX: baseX + 540,
-    topY: baseY + 180,
-    colGap: 42,
-    rowGap: 112,
-    slotWidth: 38,
-    slotHeight: 54,
-    dividerX: baseX + 291,
-    dividerY: baseY + 332,
-    dividerHeight: 360,
+    dividerX,
+    dividerY: baseY + 360,
+    dividerHeight: 390,
+    playerFrontX: dividerX - 52,
+    enemyFrontX: dividerX + 52,
+    topLaneY: baseY + 190,
+    depthGap: 72,
+    laneGap: 58,
+    slotWidth: 52,
+    slotHeight: 46,
     panelX: 620,
   };
 }
@@ -38,24 +39,34 @@ export function rowIndex(row: BattleRow): number {
   return row === 'Front' ? 0 : row === 'Mid' ? 1 : 2;
 }
 
+/**
+ * Player faces right:
+ * Front is closest to center, then Mid, then Back further left.
+ * column 1..6 maps top-to-bottom as vertical battlefield lanes.
+ */
 export function playerSlotPosition(
   layout: BattleFieldLayout,
   row: BattleRow,
   column: number,
 ): { x: number; y: number } {
   return {
-    x: layout.playerFirstX + (column - 1) * layout.colGap,
-    y: layout.topY + rowIndex(row) * layout.rowGap,
+    x: layout.playerFrontX - rowIndex(row) * layout.depthGap,
+    y: layout.topLaneY + (column - 1) * layout.laneGap,
   };
 }
 
+/**
+ * Enemy faces left:
+ * Front is closest to center, then Mid, then Back further right.
+ * Matching column numbers share the same vertical lane as the player side.
+ */
 export function enemySlotPosition(
   layout: BattleFieldLayout,
   row: BattleRow,
   column: number,
 ): { x: number; y: number } {
   return {
-    x: layout.enemyFirstX - (column - 1) * layout.colGap,
-    y: layout.topY + rowIndex(row) * layout.rowGap,
+    x: layout.enemyFrontX + rowIndex(row) * layout.depthGap,
+    y: layout.topLaneY + (column - 1) * layout.laneGap,
   };
 }
