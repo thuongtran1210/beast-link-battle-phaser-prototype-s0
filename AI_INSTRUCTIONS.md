@@ -138,24 +138,24 @@ Current immediate task:
 - resume P03 only after this gate passes.
 
 
-## Active Experimental Gate — P1-V7 Combat Pressure Tuning
+## Active Validation Gate — P03 Fresh Retest
 
-P03 is paused while P1-V7 is verified.
+P1-V7 Combat Pressure Tuning passed check/build/live verification by project-owner confirmation on 2026-10-02.
 
-P1-V7 validation fixture:
-- 6 enemies
-- 160 HP / 3 damage each
-- 960 aggregate enemy HP
-- 18 aggregate opening damage per 1.0s tick
-- representative Battle duration target: roughly 10–20 seconds, with deterministic gate >=10 and <=30 ticks
-- preserve P1-V6 integrated mirrored battlefield
-- preserve player role stats, STAR, Energy Heal, targeting, and Result/Restart rules
+Locked P03 build:
+`7b6239aa49d055580f0ea78026726e602f90eca4`
 
-This is validation tuning only. Do not present these values as adopted production balance.
+This build combines:
+- P1-V3 pre-Battle timing,
+- P1-V4 Battle Action Readability,
+- P1-V6 integrated mirrored Battle Setup/Battle field,
+- P1-V7 6-enemy combat-pressure tuning.
+
+All of these remain Experimental validation layers unless separately adopted into Current Gameplay Spec.
 
 Current immediate task:
-- run full regression checks and production build,
-- live verify Battle no longer resolves in 1–2 seconds,
-- verify there is time for frontline pressure and meaningful Heal timing,
-- verify P1-V6 orientation and Result → Restart,
-- resume P03 only after this gate passes.
+- run P03 as a completely fresh real-player retest,
+- capture observed behavior, player statements, metrics, and designer interpretation separately,
+- specifically evaluate formation/frontline readability and whether longer Battle duration creates meaningful Energy Heal timing,
+- do not reuse conclusions from earlier blocked/insufficient builds,
+- do not retune during the session unless a new severe blocker prevents completion.
