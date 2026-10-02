@@ -5,12 +5,20 @@ import type {
   EnemyCombatUnit,
   BattleRow,
 } from '../battle/AutonomousBattleModel';
-import type { BattleHealPresentation, BattleTickPresentation } from '../battle/BattlePresentation';
+import type {
+  BattleHealPresentation,
+  BattleTickPresentation,
+} from '../battle/BattlePresentation';
+import {
+  createBattleFieldLayout,
+  enemySlotPosition,
+  playerSlotPosition,
+  type BattleFieldLayout,
+} from './BattleFieldLayout';
 
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
   body: Phaser.GameObjects.Rectangle;
-  hpBg: Phaser.GameObjects.Rectangle;
   hpFill: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
 }
@@ -18,7 +26,6 @@ interface UnitVisual {
 interface EnemyVisual {
   container: Phaser.GameObjects.Container;
   body: Phaser.GameObjects.Rectangle;
-  hpBg: Phaser.GameObjects.Rectangle;
   hpFill: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
 }
@@ -27,8 +34,15 @@ export class BattleActionView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private readonly units = new Map<string, UnitVisual>();
   private readonly enemies = new Map<string, EnemyVisual>();
+  private readonly layout: BattleFieldLayout;
 
-  constructor(private readonly scene: Phaser.Scene, private readonly x: number, private readonly y: number) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    baseX = 18,
+    baseY = 105,
+  ) {
+    this.layout = createBattleFieldLayout(baseX, baseY);
+  }
 
   render(snapshot: AutonomousBattleSnapshot): void {
     if (this.objects.length === 0) {
@@ -43,12 +57,12 @@ export class BattleActionView {
     event.attackers.forEach((attacker, index) => {
       const visual = this.units.get(attacker.unitId);
       if (!visual || visual.container.alpha <= 0.1) return;
-      const delay = index * 55;
 
+      const delay = index * 55;
       if (attacker.role === 'Tanker' || attacker.role === 'Assassin') {
         this.scene.tweens.add({
           targets: visual.container,
-          x: visual.container.x + 16,
+          x: visual.container.x + 14,
           duration: 90,
           yoyo: true,
           ease: 'Quad.Out',
@@ -64,10 +78,11 @@ export class BattleActionView {
       this.scene.time.delayedCall(140 + index * 40, () => {
         const visual = this.enemies.get(damageEvent.enemyId);
         if (!visual) return;
+
         this.flash(visual.body, 0xef4444);
         this.floatText(
           visual.container.x,
-          visual.container.y - 42,
+          visual.container.y - 34,
           `-${formatNumber(damageEvent.damage)}`,
           '#b91c1c',
         );
@@ -78,11 +93,12 @@ export class BattleActionView {
       this.scene.time.delayedCall(260, () => {
         const visual = this.units.get(event.enemyTargetId!);
         if (!visual) return;
+
         this.flash(visual.body, 0xef4444);
         if (event.targetDamage > 0) {
           this.floatText(
             visual.container.x,
-            visual.container.y - 38,
+            visual.container.y - 34,
             `-${formatNumber(event.targetDamage)}`,
             '#b91c1c',
           );
@@ -96,8 +112,8 @@ export class BattleActionView {
         if (!visual) return;
         this.scene.tweens.add({
           targets: visual.container,
-          alpha: 0.28,
-          angle: 7,
+          alpha: 0.25,
+          angle: 8,
           duration: 220,
         });
       });
@@ -109,8 +125,8 @@ export class BattleActionView {
         if (!visual) return;
         this.scene.tweens.add({
           targets: visual.container,
-          alpha: 0.28,
-          angle: -7,
+          alpha: 0.25,
+          angle: -8,
           duration: 220,
         });
       });
@@ -125,7 +141,7 @@ export class BattleActionView {
 
     this.floatText(
       visual.container.x,
-      visual.container.y - 42,
+      visual.container.y - 34,
       `+${formatNumber(event.amount)} HP`,
       '#15803d',
     );
@@ -148,72 +164,85 @@ export class BattleActionView {
   }
 
   private createBattleGrid(): void {
-    const title = this.scene.add.text(this.x + 12, this.y + 98, 'BATTLE FIELD · PLAYER vs ENEMY', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '14px',
-      color: '#475569',
-      fontStyle: 'bold',
-    });
-    this.objects.push(title);
+    const layout = this.layout;
 
-    const playerOriginX = this.x + 36;
-    const enemyOriginX = this.x + 570;
-    const topY = this.y + 180;
-    const colGap = 46;
-    const rowGap = 112;
-    const slotW = 40;
-    const slotH = 54;
+    this.pushText(
+      layout.baseX + 12,
+      layout.baseY + 72,
+      'BATTLE FIELD · PLAYER vs ENEMY',
+      14,
+      '#475569',
+      'bold',
+    );
 
-    const divider = this.scene.add.rectangle(this.x + 310, this.y + 332, 3, 360, 0x94a3b8, 0.9);
+    this.pushText(
+      layout.playerFrontX - 145,
+      layout.baseY + 105,
+      'PLAYER  BACK  →  MID  →  FRONT',
+      10,
+      '#2563eb',
+      'bold',
+    );
+
+    this.pushText(
+      layout.enemyFrontX + 12,
+      layout.baseY + 105,
+      'FRONT  ←  MID  ←  BACK  ENEMY',
+      10,
+      '#b91c1c',
+      'bold',
+    );
+
+    const divider = this.scene.add.rectangle(
+      layout.dividerX,
+      layout.dividerY,
+      3,
+      layout.dividerHeight,
+      0x94a3b8,
+      0.9,
+    );
     this.objects.push(divider);
 
-    const playerSide = this.scene.add.text(playerOriginX, this.y + 120, 'PLAYER FORMATION', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '12px',
-      color: '#2563eb',
-      fontStyle: 'bold',
-    });
-    const enemySide = this.scene.add.text(enemyOriginX - 220, this.y + 120, 'ENEMY FORMATION', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '12px',
-      color: '#b91c1c',
-      fontStyle: 'bold',
-    });
-    this.objects.push(playerSide, enemySide);
-
     const rows: BattleRow[] = ['Front', 'Mid', 'Back'];
-    rows.forEach((row, rowIndex) => {
-      const y = topY + rowIndex * rowGap;
+    rows.forEach((row) => {
+      const playerTop = playerSlotPosition(layout, row, 1);
+      const enemyTop = enemySlotPosition(layout, row, 1);
 
-      const playerRowLabel = this.scene.add.text(playerOriginX - 2, y - 45, row.toUpperCase(), {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '10px',
-        color: '#64748b',
-        fontStyle: 'bold',
-      });
-      const enemyRowLabel = this.scene.add.text(enemyOriginX - 220, y - 45, row.toUpperCase(), {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '10px',
-        color: '#991b1b',
-        fontStyle: 'bold',
-      });
-      this.objects.push(playerRowLabel, enemyRowLabel);
+      this.pushText(
+        playerTop.x - 22,
+        layout.topLaneY - 34,
+        row.toUpperCase(),
+        9,
+        '#64748b',
+        'bold',
+      );
+      this.pushText(
+        enemyTop.x - 22,
+        layout.topLaneY - 34,
+        row.toUpperCase(),
+        9,
+        '#991b1b',
+        'bold',
+      );
 
-      for (let col = 0; col < 6; col += 1) {
+      for (let column = 1; column <= 6; column += 1) {
+        const playerPos = playerSlotPosition(layout, row, column);
+        const enemyPos = enemySlotPosition(layout, row, column);
+
         const playerSlot = this.scene.add.rectangle(
-          playerOriginX + 22 + col * colGap,
-          y,
-          slotW,
-          slotH,
+          playerPos.x,
+          playerPos.y,
+          layout.slotWidth,
+          layout.slotHeight,
           0xeff6ff,
           0.42,
         ).setStrokeStyle(2, 0x93c5fd);
 
         const enemySlot = this.scene.add.rectangle(
-          enemyOriginX - 22 - col * colGap,
-          y,
-          slotW,
-          slotH,
+          enemyPos.x,
+          enemyPos.y,
+          layout.slotWidth,
+          layout.slotHeight,
           0xfef2f2,
           0.42,
         ).setStrokeStyle(2, 0xfca5a5);
@@ -223,14 +252,15 @@ export class BattleActionView {
     });
 
     for (let column = 1; column <= 6; column += 1) {
-      const laneY = playerSlotPosition(layout, 'Front', column).y;
-      const laneLabel = this.scene.add.text(layout.baseX + 8, laneY - 7, `L${column}`, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '9px',
-        color: '#94a3b8',
-        fontStyle: 'bold',
-      });
-      this.objects.push(laneLabel);
+      const lane = playerSlotPosition(layout, 'Front', column);
+      this.pushText(
+        layout.baseX + 6,
+        lane.y - 7,
+        `L${column}`,
+        9,
+        '#94a3b8',
+        'bold',
+      );
     }
   }
 
@@ -242,9 +272,9 @@ export class BattleActionView {
     }
 
     const ratio = unit.maxHp > 0 ? unit.currentHp / unit.maxHp : 0;
-    visual.hpFill.width = 40 * clamp01(ratio);
+    visual.hpFill.width = 46 * clamp01(ratio);
     visual.label.setText(
-      `${shortBeast(unit.beastId)}\n${unit.role} · ${unit.star}★\n${formatNumber(unit.currentHp)} HP`,
+      `${shortBeast(unit.beastId)}\n${unit.role}\n${unit.star}★ · ${formatNumber(unit.currentHp)} HP`,
     );
 
     if (unit.currentHp > 0) {
@@ -260,7 +290,7 @@ export class BattleActionView {
     }
 
     const ratio = enemy.maxHp > 0 ? enemy.currentHp / enemy.maxHp : 0;
-    visual.hpFill.width = 40 * clamp01(ratio);
+    visual.hpFill.width = 46 * clamp01(ratio);
     visual.label.setText(
       `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}`,
     );
@@ -271,51 +301,73 @@ export class BattleActionView {
   }
 
   private createUnit(unit: CombatUnit): UnitVisual {
-    const { x, y } = this.playerSlotPosition(unit.row, unit.column);
-    const body = this.scene.add.rectangle(0, 0, 38, 48, roleFill(unit.role)).setStrokeStyle(2, 0x475569);
-    const label = this.scene.add.text(0, 0, '', {
+    const position = playerSlotPosition(this.layout, unit.row, unit.column);
+    const body = this.scene.add
+      .rectangle(0, 0, 48, 42, roleFill(unit.role))
+      .setStrokeStyle(2, 0x475569);
+
+    const label = this.scene.add.text(0, -1, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '9px',
+      fontSize: '8px',
       color: '#0f172a',
       align: 'center',
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    const hpBg = this.scene.add.rectangle(0, 32, 40, 6, 0x334155).setOrigin(0.5);
-    const hpFill = this.scene.add.rectangle(-20, 32, 40, 6, 0x16a34a).setOrigin(0, 0.5);
-    const container = this.scene.add.container(x, y, [body, label, hpBg, hpFill]);
+
+    this.scene.add.rectangle(0, 27, 46, 6, 0x334155).setOrigin(0.5);
+    const hpFill = this.scene.add.rectangle(-23, 27, 46, 6, 0x16a34a).setOrigin(0, 0.5);
+
+    const hpBg = this.scene.add.rectangle(0, 27, 46, 6, 0x334155).setOrigin(0.5);
+    const container = this.scene.add.container(
+      position.x,
+      position.y,
+      [body, label, hpBg, hpFill],
+    );
+
     this.objects.push(container);
-    return { container, body, hpBg, hpFill, label };
+    return { container, body, hpFill, label };
   }
 
   private createEnemy(enemy: EnemyCombatUnit): EnemyVisual {
-    const { x, y } = this.enemySlotPosition(enemy.row, enemy.column);
-    const body = this.scene.add.rectangle(0, 0, 38, 48, 0x7f1d1d).setStrokeStyle(2, 0x450a0a);
-    const label = this.scene.add.text(0, 0, '', {
+    const position = enemySlotPosition(this.layout, enemy.row, enemy.column);
+    const body = this.scene.add
+      .rectangle(0, 0, 48, 42, 0x7f1d1d)
+      .setStrokeStyle(2, 0x450a0a);
+
+    const label = this.scene.add.text(0, -1, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '9px',
+      fontSize: '8px',
       color: '#ffffff',
       align: 'center',
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    const hpBg = this.scene.add.rectangle(0, 32, 40, 6, 0x1f2937).setOrigin(0.5);
-    const hpFill = this.scene.add.rectangle(-20, 32, 40, 6, 0xdc2626).setOrigin(0, 0.5);
-    const container = this.scene.add.container(x, y, [body, label, hpBg, hpFill]);
+
+    const hpBg = this.scene.add.rectangle(0, 27, 46, 6, 0x1f2937).setOrigin(0.5);
+    const hpFill = this.scene.add.rectangle(-23, 27, 46, 6, 0xdc2626).setOrigin(0, 0.5);
+
+    const container = this.scene.add.container(
+      position.x,
+      position.y,
+      [body, label, hpBg, hpFill],
+    );
+
     this.objects.push(container);
-    return { container, body, hpBg, hpFill, label };
+    return { container, body, hpFill, label };
   }
 
   private projectileToEnemy(source: Phaser.GameObjects.Container): void {
     const target = [...this.enemies.values()]
       .filter((enemy) => enemy.container.alpha > 0.3)
       .sort((a, b) => a.container.x - b.container.x)[0];
+
     if (!target) return;
 
-    const projectile = this.scene.add.circle(source.x + 18, source.y, 5, 0x38bdf8);
+    const projectile = this.scene.add.circle(source.x + 16, source.y, 5, 0x38bdf8);
     this.objects.push(projectile);
 
     this.scene.tweens.add({
       targets: projectile,
-      x: target.container.x - 18,
+      x: target.container.x - 16,
       y: target.container.y,
       duration: 180,
       ease: 'Quad.In',
@@ -325,22 +377,6 @@ export class BattleActionView {
         projectile.destroy();
       },
     });
-  }
-
-  private playerSlotPosition(row: BattleRow, column: number): { x: number; y: number } {
-    const rowIndex = row === 'Front' ? 0 : row === 'Mid' ? 1 : 2;
-    return {
-      x: this.x + 58 + (column - 1) * 46,
-      y: this.y + 180 + rowIndex * 112,
-    };
-  }
-
-  private enemySlotPosition(row: BattleRow, column: number): { x: number; y: number } {
-    const rowIndex = row === 'Front' ? 0 : row === 'Mid' ? 1 : 2;
-    return {
-      x: this.x + 548 - (column - 1) * 46,
-      y: this.y + 180 + rowIndex * 112,
-    };
   }
 
   private flash(target: Phaser.GameObjects.Rectangle, color: number): void {
@@ -360,7 +396,6 @@ export class BattleActionView {
     }).setOrigin(0.5);
 
     this.objects.push(text);
-
     this.scene.tweens.add({
       targets: text,
       y: y - 24,
@@ -372,6 +407,24 @@ export class BattleActionView {
         text.destroy();
       },
     });
+  }
+
+  private pushText(
+    x: number,
+    y: number,
+    value: string,
+    size: number,
+    color: string,
+    fontStyle = '',
+  ): Phaser.GameObjects.Text {
+    const text = this.scene.add.text(x, y, value, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: `${size}px`,
+      color,
+      fontStyle,
+    });
+    this.objects.push(text);
+    return text;
   }
 }
 
