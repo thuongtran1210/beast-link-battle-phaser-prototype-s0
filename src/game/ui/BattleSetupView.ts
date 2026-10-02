@@ -158,8 +158,8 @@ export class BattleSetupView {
     const layout = createBattleFieldLayout(18, 105);
 
     this.text(layout.baseX + 12, layout.baseY + 72, 'BATTLE FIELD · SETUP PREVIEW', 14, '#475569', 'bold');
-    this.text(layout.playerFirstX - 20, layout.baseY + 102, 'PLAYER FORMATION', 12, '#2563eb', 'bold');
-    this.text(layout.enemyFirstX - 210, layout.baseY + 102, 'ENEMY FORMATION', 12, '#b91c1c', 'bold');
+    this.text(layout.playerFrontX - 150, layout.baseY + 102, 'PLAYER FORMATION →', 12, '#2563eb', 'bold');
+    this.text(layout.enemyFrontX + 28, layout.baseY + 102, '← ENEMY FORMATION', 12, '#b91c1c', 'bold');
 
     const divider = this.scene.add.rectangle(
       layout.dividerX,
@@ -173,8 +173,10 @@ export class BattleSetupView {
 
     const rows: Array<FormationSlot['row']> = ['Front', 'Mid', 'Back'];
     rows.forEach((row) => {
-      this.text(layout.playerFirstX - 22, playerSlotPosition(layout, row, 1).y - 44, row.toUpperCase(), 10, '#64748b', 'bold');
-      this.text(layout.enemyFirstX - 210, enemySlotPosition(layout, row, 6).y - 44, row.toUpperCase(), 10, '#991b1b', 'bold');
+      const playerDepth = playerSlotPosition(layout, row, 1);
+      const enemyDepth = enemySlotPosition(layout, row, 1);
+      this.text(playerDepth.x - 24, layout.topLaneY - 42, row.toUpperCase(), 9, '#64748b', 'bold');
+      this.text(enemyDepth.x - 24, layout.topLaneY - 42, row.toUpperCase(), 9, '#991b1b', 'bold');
 
       for (let column = 1; column <= 6; column += 1) {
         const playerPos = playerSlotPosition(layout, row, column);
@@ -204,6 +206,11 @@ export class BattleSetupView {
         if (formationSlot) this.renderPlayerSlot(formationSlot, playerPos.x, playerPos.y);
       }
     });
+
+    for (let column = 1; column <= 6; column += 1) {
+      const laneY = playerSlotPosition(layout, 'Front', column).y;
+      this.text(layout.baseX + 8, laneY - 7, `L${column}`, 9, '#94a3b8', 'bold');
+    }
 
     this.enemies.forEach((enemy) => {
       const pos = enemySlotPosition(layout, enemy.row, enemy.column);
