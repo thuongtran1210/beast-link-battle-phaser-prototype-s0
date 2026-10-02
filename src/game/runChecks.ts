@@ -2,6 +2,7 @@ import { runBattleBoardExhaustionChecks } from './battle/BattleBoardExhaustionCh
 import { runP1S2Checks } from './battle/P1S2Checks';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
+import { runP1V4Checks } from './battle/P1V4Checks';
 import { runS2Checks } from './combo/S2Checks';
 import { runS4Checks } from './energy/S4Checks';
 import { runP1S1Checks } from './energy/P1S1Checks';
@@ -29,4 +30,5 @@ runP1V3Checks();
 runP1S2Checks();
 runP1S3Checks();
 runP1S4Checks();
-console.log('S1/S2/S3/S4/S5, Battle exhaustion, P1-S0, P1-S1, P1-V1, P1-V2, P1-V3, P1-S2, P1-S3, P1-S4, and P1-S5 checks passed.');
+runP1V4Checks();
+console.log('S1/S2/S3/S4/S5, Battle exhaustion, P1-S0, P1-S1, P1-V1, P1-V2, P1-V3, P1-S2, P1-S3, P1-S4, P1-V4, and P1-S5 checks passed.');
