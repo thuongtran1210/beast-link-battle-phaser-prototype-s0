@@ -1,4 +1,5 @@
-import type { AutonomousBattleSnapshot, BeastRole } from './AutonomousBattleModel';
+import type { AutonomousBattleSnapshot } from './AutonomousBattleModel';
+import type { BeastRole } from './BeastRoles';
 
 export interface BattleAttackerPresentation {
   unitId: string;
