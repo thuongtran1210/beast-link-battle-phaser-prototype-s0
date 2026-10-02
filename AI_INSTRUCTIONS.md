@@ -47,9 +47,9 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-**P03 is paused for Experimental P1-V4 Battle Action Readability implementation/verification.**
+**P1-V4 Battle Action Readability is implemented; check/build/live verification is the active gate.**
 
-Implement and verify P1-V4 as a presentation-only layer over the existing deterministic battle model: readable attack, hit, death, and heal feedback. Do not change combat math, tick cadence, targeting, Energy consumption, formation rules, or balance values. Resume P03 only after the live presentation gate passes.
+Verify P1-V4 only: run the full regression checks and production build, then live-browser verify readable attack, hit, death, and heal feedback. Confirm combat math, 1.0s tick cadence, targeting, Energy consumption, formation rules, and balance values remain unchanged. Resume P03 only after this gate passes.
 
 P03 must capture:
 
