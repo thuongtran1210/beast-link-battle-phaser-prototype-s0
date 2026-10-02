@@ -1,9 +1,14 @@
-import type { AutonomousBattleSnapshot } from './AutonomousBattleModel';
+import type {
+  AutonomousBattleSnapshot,
+  PlayerActionKind,
+} from './AutonomousBattleModel';
 import type { BeastRole } from './BeastRoles';
 
 export interface BattleAttackerPresentation {
   unitId: string;
   role: BeastRole;
+  kind?: PlayerActionKind;
+  targetEnemyIds: string[];
 }
 
 export interface EnemyDamagePresentation {
@@ -28,16 +33,26 @@ export interface BattleHealPresentation {
   amount: number;
 }
 
-/**
- * Converts deterministic model deltas into UI events without changing battle rules.
- */
 export function deriveBattleTickPresentation(
   before: AutonomousBattleSnapshot,
   after: AutonomousBattleSnapshot,
 ): BattleTickPresentation {
+  const actionMap = new Map(
+    (after.lastPlayerActions ?? []).map((action) => [action.unitId, action]),
+  );
+
   const attackers = before.units
     .filter((unit) => unit.currentHp > 0)
-    .map((unit) => ({ unitId: unit.unitId, role: unit.role }));
+    .map((unit) => {
+      const action = actionMap.get(unit.unitId);
+      return {
+        unitId: unit.unitId,
+        role: unit.role,
+        kind: action?.kind,
+        targetEnemyIds: action?.hits.map((hit) => hit.enemyId) ?? [],
+      };
+    })
+    .filter((attacker) => attacker.targetEnemyIds.length > 0 || !(after.lastPlayerActions?.length));
 
   const enemyDamage = Math.max(0, before.enemyHp - after.enemyHp);
   const enemyDamages: EnemyDamagePresentation[] = [];
