@@ -221,6 +221,17 @@ export class BattleActionView {
         this.objects.push(playerSlot, enemySlot);
       }
     });
+
+    for (let column = 1; column <= 6; column += 1) {
+      const laneY = playerSlotPosition(layout, 'Front', column).y;
+      const laneLabel = this.scene.add.text(layout.baseX + 8, laneY - 7, `L${column}`, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '9px',
+        color: '#94a3b8',
+        fontStyle: 'bold',
+      });
+      this.objects.push(laneLabel);
+    }
   }
 
   private syncUnit(unit: CombatUnit): void {
