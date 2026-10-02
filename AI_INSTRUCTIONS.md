@@ -222,3 +222,24 @@ Current immediate task:
 - run full regression checks and production build,
 - live verify deployment continuity, grid fade, movement/range behavior, actual-position Heal, battle duration, and Result → Restart,
 - resume P03 only after P1-V9 passes.
+
+
+## Active Presentation Gate — P1-V10 Showcase UI / Capture Mode
+
+P03 remains paused while P1-V9 movement and P1-V10 showcase presentation are verified.
+
+P1-V10 rules:
+- Showcase Mode is presentation-only and OFF by default.
+- F1 toggles Validation / Showcase Mode.
+- Space pauses/resumes Battle model ticking only in Showcase Mode.
+- H hides/shows capture controls for clean screenshots.
+- Showcase Battle HUD is compact and must keep Stored Energy Heal controls visible/clickable.
+- Existing P1-V9 movement/combat/state rules must remain unchanged.
+- Validation Mode remains the evidence-collection baseline.
+
+Current immediate task:
+- run full regression checks and production build,
+- live verify P1-V9 movement behavior,
+- live verify V10 mode toggle, pause/resume, clean-frame and compact Energy HUD,
+- confirm Result → Restart,
+- resume P03 only after V9/V10 gates pass.
