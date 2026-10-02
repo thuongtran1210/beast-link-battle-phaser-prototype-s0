@@ -400,8 +400,8 @@ export class AutonomousBattleModel {
     }
 
     if (distance < profile.minRange) {
-      this.retreatPlayerUnit(unit, profile.speed);
-      return;
+      const retreated = this.retreatPlayerUnit(unit, profile.speed);
+      if (retreated) return;
     }
 
     const damage = this.applyDamage(target, unit.damage);
@@ -422,8 +422,8 @@ export class AutonomousBattleModel {
     }
 
     if (distance < profile.minRange) {
-      this.retreatPlayerUnit(unit, profile.speed);
-      return;
+      const retreated = this.retreatPlayerUnit(unit, profile.speed);
+      if (retreated) return;
     }
 
     const hits: PlayerCombatHit[] = [];
@@ -655,8 +655,10 @@ export class AutonomousBattleModel {
     };
   }
 
-  private retreatPlayerUnit(unit: CombatUnit, speed: number): void {
+  private retreatPlayerUnit(unit: CombatUnit, speed: number): boolean {
+    const before = unit.positionX;
     unit.positionX = clamp(unit.positionX - speed, PLAYER_MIN_X, PLAYER_MAX_X);
+    return unit.positionX < before - 0.000001;
   }
 
   private distance(
