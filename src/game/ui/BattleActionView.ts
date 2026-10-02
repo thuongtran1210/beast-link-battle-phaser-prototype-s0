@@ -360,11 +360,29 @@ export class BattleActionView {
 
     const ratio = enemy.maxHp > 0 ? enemy.currentHp / enemy.maxHp : 0;
     visual.hpFill.width = 46 * clamp01(ratio);
-    const engagedText = enemy.engagedTargetId ? '\n[ENGAGED]' : '';
+    const archetypeBadge = enemy.archetype
+      ? enemy.archetype === 'Frontliner'
+        ? 'FRONT'
+        : enemy.archetype.toUpperCase()
+      : 'FRONT';
+    const stateBadge = enemy.engagedTargetId
+      ? '\n[ENGAGED]'
+      : enemy.movementPolicyState && enemy.movementPolicyState !== 'Idle'
+      ? `\n[${enemy.movementPolicyState.toUpperCase()}]`
+      : '';
     visual.label.setText(
-      `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}${engagedText}`,
+      `[${archetypeBadge}]\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}${stateBadge}`,
     );
-    visual.body.setStrokeStyle(2, enemy.engagedTargetId ? 0xf59e0b : 0x450a0a);
+
+    let strokeColor = 0x450a0a;
+    if (enemy.engagedTargetId) {
+      strokeColor = 0xf59e0b;
+    } else if (enemy.archetype === 'Diver') {
+      strokeColor = 0xa855f7;
+    } else if (enemy.archetype === 'Ranged') {
+      strokeColor = 0x06b6d4;
+    }
+    visual.body.setStrokeStyle(2, strokeColor);
 
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     if (enemy.currentHp > 0) {

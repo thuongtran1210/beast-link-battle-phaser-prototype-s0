@@ -35,6 +35,8 @@ export class BattleSetupView {
     private readonly storedEnergy: () => string,
     private readonly startBattle: () => void,
     private readonly onArrangementChanged: () => void,
+    private readonly fixtureName?: string,
+    private readonly onCycleFixture?: () => void,
   ) {}
 
   static computeLayout(viewportHeight = 720): BattleSetupLayoutMetrics {
@@ -98,7 +100,18 @@ export class BattleSetupView {
 
     // Section Labels
     this.text(layout.playerFrontX - 160, layout.topLaneY - 48, '◀ PLAYER FORMATION', 11, HudTokens.colors.textBlue, 'bold');
-    this.text(layout.enemyFrontX + 24, layout.topLaneY - 48, 'ENEMY FORMATION ▶', 11, HudTokens.colors.textRed, 'bold');
+    const enemyLabel = this.text(
+      layout.enemyFrontX + 24,
+      layout.topLaneY - 48,
+      this.fixtureName ? `ENEMY: ${this.fixtureName} [E: Switch] ▶` : 'ENEMY FORMATION ▶',
+      11,
+      HudTokens.colors.textRed,
+      'bold',
+    );
+    if (this.onCycleFixture) {
+      enemyLabel.setInteractive({ useHandCursor: true });
+      enemyLabel.on('pointerdown', () => this.onCycleFixture!());
+    }
 
     // Central Divider
     const divider = this.scene.add.rectangle(
@@ -148,15 +161,21 @@ export class BattleSetupView {
     // Enemy units preview
     this.enemies.forEach((enemy) => {
       const pos = enemySlotPosition(layout, enemy.row, enemy.column);
+      const archetype = enemy.archetype ?? 'Frontliner';
+      const strokeColor =
+        archetype === 'Diver' ? 0xa855f7 : archetype === 'Ranged' ? 0x06b6d4 : 0xf87171;
+      const archetypeTag =
+        archetype === 'Frontliner' ? 'FRONT' : archetype.toUpperCase();
+
       const body = this.scene.add
         .rectangle(pos.x, pos.y, 48, 44, 0x7f1d1d, 0.95)
-        .setStrokeStyle(1.5, 0xf87171);
+        .setStrokeStyle(1.5, strokeColor);
 
       const label = this.text(
         pos.x,
         pos.y - 2,
-        `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${enemy.maxHp} HP\n⚔${enemy.damage}`,
-        9,
+        `[${archetypeTag}]\n${enemy.maxHp} HP\n⚔${enemy.damage}`,
+        8,
         '#ffffff',
         'bold',
       ).setOrigin(0.5);
