@@ -55,7 +55,7 @@ Implemented validation override:
 
 P1-V3 is **Experimental** and is **not adopted** into Current Gameplay Spec v2.
 
-Deterministic checks and production build are recorded as passing in project documentation. The current project gate is **live-browser verification of P1-V3** before starting P03.
+Deterministic checks and production build are recorded as passing in project documentation. **P1-V3 live-browser verification passed by project-owner confirmation on 2026-10-02.** The current project gate is **P03 real-player validation**.
 
 ## Run locally
 
@@ -66,7 +66,7 @@ npm run build
 npm run dev
 ```
 
-Then verify the full flow in browser:
+The verified validation flow is:
 
 ```text
 BeastRush → EnergyRush → BattleSetup → Battle → Result → Restart → BeastRush
