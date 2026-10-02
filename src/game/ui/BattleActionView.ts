@@ -157,14 +157,14 @@ export class BattleActionView {
     this.objects.push(title);
 
     const playerOriginX = this.x + 36;
-    const enemyOriginX = this.x + 720;
+    const enemyOriginX = this.x + 570;
     const topY = this.y + 180;
-    const colGap = 72;
+    const colGap = 46;
     const rowGap = 112;
-    const slotW = 62;
-    const slotH = 58;
+    const slotW = 40;
+    const slotH = 54;
 
-    const divider = this.scene.add.rectangle(this.x + 548, this.y + 332, 3, 360, 0x94a3b8, 0.9);
+    const divider = this.scene.add.rectangle(this.x + 310, this.y + 332, 3, 360, 0x94a3b8, 0.9);
     this.objects.push(divider);
 
     const playerSide = this.scene.add.text(playerOriginX, this.y + 120, 'PLAYER FORMATION', {
@@ -173,7 +173,7 @@ export class BattleActionView {
       color: '#2563eb',
       fontStyle: 'bold',
     });
-    const enemySide = this.scene.add.text(enemyOriginX - 180, this.y + 120, 'ENEMY FORMATION', {
+    const enemySide = this.scene.add.text(enemyOriginX - 220, this.y + 120, 'ENEMY FORMATION', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '12px',
       color: '#b91c1c',
@@ -191,7 +191,7 @@ export class BattleActionView {
         color: '#64748b',
         fontStyle: 'bold',
       });
-      const enemyRowLabel = this.scene.add.text(enemyOriginX - 180, y - 45, row.toUpperCase(), {
+      const enemyRowLabel = this.scene.add.text(enemyOriginX - 220, y - 45, row.toUpperCase(), {
         fontFamily: 'Arial, sans-serif',
         fontSize: '10px',
         color: '#991b1b',
@@ -201,7 +201,7 @@ export class BattleActionView {
 
       for (let col = 0; col < 6; col += 1) {
         const playerSlot = this.scene.add.rectangle(
-          playerOriginX + 32 + col * colGap,
+          playerOriginX + 22 + col * colGap,
           y,
           slotW,
           slotH,
@@ -210,7 +210,7 @@ export class BattleActionView {
         ).setStrokeStyle(2, 0x93c5fd);
 
         const enemySlot = this.scene.add.rectangle(
-          enemyOriginX - 32 - col * colGap,
+          enemyOriginX - 22 - col * colGap,
           y,
           slotW,
           slotH,
@@ -231,7 +231,7 @@ export class BattleActionView {
     }
 
     const ratio = unit.maxHp > 0 ? unit.currentHp / unit.maxHp : 0;
-    visual.hpFill.width = 58 * clamp01(ratio);
+    visual.hpFill.width = 40 * clamp01(ratio);
     visual.label.setText(
       `${shortBeast(unit.beastId)}\n${unit.role} · ${unit.star}★\n${formatNumber(unit.currentHp)} HP`,
     );
@@ -249,7 +249,7 @@ export class BattleActionView {
     }
 
     const ratio = enemy.maxHp > 0 ? enemy.currentHp / enemy.maxHp : 0;
-    visual.hpFill.width = 58 * clamp01(ratio);
+    visual.hpFill.width = 40 * clamp01(ratio);
     visual.label.setText(
       `${enemy.enemyId.replace('enemy-', '').toUpperCase()}\n${formatNumber(enemy.currentHp)} HP\nDMG ${enemy.damage}`,
     );
@@ -261,7 +261,7 @@ export class BattleActionView {
 
   private createUnit(unit: CombatUnit): UnitVisual {
     const { x, y } = this.playerSlotPosition(unit.row, unit.column);
-    const body = this.scene.add.rectangle(0, 0, 56, 52, roleFill(unit.role)).setStrokeStyle(2, 0x475569);
+    const body = this.scene.add.rectangle(0, 0, 38, 48, roleFill(unit.role)).setStrokeStyle(2, 0x475569);
     const label = this.scene.add.text(0, 0, '', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '9px',
@@ -269,8 +269,8 @@ export class BattleActionView {
       align: 'center',
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    const hpBg = this.scene.add.rectangle(0, 35, 58, 7, 0x334155).setOrigin(0.5);
-    const hpFill = this.scene.add.rectangle(-29, 35, 58, 7, 0x16a34a).setOrigin(0, 0.5);
+    const hpBg = this.scene.add.rectangle(0, 32, 40, 6, 0x334155).setOrigin(0.5);
+    const hpFill = this.scene.add.rectangle(-20, 32, 40, 6, 0x16a34a).setOrigin(0, 0.5);
     const container = this.scene.add.container(x, y, [body, label, hpBg, hpFill]);
     this.objects.push(container);
     return { container, body, hpBg, hpFill, label };
@@ -278,7 +278,7 @@ export class BattleActionView {
 
   private createEnemy(enemy: EnemyCombatUnit): EnemyVisual {
     const { x, y } = this.enemySlotPosition(enemy.row, enemy.column);
-    const body = this.scene.add.rectangle(0, 0, 56, 52, 0x7f1d1d).setStrokeStyle(2, 0x450a0a);
+    const body = this.scene.add.rectangle(0, 0, 38, 48, 0x7f1d1d).setStrokeStyle(2, 0x450a0a);
     const label = this.scene.add.text(0, 0, '', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '9px',
@@ -286,8 +286,8 @@ export class BattleActionView {
       align: 'center',
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    const hpBg = this.scene.add.rectangle(0, 35, 58, 7, 0x1f2937).setOrigin(0.5);
-    const hpFill = this.scene.add.rectangle(-29, 35, 58, 7, 0xdc2626).setOrigin(0, 0.5);
+    const hpBg = this.scene.add.rectangle(0, 32, 40, 6, 0x1f2937).setOrigin(0.5);
+    const hpFill = this.scene.add.rectangle(-20, 32, 40, 6, 0xdc2626).setOrigin(0, 0.5);
     const container = this.scene.add.container(x, y, [body, label, hpBg, hpFill]);
     this.objects.push(container);
     return { container, body, hpBg, hpFill, label };
@@ -319,7 +319,7 @@ export class BattleActionView {
   private playerSlotPosition(row: BattleRow, column: number): { x: number; y: number } {
     const rowIndex = row === 'Front' ? 0 : row === 'Mid' ? 1 : 2;
     return {
-      x: this.x + 68 + (column - 1) * 72,
+      x: this.x + 58 + (column - 1) * 46,
       y: this.y + 180 + rowIndex * 112,
     };
   }
@@ -327,7 +327,7 @@ export class BattleActionView {
   private enemySlotPosition(row: BattleRow, column: number): { x: number; y: number } {
     const rowIndex = row === 'Front' ? 0 : row === 'Mid' ? 1 : 2;
     return {
-      x: this.x + 688 - (column - 1) * 72,
+      x: this.x + 548 - (column - 1) * 46,
       y: this.y + 180 + rowIndex * 112,
     };
   }
