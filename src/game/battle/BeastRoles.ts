@@ -1,0 +1,15 @@
+export type BeastRole = 'Tanker' | 'Assassin' | 'Ranger' | 'Mage';
+
+/** Experimental / prototype-only P1-S2 placeholder-content mapping. */
+const roles: Readonly<Record<string, BeastRole>> = {
+  'beast-a': 'Tanker', 'beast-b': 'Assassin', 'beast-c': 'Ranger',
+  'beast-d': 'Mage', 'beast-e': 'Tanker', 'beast-f': 'Ranger',
+};
+
+export function roleForBeast(beastId: string): BeastRole {
+  const role = roles[beastId];
+  if (!role) throw new Error(`No experimental P1-S2 role mapping for ${beastId}.`);
+  return role;
+}
+
+export function recommendedRows(role: BeastRole): string { return role === 'Tanker' ? 'Front' : role === 'Assassin' ? 'Front / Mid' : 'Back'; }

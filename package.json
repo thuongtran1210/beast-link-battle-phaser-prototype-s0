@@ -1,0 +1,19 @@
+{
+  "name": "beast-link-battle-validation-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "check": "esbuild src/game/runChecks.ts --bundle --platform=node --format=cjs --outfile=dist/checks.cjs && node dist/checks.cjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}

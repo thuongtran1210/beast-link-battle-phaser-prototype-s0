@@ -1,0 +1,32 @@
+import { runBattleBoardExhaustionChecks } from './battle/BattleBoardExhaustionChecks';
+import { runP1S2Checks } from './battle/P1S2Checks';
+import { runP1S3Checks } from './battle/P1S3Checks';
+import { runP1S4Checks } from './battle/P1S4Checks';
+import { runS2Checks } from './combo/S2Checks';
+import { runS4Checks } from './energy/S4Checks';
+import { runP1S1Checks } from './energy/P1S1Checks';
+import { runP1V1Checks } from './energy/P1V1Checks';
+import { runP1V2Checks } from './combo/P1V2Checks';
+import { runP1V3Checks } from './combo/P1V3Checks';
+import { runS5Checks } from './metrics/S5Checks';
+import { runP1S5Checks } from './metrics/P1S5Checks';
+import { runOnetMatcherChecks } from './puzzle/OnetMatcherChecks';
+import { runS3Checks } from './queue/S3Checks';
+import { runP1S0Checks } from './state/P1S0Checks';
+
+runOnetMatcherChecks();
+runS2Checks();
+runS3Checks();
+runS4Checks(); // Historical P0 gauge regression: retained but not wired into P1-S0.
+runS5Checks(); // Historical P0 metrics regression: retained but not extended in P1-S0.
+runP1S5Checks();
+runBattleBoardExhaustionChecks();
+runP1S0Checks();
+runP1S1Checks();
+runP1V1Checks();
+runP1V2Checks();
+runP1V3Checks();
+runP1S2Checks();
+runP1S3Checks();
+runP1S4Checks();
+console.log('S1/S2/S3/S4/S5, Battle exhaustion, P1-S0, P1-S1, P1-V1, P1-V2, P1-V3, P1-S2, P1-S3, P1-S4, and P1-S5 checks passed.');

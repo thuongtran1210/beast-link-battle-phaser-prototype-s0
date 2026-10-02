@@ -1,0 +1,2 @@
+import { EnergySystem } from './EnergySystem';
+export function runS4Checks():void{const e=new EnergySystem();ok(e.gauge.current===0,'start');e.gainValidMatch();ok(e.gauge.current===10,'10');e.gainValidMatch();ok(e.gauge.ready,'ready');e.gainValidMatch();ok(e.gauge.current===20,'cap');ok(!new EnergySystem().cast(),'reject');ok(e.cast()&&e.gauge.current===0&&!e.gauge.ready,'cast reset')};function ok(v:boolean,n:string){if(!v)throw Error(`S4 ${n}`)}
