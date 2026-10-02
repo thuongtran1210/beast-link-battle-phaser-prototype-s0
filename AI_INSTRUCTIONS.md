@@ -47,9 +47,9 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-Run **P03 real-player validation using P1-V3**.
+**P03 is paused. Verify the Energy Rush → Battle Setup blocker fix before resuming real-player evidence collection.**
 
-Use the active Notion playtest protocol and keep the build unchanged during the session unless a severe blocker prevents completion.
+Verify only the blocker fix first: Energy Rush timeout must hard-lock puzzle input and pending match resolution, transition to BattleSetup exactly once, preserve Stored Energy, and show the short visual-only `BATTLE SETUP / Arrange your Beasts` cue. Do not collect P03 evidence until this passes.
 
 P03 must capture:
 
