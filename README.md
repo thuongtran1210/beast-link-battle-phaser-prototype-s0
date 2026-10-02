@@ -1,51 +1,77 @@
 # Beast Link Battle — Gameplay Validation Prototype
 
-Lightweight Phaser prototype for validating the current **Puzzle → Queue → Resolution → Battle/Energy** gameplay loop.
+Lightweight **Phaser + TypeScript** prototype used to validate the current Beast Link Battle gameplay structure.
 
-This repository is intended for **design validation**, not as a replacement for the Unity implementation and not as a final visual target.
+This repository is a **design-validation sandbox**. It is not the production Unity implementation and is not the final visual target.
 
 ## Source of truth
 
-Gameplay rules are defined outside this codebase in **Current Gameplay Spec v1**. This prototype maps those rules into a small web implementation.
+Gameplay rules are defined in Notion. The current design source is:
 
-Current baseline examples:
+- **00 — Beast Link Battle — Current Gameplay Spec v2**
 
-- `PUZ-001` — 6×6 board
-- `MATCH-001` — Onet path with at most 2 turns
-- `COMBO-002/003/004` — 5.0s initial / +0.3s / 5.0s cap
-- `QUEUE-001` — Beast Match → +1 Queue
-- `STAR-001` — 1 / 3 / 9 Queue → Star conversion
-- `ENERGY-001/002` — +10 Energy / max 20
+Implementation truth is tracked separately in:
+
+- **02.1 — Phaser Implementation Matrix**
+- **00.0 — Current Project Handoff — Beast Link Battle**
+
+See `AI_INSTRUCTIONS.md` before making gameplay changes.
+
+## Current P1 flow
+
+```text
+Beast Rush
+→ Energy Rush
+→ Battle Setup / Beast Arrangement
+→ Autonomous Battle + Timed Energy Cast
+→ Result
+→ Restart
+```
+
+The active validation build includes:
+
+- 6×6 Onet matching with ≤2-turn routes and outer-border routing
+- deadlock recovery
+- Beast Queue + STAR **1 / 3 / 9**
+- stored Energy Queue
+- Tanker / Assassin / Ranger / Mage prototype role mapping
+- 3×6 pre-combat formation
+- autonomous deterministic battle
+- finite stored-Energy casting
+- Experimental Frontline Heal
+- P1 validation metrics + Result summary
+- deterministic regression checks for P0 history and P1 slices/variants
 
 ## Current milestone
 
-### S0 — Project Shell
+### Experimental P1-V3 — Extended Pre-Battle Timing
 
-Implemented scaffold:
+Implemented validation override:
 
-- Phaser + TypeScript + Vite project structure
-- `ValidationScene`
-- `RuleConfig`
-- `GamePhase` + `PhaseController`
-- placeholder 6×6 board shell
-- baseline rule snapshot
+- Beast Rush: **12.0s initial / +0.3s per valid match / 12.0s cap**
+- Energy transition cue: **1.0s**
+- Energy Rush: **12.0s countdown**
+- Energy pair: **+1 stored charge**
 
-No playable Onet matching exists yet.
+P1-V3 is **Experimental** and is **not adopted** into Current Gameplay Spec v2.
+
+Deterministic checks and production build are recorded as passing in project documentation. The current project gate is **live-browser verification of P1-V3** before starting P03.
 
 ## Run locally
 
 ```bash
 npm install
+npm run check
+npm run build
 npm run dev
 ```
 
-## Next slice
+Then verify the full flow in browser:
 
-**S1 — Onet Board**
+```text
+BeastRush → EnergyRush → BattleSetup → Battle → Result → Restart → BeastRush
+```
 
-- board model
-- pair generation
-- tile selection
-- Straight / L / Z / U path validation
-- logical outer border
-- deadlock detection and reshuffle
+## Development discipline
+
+Do not infer gameplay rules from this README. Read `AI_INSTRUCTIONS.md` and the canonical Notion sources before changing behavior.
