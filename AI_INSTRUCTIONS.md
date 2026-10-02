@@ -182,3 +182,20 @@ Current immediate task:
 - confirm Assassin dive / Ranger target / Mage burst are visually readable,
 - confirm P1-V7 battle duration and Result → Restart remain valid,
 - resume P03 only after this gate passes.
+
+
+## Active Validation Phase — Cross-Player Cohort
+
+P1-V8 Role Identity & Positional Combat passed check/build/live verification by project-owner confirmation on 2026-10-02.
+
+Locked P03 code build:
+`dfbdee4ea7545fb86b3720cf354dd8a339cdb6a7`
+
+Current immediate task:
+- run P03 as a completely fresh real-player retest on the locked build,
+- if no severe blocker appears, close P03,
+- continue P04/P05 and further sessions on the same build,
+- gather cross-player evidence before adopting or rejecting Experimental V3–V8 changes,
+- do not retune between sessions unless a severe blocker prevents completion.
+
+Do not present V3–V8 as adopted Current Gameplay Spec until the evidence decision is recorded.
