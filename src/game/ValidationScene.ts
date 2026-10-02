@@ -43,6 +43,7 @@ import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
 import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
 import { ensureIconTextures } from './ui/icons/IconFactory';
+import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { getIconDefinition } from './ui/icons/UnitIconRegistry';
 
 /**
@@ -336,7 +337,7 @@ export class ValidationScene extends Phaser.Scene {
       'Match 6×6 Beast pairs to recruit combat units into your battle queue.',
       ['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f'],
       'Beast',
-      (contentId, turns) => this.onBeastMatch(contentId, turns),
+      (contentId, turns, midpoint) => this.onBeastMatch(contentId, turns, midpoint),
     );
     this.phaseStatusPanel?.setVisible(true);
     this.refreshBeastHUD();
@@ -350,7 +351,7 @@ export class ValidationScene extends Phaser.Scene {
       'Match 6×6 Energy pairs to store Frontline Heal charges for battle.',
       ['energy-a', 'energy-b', 'energy-c', 'energy-d', 'energy-e', 'energy-f'],
       'Energy',
-      (contentId) => this.onEnergyMatch(contentId),
+      (contentId, _turns, midpoint) => this.onEnergyMatch(contentId, midpoint),
     );
     this.energyTimer.start();
     this.phaseStatusPanel?.setVisible(true);
@@ -499,7 +500,7 @@ export class ValidationScene extends Phaser.Scene {
     subtitle: string,
     contentIds: string[],
     type: 'Beast' | 'Energy',
-    onMatch: (contentId: string, turns: number) => void,
+    onMatch: (contentId: string, turns: number, midpoint?: { x: number; y: number }) => void,
   ): void {
     const placement = this.layout.getPuzzleBoardPlacement(RuleConfig.boardSize);
 
@@ -536,13 +537,13 @@ export class ValidationScene extends Phaser.Scene {
             this.metrics.invalid();
           }
         },
-        onMatchRemoved: (result, contentId) => onMatch(contentId, result.turnCount),
+        onMatchRemoved: (result, contentId, midpoint) => onMatch(contentId, result.turnCount, midpoint),
       },
     );
     this.boardView.render();
   }
 
-  private onBeastMatch(contentId: string, turns: number): void {
+  private onBeastMatch(contentId: string, turns: number, midpoint?: { x: number; y: number }): void {
     if (this.phaseController.phase !== GamePhase.BeastRush || !this.board || !this.boardView) return;
     this.comboSystem.registerValidMatch();
     this.metrics.beastMatch();
@@ -556,9 +557,35 @@ export class ValidationScene extends Phaser.Scene {
 
     this.refreshBeastHUD();
     this.syncTopHud();
+
+    // Consequence feedback to HUD
+    if (midpoint) {
+      const target = this.phaseStatusPanel?.getQueueItemTarget(contentId) ?? {
+        x: this.layout.rightX + 40,
+        y: this.layout.rightY + 360,
+      };
+      FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
+        this.phaseStatusPanel?.pulseQueueRow(contentId);
+      });
+      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, '+0.3s', '#fbbf24');
+    }
+    this.phaseStatusPanel?.pulseCombo();
+    this.phaseStatusPanel?.pulseTimer(true);
+
+    // Deadlock reshuffle notification
+    if (recovery.reshuffled) {
+      this.boardView.pulseBoard();
+      FeedbackEffects.showToast(
+        this,
+        this.layout.leftCenter.x,
+        this.layout.leftCenter.y,
+        '🔄 BOARD RESHUFFLED (Auto-Recovery)',
+        '#fbbf24',
+      );
+    }
   }
 
-  private onEnergyMatch(contentId: string): void {
+  private onEnergyMatch(contentId: string, midpoint?: { x: number; y: number }): void {
     if (this.phaseController.phase !== GamePhase.EnergyRush || !this.board || !this.boardView) return;
     this.energyQueue.addCharge(contentId);
     this.metrics.energyMatch();
@@ -571,6 +598,30 @@ export class ValidationScene extends Phaser.Scene {
 
     this.refreshEnergyHUD();
     this.syncTopHud();
+
+    // Consequence feedback to HUD
+    if (midpoint) {
+      const target = this.phaseStatusPanel?.getQueueItemTarget(contentId) ?? {
+        x: this.layout.rightX + 40,
+        y: this.layout.rightY + 360,
+      };
+      FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
+        this.phaseStatusPanel?.pulseQueueRow(contentId);
+      });
+      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, '+1 Charge', '#38bdf8');
+    }
+
+    // Deadlock reshuffle notification
+    if (recovery.reshuffled) {
+      this.boardView.pulseBoard();
+      FeedbackEffects.showToast(
+        this,
+        this.layout.leftCenter.x,
+        this.layout.leftCenter.y,
+        '🔄 BOARD RESHUFFLED (Auto-Recovery)',
+        '#38bdf8',
+      );
+    }
   }
 
   private storedEnergyLines(): string {

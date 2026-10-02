@@ -25,6 +25,10 @@ export interface PhaseStatusData {
 export class PhaseStatusPanel {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private visible = true;
+  private stat2Val?: Phaser.GameObjects.Text;
+  private timerValue?: Phaser.GameObjects.Text;
+  private readonly queueRowMap = new Map<string, { bg: Phaser.GameObjects.Rectangle; count: Phaser.GameObjects.Text; x: number; y: number }>();
+  private queueCenter: { x: number; y: number } = { x: 0, y: 0 };
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -84,6 +88,7 @@ export class PhaseStatusPanel {
       fontSize: '11px',
       color: HudTokens.colors.textMuted,
     });
+    this.timerValue = timerValue;
     this.objects.push(timerBg, timerLabel, timerValue, timerSub);
     currY += timerH + 10;
 
@@ -122,6 +127,7 @@ export class PhaseStatusPanel {
       color: HudTokens.colors.textPrimary,
       fontStyle: 'bold',
     });
+    this.stat2Val = stat2Val;
 
     this.objects.push(statsBg, stat1Title, badgeBg, badgeLabel, stat2Title, stat2Val);
     currY += statsH + 10;
@@ -131,6 +137,7 @@ export class PhaseStatusPanel {
     const itemRows = Math.min(maxItems, data.queueItems.length);
     const queueCardH = Math.max(105, 52 + itemRows * 30);
     const queueBg = drawCard(this.scene, this.x, currY, w, queueCardH, HudTokens.colors.bgSurface, 0.94);
+    this.queueCenter = { x: this.x + w / 2, y: currY + 40 };
 
     const queueHeading = this.scene.add.text(this.x + 16, currY + 14, data.queueTitle.toUpperCase(), {
       fontFamily: HudTokens.fonts.family,
@@ -172,6 +179,13 @@ export class PhaseStatusPanel {
           fontStyle: 'bold',
         }).setOrigin(1, 0);
 
+        this.queueRowMap.set(item.id, {
+          bg: rowBg,
+          count: itemCount,
+          x: this.x + 30,
+          y: itemY + 12,
+        });
+
         this.objects.push(rowBg, icon, itemName, itemCount);
         itemY += 30;
       });
@@ -199,12 +213,74 @@ export class PhaseStatusPanel {
     this.setVisible(this.visible);
   }
 
+  pulseCombo(): void {
+    if (!this.stat2Val || !this.scene.tweens) return;
+    this.scene.tweens.killTweensOf(this.stat2Val);
+    this.stat2Val.setScale(1.4);
+    this.stat2Val.setColor('#facc15');
+    this.scene.tweens.add({
+      targets: this.stat2Val,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 220,
+      ease: 'Back.Out',
+      onComplete: () => {
+        this.stat2Val?.setColor(HudTokens.colors.textPrimary);
+      },
+    });
+  }
+
+  pulseTimer(isBonus = true): void {
+    if (!this.timerValue || !this.scene.tweens) return;
+    this.scene.tweens.killTweensOf(this.timerValue);
+    this.timerValue.setScale(1.2);
+    if (isBonus) this.timerValue.setColor('#4ade80');
+    this.scene.tweens.add({
+      targets: this.timerValue,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 240,
+      ease: 'Back.Out',
+    });
+  }
+
+  pulseQueueRow(id: string): void {
+    const row = this.queueRowMap.get(id);
+    if (!row || !this.scene.tweens) return;
+    this.scene.tweens.killTweensOf(row.count);
+    row.count.setScale(1.45);
+    row.count.setColor('#ffffff');
+    row.bg.setStrokeStyle(1.5, 0xfbbf24);
+    this.scene.tweens.add({
+      targets: row.count,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 260,
+      ease: 'Back.Out',
+      onComplete: () => {
+        row.count.setColor(HudTokens.colors.textGold);
+        row.bg.setStrokeStyle(1, 0x334155, 0.7);
+      },
+    });
+  }
+
+  getQueueItemTarget(id: string): { x: number; y: number } {
+    const row = this.queueRowMap.get(id);
+    if (row) return { x: row.x, y: row.y };
+    return this.queueCenter.x !== 0
+      ? { x: this.queueCenter.x, y: this.queueCenter.y }
+      : { x: this.x + this.panelWidth / 2, y: this.y + 260 };
+  }
+
   setVisible(visible: boolean): void {
     this.visible = visible;
     this.objects.forEach((obj) => (obj as unknown as Phaser.GameObjects.Components.Visible).setVisible(visible));
   }
 
   destroy(): void {
+    this.queueRowMap.clear();
+    this.stat2Val = undefined;
+    this.timerValue = undefined;
     this.objects.splice(0).forEach((obj) => obj.destroy());
   }
 }

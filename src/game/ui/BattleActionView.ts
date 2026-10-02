@@ -18,6 +18,7 @@ import {
 } from './BattleFieldLayout';
 
 import { createIconImage } from './icons/IconFactory';
+import { FeedbackEffects } from './feedback/FeedbackEffects';
 
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
@@ -87,11 +88,14 @@ export class BattleActionView {
       } else if (attacker.kind === 'GuardStrike' && primaryTarget) {
         this.scene.tweens.add({
           targets: visual.container,
-          x: visual.container.x + 14,
-          duration: 100,
+          x: visual.container.x + 28,
+          scaleX: 1.08,
+          scaleY: 1.08,
+          duration: 120,
           yoyo: true,
           ease: 'Quad.Out',
           delay,
+          onYoyo: () => this.flash(primaryTarget.body, 0xf59e0b),
         });
       } else if ((attacker.kind === 'Snipe' || attacker.role === 'Ranger') && primaryTarget) {
         this.scene.time.delayedCall(delay, () => this.projectileToTarget(
@@ -125,12 +129,13 @@ export class BattleActionView {
         const visual = this.enemies.get(damageEvent.enemyId);
         if (!visual) return;
 
-        this.flash(visual.body, 0xef4444);
+        this.flash(visual.body, 0xffffff);
+        this.scene.time.delayedCall(60, () => this.flash(visual.body, 0xef4444));
         this.floatText(
           visual.container.x,
           visual.container.y - 34,
           `-${formatNumber(damageEvent.damage)}`,
-          '#b91c1c',
+          '#ef4444',
         );
       });
     });
@@ -140,13 +145,14 @@ export class BattleActionView {
         const visual = this.units.get(event.enemyTargetId!);
         if (!visual) return;
 
-        this.flash(visual.body, 0xef4444);
+        this.flash(visual.body, 0xffffff);
+        this.scene.time.delayedCall(60, () => this.flash(visual.body, 0xef4444));
         if (event.targetDamage > 0) {
           this.floatText(
             visual.container.x,
             visual.container.y - 34,
             `-${formatNumber(event.targetDamage)}`,
-            '#b91c1c',
+            '#ef4444',
           );
         }
       });
@@ -158,9 +164,13 @@ export class BattleActionView {
         if (!visual) return;
         this.scene.tweens.add({
           targets: visual.container,
-          alpha: 0.25,
-          angle: 8,
-          duration: 220,
+          alpha: 0.2,
+          y: visual.container.y + 12,
+          scaleX: 0.85,
+          scaleY: 0.85,
+          angle: 12,
+          duration: 260,
+          ease: 'Quad.In',
         });
       });
     });
@@ -171,9 +181,13 @@ export class BattleActionView {
         if (!visual) return;
         this.scene.tweens.add({
           targets: visual.container,
-          alpha: 0.25,
-          angle: -8,
-          duration: 220,
+          alpha: 0.2,
+          y: visual.container.y + 12,
+          scaleX: 0.85,
+          scaleY: 0.85,
+          angle: -12,
+          duration: 260,
+          ease: 'Quad.In',
         });
       });
     });
@@ -185,18 +199,19 @@ export class BattleActionView {
     const visual = this.units.get(event.unitId);
     if (!visual) return;
 
+    FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0x22c55e, 38);
     this.floatText(
       visual.container.x,
       visual.container.y - 34,
       `+${formatNumber(event.amount)} HP`,
-      '#15803d',
+      '#22c55e',
     );
 
     this.scene.tweens.add({
       targets: visual.body,
-      scaleX: 1.14,
-      scaleY: 1.14,
-      duration: 120,
+      scaleX: 1.18,
+      scaleY: 1.18,
+      duration: 140,
       yoyo: true,
       ease: 'Sine.Out',
     });

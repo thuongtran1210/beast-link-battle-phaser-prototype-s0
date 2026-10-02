@@ -5,6 +5,7 @@ import { recommendedRows } from '../battle/BeastRoles';
 import { createBattleFieldLayout, enemySlotPosition, playerSlotPosition } from './BattleFieldLayout';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
+import { FeedbackEffects } from './feedback/FeedbackEffects';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -183,8 +184,40 @@ export class BattleSetupView {
         'bold',
       ).setOrigin(0.5);
 
+      if (isSelected && this.scene.tweens) {
+        this.scene.tweens.add({
+          targets: body,
+          scaleX: 1.06,
+          scaleY: 1.06,
+          duration: 380,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.InOut',
+        });
+      }
+
       const selectSlot = () => {
-        this.selectedUnitId = unit.unitId;
+        if (this.selectedUnitId && this.selectedUnitId !== unit.unitId) {
+          const selectedUnit = this.formation.units.find((u) => u.unitId === this.selectedUnitId);
+          // If selected unit is already placed, swap the two units
+          if (selectedUnit?.slotId) {
+            const fromSlotId = selectedUnit.slotId;
+            const toSlotId = slot.slotId;
+            const emptySlot = this.formation.slots.find((s) => s.unitId === null);
+            if (emptySlot) {
+              this.formation.place(selectedUnit.unitId, emptySlot.slotId);
+              this.formation.place(unit.unitId, fromSlotId);
+              this.formation.place(selectedUnit.unitId, toSlotId);
+              this.onArrangementChanged();
+              FeedbackEffects.pulseRing(this.scene, x, y, 0x38bdf8, 30);
+              FeedbackEffects.floatText(this.scene, x, y - 20, 'SWAPPED', '#38bdf8', '11px', 450);
+              this.selectedUnitId = null;
+              this.render();
+              return;
+            }
+          }
+        }
+        this.selectedUnitId = isSelected ? null : unit.unitId;
         this.render();
       };
       body.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
@@ -198,7 +231,24 @@ export class BattleSetupView {
     const hit = this.scene.add
       .rectangle(x, y, layout.slotWidth, layout.slotHeight, 0xffffff, 0.001)
       .setInteractive({ useHandCursor: true });
-    hit.on('pointerup', () => this.placeSelected(slot.slotId));
+
+    let hoverHighlight: Phaser.GameObjects.Rectangle | null = null;
+    hit.on('pointerover', () => {
+      if (this.selectedUnitId) {
+        hoverHighlight = this.scene.add
+          .rectangle(x, y, layout.slotWidth, layout.slotHeight, 0x38bdf8, 0.2)
+          .setStrokeStyle(2, 0x38bdf8, 0.9);
+        this.objects.push(hoverHighlight);
+      }
+    });
+    hit.on('pointerout', () => {
+      if (hoverHighlight) {
+        hoverHighlight.destroy();
+        hoverHighlight = null;
+      }
+    });
+
+    hit.on('pointerup', () => this.placeSelected(slot.slotId, x, y));
     this.objects.push(hit);
   }
 
@@ -312,6 +362,17 @@ export class BattleSetupView {
     ).setOrigin(0.5);
 
     if (allPlaced) {
+      if (this.scene.tweens) {
+        this.scene.tweens.add({
+          targets: btnBg,
+          scaleX: 1.02,
+          scaleY: 1.05,
+          duration: 650,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.InOut',
+        });
+      }
       btnBg.setInteractive({ useHandCursor: true });
       btnLabel.setInteractive({ useHandCursor: true });
       let started = false;
@@ -342,17 +403,28 @@ export class BattleSetupView {
       .setStrokeStyle(selected ? 2 : 1, selected ? 0x38bdf8 : 0x334155);
     this.objects.push(card);
 
+    if (selected && this.scene.tweens) {
+      this.scene.tweens.add({
+        targets: card,
+        alpha: 0.75,
+        duration: 380,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      });
+    }
+
     const icon = createIconImage(this.scene, unit.beastId, x + 22, y + cardHeight / 2, 32);
     this.objects.push(icon);
 
     const letter = displayBeast(unit.beastId);
-    const label = `Beast ${letter} · ${unit.role} · ${'★'.repeat(unit.star)}`;
+    const label = `Beast ${letter} · ${unit.role} · ${'★'.repeat(unit.star)}${selected ? ' [ACTIVE]' : ''}`;
     const sub = `Rec: ${recommendedRows(unit.role)} row`;
-    const text = this.text(x + 44, y + 6, label, 11, HudTokens.colors.textPrimary, selected ? 'bold' : '');
+    const text = this.text(x + 44, y + 6, label, 11, selected ? '#38bdf8' : HudTokens.colors.textPrimary, selected ? 'bold' : '');
     const subText = this.text(x + 44, y + 24, sub, 10, HudTokens.colors.textMuted);
 
     const selectHandler = () => {
-      this.selectedUnitId = unit.unitId;
+      this.selectedUnitId = selected ? null : unit.unitId;
       this.render();
     };
     card.setInteractive({ useHandCursor: true }).on('pointerup', selectHandler);
@@ -360,16 +432,33 @@ export class BattleSetupView {
     return cardHeight;
   }
 
-  private placeSelected(slotId: string): void {
-    const unit = this.selectedUnitId
-      ? this.formation.units.find((candidate) => candidate.unitId === this.selectedUnitId)
-      : undefined;
+  private placeSelected(slotId: string, x?: number, y?: number): void {
+    if (!this.selectedUnitId) return;
+    const unit = this.formation.units.find((candidate) => candidate.unitId === this.selectedUnitId);
     const wasPlaced = unit?.slotId !== null && unit?.slotId !== slotId;
+    const hadAllPlacedBefore = this.formation.allPlaced;
 
-    if (this.selectedUnitId && this.formation.place(this.selectedUnitId, slotId)) {
-      if (wasPlaced) this.onArrangementChanged();
+    if (this.formation.place(this.selectedUnitId, slotId)) {
+      if (wasPlaced) {
+        this.onArrangementChanged();
+        if (x !== undefined && y !== undefined) {
+          FeedbackEffects.floatText(this.scene, x, y - 20, 'MOVED', '#38bdf8', '11px', 450);
+        }
+      } else {
+        if (x !== undefined && y !== undefined) {
+          FeedbackEffects.pulseRing(this.scene, x, y, 0x38bdf8, 34);
+          FeedbackEffects.floatText(this.scene, x, y - 20, 'SNAP DEPLOY', '#22c55e', '11px', 450);
+        }
+      }
+
       this.selectedUnitId = null;
       this.render();
+
+      if (!hadAllPlacedBefore && this.formation.allPlaced) {
+        FeedbackEffects.showToast(this.scene, 450, 75, '✓ ALL UNITS DEPLOYED — READY!', '#22c55e', 1400);
+        const layoutMetrics = BattleSetupView.computeLayout(this.scene.scale.height || 720);
+        FeedbackEffects.pulseRing(this.scene, layoutMetrics.panelX + 170, layoutMetrics.startBattleY + 23, 0xfbbf24, 60);
+      }
     }
   }
 
