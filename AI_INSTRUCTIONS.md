@@ -30,8 +30,9 @@ Use **02.2 — P0 Technical Scaffold** only as historical implementation context
 - **Current active variant: P1-V3 — Extended Pre-Battle Timing.**
 - P1-V3 is implemented in code with deterministic checks and production build reported passing.
 - P1-V3 remains **Experimental / not adopted into Current Gameplay Spec**.
-- **Live-browser verification for P1-V3 is the current gate.**
-- Do **not** start P03 or expand gameplay scope until the P1-V3 live gate passes.
+- **P1-V3 live-browser gate passed by project-owner confirmation on 2026-10-02.**
+- **Current gate: P03 real-player validation on P1-V3.**
+- Do not retune or expand gameplay scope during P03 unless a severe blocker prevents completion.
 
 ## P1-V3 Current Timing
 
@@ -46,23 +47,21 @@ Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the desi
 
 ## Current Immediate Task
 
-Perform **P1-V3 live-browser verification only**.
+Run **P03 real-player validation using P1-V3**.
 
-Verify:
+Use the active Notion playtest protocol and keep the build unchanged during the session unless a severe blocker prevents completion.
 
-1. Beast Rush uses the 12.0s Experimental window.
-2. Valid Beast matches add exactly +0.3s without exceeding the 12.0s cap.
-3. Beast Rush end locks puzzle input.
-4. The 1.0s Energy transition cue remains intact and non-interactive.
-5. Energy Rush begins with a 12.0s countdown.
-6. Valid Energy matches still add +1 stored charge.
-7. Energy timeout clamps at 0 and auto-enters BattleSetup exactly once.
-8. Stored Energy persists into BattleSetup.
-9. Formation, autonomous Battle, Frontline Heal, Result, metrics and Restart still function.
-10. The full flow remains playable:
-   **BeastRush → EnergyRush → BattleSetup → Battle → Result → Restart → BeastRush**
+P03 must capture:
 
-After the live gate passes, update the Phaser Implementation Matrix and Current Project Handoff before starting P03.
+1. Beast Rush timing/readability under the 12.0s Experimental window.
+2. Energy Rush timing/readability under the 12.0s Experimental window.
+3. Whether the player understands that Energy is stored for later Battle use.
+4. Role / STAR / formation comprehension.
+5. Whether autonomous Battle is understood without puzzle input.
+6. When and why the player chooses to cast finite stored Energy.
+7. Observed behavior, player statements, prototype metrics, and designer interpretation as separate evidence.
+
+Do not treat one P03 session as a cross-player conclusion. P1-V3 remains Experimental and not adopted until the evidence supports an explicit decision.
 
 ## Mandatory Guardrails
 
