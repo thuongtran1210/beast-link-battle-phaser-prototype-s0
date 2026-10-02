@@ -77,6 +77,15 @@ function snapshot(input: {
     enemyDamage: 15,
     elapsedTicks: 1,
     units: input.units,
+    enemies: [{
+      enemyId: 'enemy-test',
+      slotId: 'enemy-front-1',
+      row: 'Front',
+      column: 1,
+      currentHp: input.enemyHp,
+      maxHp: 100,
+      damage: 15,
+    }],
   };
 }
 
