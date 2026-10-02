@@ -337,8 +337,11 @@ export class BattleActionView {
 
     const ratio = unit.maxHp > 0 ? unit.currentHp / unit.maxHp : 0;
     visual.hpFill.width = 46 * clamp01(ratio);
+    const stateBadge = unit.movementPolicyState && unit.currentHp > 0
+      ? `\n${unit.movementPolicyState.toUpperCase()}`
+      : '';
     visual.label.setText(
-      `${'★'.repeat(unit.star)} ${formatNumber(unit.currentHp)}`,
+      `${'★'.repeat(unit.star)} ${formatNumber(unit.currentHp)}${stateBadge}`,
     );
 
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
@@ -380,10 +383,11 @@ export class BattleActionView {
 
     const label = this.scene.add.text(0, 13, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '9px',
+      fontSize: '8px',
       color: '#fbbf24',
       align: 'center',
       fontStyle: 'bold',
+      lineSpacing: -2,
     }).setOrigin(0.5);
 
     const hpBg = this.scene.add.rectangle(0, 26, 46, 5, 0x111827).setOrigin(0.5);

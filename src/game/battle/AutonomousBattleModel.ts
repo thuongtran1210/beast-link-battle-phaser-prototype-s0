@@ -6,6 +6,12 @@ export type BattleStatus = 'Running' | 'Win' | 'Lose';
 export type BattleRow = 'Front' | 'Mid' | 'Back';
 export type PlayerActionKind = 'GuardStrike' | 'Dive' | 'Snipe' | 'ArcaneBurst';
 export type CombatActionState = 'Moving' | 'Windup' | 'Recovering' | 'Idle' | 'Dead';
+export type RoleMovementState = 'Hold' | 'AdvanceToRange' | 'Kite' | 'Engage' | 'Dive' | 'Idle';
+
+export interface FormationAnchor {
+  x: number;
+  lane: number;
+}
 
 export interface ActionTimingProfile {
   attackInterval: number;
@@ -45,6 +51,10 @@ export interface CombatUnit {
 
   // P1-V11B Engagement field
   engagedById?: string;
+
+  // P1-V11B.1 Role Positioning Identity fields
+  formationAnchor?: FormationAnchor;
+  movementPolicyState?: RoleMovementState;
 }
 
 export interface EnemyFixture {
@@ -89,6 +99,7 @@ export interface BattleCombatRules {
   movement: boolean;
   timeline?: boolean;
   engagement?: boolean;
+  roleIdentity?: boolean;
 }
 
 export const LEGACY_BATTLE_COMBAT_RULES: Readonly<BattleCombatRules> = {
@@ -129,6 +140,15 @@ export const P1V11B_ENGAGEMENT_RULES: Readonly<BattleCombatRules> = {
   movement: true,
   timeline: true,
   engagement: true,
+  roleIdentity: true,
+};
+
+export const P1V11B1_ROLE_IDENTITY_RULES: Readonly<BattleCombatRules> = {
+  rolePositioning: true,
+  movement: true,
+  timeline: true,
+  engagement: true,
+  roleIdentity: true,
 };
 
 export interface EngagementBattleEvent {
@@ -211,15 +231,48 @@ const PLAYER_MAX_X = 3.2;
 const ENEMY_MIN_X = -3.2;
 const ENEMY_MAX_X = 3.4;
 
-const movementProfile: Readonly<Record<BeastRole, {
+export interface RoleMovementConfig {
   speed: number;
   attackRange: number;
   minRange: number;
-}>> = {
-  Tanker: { speed: 0.75, attackRange: 0.72, minRange: 0 },
-  Assassin: { speed: 1.25, attackRange: 0.68, minRange: 0 },
-  Ranger: { speed: 0.65, attackRange: 4.2, minRange: 2.6 },
-  Mage: { speed: 0.55, attackRange: 3.6, minRange: 1.8 },
+  preferredMinRange: number;
+  dangerRange: number;
+  leashRadius: number;
+}
+
+const movementProfile: Readonly<Record<BeastRole, RoleMovementConfig>> = {
+  Tanker: {
+    speed: 0.75,
+    attackRange: 0.72,
+    minRange: 0,
+    preferredMinRange: 0,
+    dangerRange: 0,
+    leashRadius: 999,
+  },
+  Assassin: {
+    speed: 1.25,
+    attackRange: 0.68,
+    minRange: 0,
+    preferredMinRange: 0,
+    dangerRange: 0,
+    leashRadius: 999,
+  },
+  Ranger: {
+    speed: 0.65,
+    attackRange: 4.2,
+    minRange: 2.6,
+    preferredMinRange: 3.15,
+    dangerRange: 2.10,
+    leashRadius: 2.2,
+  },
+  Mage: {
+    speed: 0.55,
+    attackRange: 3.6,
+    minRange: 1.8,
+    preferredMinRange: 2.70,
+    dangerRange: 1.80,
+    leashRadius: 1.4,
+  },
 };
 
 const ENEMY_MOVE_SPEED = 0.58;
@@ -879,6 +932,11 @@ export class AutonomousBattleModel {
       damage: base.damage * multiplier,
       positionX: PLAYER_SPAWN_X[slot.row],
       positionLane: slot.column,
+      formationAnchor: {
+        x: PLAYER_SPAWN_X[slot.row],
+        lane: slot.column,
+      },
+      movementPolicyState: 'Idle',
       actionState: 'Idle',
       attackCooldownRemaining: initialCooldown,
       attackWindupRemaining: 0,
@@ -894,26 +952,77 @@ export class AutonomousBattleModel {
     for (const unit of attackers) {
       if (this.state.enemies.every((enemy) => enemy.currentHp <= 0)) {
         unit.actionState = 'Idle';
+        unit.movementPolicyState = 'Idle';
         continue;
       }
 
+      const profile = movementProfile[unit.role];
+
       // 1. Target retention or acquisition
       let target: EnemyCombatUnit | undefined;
-      if (unit.targetEnemyId) {
-        target = this.state.enemies.find((e) => e.enemyId === unit.targetEnemyId && e.currentHp > 0);
-        if (!target) {
-          unit.targetEnemyId = undefined;
+
+      if (this.combatRules.roleIdentity) {
+        if (unit.role === 'Tanker') {
+          target = this.nearestEnemyByRowPriority(unit.positionLane, ['Front', 'Mid', 'Back']);
+          unit.targetEnemyId = target?.enemyId;
+        } else if (unit.role === 'Assassin') {
+          target = this.nearestEnemyByRowPriority(unit.positionLane, ['Back', 'Mid', 'Front']);
+          unit.targetEnemyId = target?.enemyId;
+        } else {
+          // Ranger or Mage:
+          if (unit.targetEnemyId) {
+            target = this.state.enemies.find((e) => e.enemyId === unit.targetEnemyId && e.currentHp > 0);
+            if (target) {
+              const currentDist = this.distance(
+                unit.positionX,
+                unit.positionLane,
+                target.positionX,
+                target.positionLane,
+              );
+              // If current target is outside attack range, check if another enemy is in range
+              if (currentDist > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+                const inRangeEnemy = this.findBestEnemyInRange(unit, profile.attackRange);
+                if (inRangeEnemy) {
+                  target = inRangeEnemy;
+                  unit.targetEnemyId = target.enemyId;
+                }
+              }
+            } else {
+              unit.targetEnemyId = undefined;
+            }
+          }
+
+          if (!target) {
+            const inRangeEnemy = this.findBestEnemyInRange(unit, profile.attackRange);
+            if (inRangeEnemy) {
+              target = inRangeEnemy;
+              unit.targetEnemyId = target.enemyId;
+            } else {
+              target = this.findBestRangedAdvanceTarget(unit);
+              if (target) {
+                unit.targetEnemyId = target.enemyId;
+              }
+            }
+          }
         }
-      }
-      if (!unit.targetEnemyId) {
-        target = this.acquirePlayerTarget(unit);
-        if (target) {
-          unit.targetEnemyId = target.enemyId;
+      } else {
+        if (unit.targetEnemyId) {
+          target = this.state.enemies.find((e) => e.enemyId === unit.targetEnemyId && e.currentHp > 0);
+          if (!target) {
+            unit.targetEnemyId = undefined;
+          }
+        }
+        if (!unit.targetEnemyId) {
+          target = this.acquirePlayerTarget(unit);
+          if (target) {
+            unit.targetEnemyId = target.enemyId;
+          }
         }
       }
 
       if (!target || target.currentHp <= 0) {
         unit.actionState = 'Idle';
+        unit.movementPolicyState = 'Idle';
         continue;
       }
 
@@ -930,6 +1039,9 @@ export class AutonomousBattleModel {
 
       // 3. Windup resolution
       if (unit.actionState === 'Windup') {
+        if (this.combatRules.roleIdentity && (unit.role === 'Mage' || unit.role === 'Ranger')) {
+          unit.movementPolicyState = 'Hold';
+        }
         unit.attackWindupRemaining = (unit.attackWindupRemaining ?? 0) - deltaSeconds;
         if (unit.attackWindupRemaining <= COMBAT_DISTANCE_EPSILON) {
           this.resolvePlayerDamage(unit, target);
@@ -943,7 +1055,6 @@ export class AutonomousBattleModel {
       }
 
       // 4. Movement / windup initiation
-      const profile = movementProfile[unit.role];
       const distance = this.distance(
         unit.positionX,
         unit.positionLane,
@@ -951,35 +1062,178 @@ export class AutonomousBattleModel {
         target.positionLane,
       );
 
-      if (unit.role === 'Tanker' || unit.role === 'Assassin') {
+      if (!this.combatRules.roleIdentity) {
+        if (unit.role === 'Tanker' || unit.role === 'Assassin') {
+          if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+            unit.actionState = 'Moving';
+            this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange);
+          } else {
+            if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+              unit.actionState = 'Windup';
+              unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
+            } else {
+              if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+            }
+          }
+        } else {
+          // Ranger or Mage
+          if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+            unit.actionState = 'Moving';
+            this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange - 0.15);
+          } else if (distance < profile.minRange - COMBAT_DISTANCE_EPSILON) {
+            unit.actionState = 'Moving';
+            this.retreatPlayerUnit(unit, profile.speed * deltaSeconds);
+          } else {
+            if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+              unit.actionState = 'Windup';
+              unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
+            } else {
+              if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+            }
+          }
+        }
+        continue;
+      }
+
+      // Role Positioning Identity logic:
+      if (unit.role === 'Tanker') {
+        if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+          unit.actionState = 'Moving';
+          unit.movementPolicyState = unit.engagedById ? 'Engage' : 'AdvanceToRange';
+          this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange);
+        } else {
+          unit.movementPolicyState = 'Engage';
+          if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+            unit.actionState = 'Windup';
+            unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE.Tanker.windup;
+          } else {
+            if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+          }
+        }
+      } else if (unit.role === 'Assassin') {
+        unit.movementPolicyState = 'Dive';
         if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
           unit.actionState = 'Moving';
           this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange);
         } else {
           if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
             unit.actionState = 'Windup';
-            unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
+            unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE.Assassin.windup;
           } else {
             if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
           }
         }
       } else {
         // Ranger or Mage
-        if (distance > profile.attackRange + COMBAT_DISTANCE_EPSILON) {
-          unit.actionState = 'Moving';
-          this.moveTowardPlayerUnit(unit, target, profile.speed * deltaSeconds, profile.attackRange - 0.15);
-        } else if (distance < profile.minRange - COMBAT_DISTANCE_EPSILON) {
-          unit.actionState = 'Moving';
-          this.retreatPlayerUnit(unit, profile.speed * deltaSeconds);
+        this.resolveRangedMovementAndAction(unit, target, profile, deltaSeconds);
+      }
+    }
+  }
+
+  private resolveRangedMovementAndAction(
+    unit: CombatUnit,
+    target: EnemyCombatUnit,
+    profile: RoleMovementConfig,
+    deltaSeconds: number,
+  ): void {
+    // 1. Check danger zone (closest living enemy threat)
+    let closestEnemyDist = 999;
+    for (const enemy of this.state.enemies) {
+      if (enemy.currentHp <= 0) continue;
+      const d = this.distance(unit.positionX, unit.positionLane, enemy.positionX, enemy.positionLane);
+      if (d < closestEnemyDist) {
+        closestEnemyDist = d;
+      }
+    }
+
+    const wasKiting = unit.movementPolicyState === 'Kite';
+    const restoreThreshold = profile.preferredMinRange;
+    const triggerThreshold = profile.dangerRange;
+
+    const shouldKite = wasKiting
+      ? closestEnemyDist < restoreThreshold - COMBAT_DISTANCE_EPSILON
+      : closestEnemyDist < triggerThreshold - COMBAT_DISTANCE_EPSILON;
+
+    if (shouldKite) {
+      unit.actionState = 'Moving';
+      unit.movementPolicyState = 'Kite';
+      const retreated = this.retreatPlayerUnit(unit, profile.speed * deltaSeconds);
+      if (!retreated) {
+        // Reached boundary (PLAYER_MIN_X); cannot retreat further
+        unit.movementPolicyState = 'Hold';
+        if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+          unit.actionState = 'Windup';
+          unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
         } else {
-          if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
-            unit.actionState = 'Windup';
-            unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
-          } else {
-            if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
-          }
+          unit.actionState = 'Idle';
         }
       }
+      return;
+    }
+
+    // 2. Safe distance maintained. Is current target in attack range?
+    const distanceToTarget = this.distance(
+      unit.positionX,
+      unit.positionLane,
+      target.positionX,
+      target.positionLane,
+    );
+
+    if (distanceToTarget <= profile.attackRange + COMBAT_DISTANCE_EPSILON) {
+      // HOLD position and attack!
+      unit.movementPolicyState = 'Hold';
+      if ((unit.attackCooldownRemaining ?? 0) <= COMBAT_DISTANCE_EPSILON) {
+        unit.actionState = 'Windup';
+        unit.attackWindupRemaining = P1V11A_ACTION_TIMING_FIXTURE[unit.role].windup;
+      } else {
+        if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+      }
+      return;
+    }
+
+    // 3. No target in attack range. Advance only enough to bring target into attack range.
+    // Respect living Tank frontline (do not voluntarily run past Tank)
+    const livingTanks = this.state.units.filter(
+      (u) => u.currentHp > 0 && u.role === 'Tanker' && u.unitId !== unit.unitId,
+    );
+    const forwardTankX = livingTanks.length
+      ? Math.max(...livingTanks.map((t) => t.positionX))
+      : undefined;
+
+    // Buffer behind Tank: keep at least 0.25 behind forwardmost living Tank
+    const maxSafeX = forwardTankX !== undefined ? forwardTankX - 0.25 : PLAYER_MAX_X;
+
+    if (unit.positionX >= maxSafeX - COMBAT_DISTANCE_EPSILON) {
+      // Already at the safe frontline limit behind the Tank! Hold here rather than running past Tank.
+      unit.movementPolicyState = 'Hold';
+      if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+      return;
+    }
+
+    // Check soft leash around formationAnchor:
+    const anchorX = unit.formationAnchor?.x ?? PLAYER_SPAWN_X[unit.row];
+    const maxAnchorX = anchorX + profile.leashRadius;
+    const clampedMaxX = Math.min(maxSafeX, maxAnchorX);
+
+    if (unit.positionX >= clampedMaxX - COMBAT_DISTANCE_EPSILON) {
+      unit.movementPolicyState = 'Hold';
+      if (unit.actionState !== 'Recovering') unit.actionState = 'Idle';
+      return;
+    }
+
+    // Advance toward target
+    unit.actionState = 'Moving';
+    unit.movementPolicyState = 'AdvanceToRange';
+    this.moveTowardPlayerUnit(
+      unit,
+      target,
+      profile.speed * deltaSeconds,
+      profile.attackRange - 0.15,
+    );
+
+    // Apply clamp so unit does not overshoot maxSafeX or maxAnchorX
+    if (unit.positionX > clampedMaxX) {
+      unit.positionX = clampedMaxX;
     }
   }
 
@@ -1197,6 +1451,48 @@ export class AutonomousBattleModel {
     this.engagementEvents.push({ type, enemyId, tankId, time });
   }
 
+  private findBestEnemyInRange(unit: CombatUnit, maxRange: number): EnemyCombatUnit | undefined {
+    const living = this.state.enemies.filter((enemy) => {
+      if (enemy.currentHp <= 0) return false;
+      const dist = this.distance(unit.positionX, unit.positionLane, enemy.positionX, enemy.positionLane);
+      return dist <= maxRange + COMBAT_DISTANCE_EPSILON;
+    });
+    if (!living.length) return undefined;
+
+    return living.sort((a, b) => {
+      const laneDiffA = Math.abs(a.positionLane - unit.positionLane);
+      const laneDiffB = Math.abs(b.positionLane - unit.positionLane);
+      if (Math.abs(laneDiffA - laneDiffB) > 0.5) {
+        return laneDiffA - laneDiffB;
+      }
+      const distA = this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane);
+      const distB = this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane);
+      if (Math.abs(distA - distB) > COMBAT_DISTANCE_EPSILON) {
+        return distA - distB;
+      }
+      return a.enemyId.localeCompare(b.enemyId);
+    })[0];
+  }
+
+  private findBestRangedAdvanceTarget(unit: CombatUnit): EnemyCombatUnit | undefined {
+    const living = this.state.enemies.filter((e) => e.currentHp > 0);
+    if (!living.length) return undefined;
+
+    return living.sort((a, b) => {
+      const laneDiffA = Math.abs(a.positionLane - unit.positionLane);
+      const laneDiffB = Math.abs(b.positionLane - unit.positionLane);
+      if (Math.abs(laneDiffA - laneDiffB) >= 1.5) {
+        return laneDiffA - laneDiffB;
+      }
+      const distA = this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane);
+      const distB = this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane);
+      if (Math.abs(distA - distB) > COMBAT_DISTANCE_EPSILON) {
+        return distA - distB;
+      }
+      return a.enemyId.localeCompare(b.enemyId);
+    })[0];
+  }
+
   private acquirePlayerTarget(unit: CombatUnit): EnemyCombatUnit | undefined {
     if (unit.role === 'Tanker') {
       return this.nearestEnemyByRowPriority(unit.positionLane, ['Front', 'Mid', 'Back']);
@@ -1295,6 +1591,7 @@ export class AutonomousBattleModel {
       if (u.currentHp <= 0) u.actionState = 'Dead';
       else u.actionState = 'Idle';
       u.engagedById = undefined;
+      u.movementPolicyState = 'Idle';
     });
     this.state.enemies.forEach((e) => {
       if (e.currentHp <= 0) e.actionState = 'Dead';

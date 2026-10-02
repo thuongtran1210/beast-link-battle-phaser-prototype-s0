@@ -15,6 +15,7 @@ import {
   P1V9_AUTONOMOUS_MOVEMENT_RULES,
   P1V11A_TIMELINE_RULES,
   P1V11B_ENGAGEMENT_RULES,
+  P1V11B1_ROLE_IDENTITY_RULES,
   SIMULATION_STEP,
 } from './battle/AutonomousBattleModel';
 import { runP1S3Checks } from './battle/P1S3Checks';
@@ -27,6 +28,7 @@ import { runP1V8Checks } from './battle/P1V8Checks';
 import { runP1V9Checks } from './battle/P1V9Checks';
 import { runP1V11AChecks } from './battle/P1V11AChecks';
 import { runP1V11BChecks } from './battle/P1V11BChecks';
+import { runP1V11B1Checks } from './battle/P1V11B1Checks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
@@ -122,6 +124,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V9Checks();
       runP1V11AChecks();
       runP1V11BChecks();
+      runP1V11B1Checks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
@@ -395,7 +398,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterBattle(): void {
     if (!this.formation) return;
-    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V11B_ENGAGEMENT_RULES);
+    this.battleModel = new AutonomousBattleModel(this.formation, P1V7_ENEMY_FIXTURES, P1V11B1_ROLE_IDENTITY_RULES);
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
     this.battleActionView.render(this.battleModel.snapshot);
