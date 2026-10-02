@@ -91,22 +91,27 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   create(): void {
-    runOnetMatcherChecks();
-    runS2Checks();
-    runS3Checks();
-    runP1S0Checks();
-    runP1S1Checks();
-    runP1S2Checks();
-    runP1S3Checks();
-    runP1S4Checks();
-    runP1V4Checks();
-    runP1V5Checks();
-    runP1V7Checks();
-    runP1V8Checks();
-    runP1V9Checks();
-    runP1V1Checks();
-    runP1V2Checks();
-    runP1V3Checks();
+    try {
+      runOnetMatcherChecks();
+      runS2Checks();
+      runS3Checks();
+      runP1S0Checks();
+      runP1S1Checks();
+      runP1S2Checks();
+      runP1S3Checks();
+      runP1S4Checks();
+      runP1V4Checks();
+      runP1V5Checks();
+      runP1V7Checks();
+      runP1V8Checks();
+      runP1V9Checks();
+      runP1V1Checks();
+      runP1V2Checks();
+      runP1V3Checks();
+    } catch (error) {
+      this.renderStartupFailure(error);
+      return;
+    }
 
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, 42, width, 84, 0x18212b).setOrigin(0.5);
@@ -227,6 +232,36 @@ export class ValidationScene extends Phaser.Scene {
         this.phaseController.setPhase(GamePhase.Result);
       }
     }
+  }
+
+  private renderStartupFailure(error: unknown): void {
+    const { width, height } = this.scale;
+    const message = error instanceof Error ? error.message : String(error);
+
+    this.add.rectangle(width / 2, height / 2, width - 80, 260, 0x7f1d1d, 0.96)
+      .setStrokeStyle(3, 0xfca5a5);
+
+    this.add.text(70, height / 2 - 100, 'VALIDATION STARTUP CHECK FAILED', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '24px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+    });
+
+    this.add.text(70, height / 2 - 52, message, {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#fee2e2',
+      wordWrap: { width: width - 140 },
+      lineSpacing: 6,
+    });
+
+    this.add.text(70, height / 2 + 70, 'The scene was stopped intentionally so a failed regression cannot contaminate validation.', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '13px',
+      color: '#fecaca',
+      wordWrap: { width: width - 140 },
+    });
   }
 
   private handleBeastRushEnded(): void {
