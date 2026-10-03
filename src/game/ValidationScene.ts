@@ -78,6 +78,7 @@ import { ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
+import { preloadGameReadyAssets } from './assets/AssetLoader';
 
 import {
   V11D_PRESETS,
@@ -187,6 +188,10 @@ export class ValidationScene extends Phaser.Scene {
 
   constructor() {
     super('ValidationScene');
+  }
+
+  preload(): void {
+    preloadGameReadyAssets(this);
   }
 
   create(): void {
