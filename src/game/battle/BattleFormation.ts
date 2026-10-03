@@ -10,7 +10,7 @@ export class BattleFormation {
   private readonly slotsById = new Map<string, FormationSlot>();
 
   constructor(units: ReadonlyArray<DeployedUnit>) {
-    units.forEach((unit, index) => this.unitsById.set(`unit-${index + 1}`, { unitId: `unit-${index + 1}`, beastId: unit.contentId, role: roleForBeast(unit.contentId), star: unit.star, slotId: null }));
+    units.forEach((unit, index) => { const unitId = unit.instanceId ?? `unit-${index + 1}`; this.unitsById.set(unitId, { unitId, beastId: unit.contentId, role: roleForBeast(unit.contentId), star: unit.star, slotId: null }); });
     (['Front', 'Mid', 'Back'] as const).forEach((row) => {
       for (let column = 1; column <= 6; column += 1) this.slotsById.set(`${row.toLowerCase()}-${column}`, { slotId: `${row.toLowerCase()}-${column}`, row, column, unitId: null });
     });

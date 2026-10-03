@@ -1,6 +1,6 @@
 import { RuleConfig } from '../config/RuleConfig';
 
-export interface DeployedUnit { contentId: string; star: 1 | 2 | 3; }
+export interface DeployedUnit { contentId: string; star: 1 | 2 | 3; instanceId?: string; }
 export class StarConverter {
   highestAffordable(count: number): { cost: number; star: 1 | 2 | 3 } | null {
     if (count >= RuleConfig.starCosts.star3) return { cost: RuleConfig.starCosts.star3, star: 3 };

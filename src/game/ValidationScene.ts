@@ -4,6 +4,7 @@ import { runS2Checks } from './combo/S2Checks';
 import { RuleConfig } from './config/RuleConfig';
 import { isTestHarness } from './config/RuntimeMode';
 import { WaveRunController } from './run/WaveRunController';
+import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster } from './run/RunRoster';
 import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
 import { runP1S1Checks } from './energy/P1S1Checks';
@@ -145,6 +146,7 @@ export class ValidationScene extends Phaser.Scene {
   private battleTickAccumulator = 0;
   private battleOutcome?: 'Win' | 'Lose';
   private readonly waveRun = new WaveRunController();
+  private readonly runRoster = new RunRoster();
   private readonly waveResultObjects: Phaser.GameObjects.GameObject[] = [];
   private readonly metrics = new SessionMetrics();
 
@@ -346,6 +348,7 @@ export class ValidationScene extends Phaser.Scene {
       const status = this.battleModel.snapshot.status;
       if (status !== 'Running') {
         this.renderBattle();
+        this.runRoster.reconcile(this.battleModel.snapshot.units);
         this.metrics.result(status, this.energyQueue.getAll());
         this.battleOutcome = status;
         this.phaseController.setPhase(status === 'Win' && !this.waveRun.isFinalWave ? GamePhase.WaveResult : GamePhase.Result);
@@ -477,7 +480,8 @@ export class ValidationScene extends Phaser.Scene {
         converted.push(...units);
         this.battleQueue.consume(entry.contentId, entry.count);
       }
-      this.formation = new BattleFormation(converted);
+      this.runRoster.recruit(converted);
+      this.formation = new BattleFormation(this.runRoster.formationUnits());
     }
     this.renderBattleSetup();
   }
@@ -548,6 +552,7 @@ export class ValidationScene extends Phaser.Scene {
       this.formation,
       isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : this.waveRun.currentWave.enemyFixtures,
       P1V13A_SIGNATURE_RULES,
+      Object.fromEntries(this.runRoster.units.map((unit) => [unit.instanceId, unit.currentHp])),
     );
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
@@ -920,7 +925,9 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private startBattle(): void {
-    if (this.phaseController.phase !== GamePhase.BattleSetup || !this.formation?.allPlaced) return;
+    if (this.phaseController.phase !== GamePhase.BattleSetup || !this.formation) return;
+    const active = this.formation.units.filter((unit) => unit.slotId !== null && this.runRoster.canDeploy(unit.unitId));
+    if (active.length < 1 || active.length > P1V14B_ACTIVE_SQUAD_LIMIT) return;
     this.metrics.startBattle(this.energyQueue.getAll(), this.formation.units);
     this.phaseController.setPhase(GamePhase.Battle);
   }
@@ -959,6 +966,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleOutcome = undefined;
     this.metrics.reset();
     this.waveRun.resetRun();
+    this.runRoster.reset();
     this.activePresetKey = undefined;
     this.cycleEnemyFixture();
     this.phaseController.setPhase(GamePhase.BeastRush);

@@ -411,6 +411,7 @@ export class AutonomousBattleModel {
     formation: BattleFormation,
     enemyFixtures: ReadonlyArray<EnemyFixture> = LEGACY_SINGLE_ENEMY_FIXTURE,
     private readonly combatRules: Readonly<BattleCombatRules> = LEGACY_BATTLE_COMBAT_RULES,
+    private readonly persistentHpByUnitId: Readonly<Record<string, number>> = {},
   ) {
     const slots = new Map(
       formation.slots
@@ -1117,7 +1118,7 @@ export class AutonomousBattleModel {
       slotId: unit.slotId,
       row: slot.row,
       column: slot.column,
-      currentHp: maxHp,
+      currentHp: Math.min(maxHp, Math.max(0, this.persistentHpByUnitId[unit.unitId] ?? maxHp)),
       maxHp,
       damage: base.damage * multiplier,
       positionX: PLAYER_SPAWN_X[slot.row],

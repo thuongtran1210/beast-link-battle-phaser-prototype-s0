@@ -612,7 +612,8 @@ export class BattleSetupView {
     this.objects.push(energyTitle, energyContent);
 
     // START BATTLE CTA button
-    const allPlaced = this.formation.allPlaced;
+    const activeCount = this.formation.units.filter((unit) => unit.slotId !== null).length;
+    const allPlaced = activeCount >= 1 && activeCount <= 4;
     const totalUnplaced = this.controller.getUnplacedUnits().length;
     const btnW = w - 28;
     const btnH = 54;
@@ -635,7 +636,7 @@ export class BattleSetupView {
     const btnSub = this.text(
       btnX,
       allPlaced ? btnY + 11 : btnY + 10,
-      allPlaced ? 'FORMATION READY' : `Deploy all Beasts (${totalUnplaced} left)`,
+      allPlaced ? `ACTIVE ${activeCount} / 4 · RESERVE ${totalUnplaced}` : 'Deploy at least 1 Beast',
       9,
       allPlaced ? '#fef08a' : '#f59e0b',
       'bold',
