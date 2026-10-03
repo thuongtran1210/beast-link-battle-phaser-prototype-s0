@@ -509,6 +509,7 @@ export class ValidationScene extends Phaser.Scene {
       isTestHarness() ? () => this.loadFormationPreset('A') : undefined,
       isTestHarness() ? () => this.loadFormationPreset('B') : undefined,
       isTestHarness() ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
+      this.runRoster,
     );
     this.battleSetupView.render();
     this.syncTopHud();

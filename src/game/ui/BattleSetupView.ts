@@ -7,6 +7,7 @@ import { createIconImage, createRoleIconImage } from './icons/IconFactory';
 import { beastDisplayName } from './icons/UnitIconRegistry';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 import { BattleSetupInteractionController, type DropOutcome } from './BattleSetupInteractionController';
+import type { RunRoster } from '../run/RunRoster';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -61,8 +62,9 @@ export class BattleSetupView {
     private readonly onSelectPresetA?: () => void,
     private readonly onSelectPresetB?: () => void,
     private readonly onEnemyBoardEdit?: (tool: EnemyArchetype | 'Erase', row: FormationSlot['row'], column: number) => void,
+    private readonly runRoster?: RunRoster,
   ) {
-    this.controller = new BattleSetupInteractionController(this.formation);
+    this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, 4);
   }
 
   static computeLayout(viewportHeight = 720): BattleSetupLayoutMetrics {
@@ -569,14 +571,9 @@ export class BattleSetupView {
     const sigLabel = this.text(cx, cy + 28, sigName, 9, '#94a3b8').setOrigin(0.5);
     this.objects.push(sigLabel);
 
-    const recLabel = this.text(
-      cx,
-      cy + 46,
-      `Rec: ${recommendedRows(unit.role)}`,
-      8,
-      '#64748b',
-    ).setOrigin(0.5);
-    this.objects.push(recLabel);
+    const rosterUnit = this.runRoster?.get(unit.unitId);
+    const hpLabel = this.text(cx, cy + 46, rosterUnit?.status === 'ko' ? 'KO' : rosterUnit ? `${rosterUnit.currentHp} / ${rosterUnit.maxHp} HP` : `Rec: ${recommendedRows(unit.role)}`, 8, rosterUnit?.status === 'ko' ? '#ef4444' : '#94a3b8', 'bold').setOrigin(0.5);
+    this.objects.push(hpLabel);
 
     // Interactive Drag and Click Handlers
     const hitArea = this.scene.add
@@ -584,9 +581,7 @@ export class BattleSetupView {
       .setInteractive({ useHandCursor: true });
     this.objects.push(hitArea);
 
-    hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      this.startDrag(unit.unitId, null, pointer);
-    });
+    if (rosterUnit?.status !== 'ko') hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => this.startDrag(unit.unitId, null, pointer));
 
     hitArea.on('pointerup', () => {
       if (this.controller.state.mode === 'idle') {

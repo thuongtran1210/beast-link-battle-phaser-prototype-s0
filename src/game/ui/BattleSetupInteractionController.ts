@@ -35,7 +35,7 @@ export class BattleSetupInteractionController {
   private selectedUnitId: string | null = null;
   private hasEverDeployed = false;
 
-  constructor(private readonly formation: BattleFormation) {
+  constructor(private readonly formation: BattleFormation, private readonly canUse: (unitId: string) => boolean = () => true, private readonly activeCap = Infinity) {
     if (this.formation.units.some((u) => u.slotId !== null)) {
       this.hasEverDeployed = true;
     }
@@ -81,7 +81,7 @@ export class BattleSetupInteractionController {
 
   startDragFromTray(unitId: string): boolean {
     const unit = this.formation.getUnit(unitId);
-    if (!unit || unit.slotId !== null) return false;
+    if (!unit || unit.slotId !== null || !this.canUse(unitId)) return false;
     this.mode = 'draggingFromTray';
     this.draggedUnitId = unitId;
     this.sourceSlotId = null;
@@ -93,7 +93,7 @@ export class BattleSetupInteractionController {
 
   startDragFromBoard(unitId: string, slotId: string): boolean {
     const unit = this.formation.getUnit(unitId);
-    if (!unit || unit.slotId !== slotId) return false;
+    if (!unit || unit.slotId !== slotId || !this.canUse(unitId)) return false;
     this.mode = 'draggingDeployedUnit';
     this.draggedUnitId = unitId;
     this.sourceSlotId = slotId;
@@ -138,6 +138,7 @@ export class BattleSetupInteractionController {
       // Empty destination slot
       if (targetSlot.unitId === null) {
         if (currentMode === 'draggingFromTray') {
+          if (this.getDeployedUnits().length >= this.activeCap) return { type: 'rejected', reason: 'Active Squad full' };
           const success = this.formation.place(unitId, targetSlotId);
           if (success) {
             this.hasEverDeployed = true;
@@ -199,6 +200,7 @@ export class BattleSetupInteractionController {
   }
 
   selectUnit(unitId: string | null): void {
+    if (unitId && !this.canUse(unitId)) return;
     if (this.selectedUnitId === unitId) {
       this.selectedUnitId = null;
     } else {
@@ -227,6 +229,7 @@ export class BattleSetupInteractionController {
 
       // Empty slot
       if (slot.unitId === null) {
+        if (selectedUnit.slotId === null && this.getDeployedUnits().length >= this.activeCap) return { type: 'rejected', reason: 'Active Squad full' };
         const wasPlaced = selectedUnit.slotId !== null;
         const fromSlot = selectedUnit.slotId;
         const success = this.formation.place(unitId, slotId);
