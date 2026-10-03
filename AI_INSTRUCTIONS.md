@@ -78,6 +78,10 @@ Required:
 - when Active Squad is full, idle empty grid positions must look reposition-only, not deployable;
 - simplify Reserve header and keep KO visually separate;
 - replace Setup raw Energy text with structured icon/count chips from EnergyQueue entries;
+- group duplicate ready Reserve bodies by beastId + STAR into presentation-only stack cards (`×N`);
+- preserve individual instance IDs and explicit per-body selection/expansion;
+- stack grouping MUST NOT reintroduce automatic STAR conversion;
+- eligible stack may expose manual existing `CONSOLIDATE → next STAR` action;
 - keep Setup Energy preview-only;
 - remove default STAR-consolidation instruction from Stored Energy panel;
 - show STAR consolidation only as contextual Reserve state;
