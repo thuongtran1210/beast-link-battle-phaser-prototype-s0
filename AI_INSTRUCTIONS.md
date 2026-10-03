@@ -18,13 +18,14 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-4. previous slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-5. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-6. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-7. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-8. relevant historical docs
-9. current code/tests
+3. active corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+4. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+5. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+6. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+7. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+8. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+9. relevant historical docs
+10. current code/tests
 
 If repo docs and code conflict:
 - inspect current code
@@ -34,7 +35,9 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14C.2 — Combo Quality → Consolidation Efficiency (Link Shard Experiment)**. See `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
+- Current slice: **P1-V14C.1a — First-Match Start Buffer**. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
+- Corrective rule for both Beast Rush and Energy Rush: `READY → first valid match → ACTIVE 12.0s timer`. Invalid input does not start the timer. No READY safety timeout in this slice.
+- P1-V14C.2 Link Shard is already implemented / deterministic PASS / Experimental and must remain intact while C.1a corrects phase-start timing.
 - V14C.1 is implemented, deterministic/build PASS, Experimental / not adopted; owner live A–F open.
 - V14B.3 is implemented, code-review PASS, Experimental / not adopted; live hypothesis validation open.
 - V14B.1/B.2 remain implemented; their owner browser live gate remains open.
