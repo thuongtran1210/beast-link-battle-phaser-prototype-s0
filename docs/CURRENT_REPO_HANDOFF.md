@@ -25,48 +25,63 @@ P1-V14A multi-Wave flow is **owner-confirmed structurally correct enough to cont
 
 This is owner live evidence. It does not mean multi-Wave is adopted into the canonical gameplay spec.
 
-## Current blockers
+## Latest implementation evidence
 
-### Forced full deployment
+**GitHub main:** `6d1f40b2b4fe97d0b4e0b74e65fc74048acec4b1` — `fix(run): clear wave deployment while preserving roster`
 
-Battle Setup currently requires every available Beast to be placed before Start Battle becomes valid.
+Implemented and regression-covered:
+- persistent `RunRoster` with stable per-run instance IDs
+- partial deployment with Experimental Active Squad cap = 4
+- Battle spawn from persistent HP
+- Battle-end HP / KO reconciliation by instance ID
+- Wave transition preserves roster body state
+- Wave transition clears deployment/slot assignments
+- every new Battle Setup starts from `ACTIVE 0 / 4`
+- living survivors return to Reserve
+- new recruits join the same Reserve
+- KO persists and remains unavailable
+- board → Reserve can free a slot for another unit
+- `npm run check` PASS
+- `npm run build` PASS
 
-That prevents testing:
-- deploy now
-- hold this Beast in Reserve for later Wave
+## Current blocker
 
-The active experiment must allow a legal non-empty subset to enter Battle.
+The code path now matches the intended V14B.1/B.2 architecture. The remaining gate is **owner live validation**, not another core implementation rewrite.
 
-### Free full heal between Waves
-
-Units effectively return to later Waves at full HP.
-
-That prevents testing:
-- reuse injured Beast
-- protect/save it
-- deploy fresh Reserve Beast
-
-The run therefore needs stable player-unit instances with persistent current HP.
+Do not mark V14B.1/B.2 PASS until Live A–H are explicitly verified in browser, especially:
+- Wave 2 begins `ACTIVE 0 / 4`
+- injured survivor keeps exact remaining HP
+- fresh recruit and injured survivor coexist in Reserve
+- player can intentionally choose either
+- KO remains visible/unavailable
+- duplicate same-beast instances retain separate HP
+- Restart has no roster leakage.
 
 ## Active implementation sequence
 
 ### P1-V14B.1 — Partial Deployment + Persistent Reserve
 
-Required:
-- Start Battle does not require all available units to be deployed.
-- Start Battle requires at least one legal deployed unit.
-- Undeployed legal units remain in Run Reserve across Waves.
-- Formation / Reserve / Start gating derive from one roster source of truth.
-- An Active Squad Limit may be introduced as an Experimental fixture if required for the test; exact value is not adopted.
+**Implementation status:** coded + deterministic regression evidence present; owner live gate still open.
+
+Current Experimental fixture:
+- Start Battle accepts a legal subset.
+- Active Squad cap = 4.
+- Reserve may remain non-empty.
+- deployment is per-Wave only.
+- next Wave Setup starts `ACTIVE 0 / 4`.
 
 ### P1-V14B.2 — Persistent Unit Identity + HP Attrition
 
-Required:
-- recruited/formed player units become stable Run Unit instances
-- persist across Waves: instanceId, beastId, STAR, maxHp, currentHp, KO status
-- reset each Battle: target, cooldowns, windup/recovery, temporary shield, engagement, temporary buffs/debuffs, signature runtime activation state
-- no free post-Wave heal in the initial experiment
-- currentHp <= 0 => KO / unavailable for later Waves
+**Implementation status:** coded + deterministic regression evidence present; owner live gate still open.
+
+Current behavior:
+- stable Run Unit instances persist across Waves.
+- HP / KO persist.
+- Battle spawns from persistent HP.
+- Battle result reconciles by instance ID.
+- temporary Battle runtime state resets.
+- no free post-Wave heal.
+- KO remains unavailable.
 
 ## Model boundary
 
