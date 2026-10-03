@@ -103,7 +103,7 @@ Read:
 - **P1-V14C.1 — Combo Quality Signal**: Implemented / deterministic PASS. Decoupled 12.0s phase timer and 1.5s Combo window. MATCH COUNT = Beast quantity; COMBO = independent quality signal. Owner live gate open.
 - **P1-V14C.2 — Link Shard Consolidation Efficiency**: Implemented / deterministic PASS. Best streak awards Link Shards (up to 2, cap 3) which substitute for 1 missing copy in Reserve consolidation (min 2 real bodies, 0 phantom HP).
 - **P1-V14C.1a — First-Match Start Buffer**: Implemented / deterministic PASS. Beast Rush and Energy Rush enter READY with their 12.0s phase timer paused; the first valid match starts the timer exactly once. Invalid input does not start it.
-- **P1-V14C.1a.1 — Timing State Hardening & Repo Closeout**: Implemented / deterministic PASS. Active closeout slice. Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
+- **P1-V14C.1a.1 — Timing State Hardening & Repo Closeout**: Implemented / deterministic PASS / live not recorded. Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
 
 Timing principle:
 
