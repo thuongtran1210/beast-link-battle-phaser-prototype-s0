@@ -381,6 +381,9 @@ const COMBAT_DISTANCE_EPSILON = 0.001;
  * - P1-V8 can opt into role-position targeting without movement.
  * - P1-V9 can opt into autonomous model-space movement.
  */
+export type FrontlineHealCastReason = 'ok' | 'battle-not-running' | 'no-charge' | 'no-target' | 'target-full-hp';
+export interface FrontlineHealCastResult { success: boolean; reason: FrontlineHealCastReason; energyId: string; targetUnitId?: string; healedAmount: number; }
+
 export class AutonomousBattleModel {
   private state: AutonomousBattleSnapshot;
   private engagementEvents: EngagementBattleEvent[] = [];
@@ -651,18 +654,28 @@ export class AutonomousBattleModel {
     return this.enemyTarget();
   }
 
-  castFrontlineHeal(energyId?: string, energyQueue?: EnergyQueue): boolean {
-    if (this.state.status !== 'Running') return false;
-
+  frontlineHealEligibility(energyId: string, energyQueue: EnergyQueue): FrontlineHealCastResult {
+    if (this.state.status !== 'Running') return { success: false, reason: 'battle-not-running', energyId, healedAmount: 0 };
+    if (energyQueue.getCharges(energyId) <= 0) return { success: false, reason: 'no-charge', energyId, healedAmount: 0 };
     const target = this.target();
-    if (!target) return false;
+    if (!target) return { success: false, reason: 'no-target', energyId, healedAmount: 0 };
+    const healedAmount = Math.min(FRONTLINE_HEAL_HP, Math.max(0, target.maxHp - target.currentHp));
+    if (healedAmount <= 0) return { success: false, reason: 'target-full-hp', energyId, targetUnitId: target.unitId, healedAmount: 0 };
+    return { success: true, reason: 'ok', energyId, targetUnitId: target.unitId, healedAmount };
+  }
 
-    if (energyQueue && energyId) {
-      if (!energyQueue.consumeCharge(energyId, 1)) return false;
-    }
+  castFrontlineHealResult(energyId: string, energyQueue: EnergyQueue): FrontlineHealCastResult {
+    const result = this.frontlineHealEligibility(energyId, energyQueue);
+    if (!result.success) return result;
+    const target = this.state.units.find((unit) => unit.unitId === result.targetUnitId);
+    if (!target || !energyQueue.consumeCharge(energyId, 1)) return { success: false, reason: target ? 'no-charge' : 'no-target', energyId, healedAmount: 0 };
+    target.currentHp = Math.min(target.maxHp, target.currentHp + result.healedAmount);
+    return result;
+  }
 
-    target.currentHp = Math.min(target.maxHp, target.currentHp + FRONTLINE_HEAL_HP);
-    return true;
+  castFrontlineHeal(energyId?: string, energyQueue?: EnergyQueue): boolean {
+    if (!energyId || !energyQueue) return false;
+    return this.castFrontlineHealResult(energyId, energyQueue).success;
   }
 
   castEnergy(energyId: string, energyQueue: EnergyQueue): boolean {

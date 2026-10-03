@@ -35,21 +35,21 @@ export function runP1S4Checks(): void {
   const queue = new EnergyQueue();
   queue.addCharge('energy-a', 2);
 
-  // Cast on full HP unit caps at max HP
+  // F.1 safety correction: full HP is an ineffective cast and preserves selected Energy.
   expect(battle.snapshot.units[0].currentHp === 80, 'unit starts at max HP 80');
-  expect(battle.castFrontlineHeal('energy-a', queue), 'cast succeeds on full HP unit');
+  expect(!battle.castFrontlineHeal('energy-a', queue), 'full HP cast is rejected');
   expect(battle.snapshot.units[0].currentHp === 80, 'heal is capped at max HP');
-  expect(queue.getCharges('energy-a') === 1, 'cast consumes exactly 1 charge from selected ID even when capped');
+  expect(queue.getCharges('energy-a') === 2, 'full HP cast consumes zero selected charges');
 
   // Damage unit and heal
   battle.tick(); // Enemy damage 15 -> Tanker HP becomes 65
   expect(battle.snapshot.units[0].currentHp === 65, 'unit takes 15 enemy damage');
   expect(battle.castFrontlineHeal('energy-a', queue), 'cast succeeds on damaged unit');
   expect(battle.snapshot.units[0].currentHp === 80, 'heal 65 + 30 is capped at max HP 80');
-  expect(queue.getCharges('energy-a') === 0, 'second cast consumes remaining charge');
+  expect(queue.getCharges('energy-a') === 1, 'effective cast consumes exactly one charge');
 
-  // Cannot cast with 0 charges
-  expect(!battle.castFrontlineHeal('energy-a', queue), 'cast fails when selected Energy ID has 0 charges');
+  // Full HP remains protected even with a remaining charge.
+  expect(!battle.castFrontlineHeal('energy-a', queue), 'full HP cast fails with a remaining charge');
   expect(battle.snapshot.units[0].currentHp === 80, 'failed cast does not change unit HP');
 
   // 3. Multi-unit targeting: heals current front-most alive unit

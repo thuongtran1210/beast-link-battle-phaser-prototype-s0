@@ -682,17 +682,20 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private castEnergy(energyId: string): void {
-    if (this.phaseController.phase !== GamePhase.Battle || !this.battleModel || this.battleModel.snapshot.status !== 'Running') return;
+    if (this.phaseController.phase !== GamePhase.Battle || !this.battleModel) return;
     const before = this.battleModel.snapshot;
     const armyHp = before.units.reduce((sum, unit) => sum + unit.currentHp, 0);
-    const success = this.battleModel.castFrontlineHeal(energyId, this.energyQueue);
-    if (success) {
+    const result = this.battleModel.castFrontlineHealResult(energyId, this.energyQueue);
+    if (result.success) {
       const after = this.battleModel.snapshot;
       this.metrics.successfulCast(armyHp, before.enemyHp);
       this.battleActionView?.render(after);
       this.battleActionView?.playHeal(deriveBattleHealPresentation(before, after));
       this.renderBattle();
       this.syncTopHud();
+    } else {
+      const labels: Record<typeof result.reason, string> = { ok: '', 'battle-not-running': 'BATTLE ENDED', 'no-charge': 'NO CHARGES', 'no-target': 'NO FRONTLINE', 'target-full-hp': 'FRONTLINE FULL' };
+      FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, labels[result.reason], '#fbbf24');
     }
   }
 

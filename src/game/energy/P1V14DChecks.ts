@@ -69,7 +69,7 @@ export function runP1V14DChecks(): void {
   expect(runQueue.getTotalCharges() === 4 && setupFormation.units.length === 1, '9. entering Battle Setup does not clear Energy');
 
   // 10. Start Battle does not clear Energy.
-  const battleModel = new AutonomousBattleModel(setupFormation, P1V11C_FIXTURE_A_FRONTLINE, P1V13A_SIGNATURE_RULES);
+  const battleModel = new AutonomousBattleModel(setupFormation, P1V11C_FIXTURE_A_FRONTLINE, P1V13A_SIGNATURE_RULES, { [setupFormation.units[0].unitId]: 50 });
   expect(runQueue.getTotalCharges() === 4, '10. Start Battle does not clear Energy');
 
   // ========================================================
@@ -77,7 +77,6 @@ export function runP1V14DChecks(): void {
   // ========================================================
 
   // 11. successful cast consumes exactly 1 selected charge.
-  battleModel.snapshot.units[0].currentHp = 50; // Simulate damage taken
   const castSuccess = battleModel.castFrontlineHeal('energy-a', runQueue);
   expect(castSuccess && runQueue.getCharges('energy-a') === 1 && runQueue.getTotalCharges() === 3, '11. successful cast consumes exactly 1 selected charge');
 
@@ -93,8 +92,7 @@ export function runP1V14DChecks(): void {
 
   // 15. carried charges are available in next Battle.
   const nextWaveFormation = createTestFormation([{ contentId: 'beast-a', star: 1 }], ['front-1']);
-  const nextBattle = new AutonomousBattleModel(nextWaveFormation, P1V11C_FIXTURE_A_FRONTLINE, P1V13A_SIGNATURE_RULES);
-  nextBattle.snapshot.units[0].currentHp = 40;
+  const nextBattle = new AutonomousBattleModel(nextWaveFormation, P1V11C_FIXTURE_A_FRONTLINE, P1V13A_SIGNATURE_RULES, { [nextWaveFormation.units[0].unitId]: 40 });
   const nextCastSuccess = nextBattle.castFrontlineHeal('energy-b', runQueue);
   expect(nextCastSuccess && runQueue.getCharges('energy-b') === 1 && runQueue.getTotalCharges() === 2, '15. carried charges are available in next Battle');
 
