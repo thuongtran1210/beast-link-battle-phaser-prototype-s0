@@ -25,56 +25,50 @@ If Notion is unavailable or sources conflict, stop and report the conflict inste
 
 ## Current project state
 
-- Current Gameplay Spec is **v2 / P1**.
-- P1-S0 through P1-S5 are historical closed structural slices.
-- V11 tactical combat introduced per-unit timing, engagement, role positioning, enemy archetypes and formation counterplay.
-- **P1-V11D Tactical Formation Validation is owner-live PASS.**
+- Current Gameplay Spec is **v2 / P1** and remains authoritative.
+- P1-V11D Tactical Formation Validation is owner-live PASS for the tested ruleset.
 - P1-V12A combat readability exists in code.
-- **P1-V13A Beast Signature Identity** exists at `7f7af78598e99cb18bbabb76c9cadc9c95de470f`.
-- **P1-V13A.1 Enemy Board / Level Harness** exists at `e3b64a09520a20e2b0d48d6a2fb7532d923e7d81`.
-- **P1-V13A.2 Drag & Drop Deployment UX** exists at `b94ce842f1573253f9f60f4e799a77aebeb75a4c`.
-- Current owner review marks the current Battle Setup **UI/UX FAIL**.
-- **Active gate: P1-V13A.1D — Deployment Workspace Redesign.**
-- Do not start P1-V13B Tactical Energy until Setup UX and V13A live signature-testability are closed.
+- P1-V13A Beast Signature Identity exists at `7f7af78598e99cb18bbabb76c9cadc9c95de470f`.
+- P1-V13A.1 Enemy Board / Level Harness exists at `e3b64a09520a20e2b0d48d6a2fb7532d923e7d81`.
+- P1-V13A.2 Drag & Drop Deployment UX exists at `b94ce842f1573253f9f60f4e799a77aebeb75a4c`.
+- P1-V13A full live signature A/B verification remains open.
+- P1-V13A.1D Deployment Workspace Redesign remains **not passed** and is deferred as UX debt.
+- **Active experimental direction: P1-V14 — Multi-Wave Resource Commitment.**
+- **Active implementation slice: P1-V14A — Multi-Wave Run Structure.**
+
+Do not treat V14 as adopted design.
+
+## Why V14 is active
+
+Owner review identified four connected core-loop gaps:
+
+1. **Formation proof can be masked by quantity.**
+   Strong matching can produce enough player bodies that enemy pressure becomes too weak to expose positional consequences.
+
+2. **Beast Queue has no future horizon.**
+   With only one Battle, using/deploying everything now is usually rational.
+
+3. **STAR value is not yet a clear decision.**
+   STAR 1 / 3 / 9 exists as conversion math, but the system has not shown why one higher-STAR unit should sometimes be preferable to several 1★ units.
+
+4. **Combo lacks a distinct role.**
+   Combo currently mainly extends matching opportunity / quantity rather than creating a separate efficiency/quality decision.
+
+Multi-Wave is being tested because a later Wave may create real reasons to preserve resources.
 
 ## Current architecture: GAME + TEST HARNESS
 
-Do not reintroduce separate Prototype / Showcase / Production runtime concepts.
-
-There are only two useful contexts now:
+Only two useful contexts remain:
 
 ### GAME
 
-The real player-facing flow.
-
-Includes:
-
-- Level information
-- read-only enemy formation
-- player deployment
-- Beast roles/signatures
-- Stored Energy
-- autonomous Battle
-- Result
-
-GAME must not expose enemy authoring.
+Player-facing flow.
 
 ### TEST HARNESS
 
-Internal designer/developer tooling attached around the same GAME systems.
+Internal designer/developer tooling around the same GAME systems.
 
-May include:
-
-- level fixtures
-- enemy scenario composer
-- add/remove/change enemy
-- exact enemy deployment slots
-- validation metrics
-- test presets
-
-TEST HARNESS is **internal only**.
-
-It must never be treated as:
+TEST HARNESS must never become:
 
 - player feature
 - sandbox mode
@@ -82,60 +76,140 @@ It must never be treated as:
 - production level editor
 - portfolio-facing gameplay feature
 
-Both contexts must eventually use the same:
+Both contexts must use the same battle model.
+
+## Active task — P1-V14A Multi-Wave Run Structure
+
+### Goal
+
+Implement the minimum structural run loop needed to test multiple Battle pressures in sequence.
+
+Target Experimental flow:
 
 ```text
-EnemyFixture[]
-→ AutonomousBattleModel
+Wave 1
+Beast Rush
+→ Energy Rush
+→ Battle Setup
+→ Battle
+→ Wave Result
+→ Wave 2
+
+Wave 2
+Beast Rush
+→ Energy Rush
+→ Battle Setup
+→ Battle
+→ Wave Result
+→ Wave 3
+
+Wave 3
+Beast Rush
+→ Energy Rush
+→ Battle Setup
+→ Battle
+→ Final Result
 ```
 
-Only the source of the fixtures differs.
+Three Waves are a validation fixture, not a canonical rule.
 
-## P1-V13A signatures
+### Initial pressure fixtures
 
-Signatures are Experimental and Beast-defined, not Role-defined.
+Use existing enemy archetype behavior where possible:
 
-Current implementation direction:
+- Wave 1 → Frontline Pressure
+- Wave 2 → Backline Dive
+- Wave 3 → Protected Ranged
 
-- beast-a / beast-e → Guardian Brace
-- beast-b → Ambush Strike
-- beast-c / beast-f → Focus Shot
-- beast-d → Arcane Bloom
+Do not create new enemy archetypes for V14A.
 
-Do not infer future Beast kits from these mappings.
+### V14A scope
 
-Do not add mana, ultimate buttons, generic ability frameworks, traits, items or economy while the current gate is open.
+Implement:
 
-## Active task — P1-V13A.1D Deployment Workspace Redesign
+- run-level Wave index/state
+- deterministic Wave definitions
+- Wave Result distinct from Final Result
+- non-final Battle win → next Beast Rush
+- final Battle win → Final Result
+- clean per-Wave battle/setup reset
+- visible Wave identity in GAME/Test Harness where necessary
+- deterministic transition checks
+- Result/Restart compatibility
 
-The current Battle Setup must be structurally redesigned, not merely re-spaced.
+### Strict non-goals
 
-Required priorities:
+Do NOT implement in V14A:
 
-1. Formation boards are the visual center.
-2. Header becomes minimal: Level + threat, plus internal marker when Test Harness is active.
-3. Beast dock becomes compact and clearly represents only undeployed units.
-4. Board occupancy, Beast dock, remaining deployment count and Start Battle gating derive from one source of truth.
-5. Deployed units do not remain visually available as undeployed cards.
-6. Enemy archetypes are readable by icon/silhouette + label, not text/color alone.
-7. HP/damage debug stats do not permanently dominate enemy tokens.
-8. Stored Energy becomes compact during Setup.
-9. Exact deployment slot is Front/Mid/Back × Lane 1–6; do not add arbitrary world-space placement.
-10. Internal Enemy Scenario Composer is localized to Test Harness and must not pollute GAME UI.
+- persistent Beast Reserve
+- Active Squad Limit
+- STAR consolidation redesign
+- new STAR multipliers
+- Combo redesign
+- Link Shard
+- Energy persistence
+- new Tactical Energy skills
+- persistent unit HP
+- permanent death attrition
+- traits
+- items
+- economy
+- procedural Waves
+- enemy stat retuning purely to force difficulty
+- V13A.1D UI redesign unless required to prevent V14A from functioning
 
-### Internal scenario authoring requirement
+Keep V14A structural.
 
-Test Harness needs to support eventually:
+## Planned later V14 slices
 
-- enemy quantity increase/decrease
-- multiple instances of the same archetype
-- add/remove/change archetype
-- exact grid placement
-- custom deterministic scenarios
-- reset to immutable LevelDefinition
-- actual battle spawn state derived from the edited scenario
+### V14B — Beast Reserve, Squad Limit & STAR Consolidation
 
-This authoring capability is testing infrastructure only.
+Hypothesis:
+
+Higher STAR should be **power density per active slot**.
+
+Desired future trade-off:
+
+- several 1★ units → breadth / bodies / lane coverage / more attack instances
+- one higher-STAR unit → concentration / durability / output / signature strength / slot efficiency
+
+The exact Active Squad limit is open and must be Experimental.
+
+Do not make one side universally dominant.
+
+### V14C — Combo Rework: Preparation Efficiency
+
+Direction:
+
+- phase duration independent from Combo
+- match count → quantity
+- Combo quality → efficiency/quality
+- Combo becomes streak/milestone based rather than primarily extending total match time
+
+Candidate mechanisms such as Link Shard, bonus Energy or Catalyst are **not locked**.
+
+### V14D — Persistent Energy
+
+Test:
+
+```text
+spend this Wave
+vs
+save for a later Wave
+```
+
+Validate persistence before expanding Energy into many new effects.
+
+## P1-V13 status during V14
+
+V13 is not retroactively passed.
+
+- Beast signatures remain Experimental.
+- full live A/B signature verification is still open.
+- Deployment Workspace UX remains not passed.
+- Test Harness boundary remains valid.
+
+V14 may proceed because the owner has reprioritized the more fundamental core-loop horizon.
 
 ## Verification discipline
 
@@ -150,53 +224,30 @@ Never collapse these into one status:
 7. real-player evidence exists
 8. design is adopted
 
-A later item must not be claimed because an earlier one is true.
-
 ## Mandatory guardrails
 
-- Do not edit Current Gameplay Spec because code changed.
-- Experimental values must remain labeled Experimental / not adopted.
+- Do not edit Current Gameplay Spec because V14 code exists.
+- Keep all V14 values Experimental.
 - Do not use Unity implementation as Design Source of Truth.
-- Keep deterministic combat logic in `AutonomousBattleModel`; UI must not become gameplay authority.
-- Deployment grid defines starting position; combat movement remains autonomous after Start Battle.
-- Do not add row/class damage bonuses to force tactical differentiation.
-- Do not retune combat simply to make arbitrary Test Harness scenarios winnable.
-- Do not fork combat logic between GAME and TEST HARNESS.
-- Do not create a separate Showcase gameplay path.
-- Clean screenshots should come from GAME UI.
-- Work on one active gate at a time.
+- Keep deterministic combat logic shared.
+- Do not add row/class damage bonuses to force formation value.
+- Do not buff arbitrary enemy stats merely to manufacture a desired V14A result.
+- Do not fork GAME and TEST HARNESS combat.
+- Do not turn Test Harness scenario tooling into player gameplay.
+- Work on one V14 slice at a time.
 
-## Implementation workflow
+## V14A implementation workflow
 
-For each slice:
+1. Read canonical sources and `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`.
+2. Read `docs/P1-V14A-MULTI-WAVE-RUN-STRUCTURE.md`.
+3. Inspect PhaseController / run state / Battle result transitions before editing.
+4. Report conflicts before implementing.
+5. Add only Wave structure.
+6. Add deterministic V14A checks.
+7. Run historical regressions.
+8. Run `npm run check`.
+9. Run `npm run build`.
+10. Live verify Wave 1 → 2 → 3 → Final Result.
+11. Stop after V14A.
 
-1. Read canonical Notion sources.
-2. Inspect current code before editing.
-3. Identify implementation/design conflicts.
-4. Change only the active slice.
-5. Add or maintain deterministic checks.
-6. Run relevant historical regressions.
-7. Run `npm run check`.
-8. Run `npm run build`.
-9. Perform live verification for visible interaction changes.
-10. Update Notion implementation/validation status.
-11. Do not mark PASS until the required live gate is explicitly complete.
-
-## Current stop condition
-
-After P1-V13A.1D implementation:
-
-- report the commit SHA
-- report files changed
-- report state-source audit results
-- report deployment UX behavior
-- report Test Harness boundary behavior
-- report deterministic checks
-- report historical regressions
-- report `npm run check`
-- report `npm run build`
-- report live UX observations
-
-Then stop.
-
-Do not start Tactical Energy automatically.
+Do not start V14B automatically.
