@@ -18,7 +18,8 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+3. active gameplay design spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+4. player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
@@ -41,7 +42,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14F.1c — Battle Setup Visual Closeout**. ACTIVE / owner authorized / code not started / Experimental / not adopted. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
+- Current design slice: **P1-V14G — Energy Identity & Activation Grammar**. ACTIVE DESIGN SPEC / owner authorized / CODE NOT STARTED / Experimental / not adopted. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
+- F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
 - V14E Multi-Wave Resource Commitment Integration Validation: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. 70 deterministic checks pass. Controlled SAVE vs SPEND fixture verified; Energy policy ownership made explicit; Link Shard accounting corrected; divergence count aligned with harness output; production squad-cap constant verified.
 - V14D Persistent Energy: `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves. Reset only on Restart / new Run. No storage cap.
@@ -65,89 +67,62 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active player-surface visual closeout — P1-V14F.1c
+## Active design — P1-V14G Energy Identity & Activation Grammar
 
 Purpose:
 
-**Close Battle Setup visual hierarchy and normal-Battle cast-state presentation without changing gameplay rules.**
+**Make each Energy communicate what it does, what it targets, when it can be cast, and when it is contextually relevant.**
 
-Required:
-- make `GameTopHUD` the sole owner of the Battle Setup player-facing top header band;
-- pass Battle Setup Wave / Threat context into `GameTopHUD` instead of rendering a second header in `BattleSetupView`;
-- render one primary Wave title and one Threat line;
-- remove duplicate fixture/threat title rendering;
-- show `ACTIVE x/4 · GRID 18` explicitly;
-- when Active Squad is full, idle empty grid positions must look reposition-only, not deployable;
-- simplify Reserve header and keep KO visually separate;
-- replace Setup raw Energy text with structured icon/count chips from EnergyQueue entries;
-- group duplicate ready Reserve bodies by beastId + STAR into presentation-only stack cards (`×N`);
-- preserve individual instance IDs and explicit per-body selection/expansion;
-- stack grouping MUST NOT reintroduce automatic STAR conversion;
-- eligible stack may expose manual existing `CONSOLIDATE → next STAR` action;
-- keep Setup Energy preview-only;
-- remove default STAR-consolidation instruction from Stored Energy panel;
-- show STAR consolidation only as contextual Reserve state;
-- keep `◆ LINK ×N` separate from Energy rows;
-- normal PrototypeFlowPanel Energy controls must use the same `castControlState` semantics as Showcase;
-- disabled normal controls must not invoke casts;
-- preserve all F.1b Energy-cast reliability rules.
+Design baseline only. Do not implement until the owner explicitly approves moving from spec to code.
 
-## F.1c non-goals
+Locked identities:
+- `energy-a → MEND`: heal frontmost living ally up to 30 HP.
+- `energy-b → RESCUE`: heal the most damaged living Mid/Back ally up to 30 HP.
+- `energy-c → BREAK`: deal 30 direct Energy damage to a living Frontliner.
+- `energy-d → PIERCE`: deal 30 direct Energy damage to a living Ranged enemy.
+
+Activation grammar:
+- Setup = preview only.
+- Running Battle = `DISABLED / READY / SUGGESTED`.
+- Paused / Win / Lose = disabled.
+- player chooses when to cast; no auto-cast.
+- successful effective result consumes exactly 1 selected charge.
+- failed / ineffective result consumes 0.
+- deterministic targeting remains model-owned.
+- no manual target selection in baseline.
+- V14G Energy Rush player pool uses A–D only.
+- energy-e/f remain historical generic IDs.
+
+Suggested conditions:
+- MEND: frontline missing >=30 HP or <=60% HP.
+- RESCUE: Diver pressure on Mid/Back or chosen target <=60% HP.
+- BREAK: 2+ living Frontliners.
+- PIERCE: living Ranged + living Frontliner.
+
+Threat teaching relationship:
+- Frontline Pressure → MEND / BREAK.
+- Backline Dive → RESCUE.
+- Protected Ranged → PIERCE.
+
+## V14G non-goals
 
 Do NOT implement:
-- new Energy mechanics;
-- new targeting;
+- more than four active tactical Energy types;
+- manual Energy target selection;
+- Energy cooldown;
 - Energy cap / decay;
 - Energy Combo;
+- Energy crafting / rarity / upgrades;
 - Squad Capacity upgrade;
-- STAR / Link rebalance;
-- enemy rebalance;
-- final art;
-- scene architecture rewrite.
+- revive / recovery;
+- shop / meta progression.
 
-## Required F.1c workflow
+## Workflow
 
-1. Read repo-local docs only.
-2. Inspect current BattleSetupView header, grid, Reserve tray, right CTA, consolidation inspector, ValidationScene BattleSetup constructor wiring, PrototypeFlowPanel, and EnergyQueue.
-3. Add structured Setup Energy entries rather than parsing formatted text.
-4. Implement the visual hierarchy cleanup.
-5. Move consolidation out of Stored Energy card into Reserve context.
-6. Add normal-Battle cast presentation parity.
-7. Add deterministic presentation checks.
-8. Run all historical regressions.
-9. Run `npm run check`.
-10. Run `npm run build`.
-11. Record live screenshots only if actually observed.
-12. STOP for owner screenshot review.
+1. Treat `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md` as the active design spec.
+2. Do not implement until owner explicitly approves code.
+3. Preserve V14D persistence and F.1 effective-result-first charge consumption.
+4. Keep the tactical Energy catalog centralized.
+5. Keep UI guidance descriptive, not automatic.
+6. Keep deterministic and live evidence separate.
 
-## Completion report
-
-Report:
-- final origin/main SHA
-- files changed
-- header cleanup
-- Active/Grid treatment
-- full-squad empty-cell treatment
-- Reserve/KO surface changes
-- Setup Energy structured inventory
-- Link resource presentation
-- consolidation contextual placement
-- normal Battle cast parity
-- deterministic checks
-- regressions
-- `npm run check`
-- `npm run build`
-- live status
-- known limitations
-
-Explicitly state:
-
-```text
-P1-V14F.1C ADDS NO GAMEPLAY MECHANIC.
-SETUP ENERGY USES STRUCTURED ICON/COUNT PRESENTATION.
-STAR CONSOLIDATION NO LONGER OCCUPIES THE ENERGY PANEL.
-ACTIVE SQUAD CAP REMAINS 4.
-FORMATION GRID REMAINS 18 POSITIONS.
-NORMAL AND SHOWCASE CAST CONTROLS SHARE ELIGIBILITY SEMANTICS.
-LIVE CLOSEOUT REMAINS OPEN UNLESS ACTUALLY RECORDED.
-```
