@@ -124,7 +124,7 @@ Combo quality
 
 ### P1-V14D — Persistent Energy / Save-vs-Spend
 
-Deferred / not started.
+**ACTIVE / owner authorized / code not implemented.**
 
 Test later:
 
@@ -170,8 +170,7 @@ Do not reconstruct damaged units from anonymous counts after Battle.
 
 ## Deferred complexity
 
-Still deferred:
-- P1-V14D — Persistent Energy (next gameplay slice / not started)
+Still deferred outside the active V14D slice:
 - Squad Capacity upgrades (not started)
 - new Tactical Energy types
 - revive / resting recovery
