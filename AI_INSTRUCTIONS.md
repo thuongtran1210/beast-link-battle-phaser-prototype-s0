@@ -18,109 +18,114 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active slice doc: `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-4. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-5. relevant historical docs
-6. current code/tests
+3. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+4. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+5. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+6. relevant historical docs
+7. current code/tests
 
 If repo docs and code conflict:
 - inspect current code
 - report the conflict
 - do not invent missing behavior
-- do not fetch Notion to resolve it unless the user explicitly requests that
+- do not fetch Notion unless the user explicitly asks
 
 ## Current project state
 
 - V11D tactical formation validation: owner live PASS for its tested ruleset.
-- V13 signatures exist but full live A/B validation remains open.
+- V13 signatures exist but full live A/B verification remains open.
 - V13A.1D Deployment Workspace UX remains not passed.
-- V14A multi-Wave flow is **owner-confirmed structurally correct enough to continue**.
-- Active implementation: **P1-V14B.1/B.2 — Run Roster, Partial Deployment & Attrition**.
+- V14A multi-Wave flow is owner-confirmed structurally correct enough to continue.
+- V14B.1/B.2 core RunRoster / partial deployment / attrition implementation exists.
+- Owner explicitly authorized starting **P1-V14B.3 — STAR Consolidation / Power Density**.
 - V14 remains Experimental / not adopted.
 
-## Current implementation state
+## B.1/B.2 baseline
 
-P1-V14B.1/B.2 core code is implemented on main through commit `6d1f40b`.
-
-Implemented:
-- partial deployment
-- Active Squad cap = 4 Experimental fixture
+Verified implementation baseline:
 - persistent RunRoster instance identity
+- Active Squad cap = 4 Experimental fixture
 - HP / KO persistence
 - Battle reconciliation by instance ID
 - Wave deployment reset
 - next Setup starts `ACTIVE 0 / 4`
 - old living units + new recruits coexist in Reserve
+- Reserve may remain non-empty when Battle starts
 
-Remaining gate:
-- owner live verification A–H
+Do not rewrite this architecture unless a concrete defect is found.
 
-Do not rewrite the core architecture unless live validation reveals a concrete defect.
+Owner-live A–H remains a separate evidence gate. Do not mark it PASS without explicit verification.
 
-## Required model direction
+## Active implementation — V14B.3
 
-Use a persistent Run Roster layer.
+### Core hypothesis
 
-Conceptually:
+**Higher STAR = power density per active slot.**
+
+Desired trade-off:
+- several 1★ bodies = breadth / coverage / more attack instances / more interception opportunities
+- higher STAR = stronger individual unit / stronger signature / better slot efficiency
+
+Neither option should be forced to win universally.
+
+### Current code defect for B.3
+
+Current Battle Setup still performs greedy automatic STAR conversion through `StarConverter.bulk(...)`.
+
+This means the player cannot choose:
 
 ```text
-Beast Rush / current STAR conversion
-→ Run Unit instances
-→ Reserve
-→ Active Formation
-→ Battle
-→ reconcile current HP by stable instanceId
-→ Reserve / next Wave
+3 × 1★
+vs
+1 × 2★
 ```
 
-Do not treat surviving units as anonymous counts after Battle.
+That decision must become explicit.
 
-## V14B.1
+### Required B.3 direction
 
-Implement:
-- partial legal deployment
-- Start Battle with non-empty Reserve
-- persistent Reserve across Waves
-- at least one living deployed unit required
-- optional Experimental Active Squad limit if needed for the test
-- one source of truth for Reserve / deployed / readiness
-
-## V14B.2
-
-Implement:
-- stable deterministic Run Unit instance IDs
-- persistent current HP
-- persistent KO state
-- battle spawn from currentHp
-- post-Battle HP reconciliation by instanceId
-- no free post-Wave heal
-- 0 HP => KO / unavailable
-- reset all temporary Battle state between Waves
-
-## Do not implement yet
-
-- STAR redesign/balance
-- STAR consolidation UI
-- Combo redesign
-- Link Shard
-- Energy persistence redesign
-- new Tactical Energy skills
-- revive/resting recovery
-- post-Wave heal rewards
-- items/traits/economy
-- procedural Waves
-- full deferred Setup UI redesign
+- stop automatic greedy consolidation during recruitment
+- recruit separate 1★ Run Unit instances
+- keep STAR cost structure 1 / 3 / 9
+- add optional Reserve-only consolidation
+- KO units cannot be ingredients
+- deployed units cannot be ingredients
+- preserve one deterministic primary instance ID where practical
+- preserve health condition ratio so consolidation is not a free heal
+- centralize STAR stat scaling
+- keep initial stat multipliers 1.00 / 1.80 / 3.20
+- scale existing Beast signatures by STAR without changing signature identity
+- keep Active Squad cap = 4
+- keep Formation Grid unchanged
+- preserve `GRID CAPACITY ≠ SQUAD CAPACITY`
+- validate Breadth vs Density against existing deterministic threat fixtures
 
 ## Architecture guardrails
 
 - Run state belongs outside presentation classes.
-- Run Roster owns cross-Wave player unit identity.
+- RunRoster owns cross-Wave unit identity and attrition.
 - BattleFormation owns current deployment, not long-term HP truth.
 - AutonomousBattleModel remains one Battle simulation.
-- Reconcile Battle results back to Run Roster explicitly.
+- Reconcile Battle results back to RunRoster explicitly.
 - UI must not become gameplay authority.
 - GAME and TEST HARNESS must share combat semantics.
-- Existing Beast signature mechanics remain unchanged.
+- STAR stat scaling must have one gameplay source of truth.
+- Existing signature identities remain unchanged.
+
+## B.3 non-goals
+
+Do NOT implement:
+- Squad Capacity upgrade
+- Combo redesign
+- Link Shard
+- Energy persistence redesign
+- new Tactical Energy types
+- revive / resting recovery
+- post-Wave healing rewards
+- items / equipment / traits
+- economy / meta progression
+- procedural Waves
+- final STAR evolution art
 
 ## Verification discipline
 
@@ -136,50 +141,55 @@ Keep these separate:
 
 Never infer a later state from an earlier one.
 
-## Required workflow
+## Required B.3 workflow
 
-1. Read only repository-local docs listed above.
-2. Inspect actual current V14A implementation before editing.
-3. Identify current ownership of:
-   - Wave state
-   - Beast queue/conversion
-   - formation
-   - battle unit creation
-   - Battle result
-   - HP reset
-   - Start Battle readiness
-4. State conflicts briefly.
-5. Implement B.1/B.2 only.
-6. Add deterministic checks.
-7. Run historical regressions.
-8. Run `npm run check`.
-9. Run `npm run build`.
-10. Live verify partial deployment + HP/KO persistence.
-11. Stop before B.3.
+1. Read repo-local sources only.
+2. Inspect current recruitment / STAR / RunRoster / Battle code.
+3. Remove auto-consolidation from recruitment.
+4. Implement manual deterministic Reserve-only consolidation.
+5. Preserve HP ratio and instance identity rules.
+6. Centralize STAR profile.
+7. Add STAR signature scaling fixture.
+8. Add deterministic B.3 checks.
+9. Run historical regressions.
+10. Run `npm run check`.
+11. Run `npm run build`.
+12. Live validate Breadth vs Density.
+13. Report if one strategy dominates.
+14. STOP before V14C.
 
 ## Completion report
 
 Report:
-- commit SHA
+- final commit SHA
 - files changed
-- Run Roster architecture
-- stable ID strategy
-- partial-deployment readiness rule
-- actual Active Squad limit used, if any
-- HP reconciliation path
-- KO behavior
-- per-Battle reset behavior
+- recruitment semantics
+- consolidation API
+- deterministic ingredient selection
+- instance-ID rule
+- HP-ratio rule
+- centralized STAR profile
+- exact stat multipliers
+- exact signature STAR values
+- consolidation UI behavior
+- Breadth live result
+- Density live result
+- injured consolidation result
+- cross-Wave STAR persistence
+- signature scaling result
+- multi-threat metrics
+- whether either strategy universally dominated
 - deterministic checks
-- historical regressions
+- regressions
 - `npm run check`
 - `npm run build`
-- Live A–H
 - known limitations
 
 Explicitly state:
 
 ```text
-P1-V14B.3 STAR REDESIGN NOT STARTED
+ACTIVE SQUAD CAP REMAINS 4
+SQUAD CAPACITY UPGRADE NOT STARTED
 P1-V14C COMBO REWORK NOT STARTED
 P1-V14D ENERGY PERSISTENCE NOT STARTED
 ```
