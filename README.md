@@ -156,3 +156,19 @@ npm run dev
 - Do not use UI state as gameplay authority.
 - Keep GAME and TEST HARNESS combat semantics shared.
 - Work only on the active slice unless explicitly asked otherwise.
+
+## Beast Rush UI validation
+
+**Beast Rush right rail information hierarchy: OWNER VISUAL PASS (2026-10-03).**
+
+Accepted direction:
+- live resource HUD instead of instruction panel
+- Combo meter/time first
+- compact Matches / Recruited counters
+- visual Beast Queue stacks with `×N` copy counts
+- compact event strip
+- no automatic-STAR implication in Beast Rush
+
+This is a presentation-direction pass, not final Cute Tactical Chibi art/asset readiness.
+
+Energy Rush has not yet inherited this right-rail redesign automatically.
