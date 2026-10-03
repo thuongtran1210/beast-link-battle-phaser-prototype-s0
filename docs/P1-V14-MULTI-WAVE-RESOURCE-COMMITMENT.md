@@ -197,6 +197,23 @@ Purpose:
 Read:
 `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 
+### P1-V14F.1c — Battle Setup Visual Closeout
+
+**ACTIVE player-surface visual closeout / owner authorized / code not started.**
+
+Purpose:
+- one clean Wave / Threat hierarchy;
+- explicit `ACTIVE x/4 · GRID 18`;
+- full-squad empty positions read as reposition-only;
+- structured Setup Energy icon/count inventory;
+- contextual STAR consolidation outside the Energy panel;
+- normal Battle cast-state parity with Showcase.
+
+No gameplay mechanic changes.
+
+Read:
+`docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+
 ### Future — Squad Capacity Upgrade
 
 Not started.
