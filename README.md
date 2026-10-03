@@ -2,7 +2,7 @@
 
 Phaser + TypeScript implementation used to develop and validate the current **Beast Link Battle** gameplay.
 
-The project now uses one player-facing **GAME** flow plus an internal **TEST HARNESS**. Separate Prototype / Showcase runtime modes are no longer the project direction.
+The project uses one player-facing **GAME** flow plus an internal **TEST HARNESS**. Separate Prototype / Showcase runtime modes are no longer the project direction.
 
 ## Source of truth
 
@@ -17,9 +17,9 @@ Gameplay rules are defined in Notion. Read these before changing gameplay behavi
 7. **03 — Validation Log — Beast Link Battle**
 8. Current code
 
-See `AI_INSTRUCTIONS.md` for the current implementation gate.
+See `AI_INSTRUCTIONS.md` before implementation work.
 
-## Current GAME flow
+## Current adopted structural flow
 
 ```text
 Beast Rush
@@ -30,41 +30,37 @@ Beast Rush
 → Restart
 ```
 
-The current build includes:
+Current Gameplay Spec v2 remains authoritative. Experimental variants do not change it automatically.
 
-- 6×6 Onet matching with ≤2-turn routing
+## Current implementation evidence
+
+The build currently includes:
+
+- 6×6 Onet matching
 - Beast Queue + STAR **1 / 3 / 9**
-- stored Energy carried into Battle
+- stored Energy
 - Tanker / Assassin / Ranger / Mage roles
 - 3×6 deployment grid used as starting formation
-- autonomous model-space combat after Battle starts
+- autonomous model-space movement
 - deterministic per-unit action timing
 - Tank interception / engagement
 - enemy Frontliner / Diver / Ranged archetypes
 - formation counterplay validation
 - combat readability feedback
 - Experimental Beast signatures
-- Battle Setup level/enemy validation tooling
+- enemy-level validation tooling
 - drag/reposition deployment interaction
 - deterministic regression checks
 
-## Current status
+### Closed tactical evidence
 
-### Closed tactical milestone
+**P1-V11D — Tactical Formation Validation** is recorded as owner live PASS for the tested ruleset.
 
-**P1-V11D — Tactical Formation Validation** is recorded as owner live PASS.
+It demonstrated that formation can affect battle trajectory when enemy pressure and squad state are controlled.
 
-The current ruleset demonstrated that:
+### Still-open V13 work
 
-- same enemy + different formation can create different battle trajectories
-- different enemy compositions create different formation pressure
-- Tank placement can protect or expose the backline
-- Assassin access changes against protected Ranged enemies
-- formation value can emerge spatially without row/class damage bonuses
-
-### Experimental Beast identity
-
-**P1-V13A — Beast Signature Identity**
+**P1-V13A Beast Signature Identity**
 
 Commit:
 
@@ -77,78 +73,117 @@ Experimental signatures:
 - Focus Shot
 - Arcane Bloom
 
-The implementation exists and deterministic checks were reported passing. Manual Tank / Assassin / Ranger / Mage A/B live verification remains open.
+Implementation exists; full manual signature A/B live validation is still open.
 
-### Setup / test tooling
+**P1-V13A.1D Deployment Workspace Redesign** remains **UI/UX FAIL / not passed**. It is currently deferred as UX debt rather than closed.
 
-**P1-V13A.1 — Enemy Board & Level Harness**
+## New active direction — P1-V14
 
-`e3b64a09520a20e2b0d48d6a2fb7532d923e7d81`
+The next core-loop hypothesis is:
 
-**P1-V13A.2 — Drag & Drop Deployment UX**
+**P1-V14 — Multi-Wave Resource Commitment**
 
-`b94ce842f1573253f9f60f4e799a77aebeb75a4c`
+The current single-Battle loop exposes four strategic gaps:
 
-These are implemented, but the current Battle Setup **has not passed UI/UX review**.
+1. Matching many Beast pairs can create enough player quantity to mask formation consequences.
+2. Beast Queue has little reason to hold resources because there is no later Battle.
+3. STAR 1 / 3 / 9 does not yet clearly show when one higher-STAR unit is preferable to several 1★ bodies.
+4. Combo mainly increases matching opportunity / quantity and does not yet have a distinct strategic role.
 
-Current problems include:
+### Experimental V14 roadmap
 
-- formation boards do not dominate the screen strongly enough
-- enemy archetypes still read too much like debug data
-- Beast dock and deployed state are not clear enough
-- Stored Energy uses too much Setup space
-- validation controls compete with player-facing information
-- enemy scenario authoring is not yet efficient enough for signature testing
+```text
+V14A — Multi-Wave Run Structure
+↓
+V14B — Beast Reserve + Active Squad Limit + STAR Consolidation
+↓
+V14C — Combo Rework: Preparation Efficiency
+↓
+V14D — Persistent Energy / Save-vs-Spend
+```
 
-## Current active gate
+None of these are adopted gameplay rules yet.
 
-**P1-V13A.1D — Deployment Workspace Redesign**
+## Active gate — P1-V14A
 
-Goals:
+**P1-V14A — Multi-Wave Run Structure** is the next implementation slice.
 
-- formation-first visual hierarchy
-- compact Beast dock
-- readable enemy tokens
-- obvious drag/drop deployment
-- one source of truth for board / dock / remaining count / Start Battle gating
-- exact Front/Mid/Back × Lane 1–6 deployment readability
-- internal Enemy Scenario Composer localized to TEST HARNESS only
+Structure only:
 
-Do **not** start P1-V13B Tactical Energy until the Setup UX gate and V13A live signature-testability gate are closed.
+```text
+Wave 1
+Beast Rush → Energy Rush → Battle Setup → Battle → Wave Result
+↓
+Wave 2
+Beast Rush → Energy Rush → Battle Setup → Battle → Wave Result
+↓
+Wave 3
+Beast Rush → Energy Rush → Battle Setup → Battle → Final Result
+```
+
+Initial validation pressure direction:
+
+- Wave 1 — Frontline Pressure
+- Wave 2 — Backline Dive
+- Wave 3 — Protected Ranged
+
+Do not implement V14B/V14C/V14D in the same slice.
+
+Specifically defer:
+
+- persistent Beast Reserve
+- Active Squad Limit
+- STAR consolidation redesign
+- Combo reward redesign
+- persistent Energy
+- persistent HP / death attrition
+- new Tactical Energy skills
+
+## V14 design direction
+
+### STAR
+
+Higher STAR is being explored as **power density per active slot**.
+
+Desired future trade-off:
+
+- several 1★ units → breadth, bodies, lane coverage
+- one higher-STAR unit → concentration, durability/output/signature strength, slot efficiency
+
+Exact active-squad size is not locked.
+
+### Combo
+
+Future V14C direction:
+
+- phase time independent from Combo
+- match count → quantity
+- Combo quality → efficiency / quality
+
+Candidate Beast/Energy Combo rewards are intentionally not locked yet.
+
+### Energy
+
+Future V14D direction:
+
+- preserve Energy across Waves
+- create **spend now vs save for later**
+
+This should be tested before adding many new Energy spell types.
 
 ## GAME vs TEST HARNESS
 
 ### GAME
 
-Player-facing flow.
-
-Enemy formation may be inspected, but is read-only.
-
-GAME must not expose:
-
-- add/remove enemy controls
-- archetype editing
-- custom enemy quantity
-- enemy scenario reset/clear tools
-- validation presets
-- internal debug authoring controls
+Player-facing flow. Enemy formation is readable but read-only.
 
 ### TEST HARNESS
 
-Internal designer/developer tooling around the same GAME systems.
+Internal designer/developer tooling around the same combat systems.
 
-It may provide:
+It may author deterministic enemy scenarios, but it must never become player-facing gameplay.
 
-- level fixtures
-- editable enemy scenario copies
-- add/remove/change enemy archetypes
-- exact deployment-slot authoring
-- deterministic custom scenarios
-- validation metrics
-
-TEST HARNESS must feed the same `EnemyFixture[] → AutonomousBattleModel` combat path as GAME.
-
-It is not a player feature.
+Both must feed the same `EnemyFixture[] → AutonomousBattleModel` path.
 
 ## Run locally
 
@@ -159,12 +194,10 @@ npm run build
 npm run dev
 ```
 
-There is currently no documented separate `dev:test` npm script in `package.json`. If an explicit Test Harness launch path is added, document it only after it exists in code.
-
 ## Development discipline
 
 - Current Gameplay Spec v2 remains the design source of truth.
-- Experimental variants are not automatically adopted gameplay rules.
-- Distinguish code existence, deterministic checks, build success, owner live verification, real-player evidence, and adopted design.
+- V14 is Experimental until evidence supports explicit adoption.
+- Keep implementation evidence separate from live verification and design adoption.
 - Do not infer gameplay rules from this README.
-- Do not expose internal Test Harness authoring as GAME functionality.
+- Do not mark deferred V13 UX/signature gates as passed.
