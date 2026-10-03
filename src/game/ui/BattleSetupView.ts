@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { type BattleFormation, type FormationSlot, type FormationUnit } from '../battle/BattleFormation';
 import type { EnemyFixture } from '../battle/AutonomousBattleModel';
-import { recommendedRows } from '../battle/BeastRoles';
+import { recommendedRows, signatureNameForBeast } from '../battle/BeastRoles';
 import { createBattleFieldLayout, enemySlotPosition, playerSlotPosition } from './BattleFieldLayout';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
@@ -246,6 +246,7 @@ export class BattleSetupView {
         HudTokens.colors.textGold,
         'bold',
       ).setOrigin(0.5);
+      const signature = this.text(x, y + 27, signatureNameForBeast(unit.beastId), 7, HudTokens.colors.textMuted, 'bold').setOrigin(0.5);
 
       if (isSelected && this.scene.tweens) {
         this.scene.tweens.add({
@@ -286,7 +287,8 @@ export class BattleSetupView {
       body.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
       icon.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
       starBadge.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
-      this.objects.push(body, icon, starBadge);
+      signature.setInteractive({ useHandCursor: true }).on('pointerup', selectSlot);
+      this.objects.push(body, icon, starBadge, signature);
       return;
     }
 
@@ -482,7 +484,7 @@ export class BattleSetupView {
 
     const letter = displayBeast(unit.beastId);
     const label = `Beast ${letter} · ${unit.role} · ${'★'.repeat(unit.star)}${selected ? ' [ACTIVE]' : ''}`;
-    const sub = `Rec: ${recommendedRows(unit.role)} row`;
+    const sub = `${signatureNameForBeast(unit.beastId)}  ·  Rec: ${recommendedRows(unit.role)} row`;
     const text = this.text(x + 44, y + 6, label, 11, selected ? '#38bdf8' : HudTokens.colors.textPrimary, selected ? 'bold' : '');
     const subText = this.text(x + 44, y + 24, sub, 10, HudTokens.colors.textMuted);
 

@@ -1,4 +1,21 @@
 export type BeastRole = 'Tanker' | 'Assassin' | 'Ranger' | 'Mage';
+export type BeastSignatureId = 'GuardianBrace' | 'AmbushStrike' | 'FocusShot' | 'ArcaneBloom';
+
+/** Experimental V13A identity data. Signatures deliberately belong to beasts, never roles. */
+export const P1V13A_BEAST_SIGNATURES: Readonly<Record<string, BeastSignatureId>> = {
+  'beast-a': 'GuardianBrace', 'beast-b': 'AmbushStrike', 'beast-c': 'FocusShot',
+  'beast-d': 'ArcaneBloom', 'beast-e': 'GuardianBrace', 'beast-f': 'FocusShot',
+};
+
+export function signatureForBeast(beastId: string): BeastSignatureId {
+  const signature = P1V13A_BEAST_SIGNATURES[beastId];
+  if (!signature) throw new Error(`No experimental P1-V13A signature mapping for ${beastId}.`);
+  return signature;
+}
+
+export function signatureNameForBeast(beastId: string): string {
+  return signatureForBeast(beastId).replace(/([A-Z])/g, ' $1').trim();
+}
 
 /** Experimental / prototype-only P1-S2 placeholder-content mapping. */
 const roles: Readonly<Record<string, BeastRole>> = {
