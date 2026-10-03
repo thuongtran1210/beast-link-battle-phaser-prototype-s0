@@ -17,4 +17,12 @@ export function runP1V14BChecks(): void {
   const capRoster = new RunRoster(); const capUnits = capRoster.recruit([1, 2, 3, 4, 5].map(() => ({ contentId: 'beast-c', star: 1 as const }))); const capFormation = new BattleFormation(capRoster.formationUnits()); const controller = new BattleSetupInteractionController(capFormation, (id) => capRoster.canDeploy(id), 4);
   capUnits.slice(0, 4).forEach((unit, index) => { controller.startDragFromTray(unit.instanceId); controller.commitDrop(`front-${index + 1}`, false); });
   controller.startDragFromTray(capUnits[4].instanceId); expect(controller.commitDrop('front-5', false).type === 'rejected', 'fifth living unit is rejected at placement time');
+  const carryRoster = new RunRoster(); const veterans = carryRoster.recruit([{ contentId: 'beast-a', star: 1 }, { contentId: 'beast-c', star: 1 }]); const beforeHp = veterans[0].currentHp - 12;
+  carryRoster.reconcile([{ ...battle.snapshot.units[0], unitId: veterans[0].instanceId, currentHp: beforeHp }]);
+  const oldFormation = new BattleFormation(carryRoster.formationUnits()); oldFormation.place(veterans[0].instanceId, 'front-3');
+  oldFormation.reset(); const nextFormation = new BattleFormation(carryRoster.formationUnits());
+  expect(nextFormation.units.every((unit) => unit.slotId === null), 'wave transition clears all deployment assignments');
+  expect(carryRoster.units.length === 2 && carryRoster.get(veterans[0].instanceId)?.currentHp === beforeHp, 'wave transition preserves roster count and HP');
+  const recruit = carryRoster.recruit([{ contentId: 'beast-b', star: 1 }])[0];
+  expect(nextFormation.units.filter((unit) => unit.slotId === null).length === 2 && carryRoster.canDeploy(recruit.instanceId), 'new recruit joins same Reserve for next setup');
 }

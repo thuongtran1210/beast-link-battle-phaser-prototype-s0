@@ -629,6 +629,8 @@ export class ValidationScene extends Phaser.Scene {
     this.energyTimer.reset();
     this.battleQueue.clear();
     this.energyQueue.reset();
+    // Deployment is per-Wave only. The roster retains body state, never slots.
+    this.formation?.reset();
     this.formation = undefined;
     this.battleModel = undefined;
     this.battleOutcome = undefined;
