@@ -72,6 +72,8 @@ Purpose:
 **Close Battle Setup visual hierarchy and normal-Battle cast-state presentation without changing gameplay rules.**
 
 Required:
+- make `GameTopHUD` the sole owner of the Battle Setup player-facing top header band;
+- pass Battle Setup Wave / Threat context into `GameTopHUD` instead of rendering a second header in `BattleSetupView`;
 - render one primary Wave title and one Threat line;
 - remove duplicate fixture/threat title rendering;
 - show `ACTIVE x/4 · GRID 18` explicitly;
