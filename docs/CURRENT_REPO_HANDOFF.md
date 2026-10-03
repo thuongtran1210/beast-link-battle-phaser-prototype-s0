@@ -15,7 +15,8 @@ Status: **Repository-local coding handoff**
 - V14E.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
 - P1-V14F.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL** — Energy cast reliability + initial Setup roster presentation. Remote main: `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`.
 - P1-V14F.1c: **PLAYER-SURFACE VISUAL CLOSEOUT / FORMATION-BOARD IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Battle Setup visual hierarchy remains a live screenshot gate. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
-- P1-V14G.1: **CORE IMPLEMENTED / DETERMINISTIC PASS / PLAYER-SURFACE G.2 PENDING / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Tactical Energy Core. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
+- P1-V14G.1: **CORE IMPLEMENTED / DETERMINISTIC PASS / REMOTE VERIFIED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Tactical Energy Core at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
+- P1-V14G.2: **ACTIVE IMPLEMENTATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED** — Tactical Energy Player Surface + G.1 semantic hardening. See `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -26,7 +27,8 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active gameplay design spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+3. active implementation slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+4. parent tactical Energy spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 4. player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
@@ -46,33 +48,39 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14G — Energy Identity & Activation Grammar**
+**P1-V14G.2 — Tactical Energy Player Surface + G.1 Semantic Hardening**
 
-Status: **CORE IMPLEMENTED / deterministic pass / player-surface G.2 pending / live not recorded / Experimental / not adopted**
+Status: **ACTIVE IMPLEMENTATION SLICE / owner authorized / code not started / Experimental / not adopted**
 
-Owner-confirmed problem:
-- persistent Energy has save-vs-spend value, but individual Energy IDs have no meaningful tactical identity;
-- the player cannot tell which Energy to use, what it affects, or when it is relevant.
+Verified G.1 remote baseline:
 
-Locked baseline:
-- `energy-a → MEND`: frontmost living ally heal up to 30 HP.
-- `energy-b → RESCUE`: most damaged living Mid/Back ally heal up to 30 HP.
-- `energy-c → BREAK`: 30 direct Energy damage to a living Frontliner.
-- `energy-d → PIERCE`: 30 direct Energy damage to a living Ranged enemy.
-- Battle states: `DISABLED / READY / SUGGESTED`.
-- SUGGESTED is guidance only; it never auto-casts.
-- Setup remains preview-only.
-- Battle Running is the cast window; paused / terminal Battle disables cast.
-- successful effective cast consumes exactly 1 selected charge; failed / ineffective cast consumes 0.
-- deterministic target selection remains model-owned; no manual target selection in baseline.
-- V14G Energy Rush player pool uses A–D only.
-- energy-e/f remain historical generic compatibility IDs.
-- no Energy cap, decay, cooldown, Combo, crafting, rarity, or upgrade in this baseline.
+`1102a0771c1c086a2bc85b30bd57c449877aba7d`
+
+G.1 core exists:
+- A=MEND;
+- B=RESCUE;
+- C=BREAK;
+- D=PIERCE;
+- model-owned tactical eligibility / cast result;
+- A–D Energy Rush pool;
+- E/F historical compatibility;
+- effective result consumes exactly 1 selected charge;
+- no auto-cast / no ranking.
+
+Current player-surface mismatch:
+- `ValidationScene.castEnergy()` still calls the legacy Frontline Heal result rather than `castTacticalEnergy()`;
+- normal Battle still says every Energy is Frontline Heal / `CAST HEAL`;
+- Showcase still shows letter IDs and a universal frontline-heal hint;
+- Setup still prioritizes A/B/C/D shorthand rather than MEND / RESCUE / BREAK / PIERCE;
+- READY / SUGGESTED / DISABLED tactical semantics are not yet surfaced.
+
+G.2 also hardens one G.1 edge:
+- RESCUE Diver-pressure suggestion must trigger when ANY living Diver targets/engages ANY living Mid/Back body, even if RESCUE chooses a different more-damaged Mid/Back heal target.
 
 Read:
-`docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+`docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
 
-F.1c visual work remains a separate live screenshot closeout and is not silently marked PASS.
+F.1c visual screenshot closeout remains separately open.
 
 ## B.1/B.2 implementation baseline
 
@@ -168,6 +176,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
 - `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 - `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 - `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
