@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { type BattleFormation, type FormationSlot, type FormationUnit } from '../battle/BattleFormation';
-import type { EnemyFixture } from '../battle/AutonomousBattleModel';
+import type { EnemyArchetype, EnemyFixture } from '../battle/AutonomousBattleModel';
 import { recommendedRows, signatureNameForBeast } from '../battle/BeastRoles';
 import { createBattleFieldLayout, enemySlotPosition, playerSlotPosition } from './BattleFieldLayout';
 import { HudTokens, drawCard } from './layout/HudTokens';
@@ -27,6 +27,7 @@ export class BattleSetupView {
   private selectedUnitId: string | null = null;
   private unplacedPage = 0;
   private readonly maxCardsPerPage = 4;
+  private enemyTool: EnemyArchetype | 'Erase' = 'Frontliner';
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -41,6 +42,7 @@ export class BattleSetupView {
     private readonly activePresetKey?: 'A' | 'B',
     private readonly onSelectPresetA?: () => void,
     private readonly onSelectPresetB?: () => void,
+    private readonly onEnemyBoardEdit?: (tool: EnemyArchetype | 'Erase', row: FormationSlot['row'], column: number) => void,
   ) {}
 
   static computeLayout(viewportHeight = 720): BattleSetupLayoutMetrics {
@@ -166,6 +168,14 @@ export class BattleSetupView {
     this.objects.push(divider);
 
     const rows: Array<FormationSlot['row']> = ['Front', 'Mid', 'Back'];
+    if (this.onEnemyBoardEdit) {
+      this.text(layout.enemyFrontX + 24, layout.topLaneY - 70, 'ENEMY TOOLS:', 9, HudTokens.colors.textMuted, 'bold');
+      (['Frontliner', 'Diver', 'Ranged', 'Erase'] as const).forEach((tool, index) => {
+        const short = tool === 'Frontliner' ? 'FRONT' : tool === 'Ranged' ? 'RANGE' : tool.toUpperCase();
+        const label = this.text(layout.enemyFrontX + 94 + index * 45, layout.topLaneY - 70, short, 8, this.enemyTool === tool ? '#fbbf24' : '#94a3b8', this.enemyTool === tool ? 'bold' : '');
+        label.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.enemyTool = tool; this.render(); });
+      });
+    }
     rows.forEach((row) => {
       const playerDepth = playerSlotPosition(layout, row, 1);
       const enemyDepth = enemySlotPosition(layout, row, 1);
@@ -187,6 +197,7 @@ export class BattleSetupView {
           .rectangle(enemyPos.x, enemyPos.y, layout.slotWidth, layout.slotHeight, 0x1e293b, 0.6)
           .setStrokeStyle(1.5, 0xef4444, 0.4);
         this.objects.push(enemySlot);
+        if (this.onEnemyBoardEdit) enemySlot.setInteractive({ useHandCursor: true }).on('pointerup', () => this.onEnemyBoardEdit!(this.enemyTool, row, column));
 
         const formationSlot = this.formation.slots.find((slot) => slot.row === row && slot.column === column);
         if (formationSlot) this.renderPlayerSlot(formationSlot, playerPos.x, playerPos.y, layout);
@@ -205,11 +216,10 @@ export class BattleSetupView {
       const archetype = enemy.archetype ?? 'Frontliner';
       const strokeColor =
         archetype === 'Diver' ? 0xa855f7 : archetype === 'Ranged' ? 0x06b6d4 : 0xf87171;
-      const archetypeTag =
-        archetype === 'Frontliner' ? 'FRONT' : archetype.toUpperCase();
+      const archetypeTag = archetype === 'Frontliner' ? 'SHIELD FRONT' : archetype === 'Diver' ? 'DAGGER DIVER' : 'BOW RANGED';
 
       const body = this.scene.add
-        .rectangle(pos.x, pos.y, 48, 44, 0x7f1d1d, 0.95)
+        .rectangle(pos.x, pos.y, archetype === 'Frontliner' ? 54 : archetype === 'Diver' ? 42 : 36, 44, 0x7f1d1d, 0.95)
         .setStrokeStyle(1.5, strokeColor);
 
       const label = this.text(

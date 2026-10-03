@@ -20,9 +20,13 @@ import {
   P1V11C_FIXTURE_A_FRONTLINE,
   P1V11C_FIXTURE_B_DIVERS,
   P1V11C_FIXTURE_C_PROTECTED_RANGED,
+  P1V13A_SIGNATURE_RULES,
   type EnemyFixture,
   SIMULATION_STEP,
 } from './battle/AutonomousBattleModel';
+import { EnemyBoardState, fixturesForLevel, P1V13A1_LEVELS } from './battle/ValidationLevels';
+import { runP1V13AChecks } from './battle/P1V13AChecks';
+import { runP1V13A1Checks } from './battle/P1V13A1Checks';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
 import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
@@ -104,6 +108,9 @@ const ENEMY_FIXTURE_PRESETS: ReadonlyArray<{
     presetKey: 'protected-ranged',
     fixtures: P1V11C_FIXTURE_C_PROTECTED_RANGED,
   },
+  {
+    id: 'mixed-threat', name: 'Mixed Threat', tag: '1 Front, 1 Diver, 1 Ranged', threatType: 'MIXED PRESSURE', presetKey: 'frontline-pressure', fixtures: fixturesForLevel(P1V13A1_LEVELS[3]),
+  },
 ];
 
 /**
@@ -112,6 +119,7 @@ const ENEMY_FIXTURE_PRESETS: ReadonlyArray<{
  */
 export class ValidationScene extends Phaser.Scene {
   private enemyFixturePresetIndex = 0;
+  private enemyBoard?: EnemyBoardState;
   private activePresetKey?: 'A' | 'B';
   private readonly fixtureRunHistory = new Map<
     string,
@@ -184,6 +192,8 @@ export class ValidationScene extends Phaser.Scene {
       runP1V11CChecks();
       runP1V11DChecks();
       runP1V12AChecks();
+      runP1V13AChecks();
+      runP1V13A1Checks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
@@ -228,7 +238,10 @@ export class ValidationScene extends Phaser.Scene {
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
     // Keyboard shortcuts
-    this.input.keyboard?.on('keydown-F1', () => this.toggleShowcaseMode());
+    this.input.keyboard?.on('keydown-F1', () => this.setEnemyFixturePreset(0));
+    this.input.keyboard?.on('keydown-F2', () => this.setEnemyFixturePreset(1));
+    this.input.keyboard?.on('keydown-F3', () => this.setEnemyFixturePreset(2));
+    this.input.keyboard?.on('keydown-F4', () => this.setEnemyFixturePreset(3));
     this.input.keyboard?.on('keydown-SPACE', () => this.toggleShowcasePause());
     this.input.keyboard?.on('keydown-H', () => this.toggleShowcaseCleanFrame());
     this.input.keyboard?.on('keydown-E', () => this.cycleEnemyFixture());
@@ -456,22 +469,25 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.formation) return;
     this.battleSetupView?.destroy();
     const activePreset = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
+    const level = P1V13A1_LEVELS[this.enemyFixturePresetIndex];
+    this.enemyBoard ??= new EnemyBoardState(level);
     this.battleSetupView = new BattleSetupView(
       this,
       this.formation,
-      activePreset.fixtures,
+      this.enemyBoard.fixtures,
       () => this.storedEnergyLines(),
       () => this.startBattle(),
       () => {
         this.activePresetKey = undefined;
         this.metrics.arrangementChanged();
       },
-      activePreset.name,
+      `LEVEL ${this.enemyFixturePresetIndex + 1} — ${level.name}${this.enemyBoard.isCustomized ? ' [CUSTOMIZED]' : ''}`,
       () => this.cycleEnemyFixture(),
-      activePreset.threatType,
+      `Threat: ${level.threatLabel}`,
       this.activePresetKey,
       () => this.loadFormationPreset('A'),
       () => this.loadFormationPreset('B'),
+      (tool, row, column) => this.editEnemyBoard(tool, row, column),
     );
     this.battleSetupView.render();
     this.syncTopHud();
@@ -493,6 +509,7 @@ export class ValidationScene extends Phaser.Scene {
     this.enemyFixturePresetIndex =
       ((index % ENEMY_FIXTURE_PRESETS.length) + ENEMY_FIXTURE_PRESETS.length) %
       ENEMY_FIXTURE_PRESETS.length;
+    this.enemyBoard = new EnemyBoardState(P1V13A1_LEVELS[this.enemyFixturePresetIndex]);
     if (this.phaseController.phase === GamePhase.BattleSetup && this.formation) {
       this.renderBattleSetup();
     }
@@ -502,13 +519,18 @@ export class ValidationScene extends Phaser.Scene {
     this.setEnemyFixturePreset(this.enemyFixturePresetIndex + 1);
   }
 
+  private editEnemyBoard(tool: import('./battle/AutonomousBattleModel').EnemyArchetype | 'Erase', row: 'Front' | 'Mid' | 'Back', column: number): void {
+    if (!this.enemyBoard) return;
+    const changed = tool === 'Erase' ? this.enemyBoard.erase(row, column) : this.enemyBoard.place(tool, row, column);
+    if (changed) this.renderBattleSetup();
+  }
+
   private enterBattle(): void {
     if (!this.formation) return;
-    const activePreset = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
     this.battleModel = new AutonomousBattleModel(
       this.formation,
-      activePreset.fixtures,
-      P1V11C_ARCHETYPE_RULES,
+      this.enemyBoard?.fixtures ?? fixturesForLevel(P1V13A1_LEVELS[this.enemyFixturePresetIndex]),
+      P1V13A_SIGNATURE_RULES,
     );
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
