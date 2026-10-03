@@ -7,102 +7,72 @@ Implementation evidence:
 - P1-V13A.1 Enemy Board & Level Harness: `e3b64a09520a20e2b0d48d6a2fb7532d923e7d81`
 - P1-V13A.2 Drag & Drop Deployment UX: `b94ce842f1573253f9f60f4e799a77aebeb75a4c`
 
-## Why it exists
+## Purpose
 
-Beast signature and formation testing requires repeatable enemy compositions and starting positions.
-
-The tool exists so a designer/tester can author deterministic combat scenarios without editing TypeScript for every test.
+The Test Harness exists so a designer can create deterministic enemy scenarios without editing source for every validation case.
 
 It is not a gameplay feature.
 
 ## Architecture boundary
 
-The project now uses only:
+The project uses only:
 
 - **GAME**
 - **TEST HARNESS**
 
-Separate Prototype / Showcase runtime concepts are retired.
+GAME enemy formation is read-only.
 
-### GAME
+TEST HARNESS may author scenarios, but must feed the same combat model.
 
-Enemy formation is player-readable but **read-only**.
-
-GAME may show:
-
-- Level name
-- enemy composition
-- Frontliner / Diver / Ranged identity
-- starting formation
-- threat information
-
-GAME must not expose:
-
-- add enemy
-- remove enemy
-- change archetype
-- enemy quantity authoring
-- clear/reset fixture editor controls
-- custom enemy deployment editing
-- validation presets
-
-### TEST HARNESS
-
-May add internal authoring around the same Battle Setup/combat systems.
-
-Required scenario-composer direction:
+## Required scenario-composer direction
 
 - immutable `LevelDefinition`
 - editable scenario copy
 - stable unique enemy instance IDs
 - add/remove enemies
 - change archetype
-- multiple instances of the same archetype
+- multiple instances of one archetype
 - exact Front/Mid/Back × Lane 1–6 starting slots
 - visible unplaced Enemy Bench
 - deterministic custom scenario
 - reset to original LevelDefinition
 - actual `EnemyFixture[]` generated from edited state
 
-Do not add arbitrary world-space X/Y placement. The grid is the exact deployment language; autonomous movement begins after Battle starts.
+Do not add arbitrary world-space X/Y placement.
 
-## Shared combat path
+## Current status
 
-Both contexts must use the same combat implementation.
+The existing Setup/Test Harness UI did not pass owner UX review.
 
-```text
-GAME
-LevelDefinition
-→ EnemyFixture[]
-→ AutonomousBattleModel
+Known issues include:
 
-TEST HARNESS
-LevelDefinition
-→ EditableEnemyScenario
-→ EnemyFixture[]
-→ AutonomousBattleModel
-```
+- debug-like enemy tokens
+- weak formation hierarchy
+- oversized Beast dock
+- ambiguous deployment-state communication
+- Stored Energy consuming too much Setup space
+- test controls competing with GAME information
 
-Do not fork battle rules for test tooling.
+`P1-V13A1D-DEPLOYMENT-WORKSPACE-UX.md` records the redesign requirement.
 
-## Current UX finding
+That UX slice remains **not passed**, but it is temporarily deferred while P1-V14 tests the more fundamental multi-Wave resource horizon.
 
-The current implemented setup tooling is not sufficient for efficient live signature validation.
+## V14 relationship
 
-Owner screenshot review on 2026-10-03 identified:
+The Test Harness will still be useful for V14 because each Wave needs controlled deterministic enemy pressure.
 
-- enemy tokens still feel like debug stat cards
-- test controls compete with Battle Setup
-- enemy authoring source/palette is not visually connected enough to Enemy Formation
-- formation hierarchy is weak
-- Beast dock is oversized
-- deployed vs undeployed state communication needs auditing
-- Stored Energy occupies too much Setup space
+However, V14A must not require the full composer redesign.
 
-The next active UX slice is documented in `P1-V13A1D-DEPLOYMENT-WORKSPACE-UX.md`.
+Use the smallest existing deterministic fixture path that can reliably create:
+
+- Frontline Pressure
+- Backline Dive
+- Protected Ranged
+
+Do not expand test-tool UI scope inside V14A unless necessary to run the Wave sequence.
 
 ## Test-only requirement
 
-Any future Enemy Scenario Composer must be clearly marked **INTERNAL TEST** and must disappear completely from normal GAME UI.
+Enemy authoring remains **INTERNAL TEST** only.
 
-This includes keyboard shortcuts and invisible authoring affordances: non-test runs must not be able to mutate enemy scenarios through hidden controls.
+Normal GAME must not expose add/remove/edit shortcuts or hidden scenario mutation.
