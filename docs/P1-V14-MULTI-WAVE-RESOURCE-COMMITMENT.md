@@ -243,6 +243,23 @@ V14G baseline:
 Read:
 `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 
+### P1-V14G.2 — Tactical Energy Player Surface
+
+**ACTIVE implementation slice / owner authorized / code not started / Experimental / not adopted.**
+
+G.1 core is implemented at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
+
+G.2:
+- hardens RESCUE Diver-pressure suggestion;
+- routes player casts through tactical Energy model authority;
+- surfaces MEND / RESCUE / BREAK / PIERCE identities;
+- surfaces DISABLED / READY / SUGGESTED;
+- provides actual target heal/damage feedback;
+- keeps SUGGESTED manual and non-ranking.
+
+Read:
+`docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+
 ### Future — Squad Capacity Upgrade
 
 Not started.
