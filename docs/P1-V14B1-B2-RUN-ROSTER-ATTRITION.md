@@ -16,6 +16,30 @@ Coding agents must read:
 
 The repository docs have been synchronized for this slice.
 
+## Implementation Evidence — 6d1f40b
+
+GitHub main includes:
+
+`6d1f40b2b4fe97d0b4e0b74e65fc74048acec4b1` — `fix(run): clear wave deployment while preserving roster`
+
+Verified from the commit diff:
+- Wave transition calls `formation.reset()` before rebuilding Setup.
+- deployment slots are per-Wave only.
+- Run Roster survives the Wave transition.
+- deterministic checks cover:
+  - deployment assignments cleared
+  - roster count preserved
+  - injured HP preserved
+  - new recruit joins the same Reserve
+  - placement-time rejection of a fifth active unit
+
+Owner-reported command evidence:
+- `npm run check` PASS
+- `npm run build` PASS
+
+**Status remains Active Experimental / not adopted.**
+Live A–H are still required before B.1/B.2 can be marked owner-live PASS.
+
 ## Owner evidence
 
 P1-V14A multi-Wave flow has been owner-confirmed as structurally correct enough to continue.
@@ -193,12 +217,24 @@ For non-final Wave clear:
 Battle ends
 → reconcile player unit HP into Run Roster
 → clear Battle-only runtime state
+→ clear ALL deployment / formation slot assignments
 → Wave Result
 → next Beast Rush / preparation
 → preserve surviving Run Roster
-→ add any newly recruited units according to current recruitment flow
-→ Battle Setup
+→ add new recruits into the same Run Roster
+→ Battle Setup starts ACTIVE 0 / 4
+→ player deliberately selects the next Active Squad
 ```
+
+Core rule:
+
+```text
+PERSIST UNIT BODY STATE
+DO NOT PERSIST DEPLOYMENT STATE
+```
+
+Persist: instance ID, beast identity, STAR, current HP, KO.
+Reset each Wave: active membership, formation slot, grid position.
 
 V14A originally reset per-Wave Beast resources to isolate structure.
 
