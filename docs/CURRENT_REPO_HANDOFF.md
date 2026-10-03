@@ -14,7 +14,8 @@ Status: **Repository-local coding handoff**
 - V14E: **IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — remote baseline `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`.
 - V14E.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
 - P1-V14F.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL** — Energy cast reliability + initial Setup roster presentation. Remote main: `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`.
-- P1-V14F.1c: **ACTIVE PLAYER-SURFACE VISUAL CLOSEOUT / P FORMATION-BOARD IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Battle Setup visual hierarchy, structured Stored Energy, contextual consolidation, and normal-Battle cast-state parity. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
+- P1-V14F.1c: **PLAYER-SURFACE VISUAL CLOSEOUT / FORMATION-BOARD IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Battle Setup visual hierarchy remains a live screenshot gate. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
+- P1-V14G: **ACTIVE DESIGN SPEC / OWNER AUTHORIZED / CODE NOT STARTED / EXPERIMENTAL / NOT ADOPTED** — Energy Identity & Activation Grammar. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -25,7 +26,8 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+3. active gameplay design spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+4. player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
@@ -44,28 +46,33 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14F.1c — Battle Setup Visual Closeout**
+**P1-V14G — Energy Identity & Activation Grammar**
 
-Status: **ACTIVE / owner authorized / code not started / Experimental / not adopted**
+Status: **ACTIVE DESIGN SPEC / owner authorized / code not started / Experimental / not adopted**
 
-Owner screenshot after remote F.1 baseline `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8` confirms logic is improved but Setup is still visually noisy.
+Owner-confirmed problem:
+- persistent Energy has save-vs-spend value, but individual Energy IDs have no meaningful tactical identity;
+- the player cannot tell which Energy to use, what it affects, or when it is relevant.
 
-Remaining closeout targets:
-- establish a single header owner: `GameTopHUD` owns the Battle Setup top band; `BattleSetupView` must not render a second Wave/Threat header into the same y≈0–70 area;
-- one primary Wave title + one Threat line; remove duplicate fixture/threat presentation;
-- show `ACTIVE x/4 · GRID 18` as one clear status;
-- at full squad, empty grid cells read as reposition-only tactical positions;
-- simplify Reserve header;
-- replace raw `energy-a:1` text with structured Energy icon/count chips;
-- collapse duplicate Reserve presentation into same-Beast/same-STAR stack cards such as `IRONCLAD ★ ×3` while preserving individual RunRoster identities and manual STAR consolidation;
-- remove idle STAR-consolidation instruction from Stored Energy panel;
-- move STAR consolidation to contextual Reserve selection state;
-- keep Link Shard as its own resource chip;
-- make normal PrototypeFlowPanel cast controls derive the same disabled/enabled state as Showcase;
-- no gameplay/economy changes.
+Locked baseline:
+- `energy-a → MEND`: frontmost living ally heal up to 30 HP.
+- `energy-b → RESCUE`: most damaged living Mid/Back ally heal up to 30 HP.
+- `energy-c → BREAK`: 30 direct Energy damage to a living Frontliner.
+- `energy-d → PIERCE`: 30 direct Energy damage to a living Ranged enemy.
+- Battle states: `DISABLED / READY / SUGGESTED`.
+- SUGGESTED is guidance only; it never auto-casts.
+- Setup remains preview-only.
+- Battle Running is the cast window; paused / terminal Battle disables cast.
+- successful effective cast consumes exactly 1 selected charge; failed / ineffective cast consumes 0.
+- deterministic target selection remains model-owned; no manual target selection in baseline.
+- V14G Energy Rush player pool uses A–D only.
+- energy-e/f remain historical generic compatibility IDs.
+- no Energy cap, decay, cooldown, Combo, crafting, rarity, or upgrade in this baseline.
 
 Read:
-`docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+`docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+
+F.1c visual work remains a separate live screenshot closeout and is not silently marked PASS.
 
 ## B.1/B.2 implementation baseline
 
@@ -161,6 +168,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 - `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 - `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 - `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
