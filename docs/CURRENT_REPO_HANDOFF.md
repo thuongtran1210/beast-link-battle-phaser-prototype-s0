@@ -51,6 +51,7 @@ Status: **ACTIVE / owner authorized / code not started / Experimental / not adop
 Owner screenshot after remote F.1 baseline `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8` confirms logic is improved but Setup is still visually noisy.
 
 Remaining closeout targets:
+- establish a single header owner: `GameTopHUD` owns the Battle Setup top band; `BattleSetupView` must not render a second Wave/Threat header into the same y≈0–70 area;
 - one primary Wave title + one Threat line; remove duplicate fixture/threat presentation;
 - show `ACTIVE x/4 · GRID 18` as one clear status;
 - at full squad, empty grid cells read as reposition-only tactical positions;
