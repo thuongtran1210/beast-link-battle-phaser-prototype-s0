@@ -10,8 +10,8 @@ Status: **Repository-local coding handoff**
 - V14C.1: **IMPLEMENTED**; deterministic/build evidence PASS; owner-live open.
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
-- V14C.1a.1: **ACTIVE CLOSEOUT SLICE** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
-- V14D: **NEXT GAMEPLAY SLICE** / not started.
+- V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
+- V14D: **ACTIVE GAMEPLAY SLICE / OWNER AUTHORIZED / NOT IMPLEMENTED** — Persistent Energy / Save-vs-Spend. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -22,35 +22,62 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-7. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-8. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-9. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-10. relevant historical slice docs
-11. current code/tests
+3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+8. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+9. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+10. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+11. relevant historical slice docs
+12. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
-**P1-V14C.1a.1 — Timing State Hardening & Repo Closeout (Active Closeout Slice)**
+**P1-V14D — Persistent Energy / Save-vs-Spend Across Waves**
 
-Technical closeout slice following P1-V14C.1a before P1-V14D Persistent Energy:
-- Fixes state machine defect where invoking `start()` on an `isEnded` timer improperly reloaded `durationSeconds` (12.0s) and reactivated the phase countdown.
-- Enforces strict terminal state machine for both `BeastRushPhaseTimer` and `EnergyRushTimer`:
-  - `READY`: `isReady = true`, `isActive = false`, `isEnded = false`, `remainingSeconds = 12.0`
-  - `READY start()` → `ACTIVE`
-  - `ACTIVE`: repeated `start()` is a NO-OP; `update()` decrements countdown normally
-  - At 0: → `ENDED`; single end event fires exactly once
-  - `ENDED`: `start()` is a strict NO-OP; `update()` is a NO-OP; `remainingSeconds` stays 0
-  - Only `reset()` returns `ENDED → READY 12.0s`
-- Preserves all C.1a, C.1, C.2, and B.3 invariants.
-- Deterministic checks (26 checks across Beast and Energy timers) added in `P1V14C1aChecks.ts`.
-- Next gameplay slice: `P1-V14D — Persistent Energy` (not started).
-- Squad Capacity Upgrade: not started.
+Owner authorized progression into V14D after C.1a.1 closeout implementation.
+
+Core hypothesis:
+
+```text
+spend Energy now
+→ protect current roster / reduce current attrition
+
+vs
+
+save unused Energy
+→ preserve tactical healing for a later Wave
+```
+
+Locked V14D baseline:
+- `EnergyQueue` remains the single source of truth.
+- Unused charges persist across Wave transitions.
+- Valid Energy match still grants exactly +1 matched-ID charge.
+- Successful Battle cast still consumes exactly 1 selected-ID charge.
+- Restart / new Run clears Energy.
+- No Energy decay.
+- No automatic refill.
+- No new Energy storage cap in V14D baseline.
+- Do NOT reuse historical `RuleConfig.energyMax = 20` as a P1 persistent-charge cap.
+- Preserve C.1a READY → first valid Energy match → ACTIVE timing.
+- Preserve C.1a.1 terminal ENDED state.
+- No new Energy types / Combo / economy in this slice.
+
+Primary implementation defect to change:
+
+```ts
+resetWavePreparation()
+→ currently calls energyQueue.reset()
+```
+
+V14D must preserve `EnergyQueue` across Wave transition while `restartRun()` continues to clear it.
+
+Read:
+`docs/P1-V14D-PERSISTENT-ENERGY.md`
 
 ## B.1/B.2 implementation baseline
 
@@ -110,14 +137,14 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 - Implemented / deterministic PASS / owner-live open.
 
 ### P1-V14C.1a.1 — Timing State Hardening & Repo Closeout
-- Active closeout slice.
 - Terminal state rule enforced: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0.
 - Only `reset()` returns `ENDED → READY 12.0s`.
-- Implemented / deterministic PASS.
+- Remote implementation verified at `1833f5a746cc414e5fdfc489b244c7969a61670c`.
+- Deterministic/check/build evidence PASS per implementation report; live browser closeout not recorded.
 
-## Next Gameplay Slices & Deferred Complexity
+## Active / Deferred Gameplay Slices
 
-- **P1-V14D — Persistent Energy**: Next gameplay slice. NOT STARTED.
+- **P1-V14D — Persistent Energy**: ACTIVE / owner authorized / code not implemented.
 - **Squad Capacity Upgrade**: Future experiment. NOT STARTED.
 - **Still deferred**:
   - new Tactical Energy types
@@ -137,6 +164,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14D-PERSISTENT-ENERGY.md`
 - `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 - `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 - `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
