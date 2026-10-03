@@ -1,6 +1,6 @@
 # P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability
 
-Status: **ACTIVE PLAYER-SURFACE CORRECTIVE SLICE / OWNER AUTHORIZED / CODE NOT STARTED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **PARTIALLY IMPLEMENTED — Energy cast reliability complete; Battle Setup visual correction remains pending / Experimental / not adopted**.
 
 ## Why F.1 Exists
 
