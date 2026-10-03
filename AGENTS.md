@@ -19,12 +19,13 @@ Do not infer gameplay rules from art documentation.
 
 Read and obey:
 
-1. `ART_AGENT_INSTRUCTIONS.md`
-2. `art/style/STYLE_BIBLE.md`
-3. `art/style/STYLE_LOCK_PROMPT.md`
-4. `art/style/BEAST_VISUAL_GRAMMAR.md` or `art/style/ENEMY_VISUAL_GRAMMAR.md`
-5. `art/style/ASSET_QA_CHECKLIST.md`
-6. `art/style/ASSET_MANIFEST.md`
+1. Notion: **05 — Art Direction & AI Asset Style Lock — Cute Tactical Chibi**
+2. `ART_AGENT_INSTRUCTIONS.md`
+3. `art/style/STYLE_BIBLE.md`
+4. `art/style/STYLE_LOCK_PROMPT.md`
+5. `art/style/BEAST_VISUAL_GRAMMAR.md` or `art/style/ENEMY_VISUAL_GRAMMAR.md`
+6. `art/style/ASSET_QA_CHECKLIST.md`
+7. `art/style/ASSET_MANIFEST.md`
 
 Do not generate a full roster before a Master Reference is explicitly owner-approved.
 
