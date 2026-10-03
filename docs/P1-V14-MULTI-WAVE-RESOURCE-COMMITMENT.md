@@ -146,6 +146,19 @@ Implementation baseline:
 Read:
 `docs/P1-V14D-PERSISTENT-ENERGY.md`
 
+### P1-V14E — Multi-Wave Resource Commitment Integration Validation
+
+**Next validation slice / design active / code not started.**
+
+Purpose:
+- validate the current V14 systems together across the existing 3-Wave horizon;
+- prove that player commitments create persistent, readable consequences;
+- add no new resource mechanic or balance layer;
+- do not rank strategies or require a universal winner.
+
+Read:
+`docs/P1-V14E-INTEGRATION-VALIDATION.md`
+
 ### Future — Squad Capacity Upgrade
 
 Not started.
@@ -180,11 +193,7 @@ Do not reconstruct damaged units from anonymous counts after Battle.
 
 ## Deferred complexity
 
-<<<<<<< HEAD
-Still deferred:
-=======
-Still deferred outside the active V14D slice:
->>>>>>> origin/main
+Still deferred outside the active V14 integration-validation work:
 - Squad Capacity upgrades (not started)
 - new Tactical Energy types
 - revive / resting recovery
