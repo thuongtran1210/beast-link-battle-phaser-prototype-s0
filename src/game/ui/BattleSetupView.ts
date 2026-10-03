@@ -11,6 +11,8 @@ import type { RunRoster } from '../run/RunRoster';
 import { reservePage } from './ReservePagination';
 import { ACTIVE_SQUAD_LIMIT, activeSquadPresentation, reserveTargetAffordance } from './ActiveSquadPresentation';
 import { classifyBattleSetupRoster } from './BattleSetupPresentation';
+import { setupEnergyInventory } from './BattleSetupPresentation';
+import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -57,7 +59,7 @@ export class BattleSetupView {
     private readonly scene: Phaser.Scene,
     private readonly formation: BattleFormation,
     private readonly enemies: ReadonlyArray<EnemyFixture>,
-    private readonly storedEnergy: () => string,
+    private readonly storedEnergy: () => ReadonlyArray<EnergyQueueEntry> | string,
     private readonly startBattle: () => void,
     private readonly onArrangementChanged: () => void,
     private readonly fixtureName?: string,
@@ -137,14 +139,14 @@ export class BattleSetupView {
   private renderHeader(): void {
     // Wave is primary; phase/navigation is intentionally secondary.
     this.text(26, 20, this.fixtureName ?? 'BATTLE SETUP', 18, HudTokens.colors.textPrimary, 'bold');
-    this.text(26, 44, this.threatSummary ?? 'BATTLE SETUP', 11, HudTokens.colors.textGold, 'bold');
+    this.text(26, 44, `Threat · ${this.threatSummary ?? 'UNKNOWN'}`, 11, HudTokens.colors.textGold, 'bold');
     if (this.onEnemyBoardEdit) this.text(26, 58, 'TEST HARNESS — ENEMY SCENARIO EDITOR', 10, '#fbbf24', 'bold');
 
     // 2. Level title / Threat info
     const levelLabel = this.text(
       460,
       20,
-      this.fixtureName ? `${this.fixtureName} [E: Cycle] ↺` : 'LEVEL FORMATION',
+      this.onCycleFixture ? '[E] CYCLE FIXTURE' : 'BATTLE SETUP',
       12,
       HudTokens.colors.textGold,
       'bold',
@@ -246,8 +248,8 @@ export class BattleSetupView {
     const squadTitle = this.text(dividerX - 385, topLaneY - 58, 'ACTIVE SQUAD', 9, '#7dd3fc', 'bold');
     const meter = this.text(dividerX - 385, topLaneY - 42, squad.meter.map((filled) => filled ? '●' : '○').join(' '), 11, squad.isFull ? '#fbbf24' : '#38bdf8', 'bold');
     const squadCount = this.text(dividerX - 318, topLaneY - 42, squad.countLabel, 10, '#ffffff', 'bold');
-    const squadLimit = this.text(dividerX - 385, topLaneY - 27, squad.isFull ? 'MAX 4 · FULL' : 'MAX 4', 8, squad.isFull ? '#fbbf24' : '#64748b', 'bold');
-    const gridLabel = this.text(dividerX - 170, topLaneY - 38, 'POSITION GRID · Arrange your Active Squad', 8, '#94a3b8', 'bold').setOrigin(0.5);
+    const squadLimit = this.text(dividerX - 385, topLaneY - 27, `ACTIVE SQUAD ${squad.countLabel}${squad.isFull ? ' · FULL' : ''} · GRID 18`, 8, squad.isFull ? '#fbbf24' : '#64748b', 'bold');
+    const gridLabel = this.text(dividerX - 170, topLaneY - 38, '18 TACTICAL POSITIONS', 8, '#94a3b8', 'bold').setOrigin(0.5);
     this.objects.push(playerHeading, enemyHeading, squadTitle, meter, squadCount, squadLimit, gridLabel);
 
     // Row labels
@@ -630,16 +632,16 @@ export class BattleSetupView {
     this.objects.push(cardBg);
 
     // Stored Energy section
-    const energyTitle = this.text(x + 14, y + 14, '⚡ STORED ENERGY', 11, HudTokens.colors.textGold, 'bold');
-    const energyContent = this.text(x + 14, y + 34, this.storedEnergy(), 10, HudTokens.colors.textPrimary);
-    this.objects.push(energyTitle, energyContent);
+    const rawEnergy = this.storedEnergy(); const energyEntries = setupEnergyInventory(Array.isArray(rawEnergy) ? rawEnergy : []); const totalEnergy = energyEntries.reduce((sum, entry) => sum + entry.charges, 0);
+    const energyTitle = this.text(x + 14, y + 14, `⚡ STORED ENERGY ×${totalEnergy}`, 11, HudTokens.colors.textGold, 'bold'); this.objects.push(energyTitle);
+    energyEntries.slice(0, 6).forEach((entry, index) => { const px = x + 24 + Math.floor(index / 3) * 106; const py = y + 39 + (index % 3) * 21; const icon = createIconImage(this.scene, entry.energyId, px, py, 16); const label = this.text(px + 14, py - 6, `${entry.shortLabel} ×${entry.charges}`, 9, '#fef3c7', 'bold'); this.objects.push(icon, label); });
 
     // Global Link Shard count
     const shards = this.shardPool?.count ?? 0;
     const shardBadge = this.text(x + w - 88, y + 14, `◆ LINK ×${shards}`, 10, '#38bdf8', 'bold', '#0c4a6e', { x: 5, y: 2 });
     this.objects.push(shardBadge);
 
-    this.renderConsolidationInspector(x + 14, y + 59, w - 28);
+    this.text(x + 14, y + 94, 'Cast during Battle', 9, HudTokens.colors.textMuted);
 
     // START BATTLE CTA button
     const squad = this.squadPresentation();

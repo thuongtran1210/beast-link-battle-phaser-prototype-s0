@@ -534,7 +534,7 @@ export class ValidationScene extends Phaser.Scene {
       this,
       this.formation,
       this.enemyBoard?.fixtures ?? this.waveRun.currentWave.enemyFixtures,
-      () => this.storedEnergyLines(),
+      () => this.energyQueue.getAll(),
       () => this.startBattle(),
       () => {
         this.activePresetKey = undefined;

@@ -1,5 +1,6 @@
 import type { FormationUnit } from '../battle/BattleFormation';
 import type { RunUnitInstance } from '../run/RunRoster';
+import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 
 export interface SetupRosterGroups { deployed: FormationUnit[]; reserve: FormationUnit[]; ko: FormationUnit[]; }
 /** Pure visual grouping; RunRoster and BattleFormation remain authoritative. */
@@ -21,3 +22,4 @@ export function castControlState(reason: string, paused: boolean): CastControlSt
   if (reason === 'ok') return { enabled: true, label: 'CAST' };
   return { enabled: false, label: ({ 'target-full-hp': 'FULL', 'no-charge': 'NO CHARGE', 'no-target': 'NO FRONTLINE', 'battle-not-running': 'ENDED' } as Record<string, string>)[reason] ?? 'UNAVAILABLE' };
 }
+export function setupEnergyInventory(entries: ReadonlyArray<EnergyQueueEntry>): Array<EnergyQueueEntry & { shortLabel: string }> { return entries.filter(entry => entry.charges > 0).map(entry => ({ ...entry, shortLabel: entry.energyId.replace('energy-', '').toUpperCase() })); }
