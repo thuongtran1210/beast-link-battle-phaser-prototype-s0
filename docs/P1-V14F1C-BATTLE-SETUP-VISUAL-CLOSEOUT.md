@@ -533,3 +533,196 @@ Required:
 Then STOP for owner screenshot review.
 
 F.1c adds no gameplay mechanic and does not adopt V14.
+
+
+## F.1c-N — Reserve Duplicate Stack Grouping
+
+Owner screenshot shows repeated identical Reserve bodies still occupy separate full-size cards, for example three `IRONCLAD ★` bodies displayed side-by-side.
+
+This is a player-surface grouping problem, not a request to restore greedy automatic STAR conversion.
+
+### Critical Rule
+
+Do **not** automatically convert:
+
+```text
+3 × 1★
+→ 1 × 2★
+```
+
+on recruitment or merely because three copies exist.
+
+B.3 breadth-vs-density choice remains manual.
+
+Instead, collapse duplicate Reserve presentation into a **stack card**.
+
+### Stack Key
+
+Group only ready, non-deployed Reserve bodies with the same:
+
+```text
+beastId
+STAR level
+status = ready
+slotId = null
+```
+
+KO bodies never join a Reserve stack.
+
+Different STAR levels never share a stack.
+
+Example:
+
+```text
+IRONCLAD ★ ×3
+```
+
+is one Reserve stack presentation backed by three distinct stable RunRoster instance IDs.
+
+### Stable Identity Is Preserved
+
+Stacking is presentation-only.
+
+Do not merge/delete RunRoster instances unless the player explicitly performs STAR consolidation.
+
+A stack must retain access to its member instance IDs.
+
+### HP-Aware Stack Summary
+
+If all copies have equal HP:
+
+```text
+IRONCLAD ★ ×3
+HP 80 / 80
+```
+
+If member HP differs:
+
+```text
+IRONCLAD ★ ×3
+HP VARIED
+```
+
+and an expand/detail action must reveal per-body HP.
+
+Do not hide materially different persistent HP behind one misleading value.
+
+### Expand / Individual Body Selection
+
+The player must still be able to deploy a specific persistent body.
+
+Preferred interaction:
+
+```text
+collapsed stack
+→ click/tap
+→ expanded member row / mini-cards
+→ drag/select a specific instance
+```
+
+A quick-deploy shortcut may choose the deterministic lowest run serial only if the UI clearly exposes which body was chosen, but explicit member selection is preferred.
+
+Do not silently choose highest/lowest HP as a strategy decision.
+
+### Consolidation CTA
+
+For a same-Beast/same-STAR Reserve stack:
+
+If real eligible copies >= 3:
+
+```text
+IRONCLAD ★ ×3
+[CONSOLIDATE → ★★]
+```
+
+This action calls existing `RunRoster.consolidate(...)`.
+
+It is still manual.
+
+If eligible copies == 2 and Link Shard >= 1:
+
+```text
+IRONCLAD ★ ×2   ◆1
+[CONSOLIDATE → ★★]
+```
+
+Preserve C.2 assisted consolidation.
+
+If fewer than 2:
+- no consolidation CTA.
+
+### Stack Count After Consolidation
+
+Example:
+
+Before:
+
+```text
+IRONCLAD ★ ×3
+```
+
+Manual consolidate:
+
+```text
+IRONCLAD ★★ ×1
+```
+
+The two consumed 1★ instances disappear only because the existing gameplay consolidation actually consumed them.
+
+If 4 copies existed:
+
+Before:
+
+```text
+IRONCLAD ★ ×4
+```
+
+After normal 3-copy consolidation:
+
+```text
+IRONCLAD ★ ×1
+IRONCLAD ★★ ×1
+```
+
+### Pagination
+
+Reserve pagination must paginate **stack cards**, not every individual duplicate body.
+
+This is a visual-density improvement.
+
+Expanded stack members may use an inline member view and should not alter the main page count unless the implementation requires it.
+
+### Counts
+
+Important distinction:
+
+```text
+RESERVE 17
+```
+
+continues to mean **17 living Reserve bodies**, not 17 visual stack cards.
+
+Optionally show:
+
+```text
+RESERVE 17 · 9 STACKS
+```
+
+if useful.
+
+Do not redefine gameplay counts.
+
+### Deterministic Checks — Duplicate Stacks
+
+24. three same Beast + same STAR ready Reserve bodies create one stack with `count = 3`.
+25. different Beast IDs create different stacks.
+26. same Beast but different STAR creates different stacks.
+27. KO bodies are excluded from Reserve stacks.
+28. deployed bodies are excluded from Reserve stacks.
+29. stack members preserve distinct instance IDs.
+30. mixed HP stack reports non-uniform HP state.
+31. stack count does not mutate RunRoster.
+32. normal 3-copy consolidation from a stack consumes the existing correct three real bodies.
+33. after 4-copy consolidation, presentation becomes one 1★ stack member plus one 2★ stack member.
+34. 2-copy + 1 Link assisted consolidation remains legal and manual.
+35. Reserve body count remains body count, while pagination uses stack count.
