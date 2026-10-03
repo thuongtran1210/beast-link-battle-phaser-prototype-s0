@@ -10,9 +10,10 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
-4. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
-5. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+3. active player-surface corrective slice: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
+5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+6. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
 6. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 7. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 8. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
@@ -104,6 +105,24 @@ Read:
 
 `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 
+### Active player-surface corrective slice — P1-V14F.1
+
+**Battle Setup UX Clarity + Energy Cast Reliability**
+
+Owner live inspection identified Battle Setup readability problems and a manual Energy-cast reliability issue: a full-HP frontline can currently consume a charge and produce zero visible heal.
+
+F.1 corrects:
+- header / formation / enemy hierarchy;
+- Reserve vs Deployed vs KO readability;
+- Active Squad 4 vs Formation Grid 18 clarity;
+- Setup Stored Energy preview;
+- Battle cast eligibility / feedback;
+- full-HP cast protection.
+
+Read:
+
+`docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+
 ## Current V14 roadmap
 
 ```text
@@ -136,6 +155,9 @@ IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED
 ↓
 V14E.1 — Policy Semantics & Evidence Hardening
 IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL
+↓
+V14F.1 — Battle Setup UX + Energy Cast Reliability
+ACTIVE / OWNER AUTHORIZED / CODE NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
