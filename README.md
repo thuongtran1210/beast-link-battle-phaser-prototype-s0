@@ -10,8 +10,9 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active slice docs under `docs/`
-4. current code/tests
+3. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+4. supporting V14 docs
+5. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -23,7 +24,7 @@ Multi-Wave flow is **owner-confirmed structurally correct enough to continue**.
 
 This remains Experimental / not adopted.
 
-### Active gate — P1-V14B.1/B.2
+### P1-V14B.1/B.2 baseline
 
 **Run Roster, Partial Deployment & Attrition**
 
@@ -33,17 +34,50 @@ Current implementation evidence:
 - partial deployment supports 1–4 living Active units.
 - Experimental Active Squad cap = 4.
 - HP / KO reconcile back to the roster by instance ID.
-- Wave transition preserves roster body state but clears all deployment assignments.
+- Wave transition preserves roster body state but clears deployment assignments.
 - each new Battle Setup begins `ACTIVE 0 / 4`.
 - living survivors and new recruits coexist in Reserve.
-- commit: `6d1f40b`.
-- `npm run check` and `npm run build` pass.
+- Reserve may remain non-empty when Battle starts.
+- baseline commit: `6d1f40b`.
+- `npm run check` and `npm run build` were reported PASS for that baseline.
 
-The remaining gate is owner live verification of the full Reserve / injured / fresh / KO choice loop.
+Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
+
+### Active slice — P1-V14B.3
+
+**STAR Consolidation / Power Density**
+
+Owner explicitly authorized starting B.3.
+
+Current code finding:
+
+```text
+BattleQueue count
+→ StarConverter.bulk(...)
+→ automatic highest STAR
+```
+
+This prevents the player from choosing:
+
+```text
+3 × 1★
+vs
+1 × 2★
+```
+
+B.3 will test whether higher STAR creates **power density per Active slot** while separate 1★ units retain meaningful breadth.
+
+Keep:
+- Active Squad cap = 4
+- STAR cost structure = 1 / 3 / 9
+- Formation Grid unchanged
+- `GRID CAPACITY ≠ SQUAD CAPACITY`
+
+Do not implement Squad Capacity upgrades in this slice.
 
 Read:
 
-`docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+`docs/P1-V14B3-STAR-POWER-DENSITY.md`
 
 ## Current V14 roadmap
 
@@ -52,38 +86,46 @@ V14A — Multi-Wave Structure
 OWNER STRUCTURAL PASS
 ↓
 V14B.1 — Partial Deployment + Persistent Reserve
-ACTIVE
+CORE IMPLEMENTED / OWNER-LIVE EVIDENCE STILL SEPARATE
 ↓
 V14B.2 — Persistent Unit Identity + HP Attrition
-ACTIVE
+CORE IMPLEMENTED / OWNER-LIVE EVIDENCE STILL SEPARATE
 ↓
 V14B.3 — STAR Consolidation / Power Density
-BLOCKED
+ACTIVE — OWNER AUTHORIZED
 ↓
 V14C — Combo Rework
 DEFERRED
 ↓
 V14D — Persistent Energy
 DEFERRED
+↓
+Future Experiment — Squad Capacity Upgrade
+NOT STARTED
 ```
 
-## Important distinction
+## Important distinctions
 
 ```text
 Beast Queue
 = preparation / recruitment output
 
 Run Roster / Reserve
-= persistent player unit instances across Waves
-```
+= persistent player unit instances
 
-Do not reconstruct persistent units from anonymous counts after Battle.
+Active Squad
+= up to 4 living deployed Beasts in the current Experimental fixture
+
+Formation Grid
+= tactical starting positions, not squad capacity
+```
 
 ## Still-open earlier work
 
+- B.1/B.2 owner-live A–H remains unclosed unless explicitly verified.
 - V13 signature full live A/B gate remains open.
 - V13A.1D Battle Setup UX remains not passed.
-- V14 does not silently close either.
+- V14 does not silently close these.
 
 ## Art workflow
 
@@ -96,6 +138,8 @@ Art generation has a separate repo-local pipeline:
 Current art gate:
 
 **Snowguard / Tanker Master Reference → owner STYLE APPROVAL**
+
+Do not create final STAR evolution art before B.3 mechanics are validated.
 
 ## Run locally
 
