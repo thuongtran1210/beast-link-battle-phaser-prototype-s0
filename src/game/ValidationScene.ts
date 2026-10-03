@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { ComboSystem } from './combo/ComboSystem';
 import { runS2Checks } from './combo/S2Checks';
 import { RuleConfig } from './config/RuleConfig';
+import { isTestHarness } from './config/RuntimeMode';
+import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
 import { runP1S1Checks } from './energy/P1S1Checks';
 import { EnergyRushTimer } from './energy/EnergyRushTimer';
@@ -195,6 +197,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V12AChecks();
       runP1V13AChecks();
       runP1V13A1Checks();
+      runP1V13A1BChecks();
       runP1V13A2Checks();
       runP1V1Checks();
       runP1V2Checks();
@@ -240,10 +243,12 @@ export class ValidationScene extends Phaser.Scene {
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
     // Keyboard shortcuts
-    this.input.keyboard?.on('keydown-F1', () => this.setEnemyFixturePreset(0));
-    this.input.keyboard?.on('keydown-F2', () => this.setEnemyFixturePreset(1));
-    this.input.keyboard?.on('keydown-F3', () => this.setEnemyFixturePreset(2));
-    this.input.keyboard?.on('keydown-F4', () => this.setEnemyFixturePreset(3));
+    if (isTestHarness()) {
+      this.input.keyboard?.on('keydown-F1', () => this.setEnemyFixturePreset(0));
+      this.input.keyboard?.on('keydown-F2', () => this.setEnemyFixturePreset(1));
+      this.input.keyboard?.on('keydown-F3', () => this.setEnemyFixturePreset(2));
+      this.input.keyboard?.on('keydown-F4', () => this.setEnemyFixturePreset(3));
+    }
     this.input.keyboard?.on('keydown-SPACE', () => this.toggleShowcasePause());
     this.input.keyboard?.on('keydown-H', () => this.toggleShowcaseCleanFrame());
     this.input.keyboard?.on('keydown-E', () => this.cycleEnemyFixture());
@@ -492,24 +497,24 @@ export class ValidationScene extends Phaser.Scene {
     this.battleSetupView?.destroy();
     const activePreset = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
     const level = P1V13A1_LEVELS[this.enemyFixturePresetIndex];
-    this.enemyBoard ??= new EnemyBoardState(level);
+    if (isTestHarness()) this.enemyBoard ??= new EnemyBoardState(level);
     this.battleSetupView = new BattleSetupView(
       this,
       this.formation,
-      this.enemyBoard.fixtures,
+      this.enemyBoard?.fixtures ?? fixturesForLevel(level),
       () => this.storedEnergyLines(),
       () => this.startBattle(),
       () => {
         this.activePresetKey = undefined;
         this.metrics.arrangementChanged();
       },
-      `LEVEL ${this.enemyFixturePresetIndex + 1} — ${level.name}${this.enemyBoard.isCustomized ? ' [CUSTOMIZED]' : ''}`,
+      `LEVEL ${this.enemyFixturePresetIndex + 1} — ${level.name}${isTestHarness() && this.enemyBoard?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
       () => this.cycleEnemyFixture(),
       `Threat: ${level.threatLabel}`,
       this.activePresetKey,
       () => this.loadFormationPreset('A'),
       () => this.loadFormationPreset('B'),
-      (tool, row, column) => this.editEnemyBoard(tool, row, column),
+      isTestHarness() ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
     );
     this.battleSetupView.render();
     this.syncTopHud();
@@ -531,7 +536,7 @@ export class ValidationScene extends Phaser.Scene {
     this.enemyFixturePresetIndex =
       ((index % ENEMY_FIXTURE_PRESETS.length) + ENEMY_FIXTURE_PRESETS.length) %
       ENEMY_FIXTURE_PRESETS.length;
-    this.enemyBoard = new EnemyBoardState(P1V13A1_LEVELS[this.enemyFixturePresetIndex]);
+    if (isTestHarness()) this.enemyBoard = new EnemyBoardState(P1V13A1_LEVELS[this.enemyFixturePresetIndex]);
     if (this.phaseController.phase === GamePhase.BattleSetup && this.formation) {
       this.renderBattleSetup();
     }
@@ -542,7 +547,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private editEnemyBoard(tool: import('./battle/AutonomousBattleModel').EnemyArchetype | 'Erase', row: 'Front' | 'Mid' | 'Back', column: number): void {
-    if (!this.enemyBoard) return;
+    if (!isTestHarness() || !this.enemyBoard) return;
     const changed = tool === 'Erase' ? this.enemyBoard.erase(row, column) : this.enemyBoard.place(tool, row, column);
     if (changed) this.renderBattleSetup();
   }
@@ -551,7 +556,7 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(
       this.formation,
-      this.enemyBoard?.fixtures ?? fixturesForLevel(P1V13A1_LEVELS[this.enemyFixturePresetIndex]),
+      isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : fixturesForLevel(P1V13A1_LEVELS[this.enemyFixturePresetIndex]),
       P1V13A_SIGNATURE_RULES,
     );
     this.battleTickAccumulator = 0;

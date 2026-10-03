@@ -134,6 +134,7 @@ export class BattleSetupView {
       11,
       HudTokens.colors.textMuted,
     );
+    if (this.onEnemyBoardEdit) this.text(26, 58, 'TEST HARNESS — ENEMY SCENARIO EDITOR', 10, '#fbbf24', 'bold');
 
     // 2. Level title / Threat info
     const levelLabel = this.text(
