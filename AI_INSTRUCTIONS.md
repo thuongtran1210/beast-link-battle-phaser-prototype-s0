@@ -38,15 +38,24 @@ If repo docs and code conflict:
 - Active implementation: **P1-V14B.1/B.2 — Run Roster, Partial Deployment & Attrition**.
 - V14 remains Experimental / not adopted.
 
-## Active design blockers
+## Current implementation state
 
-### Forced full deployment
+P1-V14B.1/B.2 core code is implemented on main through commit `6d1f40b`.
 
-Current Start Battle gating prevents intentional Reserve play because it requires all available units to be deployed.
+Implemented:
+- partial deployment
+- Active Squad cap = 4 Experimental fixture
+- persistent RunRoster instance identity
+- HP / KO persistence
+- Battle reconciliation by instance ID
+- Wave deployment reset
+- next Setup starts `ACTIVE 0 / 4`
+- old living units + new recruits coexist in Reserve
 
-### Full HP reset
+Remaining gate:
+- owner live verification A–H
 
-Current cross-Wave behavior effectively refills player units, preventing injured-vs-fresh roster choice.
+Do not rewrite the core architecture unless live validation reveals a concrete defect.
 
 ## Required model direction
 
