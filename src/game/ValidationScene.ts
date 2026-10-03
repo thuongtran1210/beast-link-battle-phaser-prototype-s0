@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { ComboSystem } from './combo/ComboSystem';
+import { BeastRushPhaseTimer } from './combo/BeastRushPhaseTimer';
+import { ComboQualityTracker } from './combo/ComboQualityTracker';
 import { runS2Checks } from './combo/S2Checks';
 import { RuleConfig } from './config/RuleConfig';
 import { isTestHarness } from './config/RuntimeMode';
@@ -135,8 +136,9 @@ export class ValidationScene extends Phaser.Scene {
   private readonly boardGenerator = new BoardGenerator();
   private readonly matcher = new OnetMatcher();
   private readonly deadlockResolver = new DeadlockResolver(this.matcher, this.boardGenerator);
-  // P1-V3 Experimental Timing: Beast Rush 12.0s initial / +0.3s bonus / 12.0s cap
-  private readonly comboSystem = new ComboSystem({ initialSeconds: 12.0, bonusSeconds: 0.3, capSeconds: 12.0 });
+  // Historical ComboSystem is regression-only; C.1 separates live phase time from Combo quality.
+  private readonly beastRushTimer = new BeastRushPhaseTimer(12.0);
+  private readonly comboQuality = new ComboQualityTracker(1.5);
   // P1-V3 Experimental Timing: Energy Rush 12.0s countdown
   private readonly energyTimer = new EnergyRushTimer(12.0);
   private readonly battleQueue = new BattleQueue();
@@ -279,8 +281,8 @@ export class ValidationScene extends Phaser.Scene {
       }
     });
 
-    // When BeastRush combo ends: disable puzzle input immediately & start transition cue
-    this.comboSystem.onEnded(() => {
+    // P1-V14C.1: fixed phase time, never Combo expiry, ends Beast Rush.
+    this.beastRushTimer.onEnded(() => {
       this.handleBeastRushEnded();
     });
 
@@ -317,9 +319,11 @@ export class ValidationScene extends Phaser.Scene {
       return;
     }
 
-    // BeastRush combo timer update
-    if (this.phaseController.phase === GamePhase.BeastRush && this.comboSystem.snapshot.active) {
-      this.comboSystem.update(deltaSeconds);
+    if (this.phaseController.phase === GamePhase.BeastRush && this.beastRushTimer.snapshot.active) {
+      this.beastRushTimer.update(deltaSeconds);
+      this.comboQuality.update(deltaSeconds);
+      const quality = this.comboQuality.snapshot;
+      this.metrics.comboQuality(quality.currentStreak, quality.bestStreak, quality.breakCount);
       this.refreshBeastHUD();
     }
 
@@ -445,6 +449,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterBeastRush(): void {
+    this.beastRushTimer.start();
+    this.comboQuality.reset();
     this.beastRushEvent = { kind: 'idle' };
     this.recentActionText = '';
     this.createPuzzleBoard(
@@ -629,7 +635,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private resetWavePreparation(): void {
-    this.comboSystem.reset();
+    this.beastRushTimer.reset();
+    this.comboQuality.reset();
     this.energyTimer.reset();
     this.battleQueue.clear();
     this.energyQueue.reset();
@@ -783,6 +790,9 @@ export class ValidationScene extends Phaser.Scene {
           if (this.phaseController.phase === (type === 'Beast' ? GamePhase.BeastRush : GamePhase.EnergyRush)) {
             this.metrics.invalid();
             if (type === 'Beast') {
+              this.comboQuality.breakStreak();
+              const quality = this.comboQuality.snapshot;
+              this.metrics.comboQuality(quality.currentStreak, quality.bestStreak, quality.breakCount);
               this.beastRushEvent = { kind: 'invalid' };
               this.recentActionText = compactEventLabel(this.beastRushEvent);
               this.refreshBeastHUD();
@@ -797,14 +807,15 @@ export class ValidationScene extends Phaser.Scene {
 
   private onBeastMatch(contentId: string, turns: number, midpoint?: { x: number; y: number }): void {
     if (this.phaseController.phase !== GamePhase.BeastRush || !this.board || !this.boardView) return;
-    this.comboSystem.registerValidMatch();
+    const combo = this.comboQuality.registerValidMatch();
+    this.metrics.comboQuality(combo.currentStreak, combo.bestStreak, combo.breakCount);
     this.metrics.beastMatch();
     this.battleQueue.addBeastMatch(contentId);
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
     const def = getIconDefinition(contentId);
-    this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboBonus: .3 };
+    this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboStreak: combo.currentStreak };
     this.recentActionText = compactEventLabel(this.beastRushEvent);
 
     this.refreshBeastHUD();
@@ -819,10 +830,10 @@ export class ValidationScene extends Phaser.Scene {
       FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
         this.phaseStatusPanel?.pulseQueueRow(contentId);
       });
-      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, '+0.3s', '#fbbf24');
+      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, `COMBO ×${combo.currentStreak}`, '#fbbf24');
     }
     this.phaseStatusPanel?.pulseCombo();
-    this.phaseStatusPanel?.pulseTimer(true);
+    this.phaseStatusPanel?.pulseTimer(false);
 
     // Deadlock reshuffle notification
     if (recovery.reshuffled) {
@@ -884,18 +895,19 @@ export class ValidationScene extends Phaser.Scene {
 
   private refreshBeastHUD(): void {
     if (this.phaseController.phase !== GamePhase.BeastRush) return;
-    const combo = this.comboSystem.snapshot;
+    const phaseTimer = this.beastRushTimer.snapshot;
+    const combo = this.comboQuality.snapshot;
     this.phaseStatusPanel?.render({
       phaseTitle: 'BEAST RUSH',
       phaseSubtitle: '',
-      timerSeconds: combo.remainingSeconds,
-      timerLabel: 'Combo',
+      timerSeconds: phaseTimer.remainingSeconds,
+      timerLabel: 'Rush',
       timerSubtext: '',
       statusBadge: {
-        text: combo.active ? 'ACTIVE' : 'READY',
+        text: combo.active ? `×${combo.currentStreak}` : '×0',
         active: combo.active,
       },
-      matchCount: combo.count,
+      matchCount: this.metrics.snapshot.beastMatches,
       queueTitle: 'Beast Queue',
       queueItems: this.battleQueue.entries().map((e) => {
         const def = getIconDefinition(e.contentId);
@@ -907,6 +919,8 @@ export class ValidationScene extends Phaser.Scene {
       }),
       recentAction: this.recentActionText,
       beastRushHud: true,
+      comboCurrent: combo.currentStreak,
+      comboBest: combo.bestStreak,
     });
   }
 
@@ -978,7 +992,8 @@ export class ValidationScene extends Phaser.Scene {
     this.isShowingBattleSetupCue = false;
     this.battleSetupCueTimer = 0;
     this.transitionCue?.hide();
-    this.comboSystem.reset();
+    this.beastRushTimer.reset();
+    this.comboQuality.reset();
     this.energyTimer.reset();
     this.battleQueue.clear();
     this.energyQueue.reset();

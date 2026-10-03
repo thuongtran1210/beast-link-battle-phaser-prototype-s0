@@ -23,6 +23,8 @@ export interface PhaseStatusData {
   queueItems: StatusQueueItem[];
   recentAction: string;
   beastRushHud?: boolean;
+  comboCurrent?: number;
+  comboBest?: number;
 }
 
 export class PhaseStatusPanel {
@@ -236,18 +238,18 @@ export class PhaseStatusPanel {
     const sub = this.scene.add.text(this.x + 16, currY + 41, 'MATCH → RECRUIT', { fontFamily: HudTokens.fonts.family, fontSize: '11px', color: HudTokens.colors.textGold, fontStyle: 'bold', letterSpacing: 1 });
     add(header, title, sub); chip(this.x + w - 47, currY + 20, '6×6'); chip(this.x + w - 47, currY + 48, '≤2 TURN'); currY += 82;
 
-    const state = comboVisualState(data.timerSeconds, data.statusBadge.active);
+    const state = comboVisualState(data.timerSeconds, true);
     const urgent = state === 'low';
     const comboH = 142;
     const comboBg = drawCard(this.scene, this.x, currY, w, comboH, HudTokens.colors.bgSurfaceElevated, .97, urgent ? HudTokens.colors.strokeRed : HudTokens.colors.strokeGold, 1.5);
-    const label = this.scene.add.text(this.x + w / 2, currY + 16, 'COMBO', { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: urgent ? HudTokens.colors.textRed : HudTokens.colors.textGold, fontStyle: 'bold', letterSpacing: 2 }).setOrigin(.5, 0);
+    const label = this.scene.add.text(this.x + w / 2, currY + 16, 'RUSH', { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: urgent ? HudTokens.colors.textRed : HudTokens.colors.textGold, fontStyle: 'bold', letterSpacing: 2 }).setOrigin(.5, 0);
     const time = this.scene.add.text(this.x + w / 2, currY + 34, `${Math.max(0, data.timerSeconds).toFixed(1)}s`, { fontFamily: HudTokens.fonts.family, fontSize: '40px', color: urgent ? '#f87171' : HudTokens.colors.textGold, fontStyle: 'bold' }).setOrigin(.5, 0);
     const meterX = this.x + 22; const meterY = currY + 91; const meterW = w - 44;
     const meterBg = this.scene.add.rectangle(meterX, meterY, meterW, 13, 0x0f172a, 1).setOrigin(0, .5).setStrokeStyle(1, 0x475569);
     const meterFill = this.scene.add.rectangle(meterX + 2, meterY, Math.max(0, (meterW - 4) * comboRatio(data.timerSeconds, 12)), 9, urgent ? 0xef4444 : 0xfbbf24, .95).setOrigin(0, .5);
-    const stateLabel = state === 'ready' ? 'READY' : state === 'expired' ? 'TIME UP' : '';
-    const meta = this.scene.add.text(this.x + 22, currY + 112, stateLabel || '+0.3', { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: HudTokens.colors.textMuted, fontStyle: 'bold' });
-    const cap = this.scene.add.text(this.x + w - 22, currY + 112, 'MAX 12', { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: HudTokens.colors.textMuted, fontStyle: 'bold' }).setOrigin(1, 0);
+    const stateLabel = state === 'expired' ? 'TIME UP' : 'FIXED 12s';
+    const meta = this.scene.add.text(this.x + 22, currY + 112, stateLabel, { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: HudTokens.colors.textMuted, fontStyle: 'bold' });
+    const cap = this.scene.add.text(this.x + w - 22, currY + 112, `COMBO ×${data.comboCurrent ?? 0}   BEST ×${data.comboBest ?? 0}`, { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: HudTokens.colors.textMuted, fontStyle: 'bold' }).setOrigin(1, 0);
     this.timerValue = time; this.comboMeter = meterFill; add(comboBg, label, time, meterBg, meterFill, meta, cap); currY += comboH + 10;
 
     const countH = 70; const countBg = drawCard(this.scene, this.x, currY, w, countH, HudTokens.colors.bgSurface, .94);

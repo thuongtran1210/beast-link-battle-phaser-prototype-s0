@@ -2,6 +2,14 @@
 
 Status: **Repository-local coding handoff**
 
+## Current status — 2026-10-03
+
+- V14A: owner structural PASS / Experimental / not adopted.
+- V14B.1/B.2: core implemented; owner-live evidence remains separate.
+- V14B.3: implemented; code review PASS; live hypothesis validation open; not adopted.
+- V14C.1: **ACTIVE / owner authorized** — `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`.
+- V14C.2, V14D, and Squad Capacity Upgrade: not started.
+
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
 
 ## Coding-agent source order
@@ -10,7 +18,7 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+3. active slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
 4. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
 5. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
 6. relevant historical slice docs

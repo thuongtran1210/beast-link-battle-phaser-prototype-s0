@@ -10,7 +10,7 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+3. active slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
 4. supporting V14 docs
 5. current code/tests
 

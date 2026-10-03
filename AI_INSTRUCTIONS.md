@@ -36,7 +36,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Active implementation: **P1-V14B.3 — STAR Consolidation / Power Density**.
+- Active implementation: **P1-V14C.1 — Combo Decoupling / Quality Signal**. See `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`.
+- V14B.3 is implemented, code-review PASS, Experimental/not adopted; live hypothesis validation remains open.
 - V14B.1/B.2 remain implemented; their owner browser live gate is unrecorded and is not retroactively PASS.
 
 - V11D tactical formation validation: owner live PASS for its tested ruleset.

@@ -16,7 +16,7 @@ export function runBeastRushHudPresentationChecks(): void {
   expect(queueDisplayEntries([]).length === 0, 'empty queue has no prose entry');
   expect(queueDisplayEntries(entries)[0].id === 'beast-a', 'queue preserves stable ordering');
   expect(queueDisplayEntries(entries)[0].count === 3, 'three copies remain count 3, not STAR');
-  expect(compactEventLabel({ kind: 'match', beastName: 'SNOWGUARD', comboBonus: .3 }) === '+1 SNOWGUARD   +0.3s', 'match event is compact');
+  expect(compactEventLabel({ kind: 'match', beastName: 'SNOWGUARD', comboStreak: 3 }) === '+1 SNOWGUARD   COMBO ×3', 'match event is compact');
   expect(compactEventLabel({ kind: 'invalid' }) === 'NO LINK', 'invalid event is compact');
   expect(compactEventLabel({ kind: 'reshuffle' }) === 'RESHUFFLED', 'reshuffle event is compact');
 }

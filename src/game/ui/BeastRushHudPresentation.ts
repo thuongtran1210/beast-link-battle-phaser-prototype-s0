@@ -25,14 +25,14 @@ export function queueDisplayEntries<T extends QueueCountEntry>(entries: Readonly
 }
 
 export type BeastRushEvent =
-  | { kind: 'match'; beastName: string; comboBonus?: number }
+  | { kind: 'match'; beastName: string; comboStreak: number }
   | { kind: 'invalid' }
   | { kind: 'reshuffle' }
   | { kind: 'idle' };
 
 export function compactEventLabel(event: BeastRushEvent): string {
   switch (event.kind) {
-    case 'match': return `+1 ${event.beastName}${event.comboBonus ? `   +${event.comboBonus.toFixed(1)}s` : ''}`;
+    case 'match': return `+1 ${event.beastName}   COMBO ×${event.comboStreak}`;
     case 'invalid': return 'NO LINK';
     case 'reshuffle': return 'RESHUFFLED';
     default: return '';
