@@ -3,6 +3,7 @@ import { ComboSystem } from './combo/ComboSystem';
 import { runS2Checks } from './combo/S2Checks';
 import { RuleConfig } from './config/RuleConfig';
 import { isTestHarness } from './config/RuntimeMode';
+import { WaveRunController } from './run/WaveRunController';
 import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
 import { runP1S1Checks } from './energy/P1S1Checks';
@@ -143,6 +144,8 @@ export class ValidationScene extends Phaser.Scene {
   private battleModel?: AutonomousBattleModel;
   private battleTickAccumulator = 0;
   private battleOutcome?: 'Win' | 'Lose';
+  private readonly waveRun = new WaveRunController();
+  private readonly waveResultObjects: Phaser.GameObjects.GameObject[] = [];
   private readonly metrics = new SessionMetrics();
 
   // Transition state
@@ -345,7 +348,7 @@ export class ValidationScene extends Phaser.Scene {
         this.renderBattle();
         this.metrics.result(status, this.energyQueue.getAll());
         this.battleOutcome = status;
-        this.phaseController.setPhase(GamePhase.Result);
+        this.phaseController.setPhase(status === 'Win' && !this.waveRun.isFinalWave ? GamePhase.WaveResult : GamePhase.Result);
       }
     }
   }
@@ -417,6 +420,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleActionView?.destroy();
     this.battleActionView = undefined;
     this.summary?.setVisible(false);
+    this.waveResultObjects.splice(0).forEach((object) => object.destroy());
     this.showcasePaused = false;
 
     this.syncTopHud();
@@ -425,6 +429,7 @@ export class ValidationScene extends Phaser.Scene {
     else if (phase === GamePhase.EnergyRush) this.enterEnergyRush();
     else if (phase === GamePhase.BattleSetup) this.enterBattleSetup();
     else if (phase === GamePhase.Battle) this.enterBattle();
+    else if (phase === GamePhase.WaveResult) this.enterWaveResult();
     else this.enterResult();
   }
 
@@ -486,16 +491,16 @@ export class ValidationScene extends Phaser.Scene {
     this.battleSetupView = new BattleSetupView(
       this,
       this.formation,
-      this.enemyBoard?.fixtures ?? fixturesForLevel(level),
+      this.enemyBoard?.fixtures ?? this.waveRun.currentWave.enemyFixtures,
       () => this.storedEnergyLines(),
       () => this.startBattle(),
       () => {
         this.activePresetKey = undefined;
         this.metrics.arrangementChanged();
       },
-      `LEVEL ${this.enemyFixturePresetIndex + 1} — ${level.name}${isTestHarness() && this.enemyBoard?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
+      `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${this.waveRun.currentWave.name}${isTestHarness() && this.enemyBoard?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
       isTestHarness() ? () => this.cycleEnemyFixture() : undefined,
-      `Threat: ${level.threatLabel}`,
+      `Threat: ${this.waveRun.currentWave.threatLabel}`,
       isTestHarness() ? this.activePresetKey : undefined,
       isTestHarness() ? () => this.loadFormationPreset('A') : undefined,
       isTestHarness() ? () => this.loadFormationPreset('B') : undefined,
@@ -541,7 +546,7 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(
       this.formation,
-      isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : fixturesForLevel(P1V13A1_LEVELS[this.enemyFixturePresetIndex]),
+      isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : this.waveRun.currentWave.enemyFixtures,
       P1V13A_SIGNATURE_RULES,
     );
     this.battleTickAccumulator = 0;
@@ -581,9 +586,49 @@ export class ValidationScene extends Phaser.Scene {
       comparison,
       history.runA,
       history.runB,
+      this.battleOutcome === 'Win'
+        ? `RUN COMPLETE · ${this.waveRun.totalWaves} / ${this.waveRun.totalWaves} Waves Cleared`
+        : `RUN DEFEAT · Reached Wave ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves}`,
     );
     this.summary?.setVisible(true);
     this.syncTopHud();
+  }
+
+  private enterWaveResult(): void {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const current = this.waveRun.currentWave;
+    const next = this.waveRun.currentWaveIndex + 1 < this.waveRun.totalWaves
+      ? this.waveRun.currentWaveIndex + 2
+      : undefined;
+    const nextWave = next ? this.waveRun.currentWaveIndex + 1 : undefined;
+    const panel = this.add.rectangle(width / 2, height / 2, 500, 250, 0x111827, .97).setStrokeStyle(2, 0x22c55e);
+    const title = this.add.text(width / 2, height / 2 - 78, `WAVE ${current.index + 1} / ${this.waveRun.totalWaves} CLEARED`, { fontFamily: HudTokens.fonts.family, fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(.5);
+    const threat = this.add.text(width / 2, height / 2 - 42, current.threatLabel, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#86efac', fontStyle: 'bold' }).setOrigin(.5);
+    const nextText = this.add.text(width / 2, height / 2, `NEXT: WAVE ${next} — ${nextWave ? P1V13A1_LEVELS[nextWave].name : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#cbd5e1' }).setOrigin(.5);
+    const button = this.add.rectangle(width / 2, height / 2 + 62, 180, 42, 0xb45309, 1).setStrokeStyle(1, 0xfbbf24).setInteractive({ useHandCursor: true });
+    const label = this.add.text(width / 2, height / 2 + 62, 'CONTINUE', { fontFamily: HudTokens.fonts.family, fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(.5).setInteractive({ useHandCursor: true });
+    const proceed = () => this.advanceToNextWave(); button.on('pointerup', proceed); label.on('pointerup', proceed);
+    this.waveResultObjects.push(panel, title, threat, nextText, button, label);
+  }
+
+  private advanceToNextWave(): void {
+    if (this.phaseController.phase !== GamePhase.WaveResult || !this.waveRun.advanceWave()) return;
+    this.resetWavePreparation();
+    this.phaseController.setPhase(GamePhase.BeastRush);
+  }
+
+  private resetWavePreparation(): void {
+    this.comboSystem.reset();
+    this.energyTimer.reset();
+    this.battleQueue.clear();
+    this.energyQueue.reset();
+    this.formation = undefined;
+    this.battleModel = undefined;
+    this.battleOutcome = undefined;
+    this.activePresetKey = undefined;
+    this.metrics.reset();
+    this.enemyBoard = isTestHarness() ? new EnemyBoardState(P1V13A1_LEVELS[this.waveRun.currentWaveIndex]) : undefined;
   }
 
   private castEnergy(energyId: string): void {
@@ -913,6 +958,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleModel = undefined;
     this.battleOutcome = undefined;
     this.metrics.reset();
+    this.waveRun.resetRun();
     this.activePresetKey = undefined;
     this.cycleEnemyFixture();
     this.phaseController.setPhase(GamePhase.BeastRush);

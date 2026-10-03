@@ -3,6 +3,7 @@ export enum GamePhase {
   EnergyRush = 'EnergyRush',
   BattleSetup = 'BattleSetup',
   Battle = 'Battle',
+  WaveResult = 'WaveResult',
   Result = 'Result',
 }
 

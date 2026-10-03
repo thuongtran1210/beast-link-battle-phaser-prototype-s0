@@ -36,6 +36,7 @@ function isLegalTransition(from: GamePhase, to: GamePhase): boolean {
   return (from === GamePhase.BeastRush && to === GamePhase.EnergyRush)
     || (from === GamePhase.EnergyRush && to === GamePhase.BattleSetup)
     || (from === GamePhase.BattleSetup && to === GamePhase.Battle)
-    || (from === GamePhase.Battle && to === GamePhase.Result)
+    || (from === GamePhase.Battle && (to === GamePhase.WaveResult || to === GamePhase.Result))
+    || (from === GamePhase.WaveResult && to === GamePhase.BeastRush)
     || (from === GamePhase.Result && to === GamePhase.BeastRush);
 }

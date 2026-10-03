@@ -21,6 +21,7 @@ export class SessionSummaryView {
   private cachedComparison?: FormationRunDelta;
   private cachedRunA?: FormationValidationMetrics;
   private cachedRunB?: FormationValidationMetrics;
+  private cachedRunLabel?: string;
 
   constructor(scene: Phaser.Scene, centerX: number, centerY: number, onRestart: () => void) {
     this.scene = scene;
@@ -35,6 +36,7 @@ export class SessionSummaryView {
     comparison?: FormationRunDelta,
     runA?: FormationValidationMetrics,
     runB?: FormationValidationMetrics,
+    runLabel?: string,
   ): void {
     this.cachedMetrics = { ...metrics };
     this.cachedOutcome = outcome;
@@ -42,6 +44,7 @@ export class SessionSummaryView {
     this.cachedComparison = comparison;
     this.cachedRunA = runA;
     this.cachedRunB = runB;
+    this.cachedRunLabel = runLabel;
     this.restartArmed = true;
     this.rebuildDisplay();
   }
@@ -81,7 +84,7 @@ export class SessionSummaryView {
       .text(
         0,
         bannerY + 18,
-        isWin ? 'Opposing Squad Eliminated' : 'All Deployed Player Units Defeated',
+        this.cachedRunLabel ?? (isWin ? 'Opposing Squad Eliminated' : 'All Deployed Player Units Defeated'),
         {
           fontFamily: HudTokens.fonts.family,
           fontSize: '12px',
