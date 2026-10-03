@@ -10,6 +10,7 @@ import { BattleSetupInteractionController, type DropOutcome } from './BattleSetu
 import type { RunRoster } from '../run/RunRoster';
 import { reservePage } from './ReservePagination';
 import { ACTIVE_SQUAD_LIMIT, activeSquadPresentation, reserveTargetAffordance } from './ActiveSquadPresentation';
+import { classifyBattleSetupRoster } from './BattleSetupPresentation';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -134,15 +135,9 @@ export class BattleSetupView {
   }
 
   private renderHeader(): void {
-    // 1. Setup Title & instruction
-    this.text(26, 20, 'BATTLE SETUP', 18, HudTokens.colors.textPrimary, 'bold');
-    this.text(
-      26,
-      44,
-      'Drag your Beasts into formation. Drag deployed units to reposition or swap.',
-      11,
-      HudTokens.colors.textMuted,
-    );
+    // Wave is primary; phase/navigation is intentionally secondary.
+    this.text(26, 20, this.fixtureName ?? 'BATTLE SETUP', 18, HudTokens.colors.textPrimary, 'bold');
+    this.text(26, 44, this.threatSummary ?? 'BATTLE SETUP', 11, HudTokens.colors.textGold, 'bold');
     if (this.onEnemyBoardEdit) this.text(26, 58, 'TEST HARNESS — ENEMY SCENARIO EDITOR', 10, '#fbbf24', 'bold');
 
     // 2. Level title / Threat info
@@ -484,13 +479,14 @@ export class BattleSetupView {
       .setStrokeStyle(1.5, 0x334155);
     this.objects.push(trayBg);
 
-    const unplaced = this.controller.getUnplacedUnits();
+    const groups = classifyBattleSetupRoster(this.formation.units, this.runRoster?.units ?? []);
+    const unplaced = groups.reserve;
     const page = reservePage(unplaced, this.reservePageIndex);
     this.reservePageIndex = page.pageIndex;
     const hasUnplaced = unplaced.length > 0;
 
     // Tray Heading
-    const heading = this.text(x + 18, y + 14, 'YOUR BEASTS', 13, '#ffffff', 'bold');
+    const heading = this.text(x + 18, y + 14, `RESERVE ${groups.reserve.length}`, 13, '#ffffff', 'bold');
     const subtext = this.text(
       x + 130,
       y + 15,
@@ -502,6 +498,13 @@ export class BattleSetupView {
       'bold',
     );
     this.objects.push(heading, subtext);
+    const states = this.text(x + width - 210, y + 15, `DEPLOYED ${groups.deployed.length} · KO ${groups.ko.length}`, 10, groups.ko.length ? '#fb7185' : '#94a3b8', 'bold');
+    this.objects.push(states);
+    if (groups.ko.length) {
+      const koNames = groups.ko.slice(0, 3).map(unit => beastDisplayName(unit.beastId)).join(' · ');
+      const koStrip = this.text(x + 18, y + height - 18, `KO  ${koNames}${groups.ko.length > 3 ? ` +${groups.ko.length - 3}` : ''}`, 9, '#fb7185', 'bold');
+      this.objects.push(koStrip);
+    }
 
     if (!hasUnplaced) {
       // Empty Bench placeholder

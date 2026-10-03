@@ -1,6 +1,6 @@
 # P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability
 
-Status: **PARTIALLY IMPLEMENTED — Energy cast reliability complete; Battle Setup visual correction remains pending / Experimental / not adopted**.
+Status: **IMPLEMENTED — F.1a Setup UX and F.1b Energy cast reliability / deterministic PASS / live evidence not recorded / Experimental / not adopted**.
 
 ## Why F.1 Exists
 

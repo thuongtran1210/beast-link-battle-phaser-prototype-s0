@@ -3,6 +3,7 @@ import type { AutonomousBattleSnapshot } from '../battle/AutonomousBattleModel';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
+import type { CastControlState } from './BattleSetupPresentation';
 
 export class ShowcaseBattleHUDView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -21,6 +22,7 @@ export class ShowcaseBattleHUDView {
     frontlineLabel: string,
     onCast: (energyId: string) => void,
     paused: boolean,
+    castStateFor: (energyId: string) => CastControlState,
   ): void {
     this.destroyObjects();
 
@@ -161,6 +163,7 @@ export class ShowcaseBattleHUDView {
       this.objects.push(empty);
     } else {
       activeEntries.forEach((entry) => {
+        const castState = castStateFor(entry.energyId);
         const rowBg = this.scene.add
           .rectangle(this.x + w / 2, rowY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
           .setStrokeStyle(1, 0x334155);
@@ -180,23 +183,19 @@ export class ShowcaseBattleHUDView {
         );
 
         const healBtnBg = this.scene.add
-          .rectangle(this.x + w - 58, rowY + rowHeight / 2, 70, 26, 0x0284c7, 1)
-          .setStrokeStyle(1, 0x38bdf8)
-          .setInteractive({ useHandCursor: true });
+          .rectangle(this.x + w - 58, rowY + rowHeight / 2, 70, 26, castState.enabled ? 0x0284c7 : 0x334155, castState.enabled ? 1 : .65)
+          .setStrokeStyle(1, castState.enabled ? 0x38bdf8 : 0x64748b);
 
         const healBtnText = this.scene.add
-          .text(this.x + w - 58, rowY + rowHeight / 2, 'CAST HEAL', {
+          .text(this.x + w - 58, rowY + rowHeight / 2, castState.label, {
             fontFamily: HudTokens.fonts.family,
             fontSize: '10px',
             color: '#ffffff',
             fontStyle: 'bold',
           })
-          .setOrigin(0.5)
-          .setInteractive({ useHandCursor: true });
+          .setOrigin(0.5);
 
-        const castAction = () => onCast(entry.energyId);
-        healBtnBg.on('pointerdown', castAction);
-        healBtnText.on('pointerdown', castAction);
+        if (castState.enabled) { healBtnBg.setInteractive({ useHandCursor: true }); healBtnText.setInteractive({ useHandCursor: true }); const castAction = () => onCast(entry.energyId); healBtnBg.on('pointerdown', castAction); healBtnText.on('pointerdown', castAction); }
 
         this.objects.push(rowBg, tokenIcon, label, healBtnBg, healBtnText);
         rowY += rowHeight + 4;

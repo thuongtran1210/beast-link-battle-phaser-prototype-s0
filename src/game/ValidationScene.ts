@@ -78,6 +78,7 @@ import { ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
+import { castControlState } from './ui/BattleSetupPresentation';
 
 import {
   V11D_PRESETS,
@@ -721,6 +722,7 @@ export class ValidationScene extends Phaser.Scene {
         frontlineDisplay,
         (energyId) => this.castEnergy(energyId),
         this.showcasePaused,
+        (energyId) => castControlState(this.battleModel!.frontlineHealEligibility(energyId, this.energyQueue).reason, this.showcasePaused),
       );
     } else {
       this.showcaseBattleHud?.setVisible(false);
