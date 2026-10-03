@@ -1,6 +1,6 @@
 # P1-V14D — Persistent Energy / Save-vs-Spend Across Waves
 
-Status: **ACTIVE GAMEPLAY SLICE / IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL / NOT ADOPTED**
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL / NOT ADOPTED**
 
 ## Why V14D Exists
 
@@ -121,7 +121,7 @@ At Wave transition (`advanceToNextWave() → resetWavePreparation()`):
 
 ## Spend-vs-Save Decision Harness
 
-File: [PersistentEnergyHarness.ts](file:///g:/beast-link-battle-phaser-prototype-s0/src/game/energy/PersistentEnergyHarness.ts)
+File: `src/game/energy/PersistentEnergyHarness.ts`
 
 A deterministic comparison harness evaluates two legal policies on identical starting conditions:
 - **Policy A (SPEND NOW)**: Casts Frontline Heal when active units take damage >= 30 HP.
@@ -135,7 +135,7 @@ Both policies execute deterministically and remain fully legal.
 
 ## Deterministic Verification
 
-File: [P1V14DChecks.ts](file:///g:/beast-link-battle-phaser-prototype-s0/src/game/energy/P1V14DChecks.ts)
+File: `src/game/energy/P1V14DChecks.ts`
 
 Includes 28 checks plus Decision Harness verification:
 
