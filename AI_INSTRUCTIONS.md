@@ -18,7 +18,8 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active player-surface corrective slice: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+3. active player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 6. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
@@ -40,7 +41,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability**. ACTIVE / owner authorized / code not started / Experimental / not adopted. See `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`.
+- Current slice: **P1-V14F.1c — Battle Setup Visual Closeout**. ACTIVE / owner authorized / code not started / Experimental / not adopted. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
+- F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
 - V14E Multi-Wave Resource Commitment Integration Validation: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. 70 deterministic checks pass. Controlled SAVE vs SPEND fixture verified; Energy policy ownership made explicit; Link Shard accounting corrected; divergence count aligned with harness output; production squad-cap constant verified.
 - V14D Persistent Energy: `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves. Reset only on Restart / new Run. No storage cap.
 - V14C.1a.1 Timing State Hardening: Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
@@ -63,95 +65,83 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active player-surface correction — P1-V14F.1
+## Active player-surface visual closeout — P1-V14F.1c
 
 Purpose:
 
-**Make Battle Setup readable and manual Energy casting visibly reliable without adding a new gameplay mechanic.**
+**Close Battle Setup visual hierarchy and normal-Battle cast-state presentation without changing gameplay rules.**
 
 Required:
-- separate Reserve / Deployed / KO presentation;
-- KO stays visible but non-deployable and visually disabled;
-- Active Squad cap 4 vs Formation Grid 18 must be explicit;
-- simplify Battle Setup header and enemy-card hierarchy;
-- Setup Stored Energy is preview-only;
-- Battle Energy controls are interactive and stateful;
-- manual cast is eligible only in Running Battle with charge, living frontline, and missing HP;
-- full-HP frontline consumes 0 Energy;
-- success consumes exactly 1 selected charge and shows actual +heal feedback;
-- invalid casts expose deterministic reason text/state;
-- normal Battle and Showcase HUD use the same eligibility/cast semantics;
-- preserve V14A–E.1 mechanics and evidence.
+- render one primary Wave title and one Threat line;
+- remove duplicate fixture/threat title rendering;
+- show `ACTIVE x/4 · GRID 18` explicitly;
+- when Active Squad is full, idle empty grid positions must look reposition-only, not deployable;
+- simplify Reserve header and keep KO visually separate;
+- replace Setup raw Energy text with structured icon/count chips from EnergyQueue entries;
+- keep Setup Energy preview-only;
+- remove default STAR-consolidation instruction from Stored Energy panel;
+- show STAR consolidation only as contextual Reserve state;
+- keep `◆ LINK ×N` separate from Energy rows;
+- normal PrototypeFlowPanel Energy controls must use the same `castControlState` semantics as Showcase;
+- disabled normal controls must not invoke casts;
+- preserve all F.1b Energy-cast reliability rules.
 
-## F.1 non-goals
+## F.1c non-goals
 
 Do NOT implement:
-- arbitrary Energy target selection;
-- new Energy effects;
+- new Energy mechanics;
+- new targeting;
 - Energy cap / decay;
 - Energy Combo;
 - Squad Capacity upgrade;
-- revive / recovery;
-- economy / shop;
-- meta progression;
-- broad scene rewrite;
-- final production art.
+- STAR / Link rebalance;
+- enemy rebalance;
+- final art;
+- scene architecture rewrite.
 
-## Verification discipline
+## Required F.1c workflow
 
-Keep separate:
-1. code exists
-2. deterministic checks pass
-3. `npm run check` passes
-4. `npm run build` passes
-5. live browser behavior passes
-6. owner verification passes
-7. design is adopted
-
-## Required F.1 workflow
-
-1. Read repo-local sources only.
-2. Inspect current BattleSetupView, ValidationScene.castEnergy, ShowcaseBattleHUDView, BattleActionView, and AutonomousBattleModel.castFrontlineHeal.
-3. Implement Battle Setup hierarchy / Reserve / KO correction.
-4. Introduce one shared deterministic Energy cast eligibility/result seam.
-5. Prevent full-HP cast from consuming a charge.
-6. Add visible success and failure feedback.
-7. Route normal Battle and Showcase HUD through the same semantics.
-8. Add deterministic F.1 checks.
-9. Run historical regressions.
-10. Run `npm run check`.
-11. Run `npm run build`.
-12. Record Live A–H only if browser evidence is actually available.
-13. STOP after F.1 report.
+1. Read repo-local docs only.
+2. Inspect current BattleSetupView header, grid, Reserve tray, right CTA, consolidation inspector, ValidationScene BattleSetup constructor wiring, PrototypeFlowPanel, and EnergyQueue.
+3. Add structured Setup Energy entries rather than parsing formatted text.
+4. Implement the visual hierarchy cleanup.
+5. Move consolidation out of Stored Energy card into Reserve context.
+6. Add normal-Battle cast presentation parity.
+7. Add deterministic presentation checks.
+8. Run all historical regressions.
+9. Run `npm run check`.
+10. Run `npm run build`.
+11. Record live screenshots only if actually observed.
+12. STOP for owner screenshot review.
 
 ## Completion report
 
 Report:
-- final commit SHA
+- final origin/main SHA
 - files changed
-- Setup layout changes
-- Reserve / Deployed / KO classification
-- exact cast eligibility rules
-- full-HP protection
-- success/failure result behavior
-- normal vs Showcase shared path
-- deterministic F.1 checks
+- header cleanup
+- Active/Grid treatment
+- full-squad empty-cell treatment
+- Reserve/KO surface changes
+- Setup Energy structured inventory
+- Link resource presentation
+- consolidation contextual placement
+- normal Battle cast parity
+- deterministic checks
 - regressions
 - `npm run check`
 - `npm run build`
-- Live A–H status
+- live status
 - known limitations
 
 Explicitly state:
 
 ```text
-P1-V14F.1 ADDS NO NEW ENERGY MECHANIC.
-FULL-HP FRONTLINE CAST CONSUMES 0 ENERGY.
-SUCCESSFUL EFFECTIVE HEAL CONSUMES EXACTLY 1 SELECTED CHARGE.
-SETUP ENERGY IS PREVIEW-ONLY.
+P1-V14F.1C ADDS NO GAMEPLAY MECHANIC.
+SETUP ENERGY USES STRUCTURED ICON/COUNT PRESENTATION.
+STAR CONSOLIDATION NO LONGER OCCUPIES THE ENERGY PANEL.
 ACTIVE SQUAD CAP REMAINS 4.
 FORMATION GRID REMAINS 18 POSITIONS.
-LIVE A–H REMAIN OPEN UNLESS ACTUALLY RECORDED.
-ENERGY CAP / DECAY NOT STARTED.
-SQUAD CAPACITY UPGRADE NOT STARTED.
+NORMAL AND SHOWCASE CAST CONTROLS SHARE ELIGIBILITY SEMANTICS.
+LIVE CLOSEOUT REMAINS OPEN UNLESS ACTUALLY RECORDED.
 ```
