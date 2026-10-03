@@ -10,8 +10,8 @@ Status: **Repository-local coding handoff**
 - V14C.1: **IMPLEMENTED**; deterministic/build evidence PASS; owner-live open.
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
-- V14C.1a.1: **ACTIVE CLOSEOUT SLICE** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
-- V14D: **NEXT GAMEPLAY SLICE** / not started.
+- V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
+- V14D: **ACTIVE GAMEPLAY SLICE / IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — Persistent Energy / Save-vs-Spend. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -22,35 +22,32 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-7. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-8. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-9. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-10. relevant historical slice docs
-11. current code/tests
+3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+4. previous closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+8. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+9. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+10. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+11. relevant historical slice docs
+12. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
-**P1-V14C.1a.1 — Timing State Hardening & Repo Closeout (Active Closeout Slice)**
+**P1-V14D — Persistent Energy / Save-vs-Spend Across Waves (Active Gameplay Slice)**
 
-Technical closeout slice following P1-V14C.1a before P1-V14D Persistent Energy:
-- Fixes state machine defect where invoking `start()` on an `isEnded` timer improperly reloaded `durationSeconds` (12.0s) and reactivated the phase countdown.
-- Enforces strict terminal state machine for both `BeastRushPhaseTimer` and `EnergyRushTimer`:
-  - `READY`: `isReady = true`, `isActive = false`, `isEnded = false`, `remainingSeconds = 12.0`
-  - `READY start()` → `ACTIVE`
-  - `ACTIVE`: repeated `start()` is a NO-OP; `update()` decrements countdown normally
-  - At 0: → `ENDED`; single end event fires exactly once
-  - `ENDED`: `start()` is a strict NO-OP; `update()` is a NO-OP; `remainingSeconds` stays 0
-  - Only `reset()` returns `ENDED → READY 12.0s`
-- Preserves all C.1a, C.1, C.2, and B.3 invariants.
-- Deterministic checks (26 checks across Beast and Energy timers) added in `P1V14C1aChecks.ts`.
-- Next gameplay slice: `P1-V14D — Persistent Energy` (not started).
-- Squad Capacity Upgrade: not started.
+Persistent Energy allows unused stored Energy charges to carry across Waves:
+- `EnergyQueue` is Run-scoped as single source of truth; resets only on `restartRun()`.
+- Wave transition (`resetWavePreparation()`) preserves unused Energy charges intact.
+- Valid Energy matches add +1 to selected ID without wiping carried charges.
+- Battle casts consume exactly 1 selected charge; failed/post-end casts consume 0.
+- No storage cap is imposed: accumulation above 6 and above 20 is legal (`RuleConfig.energyMax` does not cap persistent charges).
+- UI shows `CARRY IN ×N` and `STORED ×N` in Energy Rush, and `ENERGY CARRIED ×N` at Wave Result.
+- Preserves all C.1a/C.1a.1, C.1, C.2, B.3, and B.1/B.2 invariants.
+- Deterministic checks (28 checks + harness) in `P1V14DChecks.ts`.
 
 ## B.1/B.2 implementation baseline
 
@@ -110,14 +107,20 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 - Implemented / deterministic PASS / owner-live open.
 
 ### P1-V14C.1a.1 — Timing State Hardening & Repo Closeout
-- Active closeout slice.
 - Terminal state rule enforced: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0.
 - Only `reset()` returns `ENDED → READY 12.0s`.
 - Implemented / deterministic PASS.
 
+### P1-V14D — Persistent Energy / Save-vs-Spend Across Waves
+- Active gameplay slice.
+- `EnergyQueue` is Run-scoped; unused charges persist across Waves.
+- `resetWavePreparation()` preserves `energyQueue`.
+- `restartRun()` clears `energyQueue` (0 cross-run leakage).
+- No storage cap (charges may exceed 6 and 20).
+- Implemented / deterministic PASS / Experimental.
+
 ## Next Gameplay Slices & Deferred Complexity
 
-- **P1-V14D — Persistent Energy**: Next gameplay slice. NOT STARTED.
 - **Squad Capacity Upgrade**: Future experiment. NOT STARTED.
 - **Still deferred**:
   - new Tactical Energy types
@@ -137,6 +140,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14D-PERSISTENT-ENERGY.md`
 - `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 - `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 - `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`

@@ -147,6 +147,7 @@ export class ValidationScene extends Phaser.Scene {
   private readonly energyTimer = new EnergyRushTimer(12.0);
   private readonly battleQueue = new BattleQueue();
   private readonly energyQueue = new EnergyQueue();
+  private energyCarryIn = 0;
   private readonly starConverter = new StarConverter();
   private formation?: BattleFormation;
   private battleModel?: AutonomousBattleModel;
@@ -492,6 +493,8 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterEnergyRush(): void {
     this.energyTimer.reset();
+    this.energyCarryIn = this.energyQueue.getTotalCharges();
+    this.metrics.recordEnergyCarryIn(this.energyCarryIn);
     this.recentActionText = 'Match identical Energy pairs to store Frontline Heal charges.';
     this.createPuzzleBoard(
       'ENERGY RUSH',
@@ -647,11 +650,13 @@ export class ValidationScene extends Phaser.Scene {
     const panel = this.add.rectangle(width / 2, height / 2, 500, 250, 0x111827, .97).setStrokeStyle(2, 0x22c55e);
     const title = this.add.text(width / 2, height / 2 - 78, `WAVE ${current.index + 1} / ${this.waveRun.totalWaves} CLEARED`, { fontFamily: HudTokens.fonts.family, fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(.5);
     const threat = this.add.text(width / 2, height / 2 - 42, current.threatLabel, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#86efac', fontStyle: 'bold' }).setOrigin(.5);
-    const nextText = this.add.text(width / 2, height / 2, `NEXT: WAVE ${next} — ${nextWave ? P1V13A1_LEVELS[nextWave].name : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#cbd5e1' }).setOrigin(.5);
-    const button = this.add.rectangle(width / 2, height / 2 + 62, 180, 42, 0xb45309, 1).setStrokeStyle(1, 0xfbbf24).setInteractive({ useHandCursor: true });
-    const label = this.add.text(width / 2, height / 2 + 62, 'CONTINUE', { fontFamily: HudTokens.fonts.family, fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(.5).setInteractive({ useHandCursor: true });
+    const carriedCharges = this.energyQueue.getTotalCharges();
+    const energyCarried = this.add.text(width / 2, height / 2 - 14, `ENERGY CARRIED ×${carriedCharges}`, { fontFamily: HudTokens.fonts.family, fontSize: '14px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(.5);
+    const nextText = this.add.text(width / 2, height / 2 + 16, `NEXT: WAVE ${next} — ${nextWave ? P1V13A1_LEVELS[nextWave].name : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#cbd5e1' }).setOrigin(.5);
+    const button = this.add.rectangle(width / 2, height / 2 + 68, 180, 42, 0xb45309, 1).setStrokeStyle(1, 0xfbbf24).setInteractive({ useHandCursor: true });
+    const label = this.add.text(width / 2, height / 2 + 68, 'CONTINUE', { fontFamily: HudTokens.fonts.family, fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(.5).setInteractive({ useHandCursor: true });
     const proceed = () => this.advanceToNextWave(); button.on('pointerup', proceed); label.on('pointerup', proceed);
-    this.waveResultObjects.push(panel, title, threat, nextText, button, label);
+    this.waveResultObjects.push(panel, title, threat, energyCarried, nextText, button, label);
   }
 
   private advanceToNextWave(): void {
@@ -665,7 +670,7 @@ export class ValidationScene extends Phaser.Scene {
     this.comboQuality.reset();
     this.energyTimer.reset();
     this.battleQueue.clear();
-    this.energyQueue.reset();
+    // P1-V14D: Unused stored Energy persists across Waves. Do NOT call energyQueue.reset()!
     // Deployment is per-Wave only. The roster retains body state, never slots.
     this.formation?.reset();
     this.formation = undefined;
@@ -958,18 +963,21 @@ export class ValidationScene extends Phaser.Scene {
     if (this.phaseController.phase !== GamePhase.EnergyRush) return;
     const isReady = this.energyTimer.isReady;
     const remaining = this.energyTimer.snapshot.remainingSeconds;
+    const total = this.energyQueue.getTotalCharges();
+    const carryIn = this.energyCarryIn;
+    const queueTitle = carryIn > 0 ? `STORED ×${total} (CARRY IN ×${carryIn})` : `STORED ×${total}`;
     this.phaseStatusPanel?.render({
       phaseTitle: 'ENERGY RUSH',
       phaseSubtitle: 'Match 6×6 Energy pairs to collect Frontline Heal charges',
       timerSeconds: remaining,
       timerLabel: isReady ? 'Energy' : 'Countdown',
-      timerSubtext: isReady ? 'READY' : '12.0s timed lock · Prepare for battle',
+      timerSubtext: isReady ? 'READY · FIRST VALID MATCH STARTS TIMER' : '12.0s timed lock · Prepare for battle',
       statusBadge: {
         text: isReady ? 'READY' : 'COUNTDOWN',
         active: !isReady,
       },
       matchCount: this.metrics.snapshot.energyMatches,
-      queueTitle: 'Stored Energy',
+      queueTitle,
       queueItems: this.energyQueue.getAll().map((e) => {
         const def = getIconDefinition(e.energyId);
         return {
@@ -1036,6 +1044,7 @@ export class ValidationScene extends Phaser.Scene {
     this.energyTimer.reset();
     this.battleQueue.clear();
     this.energyQueue.reset();
+    this.energyCarryIn = 0;
     this.formation = undefined;
     this.battleActionView?.destroy();
     this.battleActionView = undefined;

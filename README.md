@@ -10,12 +10,13 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-7. supporting V14 docs
-8. current code/tests
+3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+4. previous closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+8. supporting V14 docs
+9. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -46,18 +47,20 @@ Current implementation evidence:
 
 Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
 
-### Active closeout slice — P1-V14C.1a.1
+### Active gameplay slice — P1-V14D
 
-**Timing State Hardening & Repo Closeout**
+**Persistent Energy / Save-vs-Spend Across Waves**
 
-Technical closeout slice following P1-V14C.1a:
-- Hardens `BeastRushPhaseTimer` and `EnergyRushTimer` state machine: terminal `ENDED` state makes subsequent `start()` calls NO-OPs.
-- `remainingSeconds` remains 0; no reloading 12.0s without an explicit `reset()`.
-- Extends deterministic verification to cover full 26-check state machine.
+- `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves.
+- `resetWavePreparation()` preserves unused Energy charges intact.
+- `restartRun()` clears `energyQueue`.
+- No storage cap: charges may exceed 6 and 20.
+- UI: Energy Rush shows `CARRY IN ×N` and `STORED ×N`; Wave Result shows `ENERGY CARRIED ×N`.
+- Deterministic checks (28 checks + harness) pass.
 
 Read:
 
-`docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+`docs/P1-V14D-PERSISTENT-ENERGY.md`
 
 ## Current V14 roadmap
 
@@ -81,10 +84,10 @@ V14C.1a — First-Match Start Buffer
 IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN
 ↓
 V14C.1a.1 — Timing State Hardening & Repo Closeout
-ACTIVE CLOSEOUT SLICE / DETERMINISTIC PASS
+IMPLEMENTED / DETERMINISTIC PASS
 ↓
 V14D — Persistent Energy
-NEXT GAMEPLAY SLICE / NOT STARTED
+ACTIVE GAMEPLAY SLICE / DETERMINISTIC PASS / EXPERIMENTAL
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED

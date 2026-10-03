@@ -18,15 +18,16 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-7. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-8. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-9. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-10. relevant historical docs
-11. current code/tests
+3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+4. previous closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+8. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+9. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+10. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+11. relevant historical docs
+12. current code/tests
 
 If repo docs and code conflict:
 - inspect current code
@@ -36,14 +37,15 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14C.1a.1 — Timing State Hardening & Repo Closeout**. ACTIVE CLOSEOUT SLICE. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
-- V14C.1a First-Match Start Buffer: IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN. `READY → first valid match → ACTIVE 12.0s timer`. Invalid input does not start timer.
+- Current slice: **P1-V14D — Persistent Energy / Save-vs-Spend Across Waves**. ACTIVE GAMEPLAY SLICE / EXPERIMENTAL. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
+- V14D Persistent Energy: `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves. Reset only on Restart / new Run. No storage cap.
 - V14C.1a.1 Timing State Hardening: Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
+- V14C.1a First-Match Start Buffer: `READY → first valid match → ACTIVE 12.0s timer`. Invalid input does not start timer.
 - P1-V14C.2 Link Shard: IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL / LIVE EVIDENCE OPEN.
 - V14C.1 Combo Quality Signal: IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN.
 - V14B.3 STAR Consolidation: IMPLEMENTED / CODE REVIEW PASS / LIVE HYPOTHESIS OPEN.
 - V14B.1/B.2 Run Roster & Attrition: CORE IMPLEMENTED / OWNER-LIVE EVIDENCE OPEN.
-- V14D (Energy persistence) and Squad Capacity upgrades: NOT STARTED.
+- Squad Capacity upgrades: NOT STARTED.
 - V14 remains Experimental / not adopted.
 
 ## Implemented architecture baselines
@@ -73,9 +75,14 @@ If repo docs and code conflict:
 - `ENDED` state is strictly terminal: `start()` and `update()` are NO-OPs.
 - Only `reset()` returns `ENDED → READY 12.0s`.
 
-## Next gameplay slice — P1-V14D (Persistent Energy)
-- Not started.
-- Do NOT change `resetWavePreparation()` or `energyQueue.reset()` in closeout slices.
+### V14D — Persistent Energy / Save-vs-Spend Across Waves
+- `EnergyQueue` is Run-scoped as single source of truth.
+- `resetWavePreparation()` preserves `energyQueue`.
+- `restartRun()` resets `energyQueue`.
+- Valid match adds +1 charge to matched ID without wiping carried charges.
+- Successful Battle cast consumes exactly 1 selected charge; failed/post-end casts consume 0.
+- No storage cap: charges may exceed 6 and 20.
+- UI: Energy Rush shows `CARRY IN ×N` and `STORED ×N`; Wave Result shows `ENERGY CARRIED ×N`.
 
 ## Non-goals / Still deferred
 - Squad Capacity upgrade (NOT STARTED)
@@ -100,74 +107,3 @@ Keep these separate:
 7. design is adopted
 
 Never infer a later state from an earlier one.
-
-## Required B.3 workflow
-
-1. Read repo-local sources only.
-2. Inspect current recruitment / STAR / RunRoster / Battle code.
-3. Remove auto-consolidation from recruitment.
-4. Implement manual deterministic Reserve-only consolidation.
-5. Preserve HP ratio and instance identity rules.
-6. Centralize STAR profile.
-7. Add STAR signature scaling fixture.
-8. Add deterministic B.3 checks.
-9. Run historical regressions.
-10. Run `npm run check`.
-11. Run `npm run build`.
-12. Live validate Breadth vs Density.
-13. Report if one strategy dominates.
-14. STOP before V14C.
-1. Read only repository-local docs listed above.
-2. Inspect actual current V14A implementation before editing.
-3. Identify current ownership of:
-   - Wave state
-   - Beast queue/conversion
-   - formation
-   - battle unit creation
-   - Battle result
-   - HP reset
-   - Start Battle readiness
-4. State conflicts briefly.
-5. Implement the active B.3 STAR consolidation/power-density slice only.
-6. Add deterministic checks.
-7. Run historical regressions.
-8. Run `npm run check`.
-9. Run `npm run build`.
-10. Live verify B.3 consolidation only when a browser surface is available.
-11. Stop before V14C.
-
-## Completion report
-
-Report:
-- final commit SHA
-- files changed
-- recruitment semantics
-- consolidation API
-- deterministic ingredient selection
-- instance-ID rule
-- HP-ratio rule
-- centralized STAR profile
-- exact stat multipliers
-- exact signature STAR values
-- consolidation UI behavior
-- Breadth live result
-- Density live result
-- injured consolidation result
-- cross-Wave STAR persistence
-- signature scaling result
-- multi-threat metrics
-- whether either strategy universally dominated
-- deterministic checks
-- regressions
-- `npm run check`
-- `npm run build`
-- known limitations
-
-Explicitly state:
-
-```text
-ACTIVE SQUAD CAP REMAINS 4
-SQUAD CAPACITY UPGRADE NOT STARTED
-P1-V14C COMBO REWORK NOT STARTED
-P1-V14D ENERGY PERSISTENCE NOT STARTED
-```

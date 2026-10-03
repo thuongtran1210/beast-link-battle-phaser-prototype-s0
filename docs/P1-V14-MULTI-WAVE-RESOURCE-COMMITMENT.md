@@ -124,23 +124,33 @@ Combo quality
 
 ### P1-V14D — Persistent Energy / Save-vs-Spend
 
-Deferred / not started.
+**Implemented / deterministic PASS / Experimental.**
 
-Test later:
+Tested trade-off:
 
 ```text
-spend this Wave
+spend this Wave (protect units / reduce attrition)
 vs
-save for later threat
+save for later threat (hoard tactical heal for tough waves)
 ```
 
-Do not expand Energy effect variety before this question is isolated.
+Implementation baseline:
+- `EnergyQueue` is Run-scoped as single source of truth.
+- `resetWavePreparation()` preserves `energyQueue` across Waves.
+- `restartRun()` clears `energyQueue`.
+- Valid Energy matches add +1 to selected ID without wiping carried charges.
+- Successful Battle casts consume exactly 1 selected charge; failed/post-end casts consume 0.
+- No storage cap: charges may exceed 6 and 20 (`RuleConfig.energyMax` does not cap persistent charges).
+- UI displays `CARRY IN ×N` and `STORED ×N` in Energy Rush, and `ENERGY CARRIED ×N` at Wave Result.
+
+Read:
+`docs/P1-V14D-PERSISTENT-ENERGY.md`
 
 ### Future — Squad Capacity Upgrade
 
 Not started.
 
-Keep current Experimental cap fixed at 4 during B.3 so slot pressure remains measurable.
+Keep current Experimental cap fixed at 4 so slot pressure remains measurable.
 
 ## Important model boundary
 
@@ -171,7 +181,6 @@ Do not reconstruct damaged units from anonymous counts after Battle.
 ## Deferred complexity
 
 Still deferred:
-- P1-V14D — Persistent Energy (next gameplay slice / not started)
 - Squad Capacity upgrades (not started)
 - new Tactical Energy types
 - revive / resting recovery
