@@ -123,6 +123,24 @@ Read:
 
 `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 
+### Active visual closeout — P1-V14F.1c
+
+**Battle Setup Visual Closeout**
+
+Remote F.1 baseline `8666a5e` fixed Energy cast reliability and added Reserve/KO grouping, but owner screenshot still shows a debug-heavy Setup surface.
+
+F.1c closes:
+- duplicate header hierarchy;
+- Active 4/4 vs Grid 18 clarity;
+- full-squad empty-cell affordance;
+- raw Stored Energy text;
+- consolidation copy inside Energy panel;
+- normal-Battle cast-control parity with Showcase.
+
+Read:
+
+`docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+
 ## Current V14 roadmap
 
 ```text
@@ -157,6 +175,9 @@ V14E.1 — Policy Semantics & Evidence Hardening
 IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL
 ↓
 V14F.1 — Battle Setup UX + Energy Cast Reliability
+IMPLEMENTED / DETERMINISTIC PASS / LIVE OPEN
+↓
+V14F.1c — Battle Setup Visual Closeout
 ACTIVE / OWNER AUTHORIZED / CODE NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
