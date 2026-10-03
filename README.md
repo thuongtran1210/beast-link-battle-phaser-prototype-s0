@@ -10,9 +10,10 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-4. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-5. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
 6. supporting V14 docs
 7. current code/tests
 
@@ -45,7 +46,21 @@ Current implementation evidence:
 
 Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
 
-### Active corrective slice — P1-V14C.1a
+### Active closeout slice — P1-V14C.1a.1
+
+**Timing State Hardening & Repo Closeout**
+
+C.1a first-match start behavior is implemented. Repository review found one terminal-state edge case: after a timer reaches ENDED, calling `start()` can currently reload the full duration. C.1a.1 hardens both Beast Rush and Energy Rush so:
+
+```text
+READY → ACTIVE → ENDED
+ENDED → start() = NO-OP
+ENDED → reset() → READY
+```
+
+No gameplay reward/balance rules change in this closeout.
+
+Previous corrective behavior remains:
 
 **First-Match Start Buffer**
 
@@ -86,8 +101,11 @@ IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL
 V14C.1a — First-Match Start Buffer
 IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL
 ↓
+V14C.1a.1 — Timing State Hardening
+ACTIVE CLOSEOUT SLICE / OWNER AUTHORIZED
+↓
 V14D — Persistent Energy
-DEFERRED / NOT STARTED
+NEXT GAMEPLAY SLICE / NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
