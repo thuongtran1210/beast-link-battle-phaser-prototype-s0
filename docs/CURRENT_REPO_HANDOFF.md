@@ -15,7 +15,7 @@ Status: **Repository-local coding handoff**
 - V14E.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
 - P1-V14F.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL** — Energy cast reliability + initial Setup roster presentation. Remote main: `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`.
 - P1-V14F.1c: **PLAYER-SURFACE VISUAL CLOSEOUT / FORMATION-BOARD IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Battle Setup visual hierarchy remains a live screenshot gate. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
-- P1-V14G: **IMPLEMENTATION AUTHORIZED / ACTIVE GAMEPLAY SLICE / EXPERIMENTAL / NOT ADOPTED** — Energy Identity & Activation Grammar. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
+- P1-V14G.1: **CORE IMPLEMENTED / DETERMINISTIC PASS / PLAYER-SURFACE G.2 PENDING / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Tactical Energy Core. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -48,7 +48,7 @@ If repository docs conflict with current code, inspect the code and report the c
 
 **P1-V14G — Energy Identity & Activation Grammar**
 
-Status: **IMPLEMENTATION AUTHORIZED / active gameplay slice / Experimental / not adopted**
+Status: **CORE IMPLEMENTED / deterministic pass / player-surface G.2 pending / live not recorded / Experimental / not adopted**
 
 Owner-confirmed problem:
 - persistent Energy has save-vs-spend value, but individual Energy IDs have no meaningful tactical identity;

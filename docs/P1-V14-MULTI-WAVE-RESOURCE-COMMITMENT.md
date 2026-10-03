@@ -2,6 +2,10 @@
 
 Status: **Experimental design direction / not adopted**.
 
+## P1-V14G.1 Tactical Energy Core
+
+Core implemented with deterministic evidence; player-surface G.2 and live validation remain pending. The Run-scoped generic `EnergyQueue` remains uncapped and keeps historical `energy-e` / `energy-f` compatibility while new Energy Rush generation uses tactical A-D only.
+
 ## Problem statement
 
 The original single-Battle loop did not give several existing systems enough strategic purpose.

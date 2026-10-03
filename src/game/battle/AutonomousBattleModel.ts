@@ -2,6 +2,7 @@ import { type BattleFormation, type FormationUnit } from './BattleFormation';
 import { signatureStrengthForStar, starStatMultiplier } from '../run/StarProfile';
 import { signatureForBeast, type BeastRole, type BeastSignatureId } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
+import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/TacticalEnergyCatalog';
 import type { FormationValidationMetrics } from './FormationValidationHarness';
 
 export type BattleStatus = 'Running' | 'Win' | 'Lose';
@@ -383,6 +384,10 @@ const COMBAT_DISTANCE_EPSILON = 0.001;
  */
 export type FrontlineHealCastReason = 'ok' | 'battle-not-running' | 'no-charge' | 'no-target' | 'target-full-hp';
 export interface FrontlineHealCastResult { success: boolean; reason: FrontlineHealCastReason; energyId: string; targetUnitId?: string; healedAmount: number; }
+export type TacticalEnergyAvailability = 'disabled' | 'ready' | 'suggested';
+export type TacticalEnergyCastReason = FrontlineHealCastReason | 'no-frontliner' | 'no-ranged' | 'unsupported-energy';
+export interface TacticalEnergyEligibility { energyId: string; kind?: TacticalEnergyKind; availability: TacticalEnergyAvailability; reason: TacticalEnergyCastReason; targetUnitId?: string; targetEnemyId?: string; suggestedReason?: string; }
+export interface TacticalEnergyCastResult { success: boolean; energyId: string; kind?: TacticalEnergyKind; reason: TacticalEnergyCastReason; targetUnitId?: string; targetEnemyId?: string; amount: number; }
 
 export class AutonomousBattleModel {
   private state: AutonomousBattleSnapshot;
@@ -684,6 +689,70 @@ export class AutonomousBattleModel {
 
   cast(energyId?: string, energyQueue?: EnergyQueue): boolean {
     return this.castFrontlineHeal(energyId, energyQueue);
+  }
+
+  tacticalEnergyEligibility(energyId: string, energyQueue: EnergyQueue): TacticalEnergyEligibility {
+    const definition = tacticalEnergyDefinition(energyId);
+    if (!definition) return { energyId, availability: 'disabled', reason: 'unsupported-energy' };
+    if (this.state.status !== 'Running') return { energyId, kind: definition.kind, availability: 'disabled', reason: 'battle-not-running' };
+    if (energyQueue.getCharges(energyId) <= 0) return { energyId, kind: definition.kind, availability: 'disabled', reason: 'no-charge' };
+
+    if (definition.kind === 'Mend') {
+      const result = this.frontlineHealEligibility(energyId, energyQueue);
+      if (!result.success) return { energyId, kind: definition.kind, availability: 'disabled', reason: result.reason, targetUnitId: result.targetUnitId };
+      const target = this.state.units.find((unit) => unit.unitId === result.targetUnitId)!;
+      const suggested = target.maxHp - target.currentHp >= FRONTLINE_HEAL_HP || target.currentHp / target.maxHp <= 0.60;
+      return { energyId, kind: definition.kind, availability: suggested ? 'suggested' : 'ready', reason: 'ok', targetUnitId: target.unitId, suggestedReason: suggested ? 'FRONT INJURED' : undefined };
+    }
+
+    if (definition.kind === 'Rescue') {
+      const target = this.rescueTarget();
+      if (!target) return { energyId, kind: definition.kind, availability: 'disabled', reason: 'no-target' };
+      const diverPressure = this.state.enemies.some((enemy) => enemy.currentHp > 0 && enemy.archetype === 'Diver' && enemy.targetUnitId === target.unitId);
+      const lowHp = target.currentHp / target.maxHp <= 0.60;
+      return { energyId, kind: definition.kind, availability: diverPressure || lowHp ? 'suggested' : 'ready', reason: 'ok', targetUnitId: target.unitId, suggestedReason: diverPressure ? 'DIVER PRESSURE' : lowHp ? 'BACKLINE HIT' : undefined };
+    }
+
+    const archetype = definition.kind === 'Break' ? 'Frontliner' : 'Ranged';
+    const targets = this.state.enemies.filter((enemy) => enemy.currentHp > 0 && enemy.archetype === archetype);
+    if (!targets.length) return { energyId, kind: definition.kind, availability: 'disabled', reason: definition.kind === 'Break' ? 'no-frontliner' : 'no-ranged' };
+    const target = definition.kind === 'Break'
+      ? targets.sort((a, b) => a.positionX - b.positionX || a.enemyId.localeCompare(b.enemyId))[0]
+      : targets.sort((a, b) => a.currentHp - b.currentHp || a.enemyId.localeCompare(b.enemyId))[0];
+    const suggested = definition.kind === 'Break'
+      ? targets.length >= 2
+      : this.state.enemies.some((enemy) => enemy.currentHp > 0 && enemy.archetype === 'Frontliner');
+    return { energyId, kind: definition.kind, availability: suggested ? 'suggested' : 'ready', reason: 'ok', targetEnemyId: target.enemyId, suggestedReason: suggested ? definition.kind === 'Break' ? 'FRONTLINE PRESSURE' : 'RANGED PROTECTED' : undefined };
+  }
+
+  castTacticalEnergy(energyId: string, energyQueue: EnergyQueue): TacticalEnergyCastResult {
+    // Re-evaluate at cast time: a previously displayed legal target may be gone.
+    const eligibility = this.tacticalEnergyEligibility(energyId, energyQueue);
+    if (eligibility.reason !== 'ok' || !eligibility.kind) return { success: false, energyId, kind: eligibility.kind, reason: eligibility.reason, amount: 0, targetUnitId: eligibility.targetUnitId, targetEnemyId: eligibility.targetEnemyId };
+    if (eligibility.kind === 'Mend') {
+      const result = this.castFrontlineHealResult(energyId, energyQueue);
+      return { success: result.success, energyId, kind: 'Mend', reason: result.reason, targetUnitId: result.targetUnitId, amount: result.healedAmount };
+    }
+    if (eligibility.kind === 'Rescue') {
+      const target = this.rescueTarget();
+      const amount = target ? Math.min(FRONTLINE_HEAL_HP, target.maxHp - target.currentHp) : 0;
+      if (!target || amount <= 0 || !energyQueue.consumeCharge(energyId)) return { success: false, energyId, kind: 'Rescue', reason: target ? 'no-charge' : 'no-target', amount: 0 };
+      target.currentHp = Math.min(target.maxHp, target.currentHp + amount);
+      return { success: true, energyId, kind: 'Rescue', reason: 'ok', targetUnitId: target.unitId, amount };
+    }
+    const target = this.state.enemies.find((enemy) => enemy.enemyId === eligibility.targetEnemyId && enemy.currentHp > 0);
+    const amount = target ? Math.min(FRONTLINE_HEAL_HP, target.currentHp) : 0;
+    if (!target || amount <= 0 || !energyQueue.consumeCharge(energyId)) return { success: false, energyId, kind: eligibility.kind, reason: target ? 'no-charge' : eligibility.kind === 'Break' ? 'no-frontliner' : 'no-ranged', amount: 0 };
+    this.applyDamage(target, amount);
+    this.syncEnemyAggregates();
+    if (this.state.enemyHp <= 0) { this.state.status = 'Win'; this.freezeOnTerminal(); }
+    return { success: true, energyId, kind: eligibility.kind, reason: 'ok', targetEnemyId: target.enemyId, amount };
+  }
+
+  private rescueTarget(): CombatUnit | undefined {
+    return this.state.units
+      .filter((unit) => unit.currentHp > 0 && (unit.row === 'Mid' || unit.row === 'Back') && unit.currentHp < unit.maxHp)
+      .sort((a, b) => (b.maxHp - b.currentHp) - (a.maxHp - a.currentHp) || a.unitId.localeCompare(b.unitId))[0];
   }
 
   private resolveStaticBattleTick(): void {

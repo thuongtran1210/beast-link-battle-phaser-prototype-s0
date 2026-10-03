@@ -10,7 +10,7 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active player-surface corrective slice: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+3. tactical Energy core: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 6. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`

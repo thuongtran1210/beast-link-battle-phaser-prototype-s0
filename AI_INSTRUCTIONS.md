@@ -42,7 +42,7 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current design slice: **P1-V14G — Energy Identity & Activation Grammar**. IMPLEMENTATION AUTHORIZED / active gameplay slice / Experimental / not adopted. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
+- Current slice: **P1-V14G.1 — Tactical Energy Core**. CORE IMPLEMENTED / DETERMINISTIC PASS / player-surface G.2 pending / live not recorded / Experimental / not adopted. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
 - F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
 - V14E Multi-Wave Resource Commitment Integration Validation: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. 70 deterministic checks pass. Controlled SAVE vs SPEND fixture verified; Energy policy ownership made explicit; Link Shard accounting corrected; divergence count aligned with harness output; production squad-cap constant verified.

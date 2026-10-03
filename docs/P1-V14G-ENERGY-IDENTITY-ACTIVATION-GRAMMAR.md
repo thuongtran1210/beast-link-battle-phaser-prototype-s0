@@ -1,6 +1,14 @@
 # P1-V14G — Energy Identity & Activation Grammar
 
-Status: **IMPLEMENTATION AUTHORIZED / ACTIVE GAMEPLAY SLICE / EXPERIMENTAL / NOT ADOPTED**.
+Status: **P1-V14G.1 CORE IMPLEMENTED / DETERMINISTIC PASS / PLAYER-SURFACE G.2 PENDING / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+
+## P1-V14G.1 Implementation Evidence — 2026-10-03
+
+- Central catalog: `src/game/energy/TacticalEnergyCatalog.ts`; new player Energy Rush generation uses A-D only.
+- `AutonomousBattleModel` owns tactical eligibility and cast results, including stale-state re-evaluation and effective-result-first charge consumption.
+- MEND delegates to the existing Frontline Heal semantics. RESCUE, BREAK, and PIERCE use deterministic target selection and share existing enemy aggregate/terminal synchronization.
+- `energy-e` and `energy-f` remain valid generic `EnergyQueue` data but are unsupported tactical casts.
+- G.2 is reserved for player-facing naming, readiness, and suggested-state presentation.
 
 ## Why V14G Exists
 

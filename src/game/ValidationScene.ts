@@ -9,6 +9,7 @@ import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster } from './run/RunRoster';
 import { RunLinkShardPool, evaluateLinkShardReward } from './run/RunLinkShardPool';
 import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
+import { V14G_ENERGY_RUSH_POOL } from './energy/TacticalEnergyCatalog';
 import { runP1S1Checks } from './energy/P1S1Checks';
 import { EnergyRushTimer } from './energy/EnergyRushTimer';
 import { runP1V1Checks } from './energy/P1V1Checks';
@@ -502,7 +503,7 @@ export class ValidationScene extends Phaser.Scene {
     this.createPuzzleBoard(
       'ENERGY RUSH',
       'Match 6×6 Energy pairs to store Frontline Heal charges for battle.',
-      ['energy-a', 'energy-b', 'energy-c', 'energy-d', 'energy-e', 'energy-f'],
+      V14G_ENERGY_RUSH_POOL,
       'Energy',
       (contentId, _turns, midpoint) => this.onEnergyMatch(contentId, midpoint),
     );

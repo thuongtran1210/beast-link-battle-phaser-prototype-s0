@@ -3,8 +3,9 @@ import { DeadlockResolver } from '../puzzle/DeadlockResolver';
 import { BoardGenerator } from '../puzzle/BoardGenerator';
 import { BoardModel } from '../puzzle/BoardModel';
 import { GamePhase } from '../state/GamePhase';
+import { V14G_ENERGY_RUSH_POOL } from '../energy/TacticalEnergyCatalog';
 
-const energyContentIds = ['energy-a', 'energy-b', 'energy-c', 'energy-d', 'energy-e', 'energy-f'];
+const energyContentIds = V14G_ENERGY_RUSH_POOL;
 
 /**
  * P0 continuity only: replace an exhausted Energy board during an unresolved Battle.
