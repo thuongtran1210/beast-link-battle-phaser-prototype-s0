@@ -1,6 +1,6 @@
 # P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability
 
-Status: **IMPLEMENTED — F.1a Setup UX and F.1b Energy cast reliability / deterministic PASS / live evidence not recorded / Experimental / not adopted**.
+Status: **IMPLEMENTED BASELINE — Energy cast reliability complete; Reserve/KO grouping implemented; visual closeout continues in P1-V14F.1c / deterministic PASS / live evidence not recorded / Experimental / not adopted**.
 
 ## Why F.1 Exists
 
@@ -545,3 +545,14 @@ Required:
 - live A–H stay OPEN unless actually recorded.
 
 P1-V14F.1 remains Experimental / not adopted.
+
+
+## F.1c Visual Closeout Continuation
+
+Owner screenshot after remote baseline `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8` shows the remaining Setup surface still requires visual closeout.
+
+Active continuation:
+
+`docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+
+F.1c changes no gameplay mechanic.
