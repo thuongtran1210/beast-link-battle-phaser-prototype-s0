@@ -10,13 +10,14 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-8. supporting V14 docs
-9. current code/tests
+3. active validation slice: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+4. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+5. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+6. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+7. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+8. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+9. supporting V14 docs
+10. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -47,7 +48,7 @@ Current implementation evidence:
 
 Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
 
-### Active gameplay slice — P1-V14D
+### Implemented gameplay slice — P1-V14D
 
 **Persistent Energy / Save-vs-Spend Across Waves**
 
@@ -61,6 +62,25 @@ Owner-live A–H remains a separate evidence gate and must not be inferred as PA
 Read:
 
 `docs/P1-V14D-PERSISTENT-ENERGY.md`
+
+### Active validation slice — P1-V14E
+
+**Multi-Wave Resource Commitment Integration Validation**
+
+V14E adds no new resource mechanic. It validates whether current V14 decisions create persistent, readable consequences across the existing three-Wave run.
+
+Required evidence:
+- bodies vs STAR density;
+- Reserve preservation vs deployed attrition;
+- Combo quality → Link Shard efficiency;
+- Energy spend-now vs save-for-later;
+- at least two deterministic legal policy traces;
+- at least three factual cross-policy divergences;
+- no encoded winner/ranking.
+
+Read:
+
+`docs/P1-V14E-INTEGRATION-VALIDATION.md`
 
 ## Current V14 roadmap
 
