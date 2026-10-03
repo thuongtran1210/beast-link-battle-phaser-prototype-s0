@@ -1,6 +1,6 @@
 # P1-V14E — Multi-Wave Resource Commitment Integration Validation
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **IMPLEMENTATION EXISTS / DETERMINISTIC HARNESS EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
 
 ## Purpose
 
@@ -493,3 +493,20 @@ Required:
 Then STOP for owner review.
 
 V14E does not adopt V14 into canonical gameplay automatically.
+
+
+## E.1 Corrective Review
+
+Repository review after remote implementation `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47` found evidence-quality issues that prevent treating the current V14E harness as fully validation-ready:
+
+- CONSERVE and COMMIT currently share the same unconditional Energy auto-heal loop, so Energy divergence is not a controlled policy-semantic proof;
+- Link Shard narrative text must reflect actual assisted-consolidation spend;
+- documented divergence count must equal actual harness output;
+- squad-cap evidence must use the production constant rather than an always-true helper;
+- `SIMULATION_STEP = 0.1` must be described as 100 ms, and 6000 steps as 600 seconds if that bound remains.
+
+Active correction:
+
+`docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
+
+No V14 gameplay mechanic is changed by this correction.
