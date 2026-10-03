@@ -1,6 +1,6 @@
 # P1-V14G — Energy Identity & Activation Grammar
 
-Status: **P1-V14G.1 CORE IMPLEMENTED / DETERMINISTIC PASS / PLAYER-SURFACE G.2 PENDING / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **P1-V14G.1 CORE IMPLEMENTED / P1-V14G.2 ACTIVE IMPLEMENTATION / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
 
 ## P1-V14G.1 Implementation Evidence — 2026-10-03
 
@@ -888,3 +888,16 @@ Evidence levels remain separate:
 8. adoption.
 
 Do not adopt Tactical Energy Identity into canonical gameplay from implementation alone.
+
+
+## P1-V14G.2 Active Continuation
+
+G.1 core is implemented on remote main at:
+
+`1102a0771c1c086a2bc85b30bd57c449877aba7d`
+
+Active player-surface continuation:
+
+`docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+
+G.2 also hardens RESCUE suggestion semantics so Diver pressure on any Mid/Back body can make RESCUE SUGGESTED even when the deterministic heal target is another more-damaged Mid/Back unit.
