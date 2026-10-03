@@ -201,3 +201,43 @@ Do not implement in B.1/B.2:
 Read:
 
 `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+
+## UI Validation Update — Beast Rush Right Rail — 2026-10-03
+
+**Owner visual status: PASS.**
+
+The Beast Rush right rail has been accepted as the correct information-hierarchy direction:
+- right rail behaves as a **live resource HUD**, not an instruction panel
+- Combo time + meter is the primary focal point
+- MATCHES / RECRUITED are compact counters
+- Beast Queue uses visual Beast stacks / copy counts
+- queue copy count uses `×N` and does not imply automatic STAR consolidation
+- event feedback is compact and transient
+- paragraph-style persistent instructions were removed from the right rail
+
+This PASS is for **visual hierarchy / presentation direction**, not final production-art quality.
+
+The current project style still targets Cute Tactical Chibi; final Beast art / production asset polish remains a separate art gate.
+
+Reported implementation SHA for the right-rail slice: `ec7a60acd6fb3a26cbc75ff05c5d9afdd85035bb`.
+During documentation sync, that SHA was not visible on the connected GitHub remote, so record it as **owner-reported implementation evidence** rather than remote-verified commit evidence.
+
+Do not apply the same redesign to Energy Rush automatically; Energy Rush remains a separate UI slice.
+
+## Latest B.3 Repository Evidence — 2026-10-03
+
+GitHub main now contains:
+
+`603391e3181ec02ffb75f7ff76cd72f03f120433` — `feat(run): add player STAR consolidation`
+
+Remote code evidence includes:
+- recruitment path changed from greedy `bulk(...)` use to separate 1★ recruitment
+- Reserve-only player STAR consolidation path
+- deterministic primary instance preservation strategy
+- aggregate-health-ratio consolidation handling
+- shared STAR stat profile
+- STAR-scaled existing signatures
+- deterministic B.3 checks and breadth/density harness code
+
+This means B.3 is no longer merely “implementation pending”.
+However, command-run evidence and owner live B.3 validation must still be tracked separately before B.3 can be called PASS or adopted.
