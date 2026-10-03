@@ -18,7 +18,8 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active gameplay design spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+3. active implementation slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+4. parent tactical Energy spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 4. player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
@@ -42,7 +43,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14G.1 — Tactical Energy Core**. CORE IMPLEMENTED / DETERMINISTIC PASS / player-surface G.2 pending / live not recorded / Experimental / not adopted. See `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`.
+- Current slice: **P1-V14G.2 — Tactical Energy Player Surface + G.1 Semantic Hardening**. ACTIVE IMPLEMENTATION / owner authorized / code not started / Experimental / not adopted. See `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`.
+- G.1 core is remote verified at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
 - F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
 - V14E Multi-Wave Resource Commitment Integration Validation: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. 70 deterministic checks pass. Controlled SAVE vs SPEND fixture verified; Energy policy ownership made explicit; Link Shard accounting corrected; divergence count aligned with harness output; production squad-cap constant verified.
@@ -67,62 +69,89 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active design — P1-V14G Energy Identity & Activation Grammar
+## Active implementation — P1-V14G.2 Tactical Energy Player Surface
 
 Purpose:
 
-**Make each Energy communicate what it does, what it targets, when it can be cast, and when it is contextually relevant.**
+**Make the G.1 tactical Energy model visible, understandable, and actually used by player gameplay.**
 
-Implementation is owner-authorized. Follow the locked baseline and repo-only execution boundary.
+Required:
+- harden RESCUE Diver-pressure suggestion so ANY Diver pressure on ANY Mid/Back body can suggest RESCUE;
+- route player `castEnergy()` through `castTacticalEnergy()`;
+- Setup shows MEND / RESCUE / BREAK / PIERCE names and one-line effect hints;
+- Energy Rush player-facing HUD / match feedback uses tactical names;
+- normal Battle and Showcase derive availability from `tacticalEnergyEligibility()`;
+- surface `DISABLED / READY / SUGGESTED`;
+- use compact deterministic reason labels;
+- SUGGESTED remains guidance only;
+- successful MEND/RESCUE display heal feedback on actual target;
+- successful BREAK/PIERCE display Energy-damage feedback on actual enemy target;
+- disabled controls consume 0 and do not invoke cast;
+- no universal `CAST HEAL` text for damage Energy;
+- internal A/B/C/D IDs are not primary player labels.
 
-Locked identities:
-- `energy-a → MEND`: heal frontmost living ally up to 30 HP.
-- `energy-b → RESCUE`: heal the most damaged living Mid/Back ally up to 30 HP.
-- `energy-c → BREAK`: deal 30 direct Energy damage to a living Frontliner.
-- `energy-d → PIERCE`: deal 30 direct Energy damage to a living Ranged enemy.
-
-Activation grammar:
-- Setup = preview only.
-- Running Battle = `DISABLED / READY / SUGGESTED`.
-- Paused / Win / Lose = disabled.
-- player chooses when to cast; no auto-cast.
-- successful effective result consumes exactly 1 selected charge.
-- failed / ineffective result consumes 0.
-- deterministic targeting remains model-owned.
-- no manual target selection in baseline.
-- V14G Energy Rush player pool uses A–D only.
-- energy-e/f remain historical generic IDs.
-
-Suggested conditions:
-- MEND: frontline missing >=30 HP or <=60% HP.
-- RESCUE: Diver pressure on Mid/Back or chosen target <=60% HP.
-- BREAK: 2+ living Frontliners.
-- PIERCE: living Ranged + living Frontliner.
-
-Threat teaching relationship:
-- Frontline Pressure → MEND / BREAK.
-- Backline Dive → RESCUE.
-- Protected Ranged → PIERCE.
-
-## V14G non-goals
+## G.2 non-goals
 
 Do NOT implement:
-- more than four active tactical Energy types;
+- new Energy types;
 - manual Energy target selection;
 - Energy cooldown;
 - Energy cap / decay;
 - Energy Combo;
-- Energy crafting / rarity / upgrades;
-- Squad Capacity upgrade;
-- revive / recovery;
-- shop / meta progression.
+- crafting / rarity / upgrades;
+- auto-cast;
+- best/optimal Energy ranking;
+- new Wave mechanics;
+- final art.
 
-## Workflow
+## Required workflow
 
-1. Treat `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md` as the active design spec.
-2. Do not implement until owner explicitly approves code.
-3. Preserve V14D persistence and F.1 effective-result-first charge consumption.
-4. Keep the tactical Energy catalog centralized.
-5. Keep UI guidance descriptive, not automatic.
-6. Keep deterministic and live evidence separate.
+1. Read repo-local sources only.
+2. Verify G.1 remote baseline and current player-surface mismatch.
+3. Fix RESCUE suggestion semantics first.
+4. Create one shared pure tactical Energy presentation helper.
+5. Route player cast through tactical model result.
+6. Update Setup / Energy Rush HUD / normal Battle / Showcase presentation.
+7. Add target-correct heal/damage feedback.
+8. Add deterministic G.2 checks.
+9. Run all historical regressions.
+10. Run `npm run check`.
+11. Run `npm run build`.
+12. Record Live A–H only if actually observed.
+13. STOP for owner live review.
 
+## Completion report
+
+Report:
+- final origin/main SHA
+- files changed
+- RESCUE hardening
+- player cast routing
+- Setup tactical identity
+- Energy Rush tactical identity
+- normal Battle states
+- Showcase states
+- READY/SUGGESTED/DISABLED grammar
+- success feedback per kind
+- failure reason mapping
+- deterministic checks
+- regressions
+- check/build
+- live status
+- known limitations
+
+Explicitly state:
+
+```text
+PLAYER GAMEPLAY NOW ROUTES TACTICAL ENERGY THROUGH CASTTACTICALENERGY.
+
+MEND / RESCUE / BREAK / PIERCE ARE PRIMARY PLAYER-FACING IDENTITIES.
+
+SUGGESTED IS GUIDANCE ONLY AND NEVER AUTO-CASTS.
+
+SUCCESSFUL EFFECTIVE CAST CONSUMES EXACTLY 1 SELECTED CHARGE.
+
+FAILED / DISABLED / STALE CAST CONSUMES 0.
+
+V14G REMAINS EXPERIMENTAL / NOT ADOPTED.
+```
