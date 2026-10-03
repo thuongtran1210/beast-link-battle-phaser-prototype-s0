@@ -9,6 +9,7 @@ import { FeedbackEffects } from './feedback/FeedbackEffects';
 import { BattleSetupInteractionController, type DropOutcome } from './BattleSetupInteractionController';
 import type { RunRoster } from '../run/RunRoster';
 import { reservePage } from './ReservePagination';
+import { ACTIVE_SQUAD_LIMIT, activeSquadPresentation, reserveTargetAffordance } from './ActiveSquadPresentation';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -44,6 +45,7 @@ export class BattleSetupView {
   private readonly playerSlotVisuals: SlotVisualTarget[] = [];
   private dragGhost?: Phaser.GameObjects.Container;
   private hoverPreviewContainer?: Phaser.GameObjects.Container;
+  private readonly dragAffordanceObjects: Phaser.GameObjects.GameObject[] = [];
   private pointerMoveHandler?: (pointer: Phaser.Input.Pointer) => void;
   private pointerUpHandler?: (pointer: Phaser.Input.Pointer) => void;
   private enemyTool: EnemyArchetype | 'Erase' = 'Frontliner';
@@ -66,7 +68,7 @@ export class BattleSetupView {
     private readonly onEnemyBoardEdit?: (tool: EnemyArchetype | 'Erase', row: FormationSlot['row'], column: number) => void,
     private readonly runRoster?: RunRoster,
   ) {
-    this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, 4);
+    this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, ACTIVE_SQUAD_LIMIT);
   }
 
   static computeLayout(viewportHeight = 720): BattleSetupLayoutMetrics {
@@ -122,6 +124,7 @@ export class BattleSetupView {
       this.hoverPreviewContainer.destroy();
       this.hoverPreviewContainer = undefined;
     }
+    this.dragAffordanceObjects.splice(0).forEach((object) => object.destroy());
     if (this.scene.tweens) {
       this.scene.tweens.killTweensOf(this.objects);
     }
@@ -238,11 +241,17 @@ export class BattleSetupView {
     const zoneText = this.text(dividerX, topLaneY - 38, 'MY SIDE  →  BATTLE  ←  ENEMY SIDE', 9, '#94a3b8', 'bold').setOrigin(0.5);
     this.objects.push(zoneBadge, zoneText);
 
-    // Board headers
-    const playerHeading = this.text(dividerX - 170, topLaneY - 38, '◀ MY FORMATION', 12, '#38bdf8', 'bold').setOrigin(0.5);
+    // Board headers. Squad capacity is separate from the 3 × 6 position grid.
+    const squad = this.squadPresentation();
+    const playerHeading = this.text(dividerX - 170, topLaneY - 58, '◀ MY FORMATION', 12, '#38bdf8', 'bold').setOrigin(0.5);
     const enemyHeadingText = this.onEnemyBoardEdit ? 'ENEMY FORMATION [Validation Edit] ▶' : 'ENEMY FORMATION ▶';
     const enemyHeading = this.text(dividerX + 180, topLaneY - 38, enemyHeadingText, 12, '#f87171', 'bold').setOrigin(0.5);
-    this.objects.push(playerHeading, enemyHeading);
+    const squadTitle = this.text(dividerX - 385, topLaneY - 58, 'ACTIVE SQUAD', 9, '#7dd3fc', 'bold');
+    const meter = this.text(dividerX - 385, topLaneY - 42, squad.meter.map((filled) => filled ? '●' : '○').join(' '), 11, squad.isFull ? '#fbbf24' : '#38bdf8', 'bold');
+    const squadCount = this.text(dividerX - 318, topLaneY - 42, squad.countLabel, 10, '#ffffff', 'bold');
+    const squadLimit = this.text(dividerX - 385, topLaneY - 27, squad.isFull ? 'MAX 4 · FULL' : 'MAX 4', 8, squad.isFull ? '#fbbf24' : '#64748b', 'bold');
+    const gridLabel = this.text(dividerX - 170, topLaneY - 38, 'POSITION GRID · Arrange your Active Squad', 8, '#94a3b8', 'bold').setOrigin(0.5);
+    this.objects.push(playerHeading, enemyHeading, squadTitle, meter, squadCount, squadLimit, gridLabel);
 
     // Row labels
     const playerFrontX = dividerX - 80;
@@ -430,11 +439,13 @@ export class BattleSetupView {
       return;
     }
 
-    // Empty Player Slot: deployment affordance with subtle footprint / "+" marker
+    // Empty Player Slot: a tactical position, not an additional squad slot.
+    const squad = this.squadPresentation();
+    const blockedByFullSquad = reserveTargetAffordance(squad.activeCount, false, this.controller.state.mode === 'draggingFromTray') === 'blocked';
     const emptySlot = this.scene.add
-      .rectangle(x, y, width, height, 0x1e293b, 0.5)
-      .setStrokeStyle(1.5, 0x3b82f6, 0.4);
-    const footprint = this.text(x, y, '+', 12, '#3b82f6').setOrigin(0.5).setAlpha(0.6);
+      .rectangle(x, y, width, height, 0x1e293b, blockedByFullSquad ? 0.3 : 0.5)
+      .setStrokeStyle(1.5, blockedByFullSquad ? 0x475569 : 0x3b82f6, blockedByFullSquad ? 0.35 : 0.4);
+    const footprint = this.text(x, y, blockedByFullSquad ? 'LOCK' : '+', blockedByFullSquad ? 7 : 12, blockedByFullSquad ? '#64748b' : '#3b82f6', 'bold').setOrigin(0.5).setAlpha(blockedByFullSquad ? 0.7 : 0.6);
     this.objects.push(emptySlot, footprint);
 
     // Subtle first-time pulse on frontline empty slot
@@ -619,9 +630,9 @@ export class BattleSetupView {
     this.objects.push(energyTitle, energyContent);
 
     // START BATTLE CTA button
-    const activeCount = this.formation.units.filter((unit) => unit.slotId !== null).length;
-    const allPlaced = activeCount >= 1 && activeCount <= 4;
-    const totalUnplaced = this.controller.getUnplacedUnits().filter((unit) => this.runRoster?.canDeploy(unit.unitId) ?? true).length;
+    const squad = this.squadPresentation();
+    const activeCount = squad.activeCount;
+    const allPlaced = activeCount >= 1 && activeCount <= ACTIVE_SQUAD_LIMIT;
     const btnW = w - 28;
     const btnH = 54;
     const btnX = x + w / 2;
@@ -643,7 +654,7 @@ export class BattleSetupView {
     const btnSub = this.text(
       btnX,
       allPlaced ? btnY + 11 : btnY + 10,
-      allPlaced ? `ACTIVE ${activeCount} / 4 · RESERVE ${totalUnplaced}` : 'Deploy at least 1 Beast',
+      allPlaced ? squad.ctaSummary : 'Deploy at least 1 Beast',
       9,
       allPlaced ? '#fef08a' : '#f59e0b',
       'bold',
@@ -691,7 +702,7 @@ export class BattleSetupView {
 
     // Create Drag Ghost
     this.createDragGhost(unit, pointer.x, pointer.y);
-    this.highlightValidTargetCells(true);
+    this.showDragCapacityAffordances();
   }
 
   private createDragGhost(unit: FormationUnit, startX: number, startY: number): void {
@@ -775,17 +786,22 @@ export class BattleSetupView {
 
     const slot = this.formation.getSlot(target.slotId);
     const isOccupied = Boolean(slot?.unitId && slot.unitId !== unitId);
+    const squad = this.squadPresentation();
+    const affordance = reserveTargetAffordance(squad.activeCount, isOccupied, this.controller.state.mode === 'draggingFromTray');
 
     const container = this.scene.add.container(target.x, target.y);
     container.setDepth(150);
 
     const previewBg = this.scene.add
-      .rectangle(0, 0, target.width - 6, target.height - 6, isOccupied ? 0xd97706 : 0x0284c7, 0.45)
-      .setStrokeStyle(2, isOccupied ? 0xfbbf24 : 0x38bdf8, 0.9);
+      .rectangle(0, 0, target.width - 6, target.height - 6, affordance === 'swap' ? 0xd97706 : affordance === 'blocked' ? 0x334155 : 0x0284c7, affordance === 'blocked' ? 0.35 : 0.45)
+      .setStrokeStyle(2, affordance === 'swap' ? 0xfbbf24 : affordance === 'blocked' ? 0x64748b : 0x38bdf8, 0.9);
 
-    if (isOccupied) {
+    if (affordance === 'swap') {
       const swapText = this.text(0, 0, '⇄ SWAP', 11, '#fef08a', 'bold').setOrigin(0.5);
       container.add([previewBg, swapText]);
+    } else if (affordance === 'blocked') {
+      const blockedText = this.text(0, 0, 'SQUAD FULL', 8, '#94a3b8', 'bold').setOrigin(0.5);
+      container.add([previewBg, blockedText]);
     } else {
       const previewIcon = createIconImage(this.scene, unit.beastId, 0, 0, 32).setAlpha(0.65);
       container.add([previewBg, previewIcon]);
@@ -812,6 +828,7 @@ export class BattleSetupView {
       this.hoverPreviewContainer.destroy();
       this.hoverPreviewContainer = undefined;
     }
+    this.dragAffordanceObjects.splice(0).forEach((object) => object.destroy());
     this.highlightValidTargetCells(false);
   }
 
@@ -851,6 +868,19 @@ export class BattleSetupView {
         this.render();
         break;
 
+      case 'rejected':
+        FeedbackEffects.floatText(
+          this.scene,
+          x ?? 360,
+          (y ?? 170) - 20,
+          outcome.reason === 'Active Squad full' ? 'SQUAD FULL — 4 / 4' : outcome.reason.toUpperCase(),
+          '#fbbf24',
+          '11px',
+          750,
+        );
+        this.render();
+        break;
+
       case 'selected':
       case 'deselected':
         this.render();
@@ -884,6 +914,42 @@ export class BattleSetupView {
     });
     this.objects.push(text);
     return text;
+  }
+
+  private squadPresentation() {
+    const units = this.formation.units;
+    const isLiving = (unit: FormationUnit) => this.runRoster?.canDeploy(unit.unitId) ?? true;
+    return activeSquadPresentation(
+      units.filter((unit) => unit.slotId !== null && isLiving(unit)).length,
+      units.filter((unit) => unit.slotId === null && isLiving(unit)).length,
+      units.filter((unit) => unit.slotId === null && !isLiving(unit)).length,
+    );
+  }
+
+  /** Temporary drag affordances avoid rebuilding the view (which would cancel the drag). */
+  private showDragCapacityAffordances(): void {
+    this.dragAffordanceObjects.splice(0).forEach((object) => object.destroy());
+    if (this.controller.state.mode !== 'draggingFromTray') return;
+
+    const squad = this.squadPresentation();
+    this.playerSlotVisuals.forEach((target) => {
+      const slot = this.formation.getSlot(target.slotId);
+      const affordance = reserveTargetAffordance(squad.activeCount, Boolean(slot?.unitId), true);
+      if (affordance === 'place') {
+        const glow = this.scene.add.rectangle(target.x, target.y, target.width - 4, target.height - 4, 0x0284c7, 0.12).setStrokeStyle(1.5, 0x38bdf8, 0.7);
+        glow.setDepth(120);
+        this.dragAffordanceObjects.push(glow);
+      } else if (affordance === 'blocked') {
+        const dim = this.scene.add.rectangle(target.x, target.y, target.width - 4, target.height - 4, 0x0f172a, 0.45).setStrokeStyle(1.5, 0x475569, 0.8);
+        const lock = this.text(target.x, target.y, 'LOCK', 7, '#94a3b8', 'bold').setOrigin(0.5);
+        dim.setDepth(120); lock.setDepth(121);
+        this.dragAffordanceObjects.push(dim, lock);
+      } else {
+        const swap = this.text(target.x, target.y - target.height / 2 + 7, '⇄ SWAP', 7, '#fef08a', 'bold', '#78350f', { x: 3, y: 1 }).setOrigin(0.5);
+        swap.setDepth(121);
+        this.dragAffordanceObjects.push(swap);
+      }
+    });
   }
 }
 
