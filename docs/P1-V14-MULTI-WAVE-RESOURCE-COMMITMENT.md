@@ -163,6 +163,23 @@ Harness and check suite:
 Read:
 `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 
+### P1-V14E.1 — Policy Semantics & Evidence Hardening
+
+**ACTIVE corrective validation slice / owner authorized / code not started.**
+
+Purpose:
+- make Energy decision semantics explicit and policy-owned;
+- add controlled SAVE vs SPEND evidence on identical Battle conditions;
+- correct Link Shard earned / spent / remaining accounting;
+- make divergence documentation match actual harness output;
+- replace fake squad-cap evidence with the production cap constant;
+- correct `SIMULATION_STEP = 0.1` timing wording.
+
+No gameplay rule or balance value changes in E.1.
+
+Read:
+`docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
+
 ### Future — Squad Capacity Upgrade
 
 Not started.
