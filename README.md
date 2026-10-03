@@ -19,6 +19,16 @@ Gameplay rules are defined in Notion. Read these before changing gameplay behavi
 
 See `AI_INSTRUCTIONS.md` before implementation work.
 
+For art / visual-asset work, use the separate art pipeline:
+
+- Notion: **05 — Art Direction & AI Asset Style Lock — Cute Tactical Chibi**
+- `ART_AGENT_INSTRUCTIONS.md`
+- `art/style/STYLE_BIBLE.md`
+- `art/style/STYLE_LOCK_PROMPT.md`
+- `art/style/ASSET_QA_CHECKLIST.md`
+
+The first art gate is **Snowguard / Tanker Master Reference → owner STYLE APPROVAL**. Do not mass-generate the roster before that gate.
+
 ## Current adopted structural flow
 
 ```text
