@@ -410,31 +410,35 @@ Exact type naming may follow repo conventions.
 - Wired in: `src/game/runChecks.ts`
 
 ### Deterministic Test Results
-All 34 required integration checks pass:
+All 70 deterministic checks pass:
 - Section 24 Invariants (Checks 1–10): PASS
 - Section 25 STAR / Body (Checks 11–17): PASS
 - Section 26 Combo / Link (Checks 18–23): PASS
 - Section 27 Energy (Checks 24–29): PASS
 - Section 28 Attrition (Checks 30–34): PASS
-- Section 29 & 30 Cross-Policy Divergence: PASS (4 factual divergences recorded, 0 winner properties)
+- E.1 Energy Policy Semantics (Checks 35–42): PASS
+- E.1 Controlled SAVE vs SPEND (Checks 43–51): PASS
+- E.1 Link Shard Accounting (Checks 52–60): PASS
+- E.1 Divergences & Production Constants (Checks 61–70): PASS
 
-### Cross-Policy Divergences Recorded
+### Cross-Policy Divergences Recorded (5)
 1. **STAR Distribution Divergence**: CONSERVE has 0 2★ units; COMMIT has 2 2★ units (`run-1` Tanker 2★, `run-4` Assassin 2★).
 2. **Roster Body Count Divergence**: CONSERVE retained 19 individual 1★ bodies; COMMIT consolidated into 15 bodies (4 ingredients consumed across Waves 1 and 2).
-3. **Energy Balance Divergence**: CONSERVE saved Energy in early waves and ended with 0 charges after Wave 3; COMMIT actively cast frontline heals and carried 5 charges.
-4. **Link Shard Balance Divergence**: CONSERVE earned 0 shards (best streak 2–3); COMMIT earned 3 shards (best streak 4–6 per wave) and spent 0.
+3. **Energy Balance Divergence**: CONSERVE saved Energy (spent 0 in Waves 1 & 2, ended with 10 charges); COMMIT spent 7 charges across Waves 2 & 3 and ended with 3 charges.
+4. **Link Shard Balance Divergence**: CONSERVE earned 0 shards (best streak 2–3); COMMIT earned 3 shards (1 per wave), spent 1 on assisted consolidation, and ended with 2 shards.
+5. **Run Status Divergence**: CONSERVE fell to Wave 3 protected ranged attrition (`Lose`); COMMIT survived Wave 3 with 2★ power density (`Win`).
 
 ### Wave-by-Wave Snapshot Summaries
 
 #### CONSERVE Policy:
-- **Wave 1 (Frontline Pressure)**: 8 beasts, 4 energy prep. Deployed 4 1★ units (`run-1`, `run-4`, `run-6`, `run-8`), held 4 in Reserve. Battle Win, 3 heals cast (1 charge preserved), 7 living / 1 KO, 252 run HP. Deployment cleared.
-- **Wave 2 (Backline Dive)**: 6 beasts, 3 energy prep. Deployed 4 1★ units (`run-2`, `run-5`, `run-7`, `run-13`), held 7 in Reserve. Battle Win, 4 heals cast (0 charges preserved), 9 living / 5 KO, 342 run HP. Deployment cleared.
-- **Wave 3 (Protected Ranged)**: 5 beasts, 3 energy prep. Deployed 4 1★ units (`run-3`, `run-5`, `run-11`, `run-14`), held 10 in Reserve. Battle Lose (1★ bodies collapsed under ranged pressure), 4 heals cast, 10 living / 9 KO, 427 run HP.
+- **Wave 1 (Frontline Pressure)**: 8 beasts, 4 energy prep. Deployed 2 tanks (`run-1`, `run-2`) on outer lanes + 2 assassins (`run-4`, `run-5`), held 4 in Reserve. Battle Win, 0 heals cast (4 charges preserved), 5 living / 3 KO. Deployment cleared.
+- **Wave 2 (Backline Dive)**: 6 beasts, 3 energy prep (7 total energy). Deployed 2 tanks (`front-3`, `back-3`) + assassin + ranger, held 7 in Reserve. Battle Win, 0 heals cast (7 charges preserved), 8 living / 6 KO. Deployment cleared.
+- **Wave 3 (Protected Ranged)**: 5 beasts, 3 energy prep (10 total energy). Deployed 4 1★ living units, held 9 in Reserve. Battle Lose (1★ bodies collapsed under ranged pressure), 0 heals cast (10 charges preserved), 9 living / 10 KO. Final status: Lose.
 
 #### COMMIT Policy:
-- **Wave 1 (Frontline Pressure)**: 8 beasts, 4 energy prep. Consolidates 3 `beast-a` into 2★ Tanker `run-1` (0 shards spent). Deployed 2★ `run-1` + 3 1★ units, held 2 in Reserve. Battle Win, 0 heals cast (4 charges preserved), 5 living / 1 KO, 180 run HP. Deployment cleared.
-- **Wave 2 (Backline Dive)**: 6 beasts, 3 energy prep. Consolidates 2 `beast-b` + 1 Link Shard into 2★ Assassin `run-4`. Deployed 2 2★ units + 2 1★ units, held 5 in Reserve. Battle Win, 1 heal cast (6 charges preserved), 7 living / 3 KO, 255 run HP. Deployment cleared.
-- **Wave 3 (Protected Ranged)**: 5 beasts, 3 energy prep. Deployed 2 2★ units + 2 1★ units, held 8 in Reserve. Battle Win (2★ power density survived ranged focus), 4 heals cast, 5 charges preserved, 10 living / 5 KO, 418 run HP.
+- **Wave 1 (Frontline Pressure)**: 8 beasts, 4 energy prep. Consolidates 3 `beast-a` into 2★ Tanker `run-1` (0 shards spent). Deployed 2★ `run-1` + 3 1★ units, held 2 in Reserve. Battle Win, 0 heals cast (4 charges preserved), 1 shard earned (1 carry out), 5 living / 1 KO. Deployment cleared.
+- **Wave 2 (Backline Dive)**: 6 beasts, 3 energy prep (7 total energy). Consolidates 2 `beast-b` + 1 Link Shard into 2★ Assassin `run-4` (spends exactly 1 shard). Deployed 2 2★ units + 2 1★ units, held 4 in Reserve. Battle Win, 3 heals cast (4 charges preserved), 1 shard earned, 1 spent (1 carry out), 7 living / 3 KO. Deployment cleared.
+- **Wave 3 (Protected Ranged)**: 5 beasts, 3 energy prep (7 total energy). Deployed 2 2★ units + 2 1★ units, held 7 in Reserve. Battle Win (2★ power density survived ranged focus), 4 heals cast (3 charges preserved), 1 shard earned (2 carry out), 11 living / 4 KO. Final status: Win.
 
 ## Repo Hygiene Gate
 

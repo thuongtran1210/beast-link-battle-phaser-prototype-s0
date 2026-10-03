@@ -39,8 +39,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14E.1 — Policy Semantics & Evidence Hardening**. ACTIVE / owner authorized / code not started. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
-- V14E baseline implementation exists at `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`, but evidence hardening is required before V14E can be treated as validation-ready.
+- Current slice: **P1-V14E.1 — Policy Semantics & Evidence Hardening**. IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
+- V14E Multi-Wave Resource Commitment Integration Validation: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. 70 deterministic checks pass. Controlled SAVE vs SPEND fixture verified; Energy policy ownership made explicit; Link Shard accounting corrected; divergence count aligned with harness output; production squad-cap constant verified.
 - V14D Persistent Energy: `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves. Reset only on Restart / new Run. No storage cap.
 - V14C.1a.1 Timing State Hardening: Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
 - V14C.1a First-Match Start Buffer: `READY → first valid match → ACTIVE 12.0s timer`. Invalid input does not start timer.

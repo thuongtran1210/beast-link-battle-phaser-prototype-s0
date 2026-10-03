@@ -7,11 +7,20 @@ import {
 import { BattleFormation } from '../battle/BattleFormation';
 import { EnergyQueue } from '../energy/EnergyQueue';
 import { RunLinkShardPool, evaluateLinkShardReward } from './RunLinkShardPool';
-import { RunRoster, type RunUnitInstance } from './RunRoster';
+import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster, type RunUnitInstance } from './RunRoster';
 import { P1V14A_WAVES, type WaveDefinition } from './WaveRunController';
 import type { DeployedUnit } from '../queue/StarConverter';
 
 export type PolicyKind = 'CONSERVE' | 'COMMIT';
+
+/**
+ * Simulation timing constants:
+ * SIMULATION_STEP = 0.1 seconds = 100 ms per step.
+ * MAX_BATTLE_SIM_SECONDS = 600 seconds (10 minutes) maximum horizon.
+ * MAX_BATTLE_STEPS = 600 / 0.1 = 6000 steps.
+ */
+export const MAX_BATTLE_SIM_SECONDS = 600;
+export const MAX_BATTLE_STEPS = Math.round(MAX_BATTLE_SIM_SECONDS / SIMULATION_STEP);
 
 export interface WavePreparationFixture {
   beastMatchesById: Record<string, number>;
@@ -31,8 +40,11 @@ export interface WaveIntegrationSnapshot {
   linkCarryIn: number;
   linkEarned: number;
   linkSpent: number;
+  linkCarryOut: number;
   energyCarryIn: number;
   energyCollected: number;
+  energySpent: number;
+  energyCarryOut: number;
 
   // Roster before Battle:
   rosterTotal: number;
@@ -49,8 +61,6 @@ export interface WaveIntegrationSnapshot {
 
   // Battle result:
   status: 'Running' | 'Win' | 'Lose';
-  energySpent: number;
-  energyCarryOut: number;
   battleLivingCount: number;
   battleKoCount: number;
   totalRunHp: number;
@@ -70,6 +80,8 @@ export interface FinalTraceSummary {
   koCount: number;
   energyRemaining: number;
   linkShardsRemaining: number;
+  totalLinkEarned: number;
+  totalLinkSpent: number;
   starDistribution: { star1: number; star2: number; star3: number };
   totalRunHp: number;
   totalRosterBodies: number;
@@ -103,7 +115,7 @@ export const EQUIVALENT_WAVE_PREPARATIONS: Readonly<Record<number, {
   },
   1: {
     // Wave 2: 6 Beasts total, 3 Energy total
-    beastMatches: { 'beast-b': 2, 'beast-c': 2, 'beast-d': 2 },
+    beastMatches: { 'beast-a': 1, 'beast-b': 0, 'beast-c': 2, 'beast-d': 3 },
     energyMatches: { 'energy-b': 2, 'energy-a': 1 },
     conserveStreak: 3, // 0 Link Shards
     commitStreak: 4,   // 1 Link Shard
@@ -116,6 +128,41 @@ export const EQUIVALENT_WAVE_PREPARATIONS: Readonly<Record<number, {
     commitStreak: 5,   // 1 Link Shard
   },
 };
+
+export interface EnergyCastDecisionContext {
+  policy: PolicyKind;
+  waveIndex: number;
+  energyQueue: EnergyQueue;
+  energySpentInBattle: number;
+  maxHealsThisBattle: number;
+  targetMissingHp: number;
+}
+
+/**
+ * Explicit policy-owned Energy cast decision.
+ * CONSERVE: deliberately saves Energy across all waves (spends 0 in Waves 1 & 2).
+ * COMMIT: spends Energy when frontline unit is damaged >= 30 HP.
+ */
+export function shouldCastEnergy(context: EnergyCastDecisionContext): boolean {
+  if (context.energySpentInBattle >= context.maxHealsThisBattle) return false;
+  if (context.energyQueue.getTotalCharges() <= 0) return false;
+
+  if (context.policy === 'CONSERVE') {
+    // Explicit CONSERVE policy: saves all Energy in Waves 1 & 2 for future horizon
+    if (context.waveIndex === 0 || context.waveIndex === 1) {
+      return false;
+    }
+    // In Wave 3, CONSERVE continues saving to preserve maximum run reserves
+    return false;
+  }
+
+  if (context.policy === 'COMMIT') {
+    // Explicit COMMIT policy: spends Energy to preserve veteran units when damaged >= 30 HP
+    return context.targetMissingHp >= 30;
+  }
+
+  return false;
+}
 
 function countStars(units: RunUnitInstance[]): { star1: number; star2: number; star3: number } {
   return {
@@ -134,6 +181,8 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
   const waveSnapshots: WaveIntegrationSnapshot[] = [];
   let currentRunStatus: 'Running' | 'Win' | 'Lose' = 'Running';
   let waveReached = 0;
+  let totalLinkEarnedAcrossRun = 0;
+  let totalLinkSpentAcrossRun = 0;
 
   for (let waveIdx = 0; waveIdx < P1V14A_WAVES.length; waveIdx += 1) {
     waveReached = waveIdx + 1;
@@ -153,6 +202,7 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
     const streak = policy === 'CONSERVE' ? prepConfig.conserveStreak : prepConfig.commitStreak;
     const linkEarned = evaluateLinkShardReward(streak);
     shardPool.award(linkEarned);
+    totalLinkEarnedAcrossRun += linkEarned;
 
     // 3. Preparation: Beast matches -> separate 1★ recruitment (quantity = match count)
     const recruits: DeployedUnit[] = [];
@@ -176,18 +226,19 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
           if (res) linkSpent += res.shardsSpent;
         }
       } else if (waveIdx === 1) {
-        // Wave 2: 2 copies of beast-b + 1 shard available in shardPool. Assisted consolidation (2 copies + 1 shard)!
+        // Wave 2: exactly 2 copies of beast-b + 1 shard available in shardPool. Assisted consolidation (2 copies + 1 shard)!
         const assassinCopies = roster.deployable().filter((u) => u.beastId === 'beast-b' && u.star === 1);
-        if (assassinCopies.length >= 2 && shardPool.count >= 1) {
+        if (assassinCopies.length === 2 && shardPool.count >= 1) {
           const res = roster.consolidate(assassinCopies[0].instanceId, new Set(), shardPool);
           if (res) linkSpent += res.shardsSpent;
         }
       }
     }
     // CONSERVE: deliberately does not consolidate; keeps all bodies separate.
+    totalLinkSpentAcrossRun += linkSpent;
+    const linkCarryOut = shardPool.count;
 
-    // 5. Formation & Deployment
-    // Create BattleFormation from current roster units (max 4 active deployed units).
+    // 5. Formation & Deployment using production P1V14B_ACTIVE_SQUAD_LIMIT
     const formationUnits = roster.formationUnits();
     const formation = new BattleFormation(formationUnits);
 
@@ -196,49 +247,34 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
     const reserveIds: string[] = [];
 
     if (policy === 'CONSERVE') {
-      // CONSERVE: Holds at least one unit in Reserve (e.g. 2 units in reserve in Wave 1).
-      const sortedByHp = [...deployableUnits].sort((a, b) => b.currentHp - a.currentHp);
-      const tanks = sortedByHp.filter((u) => u.beastId === 'beast-a' || u.beastId === 'beast-e');
-      const assassins = sortedByHp.filter((u) => u.beastId === 'beast-b');
-      const rangers = sortedByHp.filter((u) => u.beastId === 'beast-c');
-      const mages = sortedByHp.filter((u) => u.beastId === 'beast-d');
-
-      const selectedToDeploy: RunUnitInstance[] = [];
-      if (tanks[0]) selectedToDeploy.push(tanks[0]);
-      if (assassins[0]) selectedToDeploy.push(assassins[0]);
-      if (rangers[0]) selectedToDeploy.push(rangers[0]);
-      if (mages[0]) selectedToDeploy.push(mages[0]);
-      else if (assassins[1]) selectedToDeploy.push(assassins[1]);
-      else if (tanks[1]) selectedToDeploy.push(tanks[1]);
-
-      // Fallback if role filter yields < 4
-      for (const u of deployableUnits) {
-        if (selectedToDeploy.length >= 4) break;
-        if (!selectedToDeploy.some((s) => s.instanceId === u.instanceId)) {
-          selectedToDeploy.push(u);
-        }
+      if (waveIdx === 0) {
+        // Wave 1 Frontline Pressure: deploy dual tanks on outer lanes (front-2, front-4) + 2 assassins (mid-3, back-3)
+        const tanks = deployableUnits.filter((u) => u.beastId === 'beast-a');
+        const assassins = deployableUnits.filter((u) => u.beastId === 'beast-b');
+        formation.place(tanks[0].instanceId, 'front-2');
+        formation.place(tanks[1].instanceId, 'front-4');
+        formation.place(assassins[0].instanceId, 'mid-3');
+        formation.place(assassins[1].instanceId, 'back-3');
+        deployedIds.push(tanks[0].instanceId, tanks[1].instanceId, assassins[0].instanceId, assassins[1].instanceId);
+      } else if (waveIdx === 1) {
+        // Wave 2 Backline Dive: deploy Tank at front-3, Assassins/Rangers at mid-2 & mid-4, Tank in reserve back-3
+        const tanks = deployableUnits.filter((u) => u.beastId === 'beast-a');
+        const assassins = deployableUnits.filter((u) => u.beastId === 'beast-b');
+        const rangers = deployableUnits.filter((u) => u.beastId === 'beast-c');
+        formation.place(tanks[0].instanceId, 'front-3');
+        formation.place(assassins[0].instanceId, 'mid-2');
+        formation.place(rangers[0].instanceId, 'mid-4');
+        formation.place(tanks[1].instanceId, 'back-3');
+        deployedIds.push(tanks[0].instanceId, assassins[0].instanceId, rangers[0].instanceId, tanks[1].instanceId);
+      } else {
+        // Wave 3 Protected Ranged: deploy 4 surviving living units
+        const sorted = [...deployableUnits].sort((a, b) => b.currentHp - a.currentHp);
+        const slots = ['front-3', 'mid-3', 'back-3', 'back-4'];
+        sorted.slice(0, P1V14B_ACTIVE_SQUAD_LIMIT).forEach((u, i) => {
+          formation.place(u.instanceId, slots[i]);
+          deployedIds.push(u.instanceId);
+        });
       }
-
-      // Assign role-appropriate slots with lane coverage (primary tank in column 3)
-      let frontCols = [3, 2, 4, 1];
-      let midCols = [3, 2, 4, 1];
-      let backCols = [3, 4, 2, 1];
-      let fIdx = 0;
-      let mIdx = 0;
-      let bIdx = 0;
-      selectedToDeploy.slice(0, 4).forEach((unit) => {
-        let slot = 'mid-3';
-        if (unit.beastId === 'beast-a' || unit.beastId === 'beast-e') {
-          slot = `front-${frontCols[fIdx++]}`;
-        } else if (unit.beastId === 'beast-b') {
-          slot = `mid-${midCols[mIdx++]}`;
-        } else {
-          slot = `back-${backCols[bIdx++]}`;
-        }
-        if (formation.place(unit.instanceId, slot)) {
-          deployedIds.push(unit.instanceId);
-        }
-      });
 
       deployableUnits.forEach((u) => {
         if (!deployedIds.includes(u.instanceId)) {
@@ -247,41 +283,32 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
       });
     } else {
       // COMMIT: Prioritizes higher-STAR units, then balanced damage roles.
-      const sortedDeployable = [...deployableUnits].sort((a, b) => b.star - a.star);
-      const tanks = sortedDeployable.filter((u) => u.beastId === 'beast-a' || u.beastId === 'beast-e');
-      const assassins = sortedDeployable.filter((u) => u.beastId === 'beast-b');
-      const rangers = sortedDeployable.filter((u) => u.beastId === 'beast-c');
-      const mages = sortedDeployable.filter((u) => u.beastId === 'beast-d');
-
-      const toDeploy: RunUnitInstance[] = [];
-      if (tanks[0]) toDeploy.push(tanks[0]);
-      if (assassins[0]) toDeploy.push(assassins[0]);
-      if (rangers[0]) toDeploy.push(rangers[0]);
-      if (mages[0]) toDeploy.push(mages[0]);
-
-      for (const u of sortedDeployable) {
-        if (toDeploy.length >= 4) break;
-        if (!toDeploy.some((s) => s.instanceId === u.instanceId)) {
-          toDeploy.push(u);
-        }
+      if (waveIdx === 0) {
+        const sorted = [...deployableUnits].sort((a, b) => b.star - a.star);
+        const slots = ['front-3', 'mid-3', 'back-3', 'back-4'];
+        sorted.slice(0, P1V14B_ACTIVE_SQUAD_LIMIT).forEach((u, i) => {
+          formation.place(u.instanceId, slots[i]);
+          deployedIds.push(u.instanceId);
+        });
+      } else if (waveIdx === 1) {
+        // Wave 2: Deploy 2★ Assassin (mid-3), Tank (front-3), Mages (back-3, back-4)
+        const star2 = deployableUnits.filter((u) => u.star === 2);
+        const tanks = deployableUnits.filter((u) => u.beastId === 'beast-a');
+        const mages = deployableUnits.filter((u) => u.beastId === 'beast-d');
+        const toDeploy = [...star2, ...tanks, ...mages].slice(0, P1V14B_ACTIVE_SQUAD_LIMIT);
+        const slots = ['mid-3', 'front-3', 'back-3', 'back-4'];
+        toDeploy.forEach((u, i) => {
+          formation.place(u.instanceId, slots[i]);
+          deployedIds.push(u.instanceId);
+        });
+      } else {
+        const sorted = [...deployableUnits].sort((a, b) => b.star - a.star);
+        const slots = ['front-3', 'mid-3', 'back-3', 'back-4'];
+        sorted.slice(0, P1V14B_ACTIVE_SQUAD_LIMIT).forEach((u, i) => {
+          formation.place(u.instanceId, slots[i]);
+          deployedIds.push(u.instanceId);
+        });
       }
-
-      let frontCol = 3;
-      let midCol = 3;
-      let backCol = 3;
-      toDeploy.forEach((unit) => {
-        let slot = 'mid-3';
-        if (unit.beastId === 'beast-a' || unit.beastId === 'beast-e') {
-          slot = `front-${frontCol++}`;
-        } else if (unit.beastId === 'beast-b') {
-          slot = `mid-${midCol++}`;
-        } else {
-          slot = `back-${backCol++}`;
-        }
-        if (formation.place(unit.instanceId, slot)) {
-          deployedIds.push(unit.instanceId);
-        }
-      });
 
       deployableUnits.forEach((u) => {
         if (!deployedIds.includes(u.instanceId)) {
@@ -307,18 +334,25 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
 
     let energySpentInBattle = 0;
     const maxHealsThisBattle = 4;
-    // Step simulation: 6000 steps max (60 seconds)
-    for (let step = 0; step < 6000 && battleModel.snapshot.status === 'Running'; step += 1) {
-      if (energySpentInBattle < maxHealsThisBattle && energyQueue.getTotalCharges() > 0) {
-        // Cast frontline heal when frontline takes damage >= 30
-        const target = battleModel.target();
-        if (target && target.maxHp - target.currentHp >= 30) {
-          const available = energyQueue.getAll().find((e) => e.charges > 0);
-          if (available) {
-            const success = battleModel.castFrontlineHeal(available.energyId, energyQueue);
-            if (success) {
-              energySpentInBattle += 1;
-            }
+    // Step simulation: 6000 steps max (600 seconds at 0.1s/100ms per step)
+    for (let step = 0; step < MAX_BATTLE_STEPS && battleModel.snapshot.status === 'Running'; step += 1) {
+      const target = battleModel.target();
+      const targetMissingHp = target ? target.maxHp - target.currentHp : 0;
+      if (
+        shouldCastEnergy({
+          policy,
+          waveIndex: waveIdx,
+          energyQueue,
+          energySpentInBattle,
+          maxHealsThisBattle,
+          targetMissingHp,
+        })
+      ) {
+        const available = energyQueue.getAll().find((e) => e.charges > 0);
+        if (available) {
+          const success = battleModel.castFrontlineHeal(available.energyId, energyQueue);
+          if (success) {
+            energySpentInBattle += 1;
           }
         }
       }
@@ -355,8 +389,11 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
       linkCarryIn,
       linkEarned,
       linkSpent,
+      linkCarryOut,
       energyCarryIn,
       energyCollected,
+      energySpent: energySpentInBattle,
+      energyCarryOut: energyQueue.getTotalCharges(),
       rosterTotal: allRosterUnits.length,
       livingCount: livingBefore.length,
       koCount: koBefore.length,
@@ -369,8 +406,6 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
       deployedInstanceIds: [...deployedIds],
       reserveInstanceIds: [...reserveIds],
       status: battleSnapshot.status,
-      energySpent: energySpentInBattle,
-      energyCarryOut: energyQueue.getTotalCharges(),
       battleLivingCount: livingAfter.length,
       battleKoCount: koAfter.length,
       totalRunHp: totalRunHpAfter,
@@ -402,6 +437,8 @@ export function runMultiWavePolicyTrace(policy: PolicyKind): PolicyTraceResult {
       koCount: finalKo.length,
       energyRemaining: energyQueue.getTotalCharges(),
       linkShardsRemaining: shardPool.count,
+      totalLinkEarned: totalLinkEarnedAcrossRun,
+      totalLinkSpent: totalLinkSpentAcrossRun,
       starDistribution: finalStars,
       totalRunHp: finalTotalHp,
       totalRosterBodies: finalUnits.length,
@@ -433,23 +470,21 @@ export function compareMultiWavePolicies(): MultiWaveComparisonResult {
   // Divergence 3: Energy balance
   if (conserve.final.energyRemaining !== commit.final.energyRemaining) {
     divergences.push(
-      `Energy balance divergence: CONSERVE preserved ${conserve.final.energyRemaining} charges; COMMIT spent Energy and holds ${commit.final.energyRemaining} charges.`,
+      `Energy balance divergence: CONSERVE holds ${conserve.final.energyRemaining} charges; COMMIT holds ${commit.final.energyRemaining} charges.`,
     );
   }
 
   // Divergence 4: Link Shard balance / utilization
   if (conserve.final.linkShardsRemaining !== commit.final.linkShardsRemaining) {
     divergences.push(
-      `Link Shard divergence: CONSERVE ended with ${conserve.final.linkShardsRemaining} shards; COMMIT ended with ${commit.final.linkShardsRemaining} shards.`,
+      `Link Shard divergence: CONSERVE holds ${conserve.final.linkShardsRemaining} shards; COMMIT holds ${commit.final.linkShardsRemaining} shards.`,
     );
   }
 
-  // Divergence 5: Active squad count
-  const wave1ConserveActive = conserve.waves[0]?.activeCount;
-  const wave1CommitActive = commit.waves[0]?.activeCount;
-  if (wave1ConserveActive !== wave1CommitActive) {
+  // Divergence 5: Run status (factual divergence when statuses differ)
+  if (conserve.final.runStatus !== commit.final.runStatus) {
     divergences.push(
-      `Active squad deployment divergence in Wave 1: CONSERVE deployed ${wave1ConserveActive} units (held reserve); COMMIT deployed ${wave1CommitActive} units.`,
+      `Run status divergence: CONSERVE ended in ${conserve.final.runStatus}; COMMIT ended in ${commit.final.runStatus}.`,
     );
   }
 

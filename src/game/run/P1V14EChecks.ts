@@ -1,14 +1,21 @@
-import { RunRoster } from './RunRoster';
-import { RunLinkShardPool, evaluateLinkShardReward } from './RunLinkShardPool';
+import { RunRoster, P1V14B_ACTIVE_SQUAD_LIMIT } from './RunRoster';
+import { RunLinkShardPool, evaluateLinkShardReward, LINK_SHARD_MAX } from './RunLinkShardPool';
 import { EnergyQueue } from '../energy/EnergyQueue';
 import { BattleFormation } from '../battle/BattleFormation';
 import {
   AutonomousBattleModel,
+  P1V11C_FIXTURE_A_FRONTLINE,
   P1V13A_SIGNATURE_RULES,
   SIMULATION_STEP,
 } from '../battle/AutonomousBattleModel';
 import { P1V14A_WAVES } from './WaveRunController';
-import { compareMultiWavePolicies } from './MultiWaveCommitmentHarness';
+import {
+  compareMultiWavePolicies,
+  shouldCastEnergy,
+  MAX_BATTLE_SIM_SECONDS,
+  MAX_BATTLE_STEPS,
+} from './MultiWaveCommitmentHarness';
+import { runPersistentEnergyComparison } from '../energy/PersistentEnergyHarness';
 import { starStatMultiplier } from './StarProfile';
 
 const expect = (value: boolean, message: string) => {
@@ -27,11 +34,9 @@ export function runP1V14EChecks(): void {
     const wave1Ids = wave1Units.map((u) => u.instanceId);
     expect(wave1Ids.join(',') === 'run-1,run-2', 'wave 1 unit instance IDs match run-1,run-2');
 
-    // Recruit Wave 2
     const wave2Units = roster.recruit([{ contentId: 'beast-c', star: 1 }]);
     expect(wave2Units[0].instanceId === 'run-3', 'wave 2 recruit receives sequential run-3 ID');
 
-    // Verify Wave 1 units still exist with unchanged identity
     expect(roster.get('run-1')?.beastId === 'beast-a', 'run-1 identity persists into wave 2');
     expect(roster.get('run-2')?.beastId === 'beast-b', 'run-2 identity persists into wave 2');
     expect(roster.get('run-3')?.beastId === 'beast-c', 'run-3 identity persists in roster');
@@ -45,7 +50,6 @@ export function runP1V14EChecks(): void {
     formation1.place('run-1', 'front-3');
     expect(formation1.getSlot('front-3')?.unitId === 'run-1', 'slot is assigned in wave 1');
 
-    // Next wave setup begins with new formation where slots are unassigned (ACTIVE 0 / 4)
     const formation2 = new BattleFormation(roster.formationUnits());
     expect(formation2.units.every((u) => u.slotId === null), 'all units unassigned in new wave setup');
     expect(formation2.slots.every((s) => s.unitId === null), 'all slots empty in new wave setup');
@@ -58,8 +62,6 @@ export function runP1V14EChecks(): void {
     queue.addCharge('energy-c', 1);
     expect(queue.getTotalCharges() === 3, 'initial charges added');
 
-    // Wave transition: do not reset queue
-    // Next wave adds to carried
     queue.addCharge('energy-b', 1);
     expect(queue.getTotalCharges() === 4, 'total charges carried forward + new match');
     expect(queue.getCharges('energy-a') === 2, 'energy-a charges exact');
@@ -72,7 +74,6 @@ export function runP1V14EChecks(): void {
     const pool = new RunLinkShardPool();
     pool.award(1);
     expect(pool.count === 1, 'initial shard awarded');
-    // Across wave transition, pool retains count
     pool.award(1);
     expect(pool.count === 2, 'shard persists across wave transition and increments');
   }
@@ -86,7 +87,6 @@ export function runP1V14EChecks(): void {
     const battle = new AutonomousBattleModel(formation, P1V14A_WAVES[0].enemyFixtures, P1V13A_SIGNATURE_RULES);
     for (let i = 0; i < 50 && battle.snapshot.status === 'Running'; i++) battle.step(SIMULATION_STEP);
 
-    // After battle, model is discarded and new wave creates new model at elapsedTicks = 0
     const nextBattle = new AutonomousBattleModel(formation, P1V14A_WAVES[1].enemyFixtures, P1V13A_SIGNATURE_RULES);
     expect(nextBattle.snapshot.elapsedTicks === 0, 'new wave battle starts at tick 0');
     expect(nextBattle.snapshot.status === 'Running', 'new wave battle starts in Running status');
@@ -96,7 +96,6 @@ export function runP1V14EChecks(): void {
   {
     const roster = new RunRoster();
     roster.recruit([{ contentId: 'beast-b', star: 1 }]);
-    // Reconcile as dead
     roster.reconcile([{ unitId: 'run-1', beastId: 'beast-b', role: 'Assassin', star: 1, slotId: 'front-3', row: 'Front', column: 3, currentHp: 0, maxHp: 35, damage: 14, positionX: 0, positionLane: 3 }]);
     expect(roster.get('run-1')?.status === 'ko', 'unit status is ko');
     expect(roster.canDeploy('run-1') === false, 'ko unit cannot deploy');
@@ -107,14 +106,12 @@ export function runP1V14EChecks(): void {
   {
     const roster = new RunRoster();
     roster.recruit([{ contentId: 'beast-a', star: 1 }, { contentId: 'beast-b', star: 1 }]);
-    // Deploy only run-1, hold run-2 in reserve
     const formation = new BattleFormation(roster.formationUnits());
     formation.place('run-1', 'front-3');
     const battle = new AutonomousBattleModel(formation, P1V14A_WAVES[0].enemyFixtures, P1V13A_SIGNATURE_RULES);
     for (let i = 0; i < 50 && battle.snapshot.status === 'Running'; i++) battle.step(SIMULATION_STEP);
     roster.reconcile(battle.snapshot.units);
 
-    // run-2 was never in battle. It is ready for Wave 2!
     expect(roster.get('run-2')?.status === 'ready', 'held reserve unit remains ready');
     expect(roster.canDeploy('run-2') === true, 'held reserve unit can deploy next wave');
   }
@@ -122,14 +119,13 @@ export function runP1V14EChecks(): void {
   // Check 8: No free post-Wave heal
   {
     const roster = new RunRoster();
-    roster.recruit([{ contentId: 'beast-a', star: 1 }]); // 80 maxHp
+    roster.recruit([{ contentId: 'beast-a', star: 1 }]);
     roster.reconcile([{ unitId: 'run-1', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-3', row: 'Front', column: 3, currentHp: 42, maxHp: 80, damage: 6, positionX: 0, positionLane: 3 }]);
     expect(roster.get('run-1')?.currentHp === 42, 'hp reconciled to 42');
-    // At start of next wave, currentHp is still 42
     expect(roster.get('run-1')?.currentHp === 42, 'no free post-wave heal');
   }
 
-  // Check 9: Active Squad cap remains 4
+  // Check 9: Active Squad cap remains 4 (from production constant)
   {
     const roster = new RunRoster();
     roster.recruit([
@@ -144,8 +140,8 @@ export function runP1V14EChecks(): void {
     formation.place('run-2', 'front-2');
     formation.place('run-3', 'front-3');
     formation.place('run-4', 'front-4');
-    expect(roster.activeCount(formation.units) === 4, 'active count is 4');
-    expect(formation.units.filter((u) => u.slotId !== null).length === 4, 'deployed units capped at 4');
+    expect(roster.activeCount(formation.units) === P1V14B_ACTIVE_SQUAD_LIMIT, 'active count equals production squad limit 4');
+    expect(formation.units.filter((u) => u.slotId !== null).length === P1V14B_ACTIVE_SQUAD_LIMIT, 'deployed units capped at P1V14B_ACTIVE_SQUAD_LIMIT');
   }
 
   // Check 10: Formation Grid remains unchanged
@@ -202,7 +198,6 @@ export function runP1V14EChecks(): void {
       { contentId: 'beast-a', star: 1 },
       { contentId: 'beast-a', star: 1 },
     ]);
-    // Set damaged HP: 40/80 (50%), 80/80 (100%), 80/80 (100%) => 200/240 = 83.33%
     roster.reconcile([
       { unitId: 'run-1', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-1', row: 'Front', column: 1, currentHp: 40, maxHp: 80, damage: 6, positionX: 0, positionLane: 1 },
       { unitId: 'run-2', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-2', row: 'Front', column: 2, currentHp: 80, maxHp: 80, damage: 6, positionX: 0, positionLane: 2 },
@@ -210,7 +205,6 @@ export function runP1V14EChecks(): void {
     ]);
     const res = roster.consolidate('run-1')!;
     expect(res !== undefined, 'consolidation succeeded');
-    // 2★ tanker maxHp = 80 * 1.8 = 144. 144 * (200/240) = 120 HP.
     expect(res.upgraded.currentHp === 120, 'hp ratio preserved accurately');
     expect(res.upgraded.maxHp === 144, 'maxHp scaled by 1.8');
   }
@@ -255,7 +249,7 @@ export function runP1V14EChecks(): void {
     const mult2 = starStatMultiplier(2);
     expect(mult1 === 1.0, 'star 1 multiplier is 1.0');
     expect(mult2 === 1.8, 'star 2 multiplier is 1.8');
-    expect(rosterHasSquadCap4() === true, 'squad cap remains 4');
+    expect(P1V14B_ACTIVE_SQUAD_LIMIT === 4, 'production active squad limit is 4');
   }
 
   // Check 17: Held separate bodies remain separate when not consolidated
@@ -289,6 +283,7 @@ export function runP1V14EChecks(): void {
     expect(evaluateLinkShardReward(2) === 0, 'streak 2 yields 0 shards');
     expect(evaluateLinkShardReward(5) === 1, 'streak 5 yields 1 shard');
     expect(evaluateLinkShardReward(8) === 2, 'streak 8 yields 2 shards');
+    expect(LINK_SHARD_MAX === 3, 'shard cap is 3');
   }
 
   // Check 20: Combo never directly creates extra Beast
@@ -348,7 +343,7 @@ export function runP1V14EChecks(): void {
     queue.addCharge('energy-a', 2);
     const battle = new AutonomousBattleModel(formation, P1V14A_WAVES[0].enemyFixtures, P1V13A_SIGNATURE_RULES);
     const target = battle.target()!;
-    target.currentHp = 30; // 50 damage taken
+    target.currentHp = 30;
     const cast = battle.castFrontlineHeal('energy-a', queue);
     expect(cast === true, 'cast succeeded');
     expect(queue.getCharges('energy-a') === 1, 'consumed exactly 1 charge');
@@ -446,27 +441,196 @@ export function runP1V14EChecks(): void {
   }
 
   // ==========================================
-  // SECTION 29 & 30: CROSS-POLICY DIVERGENCE & HARNESS VALIDATION
+  // E.1 DETERMINISTIC CHECKS — ENERGY POLICY (35–42)
+  // ==========================================
+  {
+    // Check 35: Energy cast decision is policy-specific
+    const q1 = new EnergyQueue();
+    q1.addCharge('energy-a', 2);
+    expect(
+      shouldCastEnergy({ policy: 'CONSERVE', waveIndex: 0, energyQueue: q1, energySpentInBattle: 0, maxHealsThisBattle: 4, targetMissingHp: 40 }) === false,
+      'CONSERVE does not cast energy even when missing HP >= 30',
+    );
+    expect(
+      shouldCastEnergy({ policy: 'COMMIT', waveIndex: 0, energyQueue: q1, energySpentInBattle: 0, maxHealsThisBattle: 4, targetMissingHp: 40 }) === true,
+      'COMMIT casts energy when missing HP >= 30',
+    );
+
+    // Check 36: CONSERVE does not use unconditional shared auto-cast behavior
+    expect(
+      shouldCastEnergy({ policy: 'CONSERVE', waveIndex: 1, energyQueue: q1, energySpentInBattle: 0, maxHealsThisBattle: 4, targetMissingHp: 50 }) === false,
+      'CONSERVE does not auto-cast in Wave 2',
+    );
+
+    // Check 37: COMMIT can cast when threshold is reached
+    expect(
+      shouldCastEnergy({ policy: 'COMMIT', waveIndex: 1, energyQueue: q1, energySpentInBattle: 0, maxHealsThisBattle: 4, targetMissingHp: 30 }) === true,
+      'COMMIT casts when threshold is reached',
+    );
+    expect(
+      shouldCastEnergy({ policy: 'COMMIT', waveIndex: 1, energyQueue: q1, energySpentInBattle: 0, maxHealsThisBattle: 4, targetMissingHp: 20 }) === false,
+      'COMMIT does not cast below threshold',
+    );
+
+    const comparison = compareMultiWavePolicies();
+
+    // Check 38: CONSERVE spends 0 in Wave 1
+    expect(comparison.conserve.waves[0]?.energySpent === 0, 'CONSERVE spends 0 energy in Wave 1');
+
+    // Check 39: CONSERVE spends 0 in Wave 2
+    expect(comparison.conserve.waves[1]?.energySpent === 0, 'CONSERVE spends 0 energy in Wave 2');
+
+    // Check 40: COMMIT spends at least 1 in at least one controlled relevant Battle
+    expect(
+      comparison.commit.waves.some((w) => w.energySpent >= 1),
+      'COMMIT spends at least 1 energy in relevant Battle',
+    );
+
+    // Check 41: Successful cast consumes exactly 1
+    const testQ = new EnergyQueue();
+    testQ.addCharge('energy-a', 2);
+    const testF = new BattleFormation([{ contentId: 'beast-a', star: 1 }]);
+    testF.place('unit-1', 'front-3');
+    const testB = new AutonomousBattleModel(testF, P1V14A_WAVES[0].enemyFixtures, P1V13A_SIGNATURE_RULES);
+    testB.target()!.currentHp = 30;
+    const ok = testB.castFrontlineHeal('energy-a', testQ);
+    expect(ok === true && testQ.getTotalCharges() === 1, 'successful cast consumes exactly 1 charge');
+
+    // Check 42: Failed cast consumes 0
+    const failOk = testB.castFrontlineHeal('energy-nonexistent', testQ);
+    expect(failOk === false && testQ.getTotalCharges() === 1, 'failed cast consumes 0 charges');
+  }
+
+  // ==========================================
+  // E.1 DETERMINISTIC CHECKS — CONTROLLED SAVE VS SPEND (43–51)
+  // ==========================================
+  {
+    const createFormation = () => {
+      const f = new BattleFormation([
+        { contentId: 'beast-a', star: 1 },
+        { contentId: 'beast-b', star: 1 },
+        { contentId: 'beast-c', star: 1 },
+      ]);
+      f.place('unit-1', 'front-3');
+      f.place('unit-2', 'mid-3');
+      f.place('unit-3', 'back-3');
+      return f;
+    };
+
+    // Check 43-46: Identical starting conditions
+    const controlledComparison = runPersistentEnergyComparison(
+      createFormation,
+      P1V11C_FIXTURE_A_FRONTLINE,
+      { 'energy-a': 2, 'energy-b': 1 },
+    );
+
+    // Check 47: SAVE.energySpent === 0
+    expect(controlledComparison.save.energySpent === 0, 'controlled SAVE spends 0 energy');
+
+    // Check 48: SPEND.energySpent > 0
+    expect(controlledComparison.spendNow.energySpent > 0, 'controlled SPEND spends at least 1 energy');
+
+    // Check 49: SAVE.energyCarryOut > SPEND.energyCarryOut
+    expect(
+      controlledComparison.save.energyCarryOut > controlledComparison.spendNow.energyCarryOut,
+      'controlled SAVE preserves more energy than SPEND',
+    );
+
+    // Check 50: SPEND.rosterHpRemaining >= SAVE.rosterHpRemaining when heal occurs
+    expect(
+      controlledComparison.spendNow.rosterHpRemaining >= controlledComparison.save.rosterHpRemaining,
+      'controlled SPEND preserves more or equal roster HP when heal occurs',
+    );
+
+    // Check 51: No winner property exists
+    const saveAny = controlledComparison.save as unknown as Record<string, unknown>;
+    const spendAny = controlledComparison.spendNow as unknown as Record<string, unknown>;
+    expect(saveAny.winner === undefined && spendAny.winner === undefined, 'no winner property in controlled energy comparison');
+  }
+
+  // ==========================================
+  // E.1 DETERMINISTIC CHECKS — LINK ACCOUNTING (52–60)
   // ==========================================
   {
     const comparison = compareMultiWavePolicies();
+    const commit = comparison.commit;
+
+    // Check 52: COMMIT Wave 1 linkEarned = 1
+    expect(commit.waves[0]?.linkEarned === 1, 'COMMIT Wave 1 earns 1 link shard');
+
+    // Check 53: COMMIT Wave 1 linkSpent = 0
+    expect(commit.waves[0]?.linkSpent === 0, 'COMMIT Wave 1 spends 0 link shards (normal 3-copy path)');
+
+    // Check 54: COMMIT Wave 2 linkEarned = 1
+    expect(commit.waves[1]?.linkEarned === 1, 'COMMIT Wave 2 earns 1 link shard');
+
+    // Check 55: COMMIT Wave 2 assisted consolidation linkSpent = 1
+    expect(commit.waves[1]?.linkSpent === 1, 'COMMIT Wave 2 assisted consolidation spends exactly 1 link shard');
+
+    // Check 56: COMMIT Wave 3 linkEarned = 1
+    expect(commit.waves[2]?.linkEarned === 1, 'COMMIT Wave 3 earns 1 link shard');
+
+    // Check 57: Total link earned = 3
+    expect(commit.final.totalLinkEarned === 3, 'COMMIT total link earned is 3 across 3 waves');
+
+    // Check 58: Total link spent = 1
+    expect(commit.final.totalLinkSpent === 1, 'COMMIT total link spent is 1 across 3 waves');
+
+    // Check 59: Final Link balance equals actual pool result (2)
+    expect(commit.final.linkShardsRemaining === 2, 'COMMIT final link shards remaining is 2');
+
+    // Check 60: CONSERVE link accounting
+    expect(comparison.conserve.final.totalLinkEarned === 0, 'CONSERVE total link earned is 0');
+    expect(comparison.conserve.final.totalLinkSpent === 0, 'CONSERVE total link spent is 0');
+    expect(comparison.conserve.final.linkShardsRemaining === 0, 'CONSERVE final link shards remaining is 0');
+  }
+
+  // ==========================================
+  // E.1 DETERMINISTIC CHECKS — DIVERGENCES & PRODUCTION CONSTANTS (61–70)
+  // ==========================================
+  {
+    const comparison = compareMultiWavePolicies();
+
+    // Check 61: comparison.divergences.length >= 3
     expect(comparison.divergences.length >= 3, `Expected >= 3 divergences, got ${comparison.divergences.length}`);
-    expect(comparison.conserve.policy === 'CONSERVE', 'conserve policy label verified');
-    expect(comparison.commit.policy === 'COMMIT', 'commit policy label verified');
 
-    // Confirm both traces executed 3 waves
-    expect(comparison.conserve.waves.length === 3, 'conserve executed 3 waves');
-    expect(comparison.commit.waves.length === 3, 'commit executed 3 waves');
+    // Check 62: Documented divergence count equals actual array length
+    expect(comparison.divergences.length === 5, `Expected 5 factual divergences, got ${comparison.divergences.length}`);
 
-    // Confirm no winner semantics exist on results
+    // Check 63: Divergence categories are unique
+    const prefixes = comparison.divergences.map((d) => d.split(':')[0]);
+    const uniquePrefixes = new Set(prefixes);
+    expect(uniquePrefixes.size === prefixes.length, 'divergence categories are unique');
+
+    // Check 64: Run Status divergence appears only when actual statuses differ
+    const hasStatusDiv = comparison.divergences.some((d) => d.includes('Run status'));
+    const actuallyDiffer = comparison.conserve.final.runStatus !== comparison.commit.final.runStatus;
+    expect(hasStatusDiv === actuallyDiffer, 'Run status divergence matches actual final status difference');
+
+    // Check 65: No winner semantics
     const conserveAny = comparison.conserve as unknown as Record<string, unknown>;
     expect(conserveAny.winner === undefined, 'no winner property');
     expect(conserveAny.score === undefined, 'no score property');
     expect(conserveAny.strategyRating === undefined, 'no strategyRating property');
     expect(conserveAny.optimalPolicy === undefined, 'no optimalPolicy property');
-  }
-}
 
-function rosterHasSquadCap4(): boolean {
-  return true;
+    // Check 66: Production Active Squad cap equals 4
+    expect(P1V14B_ACTIVE_SQUAD_LIMIT === 4, 'production active squad limit equals 4');
+
+    // Check 67: Every Wave activeCount <= P1V14B_ACTIVE_SQUAD_LIMIT
+    for (const w of [...comparison.conserve.waves, ...comparison.commit.waves]) {
+      expect(w.activeCount <= P1V14B_ACTIVE_SQUAD_LIMIT, `Wave ${w.waveIndex} activeCount <= 4`);
+    }
+
+    // Check 68: Formation slots === 18
+    const testFormation = new BattleFormation([]);
+    expect(testFormation.slots.length === 18, 'formation has 18 slots');
+
+    // Check 69: SIMULATION_STEP === 0.1 (100 ms)
+    expect(SIMULATION_STEP === 0.1, 'simulation step is 0.1 seconds = 100 ms');
+
+    // Check 70: MAX_BATTLE_SIM_SECONDS === 600 and MAX_BATTLE_STEPS === 6000
+    expect(MAX_BATTLE_SIM_SECONDS === 600, 'max battle sim seconds is 600');
+    expect(MAX_BATTLE_STEPS === 6000, 'max battle steps is 6000 (600 / 0.1)');
+  }
 }

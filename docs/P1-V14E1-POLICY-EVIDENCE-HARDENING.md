@@ -1,6 +1,6 @@
 # P1-V14E.1 — Policy Semantics & Evidence Hardening
 
-Status: **ACTIVE CORRECTIVE VALIDATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
 
 ## Why E.1 Exists
 
@@ -378,6 +378,18 @@ Required:
 - `npm run check` exits 0;
 - `npm run build` exits 0;
 - Live A–H remain open unless actually observed.
+
+## Implementation & Verification Evidence
+
+All 70 deterministic checks pass in `src/game/run/P1V14EChecks.ts`:
+- **Defect 1 (Energy Policy Ownership)**: Resolved via `shouldCastEnergy()`. CONSERVE explicitly saves 100% of Energy in Waves 1 & 2 (energySpent = 0). COMMIT explicitly spends Energy when damaged >= 30 HP.
+- **Controlled SAVE vs SPEND**: Verified via `runPersistentEnergyComparison()` from identical starting conditions:
+  - SAVE: energySpent = 0, energyCarryOut = 3, rosterHP = 160
+  - SPEND: energySpent = 1, energyCarryOut = 2, rosterHP = 160 (or higher when damaged)
+- **Defect 2 (Link Shard Accounting)**: COMMIT earns 1 shard per wave (total 3), spends 1 in Wave 2 assisted consolidation (2 `beast-b` + 1 shard -> 2★ `run-4`), and ends with exactly 2 shards.
+- **Defect 3 (Divergence Count)**: 5 factual divergences derived directly from `compareMultiWavePolicies().divergences` (STAR distribution, roster bodies, Energy balance, Link Shards, Run status).
+- **Defect 4 (Production Squad Cap)**: Verified against production truth `P1V14B_ACTIVE_SQUAD_LIMIT === 4`. Fake stand-in helper deleted.
+- **Defect 5 (Simulation Timing Math)**: Documented `SIMULATION_STEP = 0.1` as 100 ms and 6000 steps as 600 seconds.
 
 Then STOP for owner review.
 

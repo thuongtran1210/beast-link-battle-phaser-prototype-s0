@@ -11,8 +11,8 @@ Status: **Repository-local coding handoff**
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
-- V14E: **IMPLEMENTATION EXISTS / DETERMINISTIC HARNESS EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED / EXPERIMENTAL** — remote implementation `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`.
-- V14E.1: **ACTIVE CORRECTIVE VALIDATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
+- V14E: **IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — remote baseline `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`.
+- V14E.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -42,20 +42,17 @@ If repository docs conflict with current code, inspect the code and report the c
 
 **P1-V14E.1 — Policy Semantics & Evidence Hardening**
 
-Repository review of V14E found evidence-quality defects in the deterministic integration harness.
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
-Current remote V14E implementation:
-
-`33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`
-
-Required corrective work:
-- make Energy behavior explicitly policy-owned instead of routing CONSERVE and COMMIT through the same unconditional auto-heal loop;
-- add a controlled same-fixture SAVE vs SPEND Energy comparison;
-- correct Link Shard earned / spent / remaining documentation from actual trace facts;
-- make documented divergence count equal the actual comparison output;
-- replace the fake always-true squad-cap helper with the production cap constant;
-- correct simulation timing wording: `SIMULATION_STEP = 0.1` means 100 ms, and 6000 steps means 600 seconds;
-- preserve all V14A–D gameplay rules.
+Completed corrective work:
+- Energy behavior explicitly policy-owned via `shouldCastEnergy`: CONSERVE preserves 100% of Energy in Waves 1 & 2 (0 casts); COMMIT spends when damaged >= 30 HP;
+- controlled same-fixture SAVE vs SPEND Energy comparison integrated and verified;
+- Link Shard accounting fixed to match actual trace events: COMMIT earns 3 (1/wave), spends 1 on assisted consolidation in Wave 2 (2 beast-b + 1 shard -> 2★), ends with balance 2;
+- documented divergence count equals the actual harness output (5 unique factual categories);
+- fake always-true squad-cap helper removed; production constant `P1V14B_ACTIVE_SQUAD_LIMIT === 4` asserted;
+- simulation timing wording corrected: `SIMULATION_STEP = 0.1` means 100 ms, 6000 steps means 600 seconds;
+- all 70 deterministic checks pass;
+- all V14A–D gameplay rules preserved with zero new mechanics.
 
 V14E.1 adds no gameplay mechanic.
 
@@ -135,8 +132,8 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active / Deferred Gameplay Slices
 
-- **P1-V14E — Integration Validation**: implementation exists; deterministic harness exists; evidence hardening required.
-- **P1-V14E.1 — Policy Semantics & Evidence Hardening**: ACTIVE / owner authorized / code not started.
+- **P1-V14E — Integration Validation**: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED.
+- **P1-V14E.1 — Policy Semantics & Evidence Hardening**: IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED.
 - **Squad Capacity Upgrade**: Future experiment. NOT STARTED.
 - **Still deferred**:
   - new Tactical Energy types

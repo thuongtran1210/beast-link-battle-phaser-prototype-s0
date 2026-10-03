@@ -68,7 +68,7 @@ Read:
 
 **Multi-Wave Resource Commitment Integration Validation**
 
-Status: **IMPLEMENTATION EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
+Status: **IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
 V14E adds no new resource mechanic. It validates whether current V14 decisions create persistent, readable consequences across the existing three-Wave run.
 
@@ -85,13 +85,20 @@ Read:
 
 `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 
-### Active corrective validation slice — P1-V14E.1
+### Implemented corrective validation slice — P1-V14E.1
 
 **Policy Semantics & Evidence Hardening**
 
-V14E's integration harness exists, but repository review found that Energy policy behavior is not actually policy-specific, Link Shard documentation has accounting drift, divergence count does not fully match harness output, one squad-cap check uses an always-true helper, and simulation timing wording is incorrect.
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
-E.1 fixes evidence quality only. It adds no gameplay mechanic.
+V14E.1 hardens evidence quality without adding any gameplay mechanics:
+- Energy policy ownership is explicit via `shouldCastEnergy` (CONSERVE preserves 100% in Waves 1 & 2; COMMIT spends when HP missing >= 30);
+- controlled same-fixture SAVE vs SPEND proof added from identical battle conditions;
+- Link Shard accounting matches actual trace events (COMMIT: earned 3, spent 1, balance 2);
+- documented divergences equal actual harness comparison (5 unique categories);
+- fake squad cap check removed; production constant `P1V14B_ACTIVE_SQUAD_LIMIT === 4` asserted;
+- simulation timing math corrected (`SIMULATION_STEP = 0.1` is 100 ms; 6000 steps = 600s horizon);
+- 70 deterministic checks pass.
 
 Read:
 
@@ -125,10 +132,10 @@ V14D — Persistent Energy
 IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL
 ↓
 V14E — Multi-Wave Resource Commitment Integration Validation
-IMPLEMENTATION EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED
+IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED
 ↓
 V14E.1 — Policy Semantics & Evidence Hardening
-ACTIVE / OWNER AUTHORIZED / CODE NOT STARTED
+IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED

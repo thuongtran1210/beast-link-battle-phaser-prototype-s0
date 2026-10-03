@@ -148,7 +148,7 @@ Read:
 
 ### P1-V14E — Multi-Wave Resource Commitment Integration Validation
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
+Status: **IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
 Purpose:
 - validate the current V14 systems together across the existing 3-Wave horizon;
@@ -158,22 +158,23 @@ Purpose:
 
 Harness and check suite:
 - `src/game/run/MultiWaveCommitmentHarness.ts`
-- `src/game/run/P1V14EChecks.ts` (34 checks pass)
+- `src/game/run/P1V14EChecks.ts` (70 checks pass)
 
 Read:
 `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 
 ### P1-V14E.1 — Policy Semantics & Evidence Hardening
 
-**ACTIVE corrective validation slice / owner authorized / code not started.**
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
-Purpose:
-- make Energy decision semantics explicit and policy-owned;
-- add controlled SAVE vs SPEND evidence on identical Battle conditions;
-- correct Link Shard earned / spent / remaining accounting;
-- make divergence documentation match actual harness output;
-- replace fake squad-cap evidence with the production cap constant;
-- correct `SIMULATION_STEP = 0.1` timing wording.
+Purpose & Completed Hardening:
+- Energy decision semantics made explicit and policy-owned (`shouldCastEnergy`);
+- controlled SAVE vs SPEND evidence verified on identical Battle conditions;
+- Link Shard earned / spent / remaining accounting corrected (earned 3, spent 1, balance 2);
+- divergence documentation matches actual harness output (5 unique categories);
+- fake squad-cap helper removed; production constant `P1V14B_ACTIVE_SQUAD_LIMIT === 4` asserted;
+- `SIMULATION_STEP = 0.1` timing math verified: 100 ms per step, 6000 steps = 600s horizon;
+- all 70 deterministic checks pass.
 
 No gameplay rule or balance value changes in E.1.
 
