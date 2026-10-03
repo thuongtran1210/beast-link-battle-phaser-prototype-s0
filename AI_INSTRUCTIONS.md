@@ -1,14 +1,14 @@
-# AI_INSTRUCTIONS.md — Beast Link Battle Phaser Prototype
+# AI_INSTRUCTIONS.md — Beast Link Battle
 
 ## Purpose
 
-This repository is the Phaser gameplay validation prototype for **Beast Link Battle**.
+This repository contains the Phaser + TypeScript gameplay development build for **Beast Link Battle**.
 
-This file is only a bootstrap / guardrail for AI-assisted development. It is **not** a gameplay specification and must not duplicate or redefine canonical rules from Notion.
+This file is an AI implementation guardrail. It is **not** a gameplay specification and must not redefine canonical rules from Notion.
 
-## Canonical Source Priority
+## Canonical source priority
 
-Before changing gameplay behavior, read these Notion sources in this order:
+Before changing gameplay behavior, read:
 
 1. **00.0 — Current Project Handoff — Beast Link Battle**
 2. **00 — Beast Link Battle — Current Gameplay Spec v2**
@@ -17,229 +17,186 @@ Before changing gameplay behavior, read these Notion sources in this order:
 5. **02.1 — Phaser Implementation Matrix**
 6. **02.4 — P1 Technical Scaffold — Dual Queue + Tactical Battle**
 7. **03 — Validation Log — Beast Link Battle**
-8. Current code.
+8. Current code
 
-Use **02.2 — P0 Technical Scaffold** only as historical implementation context.
+Use P0 / Unity documents only as historical implementation evidence.
 
-## Current Project State
+If Notion is unavailable or sources conflict, stop and report the conflict instead of inventing a rule.
 
-- P0 is complete and verified as a historical baseline.
+## Current project state
+
 - Current Gameplay Spec is **v2 / P1**.
-- P1 structural implementation slices **P1-S0 through P1-S5** are closed in project documentation.
-- Experimental variants **P1-V1** and **P1-V2** have already been implemented; P1-V1 was live verified.
-- **Current active variant: P1-V3 — Extended Pre-Battle Timing.**
-- P1-V3 is implemented in code with deterministic checks and production build reported passing.
-- P1-V3 remains **Experimental / not adopted into Current Gameplay Spec**.
-- **P1-V3 live-browser gate passed by project-owner confirmation on 2026-10-02.**
-- **Current gate: P03 real-player validation on P1-V3.**
-- Do not retune or expand gameplay scope during P03 unless a severe blocker prevents completion.
+- P1-S0 through P1-S5 are historical closed structural slices.
+- V11 tactical combat introduced per-unit timing, engagement, role positioning, enemy archetypes and formation counterplay.
+- **P1-V11D Tactical Formation Validation is owner-live PASS.**
+- P1-V12A combat readability exists in code.
+- **P1-V13A Beast Signature Identity** exists at `7f7af78598e99cb18bbabb76c9cadc9c95de470f`.
+- **P1-V13A.1 Enemy Board / Level Harness** exists at `e3b64a09520a20e2b0d48d6a2fb7532d923e7d81`.
+- **P1-V13A.2 Drag & Drop Deployment UX** exists at `b94ce842f1573253f9f60f4e799a77aebeb75a4c`.
+- Current owner review marks the current Battle Setup **UI/UX FAIL**.
+- **Active gate: P1-V13A.1D — Deployment Workspace Redesign.**
+- Do not start P1-V13B Tactical Energy until Setup UX and V13A live signature-testability are closed.
 
-## P1-V3 Current Timing
+## Current architecture: GAME + TEST HARNESS
 
-These values are Experimental validation overrides, not canonical adopted design rules:
+Do not reintroduce separate Prototype / Showcase / Production runtime concepts.
 
-- Beast Rush: **12.0s initial / +0.3s per valid Beast match / 12.0s cap**
-- Energy transition cue: **1.0s**, non-interactive
-- Energy Rush: **12.0s countdown**
-- Energy conversion: **+1 stored charge per valid Energy pair**
+There are only two useful contexts now:
 
-Canonical RuleConfig Combo baseline remains **5.0 / +0.3 / 5.0** unless the design source changes.
+### GAME
 
-## Current Immediate Task
+The real player-facing flow.
 
-**P1-V4 Battle Action Readability passed check/build/live verification by project-owner confirmation; P03 fresh retest is active on locked code build `bee6a98ac480fe15f2723e88a39cfa6e0db5e93e`.**
+Includes:
 
-Run P03 as a fresh real-player retest on locked build `bee6a98ac480fe15f2723e88a39cfa6e0db5e93e`, using P1-V3 timing plus P1-V4 Battle Action Readability. Do not reuse Battle-feel conclusions from earlier interrupted or insufficient-presentation runs. Do not retune unless a new severe blocker prevents completion.
+- Level information
+- read-only enemy formation
+- player deployment
+- Beast roles/signatures
+- Stored Energy
+- autonomous Battle
+- Result
 
-P03 must capture:
+GAME must not expose enemy authoring.
 
-1. Beast Rush timing/readability under the 12.0s Experimental window.
-2. Energy Rush timing/readability under the 12.0s Experimental window.
-3. Whether the player understands that Energy is stored for later Battle use.
-4. Role / STAR / formation comprehension.
-5. Whether autonomous Battle is understood without puzzle input.
-6. When and why the player chooses to cast finite stored Energy.
-7. Observed behavior, player statements, prototype metrics, and designer interpretation as separate evidence.
+### TEST HARNESS
 
-Do not treat one P03 session as a cross-player conclusion. P1-V3 remains Experimental and not adopted until the evidence supports an explicit decision.
+Internal designer/developer tooling attached around the same GAME systems.
 
-## Mandatory Guardrails
+May include:
 
-- If Notion is inaccessible, stop. Do not implement gameplay from memory.
-- If canonical sources conflict, report the conflict. Do not silently choose one.
-- Do not invent missing values, timings, conversion rates, role stats, skill effects, slot layouts, or other open design decisions.
-- Temporary validation values must be labeled **Experimental / prototype-only / not adopted**.
-- Do not edit Current Gameplay Spec from code.
-- Do not treat Unity implementation as the Design Source of Truth.
-- Do not copy Unity architecture into Phaser.
-- Keep Phaser validation-oriented and small.
-- Work on one validation slice/variant at a time.
-- Do not expand into later work until the active verification gate is closed.
-- Reuse historical P0 systems only when they still satisfy current canonical rules.
-- Do not refactor unrelated working code without a requirement from the active task.
+- level fixtures
+- enemy scenario composer
+- add/remove/change enemy
+- exact enemy deployment slots
+- validation metrics
+- test presets
 
-## Implementation Workflow
+TEST HARNESS is **internal only**.
 
-For every implementation or validation slice:
+It must never be treated as:
 
-1. Read the canonical sources above.
-2. State the exact Rule IDs / design requirements affected.
-3. Inspect current code before editing.
-4. Report any implementation → design conflict found.
-5. Change only the active slice/variant.
-6. Add or maintain deterministic checks.
-7. Run all still-relevant regression checks.
-8. Run the production build.
-9. Perform live-browser verification when visible flow changes.
-10. Update **02.1 — Phaser Implementation Matrix** with actual implementation/verification status.
-11. Update **00.0 — Current Project Handoff** with only milestone, latest verified state, blocker and next action.
+- player feature
+- sandbox mode
+- custom battle mode
+- production level editor
+- portfolio-facing gameplay feature
 
-Do not mark a rule or variant verified merely because code exists. It must pass the required checks and, when applicable, the live validation flow.
+Both contexts must eventually use the same:
 
+```text
+EnemyFixture[]
+→ AutonomousBattleModel
+```
 
-## Active Experimental Gate — P1-V5 Enemy Squad Battle Grid
+Only the source of the fixtures differs.
 
-P03 is paused while P1-V5 is verified.
+## P1-V13A signatures
 
-Experimental P1-V5 fixture:
-- 4 enemies
-- 65 HP / 6 damage each
-- mirrored enemy formation grid opposite the player formation
-- aggregate incoming damage decreases as enemies die
-- player damage targets enemy Front → Mid → Back, then lower column priority
-- historical single-enemy default remains for P1-S3/P1-S4 regression checks
+Signatures are Experimental and Beast-defined, not Role-defined.
 
-Do not present P1-V5 as adopted Current Gameplay Spec.
+Current implementation direction:
 
-Current immediate task:
-- run regression checks and production build,
-- live verify mirrored battle grid,
-- verify 4 enemy pressure/death behavior,
-- verify Result → Restart,
-- resume P03 only after the gate passes.
+- beast-a / beast-e → Guardian Brace
+- beast-b → Ambush Strike
+- beast-c / beast-f → Focus Shot
+- beast-d → Arcane Bloom
 
+Do not infer future Beast kits from these mappings.
 
-## Active Experimental Gate — P1-V6 Integrated Battle Setup Preview
+Do not add mana, ultimate buttons, generic ability frameworks, traits, items or economy while the current gate is open.
 
-P03 is paused while P1-V6 is verified.
+## Active task — P1-V13A.1D Deployment Workspace Redesign
 
-P1-V6 presentation direction:
-- Keep GamePhase.BattleSetup logically separate.
-- Render Battle Setup on the same mirrored battlefield layout used by Battle.
-- Show player formation and P1-V5 enemy squad simultaneously during setup.
-- Preserve placement/reposition and Start Battle gating.
-- Preserve P1-V5 combat math/fixtures and all prior P1 rules.
-- Do not present P1-V6 as adopted Current Gameplay Spec.
+The current Battle Setup must be structurally redesigned, not merely re-spaced.
 
-Current immediate task:
-- run regression checks and production build,
-- live verify setup/battle layout continuity,
-- verify enemy preview, placement, gating, P1-V5 combat, and Result → Restart,
-- resume P03 only after this gate passes.
+Required priorities:
 
+1. Formation boards are the visual center.
+2. Header becomes minimal: Level + threat, plus internal marker when Test Harness is active.
+3. Beast dock becomes compact and clearly represents only undeployed units.
+4. Board occupancy, Beast dock, remaining deployment count and Start Battle gating derive from one source of truth.
+5. Deployed units do not remain visually available as undeployed cards.
+6. Enemy archetypes are readable by icon/silhouette + label, not text/color alone.
+7. HP/damage debug stats do not permanently dominate enemy tokens.
+8. Stored Energy becomes compact during Setup.
+9. Exact deployment slot is Front/Mid/Back × Lane 1–6; do not add arbitrary world-space placement.
+10. Internal Enemy Scenario Composer is localized to Test Harness and must not pollute GAME UI.
 
-## Active Validation Gate — P03 Fresh Retest
+### Internal scenario authoring requirement
 
-P1-V7 Combat Pressure Tuning passed check/build/live verification by project-owner confirmation on 2026-10-02.
+Test Harness needs to support eventually:
 
-Locked P03 build:
-`7b6239aa49d055580f0ea78026726e602f90eca4`
+- enemy quantity increase/decrease
+- multiple instances of the same archetype
+- add/remove/change archetype
+- exact grid placement
+- custom deterministic scenarios
+- reset to immutable LevelDefinition
+- actual battle spawn state derived from the edited scenario
 
-This build combines:
-- P1-V3 pre-Battle timing,
-- P1-V4 Battle Action Readability,
-- P1-V6 integrated mirrored Battle Setup/Battle field,
-- P1-V7 6-enemy combat-pressure tuning.
+This authoring capability is testing infrastructure only.
 
-All of these remain Experimental validation layers unless separately adopted into Current Gameplay Spec.
+## Verification discipline
 
-Current immediate task:
-- run P03 as a completely fresh real-player retest,
-- capture observed behavior, player statements, metrics, and designer interpretation separately,
-- specifically evaluate formation/frontline readability and whether longer Battle duration creates meaningful Energy Heal timing,
-- do not reuse conclusions from earlier blocked/insufficient builds,
-- do not retune during the session unless a new severe blocker prevents completion.
+Never collapse these into one status:
 
+1. code exists
+2. deterministic checks pass
+3. `npm run check` passes
+4. `npm run build` passes
+5. live browser flow passes
+6. owner live verification passes
+7. real-player evidence exists
+8. design is adopted
 
-## Active Experimental Gate — P1-V8 Role Identity & Positional Combat
+A later item must not be claimed because an earlier one is true.
 
-P03 is paused while P1-V8 is verified.
+## Mandatory guardrails
 
-P1-V8 rules are opt-in for the validation scene:
-- Tanker: Guard Strike only from Front.
-- Assassin: Dive from Front/Mid, prioritizing deepest living enemy row.
-- Ranger: Snipe from all rows with output Front 60% / Mid 80% / Back 100%, preferring deep same-lane targets.
-- Mage: Arcane Burst, Front 70% / Mid-Back 100%, with adjacent-lane secondary damage at 50%.
-- Battle presentation must animate attacks toward actual model-selected targets.
-- P1-V7 enemy fixture / duration pressure remains active.
-- Historical aggregate-combat default remains unchanged for legacy P1-S3/S4/V7 regression.
+- Do not edit Current Gameplay Spec because code changed.
+- Experimental values must remain labeled Experimental / not adopted.
+- Do not use Unity implementation as Design Source of Truth.
+- Keep deterministic combat logic in `AutonomousBattleModel`; UI must not become gameplay authority.
+- Deployment grid defines starting position; combat movement remains autonomous after Start Battle.
+- Do not add row/class damage bonuses to force tactical differentiation.
+- Do not retune combat simply to make arbitrary Test Harness scenarios winnable.
+- Do not fork combat logic between GAME and TEST HARNESS.
+- Do not create a separate Showcase gameplay path.
+- Clean screenshots should come from GAME UI.
+- Work on one active gate at a time.
 
-Do not present P1-V8 as adopted Current Gameplay Spec.
+## Implementation workflow
 
-Current immediate task:
-- run full regression checks and production build,
-- live verify role identity and positional consequences,
-- confirm Assassin dive / Ranger target / Mage burst are visually readable,
-- confirm P1-V7 battle duration and Result → Restart remain valid,
-- resume P03 only after this gate passes.
+For each slice:
 
+1. Read canonical Notion sources.
+2. Inspect current code before editing.
+3. Identify implementation/design conflicts.
+4. Change only the active slice.
+5. Add or maintain deterministic checks.
+6. Run relevant historical regressions.
+7. Run `npm run check`.
+8. Run `npm run build`.
+9. Perform live verification for visible interaction changes.
+10. Update Notion implementation/validation status.
+11. Do not mark PASS until the required live gate is explicitly complete.
 
-## Active Validation Phase — Cross-Player Cohort
+## Current stop condition
 
-P1-V8 Role Identity & Positional Combat passed check/build/live verification by project-owner confirmation on 2026-10-02.
+After P1-V13A.1D implementation:
 
-Locked P03 code build:
-`dfbdee4ea7545fb86b3720cf354dd8a339cdb6a7`
+- report the commit SHA
+- report files changed
+- report state-source audit results
+- report deployment UX behavior
+- report Test Harness boundary behavior
+- report deterministic checks
+- report historical regressions
+- report `npm run check`
+- report `npm run build`
+- report live UX observations
 
-Current immediate task:
-- run P03 as a completely fresh real-player retest on the locked build,
-- if no severe blocker appears, close P03,
-- continue P04/P05 and further sessions on the same build,
-- gather cross-player evidence before adopting or rejecting Experimental V3–V8 changes,
-- do not retune between sessions unless a severe blocker prevents completion.
+Then stop.
 
-Do not present V3–V8 as adopted Current Gameplay Spec until the evidence decision is recorded.
-
-
-## Active Experimental Gate — P1-V9 Autonomous Movement & Formation Deployment
-
-P03 is paused while P1-V9 is verified.
-
-P1-V9 validation rules:
-- BattleSetup grid defines deployment/spawn positions only.
-- Battle units/enemies use model-space movement after combat starts.
-- Deployment grid fades after Battle begins.
-- Tanker/Assassin close distance before melee attacks.
-- Ranger/Mage use range movement; Back Ranger should gain natural attack uptime without row damage multipliers.
-- Enemy squad moves toward the actual player frontline and attacks only in melee range.
-- Frontline Heal targets the actual forward living unit in movement combat.
-- P1-V7 enemy fixture remains active.
-- Historical legacy/V8 combat modes remain available for regression.
-
-Do not present P1-V9 as adopted Current Gameplay Spec.
-
-Current immediate task:
-- run full regression checks and production build,
-- live verify deployment continuity, grid fade, movement/range behavior, actual-position Heal, battle duration, and Result → Restart,
-- resume P03 only after P1-V9 passes.
-
-
-## Active Presentation Gate — P1-V10 Showcase UI / Capture Mode
-
-P03 remains paused while P1-V9 movement and P1-V10 showcase presentation are verified.
-
-P1-V10 rules:
-- Showcase Mode is presentation-only and OFF by default.
-- F1 toggles Validation / Showcase Mode.
-- Space pauses/resumes Battle model ticking only in Showcase Mode.
-- H hides/shows capture controls for clean screenshots.
-- Showcase Battle HUD is compact and must keep Stored Energy Heal controls visible/clickable.
-- Existing P1-V9 movement/combat/state rules must remain unchanged.
-- Validation Mode remains the evidence-collection baseline.
-
-Current immediate task:
-- run full regression checks and production build,
-- live verify P1-V9 movement behavior,
-- live verify V10 mode toggle, pause/resume, clean-frame and compact Energy HUD,
-- confirm Result → Restart,
-- resume P03 only after V9/V10 gates pass.
+Do not start Tactical Energy automatically.
