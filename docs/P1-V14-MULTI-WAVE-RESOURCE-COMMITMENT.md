@@ -6,22 +6,17 @@ Status: **Experimental design direction / not adopted**.
 
 The original single-Battle loop did not give several existing systems enough strategic purpose.
 
-Multi-Wave now provides a future horizon, but owner validation exposed the next blockers:
-- Start Battle forces all available Beasts to be deployed.
-- player units effectively return to later Waves at full HP.
-
-Until those are fixed, the project still cannot prove hold-vs-deploy or injured-vs-fresh decisions.
+Multi-Wave provides a future horizon so the project can test:
+- deploy now vs preserve Beast resources
+- injured veteran vs fresh Reserve
+- several 1★ bodies vs higher-STAR power density
+- spend Energy now vs later
+- formation changes against different threats
+- Combo quality as preparation efficiency
 
 ## Core hypothesis
 
-A multi-Wave run can support:
-
-- commit now vs preserve Beast resources
-- reuse injured Beast vs field fresh Reserve
-- multiple 1★ bodies vs higher-STAR power density
-- current-Wave Energy spend vs later-Wave conservation
-- formation changes against different threats
-- Combo quality as preparation efficiency
+A multi-Wave run can support meaningful resource commitment only if the player faces future opportunity cost.
 
 ## Experimental roadmap
 
@@ -29,9 +24,11 @@ A multi-Wave run can support:
 
 **Owner status: structural flow PASS / Experimental / not adopted.**
 
-The Wave-flow question is sufficiently proven to continue.
+The Wave sequence is working correctly enough to continue.
 
 ### P1-V14B.1 — Partial Deployment + Persistent Reserve
+
+Core implementation exists.
 
 Goal:
 
@@ -41,11 +38,13 @@ available Run Roster
 → hold the rest in Reserve
 ```
 
-Start Battle must not require Reserve to be empty.
+Current Experimental Active Squad cap = 4.
 
-A finite Active Squad limit may be used as an Experimental fixture to create slot pressure.
+Owner-live A–H remains a separate evidence gate.
 
 ### P1-V14B.2 — Persistent Unit Identity + HP Attrition
+
+Core implementation exists.
 
 Goal:
 
@@ -64,15 +63,21 @@ Persist:
 - KO
 
 Reset:
-- temporary Battle action/signature/shield/target state
+- deployment membership / slot
+- target / engagement
+- cooldown / action state
+- temporary shield
+- temporary signature/buff runtime
 
 Initial experiment:
 - no free post-Wave heal
-- 0 HP => KO / unavailable for later Wave
+- 0 HP => KO / unavailable
+
+Owner-live A–H remains a separate evidence gate.
 
 ### P1-V14B.3 — STAR Consolidation / Power Density
 
-Blocked until B.1/B.2 pass.
+**Current active Experimental slice / owner authorized.**
 
 Hypothesis:
 
@@ -82,9 +87,29 @@ Desired trade-off:
 - several 1★ units = breadth / bodies / lane coverage / more attack instances
 - one higher-STAR unit = concentration / durability / output / signature strength / slot efficiency
 
+Current code blocker:
+- `StarConverter.bulk(...)` greedily converts BattleQueue counts into the highest affordable STAR
+- therefore the player cannot currently choose `3 × 1★` versus `1 × 2★`
+
+Required B.3 direction:
+- stop automatic greedy consolidation
+- recruit separate 1★ Run Unit instances
+- keep STAR cost structure 1 / 3 / 9
+- add manual Reserve-only consolidation
+- do not use deployed or KO units as ingredients
+- preserve health condition ratio
+- centralize STAR stat scaling
+- scale existing signatures by STAR without changing identity
+- keep Active Squad cap = 4
+- keep Formation Grid unchanged
+- validate Breadth vs Density against deterministic threats
+
+Read:
+`docs/P1-V14B3-STAR-POWER-DENSITY.md`
+
 ### P1-V14C — Combo Rework: Preparation Efficiency
 
-Deferred until Run Roster foundation is stable.
+Deferred until B.3 evidence is reviewed.
 
 Direction:
 
@@ -112,39 +137,53 @@ save for later threat
 
 Do not expand Energy effect variety before this question is isolated.
 
-## Important model boundary
+### Future — Squad Capacity Upgrade
 
-Beast Queue and Run Roster are different concepts.
+Not started.
+
+Keep current Experimental cap fixed at 4 during B.3 so slot pressure remains measurable.
+
+## Important model boundary
 
 ```text
 Beast Queue
-= preparation/recruitment output
+= preparation / recruitment output
 
 Run Roster / Reserve
-= persistent player unit instances across Waves
+= persistent player unit instances
+
+Active Squad
+= current deployed subset, Experimental cap 4
+
+Formation Grid
+= tactical starting positions
+```
+
+Therefore:
+
+```text
+Run Roster size
+≠ Squad capacity
+≠ Grid capacity
 ```
 
 Do not reconstruct damaged units from anonymous counts after Battle.
 
-## Current active doc
-
-Read:
-
-`docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-
 ## Deferred complexity
 
-Do not add during B.1/B.2:
-- STAR redesign
+Do not add during B.3:
+- Squad Capacity upgrades
 - Combo redesign
 - Energy persistence redesign
+- Link Shard
 - revive/recovery
-- items/traits/economy
+- items / equipment / traits
+- economy / meta progression
 - procedural Waves
-- large Tactical Energy expansion
+- final STAR evolution art
 
 ## Relationship to Current Gameplay Spec
 
-Current canonical gameplay spec remains unchanged.
+Current canonical Gameplay Spec v2 remains unchanged.
 
 P1-V14 remains Experimental until evidence supports an explicit adoption decision.
