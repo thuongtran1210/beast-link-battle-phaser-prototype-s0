@@ -11,7 +11,8 @@ Status: **Repository-local coding handoff**
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
-- V14E: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL** — Multi-Wave Resource Commitment Integration Validation. See `docs/P1-V14E-INTEGRATION-VALIDATION.md`.
+- V14E: **IMPLEMENTATION EXISTS / DETERMINISTIC HARNESS EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED / EXPERIMENTAL** — remote implementation `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`.
+- V14E.1: **ACTIVE CORRECTIVE VALIDATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -22,52 +23,44 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active validation slice: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
-4. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-5. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-6. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-7. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-8. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-9. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-10. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-11. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-12. relevant historical slice docs
-13. current code/tests
+3. active corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
+4. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+5. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+6. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+7. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+8. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+9. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+10. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+11. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+12. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+13. relevant historical slice docs
+14. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
-**P1-V14E — Multi-Wave Resource Commitment Integration Validation**
+**P1-V14E.1 — Policy Semantics & Evidence Hardening**
 
-V14E adds no new economy/resource mechanic. It validates the current V14 systems together across the existing three-Wave horizon.
+Repository review of V14E found evidence-quality defects in the deterministic integration harness.
 
-Core validation target:
+Current remote V14E implementation:
 
-```text
-choice now
-→ persistent consequence
-→ later-Wave option changes
-→ readable reason for the difference
-```
+`33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`
 
-Decision axes under validation:
-- bodies vs STAR density;
-- deployed bodies vs preserved Reserve;
-- Combo quality → Link Shard efficiency;
-- Energy spend-now vs save-for-later;
-- persistent HP / KO consequences across Waves.
+Required corrective work:
+- make Energy behavior explicitly policy-owned instead of routing CONSERVE and COMMIT through the same unconditional auto-heal loop;
+- add a controlled same-fixture SAVE vs SPEND Energy comparison;
+- correct Link Shard earned / spent / remaining documentation from actual trace facts;
+- make documented divergence count equal the actual comparison output;
+- replace the fake always-true squad-cap helper with the production cap constant;
+- correct simulation timing wording: `SIMULATION_STEP = 0.1` means 100 ms, and 6000 steps means 600 seconds;
+- preserve all V14A–D gameplay rules.
 
-Required deterministic work:
-- three-Wave integration harness using existing gameplay-domain classes;
-- at least two legal policy traces from equivalent starting fixtures;
-- at least three factual cross-policy divergences;
-- no winner/ranking semantics;
-- repo hygiene checks for merge markers / machine-local links;
-- no rebalance of current mechanics.
+V14E.1 adds no gameplay mechanic.
 
 Read:
-`docs/P1-V14E-INTEGRATION-VALIDATION.md`
+`docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 
 ## B.1/B.2 implementation baseline
 
@@ -142,7 +135,8 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active / Deferred Gameplay Slices
 
-- **P1-V14E — Integration Validation**: ACTIVE / owner authorized / code not started.
+- **P1-V14E — Integration Validation**: implementation exists; deterministic harness exists; evidence hardening required.
+- **P1-V14E.1 — Policy Semantics & Evidence Hardening**: ACTIVE / owner authorized / code not started.
 - **Squad Capacity Upgrade**: Future experiment. NOT STARTED.
 - **Still deferred**:
   - new Tactical Energy types
@@ -162,6 +156,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 - `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 - `docs/P1-V14D-PERSISTENT-ENERGY.md`
 - `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
