@@ -1,4 +1,5 @@
 import { type BattleFormation, type FormationUnit } from './BattleFormation';
+import { signatureStrengthForStar, starStatMultiplier } from '../run/StarProfile';
 import { signatureForBeast, type BeastRole, type BeastSignatureId } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import type { FormationValidationMetrics } from './FormationValidationHarness';
@@ -300,12 +301,6 @@ const baseStats: Readonly<Record<BeastRole, { hp: number; damage: number }>> = {
   Assassin: { hp: 35, damage: 14 },
   Ranger: { hp: 45, damage: 10 },
   Mage: { hp: 40, damage: 9 },
-};
-
-const starMultiplier: Readonly<Record<1 | 2 | 3, number>> = {
-  1: 1,
-  2: 1.8,
-  3: 3.2,
 };
 
 const rowOrder: Readonly<Record<BattleRow, number>> = {
@@ -1103,7 +1098,7 @@ export class AutonomousBattleModel {
     index = 0,
   ): CombatUnit {
     const base = baseStats[unit.role];
-    const multiplier = starMultiplier[unit.star];
+    const multiplier = starStatMultiplier(unit.star);
     const maxHp = base.hp * multiplier;
     const profile = P1V11A_ACTION_TIMING_FIXTURE[unit.role];
     const initialCooldown = this.combatRules.timeline
@@ -2041,12 +2036,12 @@ export class AutonomousBattleModel {
         this.consequenceMetrics.firstAssassinContactTime = this.state.elapsedTime ?? 0;
       }
       const ambush = unit.signatureId === 'AmbushStrike' && unit.ambushReady && unit.ambushTargetId === target.enemyId;
-      const damage = this.applyDamage(target, unit.damage * (ambush ? P1V13A_SIGNATURE_FIXTURE.ambushMultiplier : 1));
+      const damage = this.applyDamage(target, unit.damage * (ambush ? signatureStrengthForStar('AmbushStrike', unit.star) : 1));
       if (ambush) { this.activateSignature(unit, target.enemyId); unit.ambushReady = false; this.signatureMetrics.ambushStrikesResolved += 1; }
       if (damage > 0) this.recordAction(unit, 'Dive', [{ enemyId: target.enemyId, damage }]);
     } else if (unit.role === 'Ranger') {
       const focus = unit.signatureId === 'FocusShot' && unit.focusReady;
-      const damage = this.applyDamage(target, unit.damage * (focus ? P1V13A_SIGNATURE_FIXTURE.focusMultiplier : 1));
+      const damage = this.applyDamage(target, unit.damage * (focus ? signatureStrengthForStar('FocusShot', unit.star) : 1));
       if (focus) { this.activateSignature(unit, target.enemyId); unit.focusReady = false; unit.continuousHoldTime = 0; this.signatureMetrics.focusShotsResolved += 1; }
       if (damage > 0) this.recordAction(unit, 'Snipe', [{ enemyId: target.enemyId, damage }]);
     } else {
@@ -2068,7 +2063,7 @@ export class AutonomousBattleModel {
         );
 
       for (const enemy of bloom ? secondaryTargets.slice(0, P1V13A_SIGNATURE_FIXTURE.arcaneBloomSecondaryLimit) : secondaryTargets) {
-        const applied = this.applyDamage(enemy, unit.damage * (bloom ? P1V13A_SIGNATURE_FIXTURE.arcaneBloomSplashMultiplier : 0.5));
+        const applied = this.applyDamage(enemy, unit.damage * (bloom ? signatureStrengthForStar('ArcaneBloom', unit.star) : 0.5));
         if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
       }
 
@@ -2099,7 +2094,7 @@ export class AutonomousBattleModel {
 
   private activateGuardianBrace(unit: CombatUnit, targetId: string): void {
     if (!this.combatRules.signatures || unit.signatureId !== 'GuardianBrace' || (unit.signatureActivationCount ?? 0) > 0) return;
-    unit.temporaryShieldHp = P1V13A_SIGNATURE_FIXTURE.guardianBraceShieldHp;
+    unit.temporaryShieldHp = signatureStrengthForStar('GuardianBrace', unit.star);
     unit.temporaryShieldExpiresAt = (this.state.elapsedTime ?? 0) + P1V13A_SIGNATURE_FIXTURE.guardianBraceDuration;
     this.activateSignature(unit, targetId);
   }

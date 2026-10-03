@@ -476,7 +476,7 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.formation) {
       const converted: DeployedUnit[] = [];
       for (const entry of [...this.battleQueue.entries()]) {
-        const units = this.starConverter.bulk(entry.contentId, entry.count);
+        const units = this.starConverter.recruit(entry.contentId, entry.count);
         converted.push(...units);
         this.battleQueue.consume(entry.contentId, entry.count);
       }
@@ -510,6 +510,7 @@ export class ValidationScene extends Phaser.Scene {
       isTestHarness() ? () => this.loadFormationPreset('B') : undefined,
       isTestHarness() ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
       this.runRoster,
+      (selectedUnitId) => this.consolidateReserveUnit(selectedUnitId),
     );
     this.battleSetupView.render();
     this.syncTopHud();
@@ -925,6 +926,16 @@ export class ValidationScene extends Phaser.Scene {
       }),
       recentAction: this.recentActionText,
     });
+  }
+
+  private consolidateReserveUnit(selectedUnitId: string): string | undefined {
+    if (!this.formation) return undefined;
+    const deployedIds = new Set(this.formation.units.filter((unit) => unit.slotId !== null).map((unit) => unit.unitId));
+    const result = this.runRoster.consolidate(selectedUnitId, deployedIds);
+    if (!result) return undefined;
+    result.consumedIds.forEach((unitId) => this.formation?.removeUnplacedUnit(unitId));
+    this.formation.updateUnplacedUnitStar(result.upgraded.instanceId, result.upgraded.star);
+    return result.upgraded.instanceId;
   }
 
   private startBattle(): void {

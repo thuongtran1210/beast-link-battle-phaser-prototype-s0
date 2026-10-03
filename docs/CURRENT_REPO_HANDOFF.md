@@ -15,12 +15,21 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 5. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
 6. relevant historical slice docs
 7. current code/tests
+3. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+4. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+5. relevant historical slice docs
+6. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
 **P1-V14B.3 — STAR Consolidation / Power Density**
+**Active Experimental slice: P1-V14B.3 — STAR Consolidation / Power Density.**
+
+The owner explicitly authorized B.3. V14B.1/B.2 remain implemented and their owner browser live gate remains unrecorded; beginning B.3 does not mark that evidence PASS. Preserve persistent RunRoster identity, HP/KO attrition, per-Wave deployment reset, and the Experimental Active Squad cap of 4.
+
+**P1-V14B — Run Roster, Partial Deployment & Attrition**
 
 Owner explicitly authorized starting B.3.
 
@@ -53,6 +62,50 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 ## Current B.3 blocker discovered in code
 
 Current Battle Setup still uses greedy STAR conversion:
+Do not mark V14B.1/B.2 PASS until Live A–H are explicitly verified in browser, especially:
+- Wave 2 begins `ACTIVE 0 / 4`
+- injured survivor keeps exact remaining HP
+- fresh recruit and injured survivor coexist in Reserve
+- player can intentionally choose either
+- KO remains visible/unavailable
+- duplicate same-beast instances retain separate HP
+- Restart has no roster leakage.
+
+## Active implementation sequence
+
+### P1-V14B.3 — STAR Consolidation / Power Density
+
+**Implementation status:** active Experimental slice, explicitly owner-authorized. Recruitment creates separate 1-star Run Units, and optional consolidation is Reserve-only, preserves aggregate HP condition, excludes KO units, and keeps the Active Squad cap at 4.
+
+### P1-V14B.1 — Partial Deployment + Persistent Reserve
+
+**Implementation status:** coded + deterministic regression evidence present; owner live gate still open.
+
+Current Experimental fixture:
+- Start Battle accepts a legal subset.
+- Active Squad cap = 4.
+- Reserve may remain non-empty.
+- deployment is per-Wave only.
+- next Wave Setup starts `ACTIVE 0 / 4`.
+
+### P1-V14B.2 — Persistent Unit Identity + HP Attrition
+
+**Implementation status:** coded + deterministic regression evidence present; owner live gate still open.
+
+Current behavior:
+- stable Run Unit instances persist across Waves.
+- HP / KO persist.
+- Battle spawns from persistent HP.
+- Battle result reconciles by instance ID.
+- temporary Battle runtime state resets.
+- no free post-Wave heal.
+- KO remains unavailable.
+
+## Model boundary
+
+Do not model surviving units as anonymous counts returning to Beast Queue.
+
+Use:
 
 ```text
 BattleQueue count
@@ -124,6 +177,7 @@ Do not reconstruct persistent units from anonymous counts after Battle.
 
 Do not implement in B.3:
 - Squad Capacity upgrade
+Do not implement in B.1/B.2:
 - Combo redesign
 - Link Shard
 - Energy persistence redesign

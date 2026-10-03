@@ -37,6 +37,19 @@ export class BattleFormation {
     unit.slotId = null;
     return true;
   }
+  /** Removes a Reserve-only roster instance after consolidation; active units are never mutated. */
+  removeUnplacedUnit(unitId: string): boolean {
+    const unit = this.unitsById.get(unitId);
+    if (!unit || unit.slotId !== null) return false;
+    return this.unitsById.delete(unitId);
+  }
+  /** Applies a Reserve-only roster STAR upgrade without changing deployment membership. */
+  updateUnplacedUnitStar(unitId: string, star: 1 | 2 | 3): boolean {
+    const unit = this.unitsById.get(unitId);
+    if (!unit || unit.slotId !== null) return false;
+    unit.star = star;
+    return true;
+  }
   swap(unitIdA: string, unitIdB: string): boolean {
     const unitA = this.unitsById.get(unitIdA);
     const unitB = this.unitsById.get(unitIdB);

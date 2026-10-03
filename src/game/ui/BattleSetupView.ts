@@ -67,6 +67,7 @@ export class BattleSetupView {
     private readonly onSelectPresetB?: () => void,
     private readonly onEnemyBoardEdit?: (tool: EnemyArchetype | 'Erase', row: FormationSlot['row'], column: number) => void,
     private readonly runRoster?: RunRoster,
+    private readonly onConsolidate?: (selectedUnitId: string) => string | undefined,
   ) {
     this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, ACTIVE_SQUAD_LIMIT);
   }
@@ -629,6 +630,8 @@ export class BattleSetupView {
     const energyContent = this.text(x + 14, y + 34, this.storedEnergy(), 10, HudTokens.colors.textPrimary);
     this.objects.push(energyTitle, energyContent);
 
+    this.renderConsolidationInspector(x + 14, y + 59, w - 28);
+
     // START BATTLE CTA button
     const squad = this.squadPresentation();
     const activeCount = squad.activeCount;
@@ -914,6 +917,44 @@ export class BattleSetupView {
     });
     this.objects.push(text);
     return text;
+  }
+
+  private renderConsolidationInspector(x: number, y: number, width: number): void {
+    const selectedId = this.controller.selectedId;
+    const selected = selectedId ? this.formation.getUnit(selectedId) : undefined;
+    const rosterUnit = selected ? this.runRoster?.get(selected.unitId) : undefined;
+    if (!selected || !rosterUnit || selected.slotId !== null) {
+      this.text(x, y, 'SELECT A RESERVE BEAST\nTO VIEW STAR CONSOLIDATION', 8, '#64748b', 'bold');
+      return;
+    }
+
+    const deployedIds = new Set(this.formation.units.filter((unit) => unit.slotId !== null).map((unit) => unit.unitId));
+    const preview = this.runRoster?.consolidationPreview(selected.unitId, deployedIds);
+    const targetStars = preview?.targetStar ? '★'.repeat(preview.targetStar) : 'MAX STAR';
+    const copies = preview ? `${preview.eligibleCount} / 3` : '0 / 3';
+    this.text(x, y, `${beastDisplayName(selected.beastId)}  ${'★'.repeat(selected.star)}\nHP ${rosterUnit.currentHp} / ${rosterUnit.maxHp}  ·  SAME-COPY READY: ${copies}`, 8, '#cbd5e1', 'bold');
+
+    if (!preview || preview.targetStar === null) {
+      this.text(x, y + 34, 'MAX STAR', 8, '#fbbf24', 'bold');
+      return;
+    }
+
+    const eligible = preview.ingredientIds.length === 3 && preview.ingredientIds.includes(selected.unitId);
+    const button = this.text(x, y + 34, eligible ? `CONSOLIDATE → ${targetStars}` : `NEED ${Math.max(0, 3 - preview.eligibleCount)} MORE ★`, 8, eligible ? '#fef08a' : '#64748b', 'bold', eligible ? '#78350f' : '#1e293b', { x: 6, y: 3 });
+    const tradeoff = this.text(x, y + 52, eligible ? `3 × ${'★'.repeat(selected.star)} → 1 × ${targetStars} · Active slots: 3 → 1` : 'Requires 3 ready Reserve copies', 7, '#94a3b8', 'bold');
+    this.objects.push(button, tradeoff);
+    if (eligible && this.onConsolidate) {
+      button.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+        const upgradedId = this.onConsolidate!(selected.unitId);
+        if (upgradedId) {
+          this.controller.selectUnit(null);
+          this.controller.selectUnit(upgradedId);
+          FeedbackEffects.floatText(this.scene, x + width / 2, y + 35, `CONSOLIDATED → ${targetStars}`, '#fbbf24', '10px', 700);
+          this.onArrangementChanged();
+        }
+        this.render();
+      });
+    }
   }
 
   private squadPresentation() {

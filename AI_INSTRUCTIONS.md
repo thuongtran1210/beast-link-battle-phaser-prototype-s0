@@ -23,6 +23,10 @@ Read in this order:
 5. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
 6. relevant historical docs
 7. current code/tests
+3. active slice doc: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+4. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+5. relevant historical docs
+6. current code/tests
 
 If repo docs and code conflict:
 - inspect current code
@@ -31,6 +35,9 @@ If repo docs and code conflict:
 - do not fetch Notion unless the user explicitly asks
 
 ## Current project state
+
+- Active implementation: **P1-V14B.3 — STAR Consolidation / Power Density**.
+- V14B.1/B.2 remain implemented; their owner browser live gate is unrecorded and is not retroactively PASS.
 
 - V11D tactical formation validation: owner live PASS for its tested ruleset.
 - V13 signatures exist but full live A/B verification remains open.
@@ -43,6 +50,13 @@ If repo docs and code conflict:
 ## B.1/B.2 baseline
 
 Verified implementation baseline:
+P1-V14B.3 is explicitly owner-authorized. Implement player-chosen Reserve-only STAR consolidation only: recruitment produces separate 1-star instances; STAR/HP/KO persist; Active Squad cap remains 4; no V14C/D work.
+
+P1-V14B.1/B.2 core code is implemented on main through commit `6d1f40b`.
+
+Implemented:
+- partial deployment
+- Active Squad cap = 4 Experimental fixture
 - persistent RunRoster instance identity
 - Active Squad cap = 4 Experimental fixture
 - HP / KO persistence
@@ -99,6 +113,37 @@ That decision must become explicit.
 - keep Formation Grid unchanged
 - preserve `GRID CAPACITY ≠ SQUAD CAPACITY`
 - validate Breadth vs Density against existing deterministic threat fixtures
+Implement:
+- partial legal deployment
+- Start Battle with non-empty Reserve
+- persistent Reserve across Waves
+- at least one living deployed unit required
+- optional Experimental Active Squad limit if needed for the test
+- one source of truth for Reserve / deployed / readiness
+
+## V14B.2
+
+Implement:
+- stable deterministic Run Unit instance IDs
+- persistent current HP
+- persistent KO state
+- battle spawn from currentHp
+- post-Battle HP reconciliation by instanceId
+- no free post-Wave heal
+- 0 HP => KO / unavailable
+- reset all temporary Battle state between Waves
+
+## Do not implement yet
+
+- Combo redesign
+- Link Shard
+- Energy persistence redesign
+- new Tactical Energy skills
+- revive/resting recovery
+- post-Wave heal rewards
+- items/traits/economy
+- procedural Waves
+- full deferred Setup UI redesign
 
 ## Architecture guardrails
 
@@ -157,6 +202,24 @@ Never infer a later state from an earlier one.
 12. Live validate Breadth vs Density.
 13. Report if one strategy dominates.
 14. STOP before V14C.
+1. Read only repository-local docs listed above.
+2. Inspect actual current V14A implementation before editing.
+3. Identify current ownership of:
+   - Wave state
+   - Beast queue/conversion
+   - formation
+   - battle unit creation
+   - Battle result
+   - HP reset
+   - Start Battle readiness
+4. State conflicts briefly.
+5. Implement the active B.3 STAR consolidation/power-density slice only.
+6. Add deterministic checks.
+7. Run historical regressions.
+8. Run `npm run check`.
+9. Run `npm run build`.
+10. Live verify B.3 consolidation only when a browser surface is available.
+11. Stop before V14C.
 
 ## Completion report
 
