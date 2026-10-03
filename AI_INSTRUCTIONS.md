@@ -1,253 +1,176 @@
-# AI_INSTRUCTIONS.md — Beast Link Battle
+# AI_INSTRUCTIONS.md — Beast Link Battle Coding Agent
 
-## Purpose
+## Critical operational rule — REPO ONLY
 
-This repository contains the Phaser + TypeScript gameplay development build for **Beast Link Battle**.
+For normal coding/implementation tasks in this repository:
 
-This file is an AI implementation guardrail. It is **not** a gameplay specification and must not redefine canonical rules from Notion.
+**DO NOT call Notion MCP.**
 
-## Canonical source priority
+The project owner wants coding agents to avoid Notion MCP usage to reduce connector limits.
 
-Before changing gameplay behavior, read:
+Repository-local documentation is the synchronized operational source for coding.
 
-1. **00.0 — Current Project Handoff — Beast Link Battle**
-2. **00 — Beast Link Battle — Current Gameplay Spec v2**
-3. **00.2 — Decision Record — P1 Dual-Queue Core Loop**
-4. **02 — Phaser Validation Prototype Spec — P1 Transition**
-5. **02.1 — Phaser Implementation Matrix**
-6. **02.4 — P1 Technical Scaffold — Dual Queue + Tactical Battle**
-7. **03 — Validation Log — Beast Link Battle**
-8. Current code
+Only query/update Notion when the user explicitly asks for a Notion documentation sync.
 
-Use P0 / Unity documents only as historical implementation evidence.
+## Repository source priority
 
-If Notion is unavailable or sources conflict, stop and report the conflict instead of inventing a rule.
+Read in this order:
+
+1. `docs/CURRENT_REPO_HANDOFF.md`
+2. this file
+3. active slice doc: `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+4. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+5. relevant historical docs
+6. current code/tests
+
+If repo docs and code conflict:
+- inspect current code
+- report the conflict
+- do not invent missing behavior
+- do not fetch Notion to resolve it unless the user explicitly requests that
 
 ## Current project state
 
-- Current Gameplay Spec is **v2 / P1** and remains authoritative.
-- P1-V11D Tactical Formation Validation is owner-live PASS for the tested ruleset.
-- P1-V12A combat readability exists in code.
-- P1-V13A Beast Signature Identity exists at `7f7af78598e99cb18bbabb76c9cadc9c95de470f`.
-- P1-V13A.1 Enemy Board / Level Harness exists at `e3b64a09520a20e2b0d48d6a2fb7532d923e7d81`.
-- P1-V13A.2 Drag & Drop Deployment UX exists at `b94ce842f1573253f9f60f4e799a77aebeb75a4c`.
-- P1-V13A full live signature A/B verification remains open.
-- P1-V13A.1D Deployment Workspace Redesign remains **not passed** and is deferred as UX debt.
-- **Active experimental direction: P1-V14 — Multi-Wave Resource Commitment.**
-- **Active implementation slice: P1-V14A — Multi-Wave Run Structure.**
+- V11D tactical formation validation: owner live PASS for its tested ruleset.
+- V13 signatures exist but full live A/B validation remains open.
+- V13A.1D Deployment Workspace UX remains not passed.
+- V14A multi-Wave flow is **owner-confirmed structurally correct enough to continue**.
+- Active implementation: **P1-V14B.1/B.2 — Run Roster, Partial Deployment & Attrition**.
+- V14 remains Experimental / not adopted.
 
-Do not treat V14 as adopted design.
+## Active design blockers
 
-## Why V14 is active
+### Forced full deployment
 
-Owner review identified four connected core-loop gaps:
+Current Start Battle gating prevents intentional Reserve play because it requires all available units to be deployed.
 
-1. **Formation proof can be masked by quantity.**
-   Strong matching can produce enough player bodies that enemy pressure becomes too weak to expose positional consequences.
+### Full HP reset
 
-2. **Beast Queue has no future horizon.**
-   With only one Battle, using/deploying everything now is usually rational.
+Current cross-Wave behavior effectively refills player units, preventing injured-vs-fresh roster choice.
 
-3. **STAR value is not yet a clear decision.**
-   STAR 1 / 3 / 9 exists as conversion math, but the system has not shown why one higher-STAR unit should sometimes be preferable to several 1★ units.
+## Required model direction
 
-4. **Combo lacks a distinct role.**
-   Combo currently mainly extends matching opportunity / quantity rather than creating a separate efficiency/quality decision.
+Use a persistent Run Roster layer.
 
-Multi-Wave is being tested because a later Wave may create real reasons to preserve resources.
-
-## Current architecture: GAME + TEST HARNESS
-
-Only two useful contexts remain:
-
-### GAME
-
-Player-facing flow.
-
-### TEST HARNESS
-
-Internal designer/developer tooling around the same GAME systems.
-
-TEST HARNESS must never become:
-
-- player feature
-- sandbox mode
-- custom battle mode
-- production level editor
-- portfolio-facing gameplay feature
-
-Both contexts must use the same battle model.
-
-## Active task — P1-V14A Multi-Wave Run Structure
-
-### Goal
-
-Implement the minimum structural run loop needed to test multiple Battle pressures in sequence.
-
-Target Experimental flow:
+Conceptually:
 
 ```text
-Wave 1
-Beast Rush
-→ Energy Rush
-→ Battle Setup
+Beast Rush / current STAR conversion
+→ Run Unit instances
+→ Reserve
+→ Active Formation
 → Battle
-→ Wave Result
-→ Wave 2
-
-Wave 2
-Beast Rush
-→ Energy Rush
-→ Battle Setup
-→ Battle
-→ Wave Result
-→ Wave 3
-
-Wave 3
-Beast Rush
-→ Energy Rush
-→ Battle Setup
-→ Battle
-→ Final Result
+→ reconcile current HP by stable instanceId
+→ Reserve / next Wave
 ```
 
-Three Waves are a validation fixture, not a canonical rule.
+Do not treat surviving units as anonymous counts after Battle.
 
-### Initial pressure fixtures
-
-Use existing enemy archetype behavior where possible:
-
-- Wave 1 → Frontline Pressure
-- Wave 2 → Backline Dive
-- Wave 3 → Protected Ranged
-
-Do not create new enemy archetypes for V14A.
-
-### V14A scope
+## V14B.1
 
 Implement:
+- partial legal deployment
+- Start Battle with non-empty Reserve
+- persistent Reserve across Waves
+- at least one living deployed unit required
+- optional Experimental Active Squad limit if needed for the test
+- one source of truth for Reserve / deployed / readiness
 
-- run-level Wave index/state
-- deterministic Wave definitions
-- Wave Result distinct from Final Result
-- non-final Battle win → next Beast Rush
-- final Battle win → Final Result
-- clean per-Wave battle/setup reset
-- visible Wave identity in GAME/Test Harness where necessary
-- deterministic transition checks
-- Result/Restart compatibility
+## V14B.2
 
-### Strict non-goals
+Implement:
+- stable deterministic Run Unit instance IDs
+- persistent current HP
+- persistent KO state
+- battle spawn from currentHp
+- post-Battle HP reconciliation by instanceId
+- no free post-Wave heal
+- 0 HP => KO / unavailable
+- reset all temporary Battle state between Waves
 
-Do NOT implement in V14A:
+## Do not implement yet
 
-- persistent Beast Reserve
-- Active Squad Limit
-- STAR consolidation redesign
-- new STAR multipliers
+- STAR redesign/balance
+- STAR consolidation UI
 - Combo redesign
 - Link Shard
-- Energy persistence
+- Energy persistence redesign
 - new Tactical Energy skills
-- persistent unit HP
-- permanent death attrition
-- traits
-- items
-- economy
+- revive/resting recovery
+- post-Wave heal rewards
+- items/traits/economy
 - procedural Waves
-- enemy stat retuning purely to force difficulty
-- V13A.1D UI redesign unless required to prevent V14A from functioning
+- full deferred Setup UI redesign
 
-Keep V14A structural.
+## Architecture guardrails
 
-## Planned later V14 slices
-
-### V14B — Beast Reserve, Squad Limit & STAR Consolidation
-
-Hypothesis:
-
-Higher STAR should be **power density per active slot**.
-
-Desired future trade-off:
-
-- several 1★ units → breadth / bodies / lane coverage / more attack instances
-- one higher-STAR unit → concentration / durability / output / signature strength / slot efficiency
-
-The exact Active Squad limit is open and must be Experimental.
-
-Do not make one side universally dominant.
-
-### V14C — Combo Rework: Preparation Efficiency
-
-Direction:
-
-- phase duration independent from Combo
-- match count → quantity
-- Combo quality → efficiency/quality
-- Combo becomes streak/milestone based rather than primarily extending total match time
-
-Candidate mechanisms such as Link Shard, bonus Energy or Catalyst are **not locked**.
-
-### V14D — Persistent Energy
-
-Test:
-
-```text
-spend this Wave
-vs
-save for a later Wave
-```
-
-Validate persistence before expanding Energy into many new effects.
-
-## P1-V13 status during V14
-
-V13 is not retroactively passed.
-
-- Beast signatures remain Experimental.
-- full live A/B signature verification is still open.
-- Deployment Workspace UX remains not passed.
-- Test Harness boundary remains valid.
-
-V14 may proceed because the owner has reprioritized the more fundamental core-loop horizon.
+- Run state belongs outside presentation classes.
+- Run Roster owns cross-Wave player unit identity.
+- BattleFormation owns current deployment, not long-term HP truth.
+- AutonomousBattleModel remains one Battle simulation.
+- Reconcile Battle results back to Run Roster explicitly.
+- UI must not become gameplay authority.
+- GAME and TEST HARNESS must share combat semantics.
+- Existing Beast signature mechanics remain unchanged.
 
 ## Verification discipline
 
-Never collapse these into one status:
+Keep these separate:
 
 1. code exists
 2. deterministic checks pass
 3. `npm run check` passes
 4. `npm run build` passes
-5. live browser flow passes
+5. live browser behavior passes
 6. owner live verification passes
-7. real-player evidence exists
-8. design is adopted
+7. design is adopted
 
-## Mandatory guardrails
+Never infer a later state from an earlier one.
 
-- Do not edit Current Gameplay Spec because V14 code exists.
-- Keep all V14 values Experimental.
-- Do not use Unity implementation as Design Source of Truth.
-- Keep deterministic combat logic shared.
-- Do not add row/class damage bonuses to force formation value.
-- Do not buff arbitrary enemy stats merely to manufacture a desired V14A result.
-- Do not fork GAME and TEST HARNESS combat.
-- Do not turn Test Harness scenario tooling into player gameplay.
-- Work on one V14 slice at a time.
+## Required workflow
 
-## V14A implementation workflow
-
-1. Read canonical sources and `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`.
-2. Read `docs/P1-V14A-MULTI-WAVE-RUN-STRUCTURE.md`.
-3. Inspect PhaseController / run state / Battle result transitions before editing.
-4. Report conflicts before implementing.
-5. Add only Wave structure.
-6. Add deterministic V14A checks.
+1. Read only repository-local docs listed above.
+2. Inspect actual current V14A implementation before editing.
+3. Identify current ownership of:
+   - Wave state
+   - Beast queue/conversion
+   - formation
+   - battle unit creation
+   - Battle result
+   - HP reset
+   - Start Battle readiness
+4. State conflicts briefly.
+5. Implement B.1/B.2 only.
+6. Add deterministic checks.
 7. Run historical regressions.
 8. Run `npm run check`.
 9. Run `npm run build`.
-10. Live verify Wave 1 → 2 → 3 → Final Result.
-11. Stop after V14A.
+10. Live verify partial deployment + HP/KO persistence.
+11. Stop before B.3.
 
-Do not start V14B automatically.
+## Completion report
+
+Report:
+- commit SHA
+- files changed
+- Run Roster architecture
+- stable ID strategy
+- partial-deployment readiness rule
+- actual Active Squad limit used, if any
+- HP reconciliation path
+- KO behavior
+- per-Battle reset behavior
+- deterministic checks
+- historical regressions
+- `npm run check`
+- `npm run build`
+- Live A–H
+- known limitations
+
+Explicitly state:
+
+```text
+P1-V14B.3 STAR REDESIGN NOT STARTED
+P1-V14C COMBO REWORK NOT STARTED
+P1-V14D ENERGY PERSISTENCE NOT STARTED
+```

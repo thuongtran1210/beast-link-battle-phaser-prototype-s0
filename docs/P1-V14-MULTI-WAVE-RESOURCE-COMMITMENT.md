@@ -4,97 +4,87 @@ Status: **Experimental design direction / not adopted**.
 
 ## Problem statement
 
-The current single-Battle loop does not yet give several existing systems enough strategic purpose.
+The original single-Battle loop did not give several existing systems enough strategic purpose.
 
-### Formation
+Multi-Wave now provides a future horizon, but owner validation exposed the next blockers:
+- Start Battle forces all available Beasts to be deployed.
+- player units effectively return to later Waves at full HP.
 
-When Beast matching produces many player units and enemy fixtures are weak, raw quantity can dominate the encounter and hide positional consequences.
-
-### Beast Queue
-
-With no later Battle, there is little reason to preserve resources.
-
-### STAR
-
-STAR 1 / 3 / 9 exists as conversion math, but the game has not demonstrated why one higher-STAR unit should sometimes be preferable to several 1★ units.
-
-### Combo
-
-Combo currently mainly increases matching opportunity / resource quantity.
-
-It does not yet represent a separate preparation-quality decision.
-
-### Energy
-
-With one Battle horizon, saving Energy for later is weak or meaningless.
+Until those are fixed, the project still cannot prove hold-vs-deploy or injured-vs-fresh decisions.
 
 ## Core hypothesis
 
-A multi-Wave run creates a future horizon.
-
-That future can support:
+A multi-Wave run can support:
 
 - commit now vs preserve Beast resources
+- reuse injured Beast vs field fresh Reserve
 - multiple 1★ bodies vs higher-STAR power density
-- current Wave Energy spend vs later Wave conservation
-- changing formation against different threats
-- Combo quality as preparation efficiency rather than just more time
+- current-Wave Energy spend vs later-Wave conservation
+- formation changes against different threats
+- Combo quality as preparation efficiency
 
 ## Experimental roadmap
 
 ### P1-V14A — Multi-Wave Run Structure
 
-Structure only.
+**Owner status: structural flow PASS / Experimental / not adopted.**
+
+The Wave-flow question is sufficiently proven to continue.
+
+### P1-V14B.1 — Partial Deployment + Persistent Reserve
+
+Goal:
 
 ```text
-Wave 1
-Beast Rush → Energy Rush → Battle Setup → Battle → Wave Result
-↓
-Wave 2
-Beast Rush → Energy Rush → Battle Setup → Battle → Wave Result
-↓
-Wave 3
-Beast Rush → Energy Rush → Battle Setup → Battle → Final Result
+available Run Roster
+→ deploy a legal subset
+→ hold the rest in Reserve
 ```
 
-Initial deterministic pressure direction:
+Start Battle must not require Reserve to be empty.
 
-- Wave 1 — Frontline Pressure
-- Wave 2 — Backline Dive
-- Wave 3 — Protected Ranged
+A finite Active Squad limit may be used as an Experimental fixture to create slot pressure.
 
-Three Waves are only the first validation fixture.
+### P1-V14B.2 — Persistent Unit Identity + HP Attrition
 
-### P1-V14B — Beast Reserve, Active Squad Limit & STAR Consolidation
+Goal:
+
+```text
+same Run Unit
+→ Battle
+→ damaged HP reconciles
+→ next Wave
+→ same Run Unit, same remaining HP
+```
+
+Persist:
+- identity
+- STAR
+- current HP
+- KO
+
+Reset:
+- temporary Battle action/signature/shield/target state
+
+Initial experiment:
+- no free post-Wave heal
+- 0 HP => KO / unavailable for later Wave
+
+### P1-V14B.3 — STAR Consolidation / Power Density
+
+Blocked until B.1/B.2 pass.
 
 Hypothesis:
 
 **Higher STAR = power density per active slot.**
 
 Desired trade-off:
-
-- several 1★ units
-  - more bodies
-  - more lanes covered
-  - more attack instances
-  - broader protection/pressure
-
-- one higher-STAR unit
-  - less slot usage
-  - more concentrated durability/output
-  - stronger signature expression
-  - higher slot efficiency
-
-The exact active-squad size is not locked.
-
-The system should fail validation if:
-
-- the player always prefers multiple 1★ units
-- or the player always consolidates immediately
-
-The target is situational preference.
+- several 1★ units = breadth / bodies / lane coverage / more attack instances
+- one higher-STAR unit = concentration / durability / output / signature strength / slot efficiency
 
 ### P1-V14C — Combo Rework: Preparation Efficiency
+
+Deferred until Run Roster foundation is stable.
 
 Direction:
 
@@ -106,56 +96,55 @@ Combo quality
 → efficiency / quality
 ```
 
-Phase duration should become independent from Combo.
-
-Combo should be tested as a streak/milestone mechanic rather than mainly extending total match time.
-
-Candidate Beast rewards:
-
-- upgrade efficiency
-- flexible upgrade resource such as a Link Shard
-
-Candidate Energy rewards:
-
-- bonus charge
-- future Catalyst-like efficiency
-
-These are **candidate mechanisms only**.
-
-Do not lock exact thresholds or rewards before the V14C slice.
+Exact rewards remain open.
 
 ### P1-V14D — Persistent Energy / Save-vs-Spend
 
-Energy should persist across Waves so the player can choose:
+Deferred.
+
+Test later:
 
 ```text
-spend now
+spend this Wave
 vs
 save for later threat
 ```
 
-Test persistence before adding many new Energy spell types.
+Do not expand Energy effect variety before this question is isolated.
 
-## Deliberately deferred
+## Important model boundary
 
-Do not combine these into the first experiment:
+Beast Queue and Run Roster are different concepts.
 
-- persistent unit HP
-- permanent death attrition
-- mana / ultimates
-- traits
-- items
-- economy
+```text
+Beast Queue
+= preparation/recruitment output
+
+Run Roster / Reserve
+= persistent player unit instances across Waves
+```
+
+Do not reconstruct damaged units from anonymous counts after Battle.
+
+## Current active doc
+
+Read:
+
+`docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+
+## Deferred complexity
+
+Do not add during B.1/B.2:
+- STAR redesign
+- Combo redesign
+- Energy persistence redesign
+- revive/recovery
+- items/traits/economy
 - procedural Waves
 - large Tactical Energy expansion
 
 ## Relationship to Current Gameplay Spec
 
-Current Gameplay Spec v2 remains unchanged.
+Current canonical gameplay spec remains unchanged.
 
-P1-V14 is an Experimental proposal until:
-
-- implementation evidence exists
-- required live validation passes
-- player evidence supports it where applicable
-- an explicit adoption decision is recorded
+P1-V14 remains Experimental until evidence supports an explicit adoption decision.
