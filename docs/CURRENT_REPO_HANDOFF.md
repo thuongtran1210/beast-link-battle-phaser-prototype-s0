@@ -9,6 +9,7 @@ Status: **Repository-local coding handoff**
 - V14B.3: implemented; code review PASS; live hypothesis validation open; not adopted.
 - V14C.1: implemented; deterministic/build PASS; owner live A–F open; Experimental / not adopted.
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
+- V14C.1a: **ACTIVE corrective slice / owner authorized** — First-Match Start Buffer for Beast Rush + Energy Rush. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - V14D and Squad Capacity Upgrade: not started.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -19,22 +20,36 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-4. previous slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-5. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-6. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-7. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-8. relevant historical slice docs
-9. current code/tests
+3. active corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+4. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+5. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+6. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+7. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+8. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+9. relevant historical slice docs
+10. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
-**P1-V14C.2 — Combo Quality → Consolidation Efficiency (Link Shard Experiment)**
+**P1-V14C.1a — First-Match Start Buffer (Corrective Timing Slice)**
 
-The owner explicitly authorized C.2. C.1 and B.3 owner-live gates remain open.
-MATCH COUNT strictly determines Beast quantity. Combo quality awards Link Shards (up to 2 per Rush, cap 3) which enable 2-copy + 1-shard consolidation with zero phantom HP. Active Squad cap remains 4. Energy persistence (V14D) not started.
+Owner identified a UX/game-feel defect after C.1/C.2 implementation: Beast Rush and Energy Rush currently consume timed execution budget immediately when the board appears, before the player has time to read the board.
+
+Approved corrective rule:
+
+```text
+READY
+→ observe board freely
+→ FIRST VALID MATCH
+→ ACTIVE 12.0s timer
+→ 0s → phase end
+```
+
+This applies to both Beast Rush and Energy Rush. Invalid input must not start the timer. No READY safety timeout is added in this experiment.
+
+C.1 remains: MATCH COUNT = Beast quantity; COMBO = quality signal. C.2 Link Shard rules remain implemented and must be preserved. V14D Energy persistence remains not started.
 
 P1-V14A multi-Wave flow is owner-confirmed structurally correct enough to continue.
 
