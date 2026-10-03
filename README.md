@@ -10,14 +10,15 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active validation slice: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
-4. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-5. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-6. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-7. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-8. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-9. supporting V14 docs
-10. current code/tests
+3. active corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
+4. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+5. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+6. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+7. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+8. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+9. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+10. supporting V14 docs
+11. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -67,7 +68,7 @@ Read:
 
 **Multi-Wave Resource Commitment Integration Validation**
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
+Status: **IMPLEMENTATION EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
 V14E adds no new resource mechanic. It validates whether current V14 decisions create persistent, readable consequences across the existing three-Wave run.
 
@@ -83,6 +84,18 @@ Required evidence:
 Read:
 
 `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+
+### Active corrective validation slice — P1-V14E.1
+
+**Policy Semantics & Evidence Hardening**
+
+V14E's integration harness exists, but repository review found that Energy policy behavior is not actually policy-specific, Link Shard documentation has accounting drift, divergence count does not fully match harness output, one squad-cap check uses an always-true helper, and simulation timing wording is incorrect.
+
+E.1 fixes evidence quality only. It adds no gameplay mechanic.
+
+Read:
+
+`docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 
 ## Current V14 roadmap
 
@@ -112,7 +125,10 @@ V14D — Persistent Energy
 IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL
 ↓
 V14E — Multi-Wave Resource Commitment Integration Validation
-IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL
+IMPLEMENTATION EXISTS / EVIDENCE HARDENING REQUIRED / LIVE NOT RECORDED
+↓
+V14E.1 — Policy Semantics & Evidence Hardening
+ACTIVE / OWNER AUTHORIZED / CODE NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
