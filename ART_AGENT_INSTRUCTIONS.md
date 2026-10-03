@@ -22,16 +22,17 @@ Target:
 
 For every art task, read in this order:
 
-1. this file
-2. `art/style/STYLE_BIBLE.md`
-3. `art/style/STYLE_LOCK_PROMPT.md`
-4. relevant visual grammar:
+1. Notion: **05 — Art Direction & AI Asset Style Lock — Cute Tactical Chibi**
+2. this file
+3. `art/style/STYLE_BIBLE.md`
+4. `art/style/STYLE_LOCK_PROMPT.md`
+5. relevant visual grammar:
    - `art/style/BEAST_VISUAL_GRAMMAR.md`
    - `art/style/ENEMY_VISUAL_GRAMMAR.md`
-5. `art/style/ASSET_QA_CHECKLIST.md`
-6. `art/style/ASSET_MANIFEST.md`
-7. approved Master Reference assets, when they exist
-8. the specific character/asset brief
+6. `art/style/ASSET_QA_CHECKLIST.md`
+7. `art/style/ASSET_MANIFEST.md`
+8. approved Master Reference assets, when they exist
+9. the specific character/asset brief
 
 For gameplay facts such as Role, Signature, STAR rules, Energy behavior or enemy archetype behavior, read `AI_INSTRUCTIONS.md` and the active gameplay docs. Do not invent gameplay facts inside an art brief.
 
