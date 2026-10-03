@@ -212,11 +212,7 @@ export class ValidationScene extends Phaser.Scene {
     ensureIconTextures(this);
 
     // Global Top HUD
-    this.topHud = new GameTopHUD(this, {
-      onToggleShowcase: () => this.toggleShowcaseMode(),
-      onTogglePause: () => this.toggleShowcasePause(),
-      onToggleCleanFrame: () => this.toggleShowcaseCleanFrame(),
-    });
+    this.topHud = new GameTopHUD(this);
 
     // Reusable views
     this.phaseStatusPanel = new PhaseStatusPanel(
@@ -249,8 +245,6 @@ export class ValidationScene extends Phaser.Scene {
       this.input.keyboard?.on('keydown-F3', () => this.setEnemyFixturePreset(2));
       this.input.keyboard?.on('keydown-F4', () => this.setEnemyFixturePreset(3));
     }
-    this.input.keyboard?.on('keydown-SPACE', () => this.toggleShowcasePause());
-    this.input.keyboard?.on('keydown-H', () => this.toggleShowcaseCleanFrame());
     this.input.keyboard?.on('keydown-E', () => this.cycleEnemyFixture());
     this.input.keyboard?.on('keydown-ONE', () => this.setEnemyFixturePreset(0));
     this.input.keyboard?.on('keydown-TWO', () => this.setEnemyFixturePreset(1));
@@ -332,7 +326,7 @@ export class ValidationScene extends Phaser.Scene {
     if (
       this.phaseController.phase === GamePhase.Battle &&
       this.battleModel?.snapshot.status === 'Running' &&
-      !(this.showcaseMode && this.showcasePaused)
+      true
     ) {
       this.battleTickAccumulator += delta;
       let ticked = false;
@@ -437,16 +431,7 @@ export class ValidationScene extends Phaser.Scene {
   private syncTopHud(): void {
     const beastCount = this.battleQueue.entries().reduce((s, e) => s + e.count, 0);
     const energyCount = this.energyQueue.getTotalCharges();
-    const canPause = this.phaseController.phase === GamePhase.Battle && this.battleModel?.snapshot.status === 'Running';
-    this.topHud?.update(
-      this.phaseController.phase,
-      beastCount,
-      energyCount,
-      this.showcaseMode,
-      this.showcasePaused,
-      canPause,
-      this.showcaseCleanFrame,
-    );
+    this.topHud?.update(this.phaseController.phase, beastCount, energyCount);
   }
 
   private enterBeastRush(): void {

@@ -1,10 +1,9 @@
-export type RuntimeMode = 'TestHarness' | 'Prototype' | 'Production';
+export type RuntimeMode = 'Game' | 'TestHarness';
 
-/** Explicit startup boundary. Default is player-facing Prototype, never test tooling. */
+/** Explicit startup boundary. Default is GAME, never test tooling. */
 export function runtimeModeFrom(value: string | undefined): RuntimeMode {
   if (value === 'test') return 'TestHarness';
-  if (value === 'production') return 'Production';
-  return 'Prototype';
+  return 'Game';
 }
 
 const globalMode = (globalThis as { __BEAST_LINK_APP_MODE__?: string }).__BEAST_LINK_APP_MODE__;
