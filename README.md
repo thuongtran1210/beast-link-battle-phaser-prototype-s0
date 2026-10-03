@@ -27,21 +27,19 @@ This remains Experimental / not adopted.
 
 **Run Roster, Partial Deployment & Attrition**
 
-Two owner-observed blockers:
+Current implementation evidence:
 
-- Start Battle currently requires all available units to be deployed.
-- returning units effectively regain full HP between Waves.
+- `RunRoster` persists stable unit instances.
+- partial deployment supports 1–4 living Active units.
+- Experimental Active Squad cap = 4.
+- HP / KO reconcile back to the roster by instance ID.
+- Wave transition preserves roster body state but clears all deployment assignments.
+- each new Battle Setup begins `ACTIVE 0 / 4`.
+- living survivors and new recruits coexist in Reserve.
+- commit: `6d1f40b`.
+- `npm run check` and `npm run build` pass.
 
-The next implementation must allow:
-
-```text
-Run Roster
-→ deploy a legal subset
-→ hold others in Reserve
-→ Battle
-→ preserve each unit's current HP
-→ choose injured vs fresh units next Wave
-```
+The remaining gate is owner live verification of the full Reserve / injured / fresh / KO choice loop.
 
 Read:
 
