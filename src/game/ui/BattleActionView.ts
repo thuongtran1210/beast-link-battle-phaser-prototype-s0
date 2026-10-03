@@ -19,6 +19,7 @@ import {
 
 import { createIconImage } from './icons/IconFactory';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
+import { BattleAnimationController } from '../animation/BattleAnimationController';
 
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
@@ -50,6 +51,7 @@ export class BattleActionView {
   private readonly enemies = new Map<string, EnemyVisual>();
   private readonly unitHitTracking = new Map<string, { time: number; count: number }>();
   private readonly layout: BattleFieldLayout;
+  private readonly animation: BattleAnimationController;
   private showcaseMode = false;
 
   constructor(
@@ -58,6 +60,7 @@ export class BattleActionView {
     baseY = 105,
   ) {
     this.layout = createBattleFieldLayout(baseX, baseY);
+    this.animation = new BattleAnimationController(scene);
   }
 
   setShowcaseMode(enabled: boolean): void {
@@ -82,21 +85,18 @@ export class BattleActionView {
           ? this.units.get(windup.unitId)
           : this.enemies.get(windup.unitId);
         if (!visual || visual.container.alpha <= 0.2) return;
-
-        const leanX = windup.isPlayer ? 4 : -4;
-        this.scene.tweens.add({
-          targets: visual.container,
-          x: visual.container.x + leanX,
-          scaleX: 1.07,
-          scaleY: 1.07,
-          duration: 120,
-          yoyo: true,
-          ease: 'Quad.Out',
-        });
+        this.animation.windup(visual.container, windup.isPlayer);
       });
     }
 
-    // 2. Player attacks resolved against enemies
+    // 2. Player attack punctuation. Battle model remains authoritative.
+    event.attackers.forEach((attacker) => {
+      const visual = this.units.get(attacker.unitId);
+      if (!visual || attacker.targetEnemyIds.length === 0) return;
+      this.animation.attack(visual.container, true);
+    });
+
+    // 3. Player attacks resolved against enemies
     event.enemyDamages.forEach((damageEvent) => {
       if (damageEvent.damage <= 0) return;
       const visual = this.enemies.get(damageEvent.enemyId);
@@ -111,7 +111,7 @@ export class BattleActionView {
       FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
 
       // Visual recoil on target (never alters model coordinates)
-      this.recoilVisual(visual.container, 4);
+      this.animation.recoil(visual.container, 4);
 
       // Floating combat text
       this.floatCombatText(
@@ -139,7 +139,7 @@ export class BattleActionView {
         FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
 
         // Visual recoil on target
-        this.recoilVisual(visual.container, -4);
+        this.animation.recoil(visual.container, -4);
 
         // Floating combat text
         this.floatCombatText(
@@ -158,7 +158,7 @@ export class BattleActionView {
           this.flash(visual.body, 0xef4444, 50);
         });
         FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
-        this.recoilVisual(visual.container, -4);
+        this.animation.recoil(visual.container, -4);
         this.floatCombatText(
           visual.container.x,
           visual.container.y,
@@ -174,18 +174,8 @@ export class BattleActionView {
       const visual = this.units.get(unitId);
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
-      this.scene.tweens.killTweensOf(visual.container);
       this.flash(visual.body, 0xffffff, 80);
-      this.scene.tweens.add({
-        targets: visual.container,
-        alpha: 0.2,
-        y: visual.container.y + 10,
-        scaleX: 0.8,
-        scaleY: 0.8,
-        angle: 12,
-        duration: 220,
-        ease: 'Quad.In',
-      });
+      this.animation.defeat(visual.container, true);
     });
 
     // 5. Defeated enemy units punctuation
@@ -193,18 +183,8 @@ export class BattleActionView {
       const visual = this.enemies.get(enemyId);
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
-      this.scene.tweens.killTweensOf(visual.container);
       this.flash(visual.body, 0xffffff, 80);
-      this.scene.tweens.add({
-        targets: visual.container,
-        alpha: 0.2,
-        y: visual.container.y + 10,
-        scaleX: 0.8,
-        scaleY: 0.8,
-        angle: -12,
-        duration: 220,
-        ease: 'Quad.In',
-      });
+      this.animation.defeat(visual.container, false);
     });
   }
 
@@ -588,21 +568,6 @@ export class BattleActionView {
       y,
       duration: 100,
       ease: 'Linear',
-    });
-  }
-
-  private recoilVisual(container: Phaser.GameObjects.Container, offsetX: number): void {
-    if (!container || !container.active || container.alpha <= 0.2) return;
-    const startX = container.x;
-    this.scene.tweens.add({
-      targets: container,
-      x: startX + offsetX,
-      duration: 55,
-      yoyo: true,
-      ease: 'Quad.Out',
-      onComplete: () => {
-        if (container.active) container.x = startX;
-      },
     });
   }
 
