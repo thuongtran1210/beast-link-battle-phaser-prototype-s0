@@ -9,7 +9,7 @@ Status: **Repository-local coding handoff**
 - V14B.3: implemented; code review PASS; live hypothesis validation open; not adopted.
 - V14C.1: implemented; deterministic/build PASS; owner live A–F open; Experimental / not adopted.
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
-- V14C.1a: **ACTIVE corrective slice / owner authorized** — First-Match Start Buffer for Beast Rush + Energy Rush. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
+- V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — First-Match Start Buffer for Beast Rush + Energy Rush. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - V14D and Squad Capacity Upgrade: not started.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.

@@ -1,6 +1,6 @@
 # P1-V14C.1a — First-Match Start Buffer
 
-Status: **Active corrective Experimental slice / owner authorized / not adopted**.
+Status: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL (NOT ADOPTED)**.
 
 ## Why this slice exists
 

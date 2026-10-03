@@ -15,6 +15,7 @@ import { runP1V1Checks } from './energy/P1V1Checks';
 import { runP1V2Checks } from './combo/P1V2Checks';
 import { runP1V3Checks } from './combo/P1V3Checks';
 import { runP1V14C1Checks } from './combo/P1V14C1Checks';
+import { runP1V14C1aChecks } from './combo/P1V14C1aChecks';
 import { runP1V14C2Checks } from './run/P1V14C2Checks';
 import { BattleFormation } from './battle/BattleFormation';
 import { runP1S2Checks } from './battle/P1S2Checks';
@@ -216,6 +217,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V2Checks();
       runP1V3Checks();
       runP1V14C1Checks();
+      runP1V14C1aChecks();
       runP1V14C2Checks();
     } catch (error) {
       this.renderStartupFailure(error);
@@ -472,7 +474,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterBeastRush(): void {
-    this.beastRushTimer.start();
+    this.beastRushTimer.reset();
     this.comboQuality.reset();
     this.beastRushEvent = { kind: 'idle' };
     this.recentActionText = '';
@@ -489,7 +491,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterEnergyRush(): void {
-    this.recentActionText = 'Match identical Energy pairs. 12.0s countdown started!';
+    this.energyTimer.reset();
+    this.recentActionText = 'Match identical Energy pairs to store Frontline Heal charges.';
     this.createPuzzleBoard(
       'ENERGY RUSH',
       'Match 6×6 Energy pairs to store Frontline Heal charges for battle.',
@@ -497,7 +500,6 @@ export class ValidationScene extends Phaser.Scene {
       'Energy',
       (contentId, _turns, midpoint) => this.onEnergyMatch(contentId, midpoint),
     );
-    this.energyTimer.start();
     this.phaseStatusPanel?.setVisible(true);
     this.refreshEnergyHUD();
     this.syncTopHud();
@@ -831,6 +833,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private onBeastMatch(contentId: string, turns: number, midpoint?: { x: number; y: number }): void {
     if (this.phaseController.phase !== GamePhase.BeastRush || !this.board || !this.boardView) return;
+    this.beastRushTimer.start();
     const combo = this.comboQuality.registerValidMatch();
     this.metrics.comboQuality(combo.currentStreak, combo.bestStreak, combo.breakCount);
     this.metrics.beastMatch();
@@ -874,6 +877,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private onEnergyMatch(contentId: string, midpoint?: { x: number; y: number }): void {
     if (this.phaseController.phase !== GamePhase.EnergyRush || !this.board || !this.boardView) return;
+    this.energyTimer.start();
     this.energyQueue.addCharge(contentId);
     this.metrics.energyMatch();
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
@@ -921,14 +925,15 @@ export class ValidationScene extends Phaser.Scene {
     if (this.phaseController.phase !== GamePhase.BeastRush) return;
     const phaseTimer = this.beastRushTimer.snapshot;
     const combo = this.comboQuality.snapshot;
+    const isReady = this.beastRushTimer.isReady;
     this.phaseStatusPanel?.render({
       phaseTitle: 'BEAST RUSH',
       phaseSubtitle: '',
       timerSeconds: phaseTimer.remainingSeconds,
       timerLabel: 'Rush',
-      timerSubtext: '',
+      timerSubtext: isReady ? 'READY' : '',
       statusBadge: {
-        text: combo.active ? `×${combo.currentStreak}` : '×0',
+        text: isReady ? 'READY' : combo.active ? `×${combo.currentStreak}` : '×0',
         active: combo.active,
       },
       matchCount: this.metrics.snapshot.beastMatches,
@@ -945,21 +950,23 @@ export class ValidationScene extends Phaser.Scene {
       beastRushHud: true,
       comboCurrent: combo.currentStreak,
       comboBest: combo.bestStreak,
+      isReady,
     });
   }
 
   private refreshEnergyHUD(): void {
     if (this.phaseController.phase !== GamePhase.EnergyRush) return;
+    const isReady = this.energyTimer.isReady;
     const remaining = this.energyTimer.snapshot.remainingSeconds;
     this.phaseStatusPanel?.render({
       phaseTitle: 'ENERGY RUSH',
       phaseSubtitle: 'Match 6×6 Energy pairs to collect Frontline Heal charges',
       timerSeconds: remaining,
-      timerLabel: 'Countdown',
-      timerSubtext: '12.0s timed lock · Prepare for battle',
+      timerLabel: isReady ? 'Energy' : 'Countdown',
+      timerSubtext: isReady ? 'READY' : '12.0s timed lock · Prepare for battle',
       statusBadge: {
-        text: 'COUNTDOWN',
-        active: true,
+        text: isReady ? 'READY' : 'COUNTDOWN',
+        active: !isReady,
       },
       matchCount: this.metrics.snapshot.energyMatches,
       queueTitle: 'Stored Energy',
@@ -972,6 +979,7 @@ export class ValidationScene extends Phaser.Scene {
         };
       }),
       recentAction: this.recentActionText,
+      isReady,
     });
   }
 

@@ -35,9 +35,9 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14C.1a — First-Match Start Buffer**. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
+- Current slice: **P1-V14C.1a — First-Match Start Buffer**. IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - Corrective rule for both Beast Rush and Energy Rush: `READY → first valid match → ACTIVE 12.0s timer`. Invalid input does not start the timer. No READY safety timeout in this slice.
-- P1-V14C.2 Link Shard is already implemented / deterministic PASS / Experimental and must remain intact while C.1a corrects phase-start timing.
+- P1-V14C.2 Link Shard is implemented / deterministic PASS / Experimental and remains intact.
 - V14C.1 is implemented, deterministic/build PASS, Experimental / not adopted; owner live A–F open.
 - V14B.3 is implemented, code-review PASS, Experimental / not adopted; live hypothesis validation open.
 - V14B.1/B.2 remain implemented; their owner browser live gate remains open.

@@ -4,14 +4,14 @@ export interface EnergyRushTimerState {
 }
 
 /**
- * P1-V1 Experimental Energy Rush Countdown Timer.
- * Fixed 8.0s duration, clamps at 0, emits expiration exactly once.
+ * P1-V1 / P1-V14C.1a Experimental Energy Rush Countdown Timer.
+ * Fixed 12.0s duration, clamps at 0, emits expiration exactly once.
  */
 export class EnergyRushTimer {
   private state: EnergyRushTimerState;
   private readonly endListeners = new Set<() => void>();
 
-  constructor(private readonly durationSeconds: number = 8.0) {
+  constructor(private readonly durationSeconds: number = 12.0) {
     this.state = { active: false, remainingSeconds: durationSeconds };
   }
 
@@ -19,17 +19,33 @@ export class EnergyRushTimer {
     return { ...this.state };
   }
 
+  get isReady(): boolean {
+    return !this.state.active && this.state.remainingSeconds > 0;
+  }
+
+  get isActive(): boolean {
+    return this.state.active;
+  }
+
+  get isEnded(): boolean {
+    return !this.state.active && this.state.remainingSeconds === 0;
+  }
+
   start(): Readonly<EnergyRushTimerState> {
-    this.state = { active: true, remainingSeconds: this.durationSeconds };
+    if (this.state.active) return this.snapshot;
+    this.state = {
+      active: true,
+      remainingSeconds: this.state.remainingSeconds > 0 ? this.state.remainingSeconds : this.durationSeconds,
+    };
     return this.snapshot;
   }
 
   update(deltaSeconds: number): Readonly<EnergyRushTimerState> {
     if (!this.state.active || deltaSeconds <= 0) return this.snapshot;
     const remainingSeconds = Math.max(0, this.state.remainingSeconds - deltaSeconds);
-    this.state = { ...this.state, remainingSeconds };
-    if (remainingSeconds === 0) {
-      this.state = { ...this.state, active: false };
+    const wasActive = this.state.active;
+    this.state = { active: remainingSeconds > 0, remainingSeconds };
+    if (wasActive && remainingSeconds === 0) {
       for (const listener of this.endListeners) {
         listener();
       }
