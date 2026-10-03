@@ -726,3 +726,204 @@ Do not redefine gameplay counts.
 33. after 4-copy consolidation, presentation becomes one 1★ stack member plus one 2★ stack member.
 34. 2-copy + 1 Link assisted consolidation remains legal and manual.
 35. Reserve body count remains body count, while pagination uses stack count.
+
+## F.1c-O — Single Owner for the Gameplay Header
+
+Owner screenshot confirms the remaining header collision is architectural, not just typography.
+
+Current code has two different views rendering into the same top ~70 px band:
+
+1. `GameTopHUD`
+   - draws the global dark header;
+   - renders `BEAST LINK BATTLE`;
+   - renders a second phase label such as `BATTLE SETUP`;
+   - renders phase tabs;
+   - renders Beast / Energy counters.
+
+2. `BattleSetupView.renderHeader()`
+   - also renders the Wave title at y≈20;
+   - also renders Threat at y≈44;
+   - also renders fixture-cycle / validation controls at the same vertical band.
+
+This is the root cause of the current overlap.
+
+### Locked Architecture
+
+Only one component may own the player-facing top header band during Battle Setup.
+
+Preferred implementation:
+
+```text
+GameTopHUD
+= sole owner of y = 0..70 player-facing header
+
+BattleSetupView
+= begins player-facing content below the global header
+= does NOT render a second primary Wave/Threat header in y = 0..70
+```
+
+### GameTopHUD Battle Setup Context
+
+Extend `GameTopHUD` with an optional phase-context presentation input rather than creating another header.
+
+Conceptual API:
+
+```ts
+interface GameTopHudContext {
+  primaryTitle?: string;
+  secondaryTitle?: string;
+  linkShards?: number;
+  hideBrand?: boolean;
+}
+```
+
+Exact API may follow repo conventions.
+
+During Battle Setup:
+
+```text
+primaryTitle:
+WAVE 1 / 3 · FRONTLINE WALL
+
+secondaryTitle:
+Threat · FRONTLINE PRESSURE
+
+phase tabs:
+BEAST | ENERGY | SETUP | BATTLE | RESULT
+
+resources:
+BEAST 0 · ENERGY 9 · ◆ 2
+```
+
+The phase tab `SETUP` already communicates the current phase.
+
+Therefore do not also render a large `BATTLE SETUP` label.
+
+### Brand Rule
+
+During active gameplay phases, `BEAST LINK BATTLE` is not required as a dominant header label on every screen.
+
+For Battle Setup specifically:
+- hide the brand from the primary title slot;
+- use the Wave title as the primary player-facing title.
+
+The brand may remain in menus / splash / non-gameplay surfaces.
+
+If retained in the gameplay header, it must be visually tertiary and must not compete with Wave title.
+
+### Resource Rule
+
+Do not render duplicate resource counters in BattleSetupView.
+
+GameTopHUD is the top-level resource owner for:
+- Beast count;
+- Energy total;
+- Link Shards if added to top resource chips.
+
+BattleSetupView right card still shows detailed Stored Energy inventory because it serves a different purpose:
+- top HUD = compact run-state counter;
+- right card = per-ID Energy inventory.
+
+### Link Shard Top Chip
+
+Add `◆ LINK ×N` or compact `◆ N` to the top-right gameplay resource group during Battle Setup if space allows.
+
+### BattleSetupView Header Responsibility After Change
+
+`BattleSetupView.renderHeader()` must no longer draw primary player-facing:
+- Wave title;
+- Threat line;
+- `BATTLE SETUP` label.
+
+It may render test-harness-only tools below the global header or inside a compact debug strip when appropriate.
+
+Preferred player content start:
+
+```text
+y >= 78
+```
+
+No Battle Setup content should overlap the global top header band.
+
+### Debug/Test Harness Controls
+
+Current validation controls include:
+- `[E] CYCLE FIXTURE`;
+- presets;
+- enemy tools;
+- test harness label.
+
+These are validation controls, not primary player information.
+
+When test harness is enabled:
+- place them in a compact muted debug strip;
+- keep them below or to the far edge of the player header;
+- do not repeat Wave / Threat text;
+- use smaller typography than gameplay title.
+
+When not test harness:
+- do not reserve empty space for them.
+
+### Single Representation Rule
+
+For Battle Setup player-facing information:
+
+```text
+Wave title        → exactly one primary representation
+Threat            → exactly one primary representation
+Current phase     → phase tab only
+Active capacity   → exactly one compact representation
+Top Beast count   → one compact top resource counter
+Top Energy total  → one compact top resource counter
+Top Link count    → one compact top resource counter
+```
+
+Do not render the same semantic fact twice merely with different wording.
+
+### Active Squad Header Deduplication
+
+Current screenshot also shows:
+- `ACTIVE SQUAD`;
+- four dots;
+- `4/4`;
+- `ACTIVE SQUAD 4/4 · FULL · GRID 18`.
+
+Replace all of that with one compact line under `MY FORMATION`:
+
+```text
+ACTIVE 4 / 4 · FULL · GRID 18
+```
+
+Optional:
+- `FULL` in Butter Yellow;
+- `GRID 18` muted.
+
+Do not keep the dot meter unless it serves a unique interaction purpose.
+
+### Header Layout Target
+
+At 1280×720, target approximately:
+
+```text
+┌──────────────────────────────────────────────────────────────────────────┐
+│ WAVE 1 / 3 · FRONTLINE WALL     BEAST  ENERGY [SETUP] BATTLE RESULT    │
+│ Threat · FRONTLINE PRESSURE                         🐾0 ⚡9 ◆2           │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+Exact coordinates may follow the current Phaser layout, but:
+- left title zone must not collide with center tabs;
+- resource chips must remain inside the right safe area;
+- top bar total height should remain around 64–72 px;
+- BattleSetupView content begins below it.
+
+### Deterministic / Presentation Checks — Header Ownership
+
+36. Battle Setup has exactly one player-facing Wave title source.
+37. Battle Setup has exactly one player-facing Threat source.
+38. `GameTopHUD` owns Battle Setup primary header context.
+39. `BattleSetupView` does not render primary Wave/Threat text in the global top band.
+40. current phase is represented by the active phase tab, without a second large `BATTLE SETUP` title.
+41. Active Squad state has one primary compact representation.
+42. Battle Setup player content begins below the global header safe band.
+43. test-harness controls do not duplicate Wave/Threat semantics.
