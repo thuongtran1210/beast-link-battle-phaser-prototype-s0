@@ -13,7 +13,8 @@ Status: **Repository-local coding handoff**
 - V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
 - V14E: **IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — remote baseline `33dbaa1f3ac684c5785c8b863383f4b6cad8cf47`.
 - V14E.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Policy Semantics & Evidence Hardening. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
-- P1-V14F.1: **ACTIVE PLAYER-SURFACE CORRECTIVE SLICE / OWNER AUTHORIZED / CODE NOT STARTED** — Battle Setup UX Clarity + Energy Cast Reliability. See `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`.
+- P1-V14F.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL** — Energy cast reliability + initial Setup roster presentation. Remote main: `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`.
+- P1-V14F.1c: **ACTIVE PLAYER-SURFACE VISUAL CLOSEOUT / OWNER AUTHORIZED / CODE NOT STARTED** — Battle Setup visual hierarchy, structured Stored Energy, contextual consolidation, and normal-Battle cast-state parity. See `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -24,7 +25,8 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active player-surface corrective slice: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+3. active player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
+4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 6. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
@@ -42,31 +44,26 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability**
+**P1-V14F.1c — Battle Setup Visual Closeout**
 
 Status: **ACTIVE / owner authorized / code not started / Experimental / not adopted**
 
-Owner live screenshot exposed:
-- Battle Setup hierarchy / overlap / scan-density problems;
-- Reserve and KO bodies are not separated clearly enough;
-- Active Squad cap 4 vs 18-position formation grid is not immediately readable;
-- Stored Energy is too text-heavy in Setup;
-- manual Energy cast can consume a charge on a full-HP frontline and then show no heal feedback, making cast appear broken;
-- invalid manual cast states currently fail too silently.
+Owner screenshot after remote F.1 baseline `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8` confirms logic is improved but Setup is still visually noisy.
 
-Locked corrective direction:
-- separate Reserve / Deployed / KO presentation;
-- improve header / enemy-card / resource hierarchy;
-- Setup Energy remains preview-only;
-- Battle Energy becomes explicit interactive action inventory;
-- full-HP target must consume 0 Energy;
-- successful effective heal consumes exactly 1 selected charge;
-- invalid cast exposes a deterministic reason;
-- normal Battle and Showcase Battle share the same eligibility semantics;
-- preserve +30 Frontline Heal, Run persistence, Active Squad cap 4, and 18 formation positions.
+Remaining closeout targets:
+- one primary Wave title + one Threat line; remove duplicate fixture/threat presentation;
+- show `ACTIVE x/4 · GRID 18` as one clear status;
+- at full squad, empty grid cells read as reposition-only tactical positions;
+- simplify Reserve header;
+- replace raw `energy-a:1` text with structured Energy icon/count chips;
+- remove idle STAR-consolidation instruction from Stored Energy panel;
+- move STAR consolidation to contextual Reserve selection state;
+- keep Link Shard as its own resource chip;
+- make normal PrototypeFlowPanel cast controls derive the same disabled/enabled state as Showcase;
+- no gameplay/economy changes.
 
 Read:
-`docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+`docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 
 ## B.1/B.2 implementation baseline
 
@@ -162,6 +159,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 - `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
 - `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 - `docs/P1-V14E-INTEGRATION-VALIDATION.md`
