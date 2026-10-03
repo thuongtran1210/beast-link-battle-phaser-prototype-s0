@@ -10,10 +10,11 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-4. previous slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-5. supporting V14 docs
-6. current code/tests
+3. active corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+4. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+5. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+6. supporting V14 docs
+7. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -44,18 +45,25 @@ Current implementation evidence:
 
 Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
 
-### Active slice — P1-V14C.2
+### Active corrective slice — P1-V14C.1a
 
-**Combo Quality → Consolidation Efficiency (Link Shard Experiment)**
+**First-Match Start Buffer**
 
-- MATCH COUNT strictly controls Beast quantity (1 match = 1 recruited Beast).
-- COMBO QUALITY (`bestStreak`) earns Link Shards (up to 2 per Beast Rush, cap 3).
-- Link Shards substitute for 1 missing same-STAR copy in Reserve consolidation (min 2 real bodies, 0 phantom HP).
-- Active Squad cap remains 4; Energy persistence (V14D) not started.
+Owner review found that both puzzle phases currently start consuming timed execution budget as soon as the board appears. The corrective experiment changes both Beast Rush and Energy Rush to:
+
+```text
+READY → FIRST VALID MATCH → ACTIVE 12.0s TIMER
+```
+
+- player may inspect the board while READY;
+- invalid input does not start the timer;
+- first valid match resolves normally and starts the timer exactly once;
+- no READY safety timeout is added yet;
+- C.1 Combo quality and C.2 Link Shard behavior remain unchanged.
 
 Read:
 
-`docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+`docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 
 ## Current V14 roadmap
 
@@ -74,6 +82,9 @@ IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN
 ↓
 V14C.2 — Link Shard Consolidation Efficiency
 IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL
+↓
+V14C.1a — First-Match Start Buffer
+ACTIVE CORRECTIVE SLICE / OWNER AUTHORIZED
 ↓
 V14D — Persistent Energy
 DEFERRED / NOT STARTED
