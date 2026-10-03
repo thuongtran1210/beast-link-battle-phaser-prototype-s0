@@ -18,16 +18,17 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-8. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-9. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-10. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-11. relevant historical docs
-12. current code/tests
+3. active validation slice: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+4. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+5. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+6. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+7. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+8. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+9. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+10. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+11. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+12. relevant historical docs
+13. current code/tests
 
 If repo docs and code conflict:
 - inspect current code
@@ -59,34 +60,40 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active implementation — P1-V14D
+## Active validation — P1-V14E
 
-Core hypothesis:
+Core question:
 
-**Unused Stored Energy becomes a Run resource so spend-now competes with save-for-later.**
+**Do current preparation decisions create persistent, understandable consequences across the existing three-Wave Run?**
 
-### V14D — Persistent Energy / Save-vs-Spend Across Waves
-- `EnergyQueue` is Run-scoped as single source of truth.
-- `resetWavePreparation()` preserves `energyQueue`.
-- `restartRun()` resets `energyQueue`.
-- Valid match adds +1 charge to matched ID without wiping carried charges.
-- Successful Battle cast consumes exactly 1 selected charge; failed/post-end casts consume 0.
-- No storage cap: charges may exceed 6 and 20.
-- UI: Energy Rush shows `CARRY IN ×N` and `STORED ×N`; Wave Result shows `ENERGY CARRIED ×N`.
+Required direction:
+- add no new economy/resource mechanic;
+- use existing V14A–D systems together;
+- build a deterministic three-Wave integration harness;
+- compare at least two legal policy traces from equivalent starting fixtures;
+- record factual state differences without ranking a winner;
+- validate bodies vs STAR density;
+- validate Reserve preservation vs deployed attrition;
+- validate Combo quality → Link Shard efficiency;
+- validate Energy spend vs save;
+- preserve stable RunRoster IDs / HP / KO;
+- keep Active Squad cap = 4;
+- keep current Wave fixtures;
+- clean repo conflict markers and local file:// links before/with implementation.
 
-## V14D non-goals
+## V14E non-goals
 
 Do NOT implement:
+- Energy cap / decay;
 - Energy Combo;
-- new Energy spell types;
-- Energy storage cap;
-- decay;
-- crafting;
-- Link Shard conversion;
+- new Energy spells;
 - Squad Capacity upgrade;
-- items/equipment;
+- revive / recovery;
+- items / economy / shop;
+- procedural Waves;
 - meta progression;
-- final balance tuning.
+- broad UI redesign;
+- balance rebalance.
 
 ## Verification discipline
 
@@ -99,37 +106,52 @@ Keep separate:
 6. owner verification passes
 7. design is adopted
 
-Never infer a later state from an earlier one.
+## Required V14E workflow
+
+1. Read repo-local sources only.
+2. Verify repo docs contain no committed merge markers.
+3. Verify active docs contain no machine-local file:/// links.
+4. Build a focused three-Wave integration harness using existing domain classes.
+5. Implement at least two legal policy traces from equivalent deterministic preparation fixtures.
+6. Record per-Wave resource / roster / battle snapshots.
+7. Require at least three factual cross-policy divergences.
+8. Do not encode winner/rank semantics.
+9. Add deterministic V14E checks.
+10. Run historical regressions.
+11. Run `npm run check`.
+12. Run `npm run build`.
+13. Record Live A–H only if actually observed in browser.
+14. STOP after implementation report.
 
 ## Completion report
 
 Report:
 - final commit SHA
 - files changed
-- EnergyQueue lifetime before/after
-- exact Wave transition change
-- Restart behavior
-- per-ID persistence
-- later-Wave collection behavior
-- Battle spending behavior
-- no-cap behavior
-- UI carry-in/current/carry-out behavior
-- deterministic checks
-- spend-vs-save harness
-- C.1a/C.1a.1/C.1/C.2/B.3 regressions
+- repo hygiene cleanup
+- harness structure
+- deterministic puzzle/preparation fixtures
+- policy trace definitions
+- per-Wave snapshots
+- bodies vs STAR evidence
+- Reserve vs attrition evidence
+- Combo/Link evidence
+- Energy spend/save evidence
+- at least three cross-policy divergences
+- no-winner semantics confirmation
+- regressions
 - `npm run check`
 - `npm run build`
-- live A–H status
+- Live A–H status
 - known limitations
 
 Explicitly state:
 
 ```text
-UNUSED ENERGY PERSISTS ACROSS WAVES.
-RESTART / NEW RUN CLEARS ENERGY.
-VALID ENERGY MATCH STILL ADDS EXACTLY +1 CHARGE.
-SUCCESSFUL BATTLE CAST STILL CONSUMES EXACTLY 1 SELECTED CHARGE.
-V14D ADDS NO NEW ENERGY STORAGE CAP.
-RULECONFIG.ENERGYMAX = 20 IS NOT USED AS A V14D CHARGE CAP.
+P1-V14E ADDS NO NEW RESOURCE MECHANIC.
+V14E VALIDATES EXISTING V14A–D SYSTEMS TOGETHER.
+NO UNIVERSAL WINNER IS ENCODED.
+ACTIVE SQUAD CAP REMAINS 4.
+ENERGY CAP / DECAY NOT STARTED.
 SQUAD CAPACITY UPGRADE NOT STARTED.
 ```
