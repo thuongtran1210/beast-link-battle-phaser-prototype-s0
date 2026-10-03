@@ -56,6 +56,7 @@ Remaining closeout targets:
 - at full squad, empty grid cells read as reposition-only tactical positions;
 - simplify Reserve header;
 - replace raw `energy-a:1` text with structured Energy icon/count chips;
+- collapse duplicate Reserve presentation into same-Beast/same-STAR stack cards such as `IRONCLAD ★ ×3` while preserving individual RunRoster identities and manual STAR consolidation;
 - remove idle STAR-consolidation instruction from Stored Energy panel;
 - move STAR consolidation to contextual Reserve selection state;
 - keep Link Shard as its own resource chip;
