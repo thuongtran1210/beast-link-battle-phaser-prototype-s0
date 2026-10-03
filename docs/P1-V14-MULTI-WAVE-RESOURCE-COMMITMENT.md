@@ -124,7 +124,7 @@ Combo quality
 
 ### P1-V14D — Persistent Energy / Save-vs-Spend
 
-**Implemented / deterministic PASS / Experimental.**
+**ACTIVE GAMEPLAY SLICE / IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**.
 
 Tested trade-off:
 
@@ -180,7 +180,11 @@ Do not reconstruct damaged units from anonymous counts after Battle.
 
 ## Deferred complexity
 
+<<<<<<< HEAD
 Still deferred:
+=======
+Still deferred outside the active V14D slice:
+>>>>>>> origin/main
 - Squad Capacity upgrades (not started)
 - new Tactical Energy types
 - revive / resting recovery

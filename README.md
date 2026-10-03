@@ -11,7 +11,7 @@ Read:
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
 3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-4. previous closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
 7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
@@ -84,10 +84,17 @@ V14C.1a — First-Match Start Buffer
 IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN
 ↓
 V14C.1a.1 — Timing State Hardening & Repo Closeout
+<<<<<<< HEAD
 IMPLEMENTED / DETERMINISTIC PASS
 ↓
 V14D — Persistent Energy
 ACTIVE GAMEPLAY SLICE / DETERMINISTIC PASS / EXPERIMENTAL
+=======
+IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED
+↓
+V14D — Persistent Energy
+ACTIVE / OWNER AUTHORIZED / CODE NOT IMPLEMENTED
+>>>>>>> origin/main
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED

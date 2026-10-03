@@ -1,12 +1,24 @@
 # P1-V14D — Persistent Energy / Save-vs-Spend Across Waves
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL / NOT ADOPTED**
+Status: **ACTIVE GAMEPLAY SLICE / IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL / NOT ADOPTED**
 
-## 1. Executive Summary
+## Why V14D Exists
 
-`P1-V14D` introduces **Persistent Energy**, allowing unused stored Energy charges to carry forward across Waves within a Run.
+P1-V14 already gives Run persistence to:
+- RunRoster unit identity;
+- HP / KO attrition;
+- STAR consolidation;
+- Link Shards.
 
-In previous implementations, `resetWavePreparation()` invoked `energyQueue.reset()` at every Wave transition, completely destroying all unused Energy charges. This prevented players from making meaningful strategic trade-offs between:
+Energy was the remaining major preparation resource that was still cleared between Waves.
+
+In previous implementations, `ValidationScene.resetWavePreparation()` called:
+
+```ts
+this.energyQueue.reset();
+```
+
+which destroyed all unused Energy after every Wave. This prevented players from making meaningful strategic trade-offs between:
 - **Spend Now**: Cast Frontline Heal in the current Battle to protect active units and reduce immediate roster attrition.
 - **Save for Later**: Conserve Tactical Energy to accumulate multiple healing charges for subsequent, higher-threat Waves.
 
@@ -16,41 +28,68 @@ Under V14D:
 - No artificial storage cap is imposed: accumulation above 6 and above historical 20 charges is fully legal.
 - `RuleConfig.energyMax = 20` remains isolated to historical P0 gauge semantics and does not cap P1 persistent charges.
 
-## 2. Core Gameplay Rules & Invariants
+## Core Hypothesis
 
-### 2.1 Single Source of Truth
+```text
+Unused Stored Energy becomes a persistent Run resource so that
+spending now directly competes with saving for later threats.
+```
+
+The player can choose:
+
+A.
+```text
+spend Energy now
+→ protect current roster
+→ reduce immediate attrition
+```
+
+or:
+
+B.
+```text
+save Energy
+→ carry tactical healing
+→ preserve options for later Waves
+```
+
+Neither path is intended to universally dominate.
+
+## Core Gameplay Rules & Invariants
+
+### Single Source of Truth
 `EnergyQueue` remains the single, authoritative gameplay store of Energy charges. No secondary store or UI-side caching is created.
 
-### 2.2 Wave Transition Lifetime
+### Wave Transition Lifetime
 At Wave transition (`advanceToNextWave() → resetWavePreparation()`):
 - Beast Rush timer, Combo quality tracker, and Energy Rush timer reset to `READY 12.0s`.
 - `BattleQueue` clears (new recruitment per wave).
 - `BattleFormation` and `AutonomousBattleModel` reset (deployment cleared to `ACTIVE 0 / 4`).
 - **`energyQueue` is NOT reset**: All unused charges remain intact in the queue.
 
-### 2.3 Restart & New Run
+### Restart & New Run
 `restartRun()` invokes `energyQueue.reset()`, ensuring that any new Run starts with exactly 0 Energy charges and zero cross-run leakage.
 
-### 2.4 Energy Collection
+### Energy Collection Rule
 - During Energy Rush, 1 valid match of an Energy pair adds exactly +1 charge of that specific Energy ID (`energy-a` through `energy-f`).
 - Carried charges from previous Waves remain present; newly matched charges are added to the existing totals.
 - Energy Rush timer enters `READY 12.0s`; board observation is free and carried Energy does NOT auto-start the countdown. Only the first valid match starts the timer (`READY → ACTIVE 12.0s`).
 
-### 2.5 Energy Spending
+### Energy Spending Rule
 - During Battle, clicking an available Energy button invokes `castFrontlineHeal(energyId, energyQueue)`.
 - A successful cast consumes exactly 1 charge of the selected Energy ID, healing the frontmost living ally for +30 HP (clamped at unit max HP).
-- Casts are only accepted while `status === 'Running'`.
+- Casts are only accepted while Battle `status === 'Running'`.
 - Failed casts or casts after battle completion consume 0 charges.
 - No automatic spending occurs at battle start, wave result, or phase transition.
 
-### 2.6 No Decay, No Refill, No Storage Cap
+### No Decay, No Free Refill, No Storage Cap
 - **No decay**: Carried Energy does not expire, degrade, or suffer percentage loss between Waves.
 - **No free refill**: Ending a Wave with 0 Energy results in starting the next Wave with 0 Energy.
 - **No cap**: Stored charges may accumulate beyond 6 and beyond historical 20. Neither `RuleConfig.energyMax` nor visual mockup limits clamp persistent charges in this experiment.
 
-## 3. UI Presentation
+## UI Presentation
 
-### 3.1 Energy Rush HUD
+### Energy Rush HUD
 - At Energy Rush entry, `energyCarryIn` snapshots the existing total charges.
 - The Right Rail queue card displays:
   - With carried Energy: `STORED ×${total} (CARRY IN ×${carryIn})`
@@ -58,21 +97,21 @@ At Wave transition (`advanceToNextWave() → resetWavePreparation()`):
 - Per-ID chips show individual energy counts (e.g., `energy-a (A) ×3`).
 - Valid matches immediately increment the matched chip count and stored total.
 
-### 3.2 Battle Setup UI
+### Battle Setup UI
 - Battle Setup reads directly from `this.energyQueue.getAll()`, displaying all available charges (carried + freshly matched) in the `⚡ STORED ENERGY` panel before Battle starts.
 
-### 3.3 Battle UI
+### Battle UI
 - Energy cast buttons display current available charges per ID.
 - Successfully casting decrements the charge count live and updates the top HUD counter.
 
-### 3.4 Wave Result UI
+### Wave Result UI
 - Upon clearing a Wave, the Result overlay prominently displays:
   ```text
   ENERGY CARRIED ×N
   ```
   making the save-vs-spend outcome immediately visible to the player before continuing to the next Wave.
 
-## 4. Metrics Tracking
+## Metrics Tracking
 
 `SessionMetrics` is extended with four lightweight tracking fields:
 - `energyCarryIn`: Number of charges carried into Energy Rush.
@@ -80,7 +119,7 @@ At Wave transition (`advanceToNextWave() → resetWavePreparation()`):
 - `energySpent`: Number of charges successfully consumed via Battle casts.
 - `energyCarryOut`: Number of unused charges remaining at Battle / Wave Result.
 
-## 5. Spend-vs-Save Decision Harness
+## Spend-vs-Save Decision Harness
 
 File: [PersistentEnergyHarness.ts](file:///g:/beast-link-battle-phaser-prototype-s0/src/game/energy/PersistentEnergyHarness.ts)
 
@@ -94,7 +133,7 @@ A deterministic comparison harness evaluates two legal policies on identical sta
 
 Both policies execute deterministically and remain fully legal.
 
-## 6. Deterministic Verification
+## Deterministic Verification
 
 File: [P1V14DChecks.ts](file:///g:/beast-link-battle-phaser-prototype-s0/src/game/energy/P1V14DChecks.ts)
 
@@ -139,7 +178,7 @@ Includes 28 checks plus Decision Harness verification:
 ### Harness Check (29)
 29. Decision harness confirms Policy A (Spend Now) results in lower `energyCarryOut` and higher roster HP, while Policy B (Save) carries all charges forward.
 
-## 7. Preserved Regressions
+## Preserved Regressions
 
 - **P1-V14C.1a / C.1a.1**: Both puzzle timers start at `READY 12.0s`; first valid match starts countdown; `ENDED → start()` is a strict NO-OP; only `reset()` returns `ENDED → READY`.
 - **P1-V14C.1**: Match count = Beast quantity; Combo = quality signal; 1.5s link window; invalid input does not alter phase timer.
@@ -147,3 +186,36 @@ Includes 28 checks plus Decision Harness verification:
 - **P1-V14B.3**: Separate 1★ recruitment; manual Reserve consolidation; STAR scaling; Active Squad cap = 4; Formation Grid unchanged.
 - **P1-V14B.1 / B.2**: Persistent RunRoster; HP / KO attrition; per-Wave deployment reset (`ACTIVE 0 / 4` at each setup); living survivors + new recruits coexist in Reserve.
 - **Squad Capacity Upgrade**: NOT STARTED.
+
+## Non-Goals
+
+Do NOT implement:
+- Energy storage cap;
+- Energy decay;
+- Energy Combo;
+- bonus Energy from Combo;
+- new Energy spell types;
+- Catalyst;
+- Energy crafting;
+- Link Shard conversion;
+- Squad Capacity upgrade;
+- items / equipment;
+- meta progression;
+- account-level Energy;
+- final balance tuning.
+
+## Adoption Boundary
+
+V14D remains Experimental.
+
+Evidence levels remain separate:
+1. code exists;
+2. deterministic checks pass;
+3. npm run check passes;
+4. npm run build passes;
+5. live browser flow;
+6. owner verification;
+7. real-player evidence;
+8. adopted design.
+
+Do not adopt Persistent Energy into Current Gameplay Spec v2 from implementation alone.

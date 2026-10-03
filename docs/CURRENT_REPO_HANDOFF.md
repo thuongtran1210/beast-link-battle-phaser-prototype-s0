@@ -10,7 +10,7 @@ Status: **Repository-local coding handoff**
 - V14C.1: **IMPLEMENTED**; deterministic/build evidence PASS; owner-live open.
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
-- V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
+- V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
 - V14D: **ACTIVE GAMEPLAY SLICE / IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — Persistent Energy / Save-vs-Spend. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
@@ -23,7 +23,7 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 1. `AI_INSTRUCTIONS.md`
 2. this file
 3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-4. previous closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
 7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
@@ -109,7 +109,8 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 ### P1-V14C.1a.1 — Timing State Hardening & Repo Closeout
 - Terminal state rule enforced: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0.
 - Only `reset()` returns `ENDED → READY 12.0s`.
-- Implemented / deterministic PASS.
+- Remote implementation verified at `1833f5a746cc414e5fdfc489b244c7969a61670c`.
+- Deterministic/check/build evidence PASS per implementation report; live browser closeout not recorded.
 
 ### P1-V14D — Persistent Energy / Save-vs-Spend Across Waves
 - Active gameplay slice.

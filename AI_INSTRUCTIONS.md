@@ -19,7 +19,7 @@ Read in this order:
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
 3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-4. previous closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
 7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
@@ -50,30 +50,20 @@ If repo docs and code conflict:
 
 ## Implemented architecture baselines
 
-### V14B.1/B.2 — Run Roster & Attrition
-- Partial deployment (1–4 units, Active Squad cap = 4).
-- Persistent `RunRoster` instance identity across Waves.
-- HP / KO persistence; Battle reconciliation by instance ID.
-- Wave deployment reset (`ACTIVE 0 / 4` at each setup).
-- Old living units + new recruits coexist in Reserve.
+- RunRoster unit identity, HP / KO persistence, per-Wave deployment reset: implemented.
+- B.3 manual STAR consolidation: implemented; do not restore greedy recruitment conversion.
+- C.1 Combo quality: implemented; do not restore +0.3 phase-time extension.
+- C.2 Link Shard: implemented; preserve threshold, cap, persistence, assisted consolidation, and zero-phantom-HP rules.
+- C.1a first-match timer start: implemented.
+- C.1a.1 terminal timer state: implemented; `ENDED → start()` is a no-op.
+- Active Squad cap remains 4.
+- Formation Grid capacity remains independent of squad capacity.
 
-### V14B.3 — STAR Consolidation / Power Density
-- Recruitment produces separate 1★ Run Unit instances (no automatic greedy conversion).
-- Optional Reserve-only consolidation (cost: 1 / 3 / 9).
-- Aggregate health ratio preserved; KO and deployed units excluded.
-- Centralized STAR stat profile and signature scaling.
+## Active implementation — P1-V14D
 
-### V14C.1 / V14C.2 — Combo Quality & Link Shards
-- Decoupled 12.0s phase timer from 1.5s Combo window.
-- Match count = Beast quantity; Combo streak = quality signal.
-- Link Shards awarded from streak (streak 4–6: 1, 7+: 2, cap 3).
-- Shards substitute 1 copy in Reserve consolidation (min 2 real bodies, 0 phantom HP).
+Core hypothesis:
 
-### V14C.1a / V14C.1a.1 — Start Buffer & Timing State Hardening
-- Both Beast and Energy Rush enter `READY 12.0s`.
-- First valid match starts the timer.
-- `ENDED` state is strictly terminal: `start()` and `update()` are NO-OPs.
-- Only `reset()` returns `ENDED → READY 12.0s`.
+**Unused Stored Energy becomes a Run resource so spend-now competes with save-for-later.**
 
 ### V14D — Persistent Energy / Save-vs-Spend Across Waves
 - `EnergyQueue` is Run-scoped as single source of truth.
@@ -84,26 +74,62 @@ If repo docs and code conflict:
 - No storage cap: charges may exceed 6 and 20.
 - UI: Energy Rush shows `CARRY IN ×N` and `STORED ×N`; Wave Result shows `ENERGY CARRIED ×N`.
 
-## Non-goals / Still deferred
-- Squad Capacity upgrade (NOT STARTED)
-- New Tactical Energy types
-- Revive / resting recovery
-- Post-Wave healing rewards
-- Items / equipment / traits
-- Economy / meta progression
-- Procedural Waves
-- Final STAR evolution art
+## V14D non-goals
+
+Do NOT implement:
+- Energy Combo;
+- new Energy spell types;
+- Energy storage cap;
+- decay;
+- crafting;
+- Link Shard conversion;
+- Squad Capacity upgrade;
+- items/equipment;
+- meta progression;
+- final balance tuning.
 
 ## Verification discipline
 
-Keep these separate:
-
+Keep separate:
 1. code exists
 2. deterministic checks pass
 3. `npm run check` passes
 4. `npm run build` passes
 5. live browser behavior passes
-6. owner live verification passes
+6. owner verification passes
 7. design is adopted
 
 Never infer a later state from an earlier one.
+
+## Completion report
+
+Report:
+- final commit SHA
+- files changed
+- EnergyQueue lifetime before/after
+- exact Wave transition change
+- Restart behavior
+- per-ID persistence
+- later-Wave collection behavior
+- Battle spending behavior
+- no-cap behavior
+- UI carry-in/current/carry-out behavior
+- deterministic checks
+- spend-vs-save harness
+- C.1a/C.1a.1/C.1/C.2/B.3 regressions
+- `npm run check`
+- `npm run build`
+- live A–H status
+- known limitations
+
+Explicitly state:
+
+```text
+UNUSED ENERGY PERSISTS ACROSS WAVES.
+RESTART / NEW RUN CLEARS ENERGY.
+VALID ENERGY MATCH STILL ADDS EXACTLY +1 CHARGE.
+SUCCESSFUL BATTLE CAST STILL CONSUMES EXACTLY 1 SELECTED CHARGE.
+V14D ADDS NO NEW ENERGY STORAGE CAP.
+RULECONFIG.ENERGYMAX = 20 IS NOT USED AS A V14D CHARGE CAP.
+SQUAD CAPACITY UPGRADE NOT STARTED.
+```
