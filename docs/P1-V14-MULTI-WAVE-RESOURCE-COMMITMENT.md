@@ -148,13 +148,17 @@ Read:
 
 ### P1-V14E — Multi-Wave Resource Commitment Integration Validation
 
-**Next validation slice / design active / code not started.**
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
 
 Purpose:
 - validate the current V14 systems together across the existing 3-Wave horizon;
 - prove that player commitments create persistent, readable consequences;
 - add no new resource mechanic or balance layer;
 - do not rank strategies or require a universal winner.
+
+Harness and check suite:
+- `src/game/run/MultiWaveCommitmentHarness.ts`
+- `src/game/run/P1V14EChecks.ts` (34 checks pass)
 
 Read:
 `docs/P1-V14E-INTEGRATION-VALIDATION.md`

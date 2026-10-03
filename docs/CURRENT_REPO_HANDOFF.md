@@ -11,8 +11,7 @@ Status: **Repository-local coding handoff**
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
-- V14D: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL** — Persistent Energy / Save-vs-Spend. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
-- V14E: **ACTIVE VALIDATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED** — Multi-Wave Resource Commitment Integration Validation. See `docs/P1-V14E-INTEGRATION-VALIDATION.md`.
+- V14E: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL** — Multi-Wave Resource Commitment Integration Validation. See `docs/P1-V14E-INTEGRATION-VALIDATION.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.

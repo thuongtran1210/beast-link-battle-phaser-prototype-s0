@@ -38,7 +38,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14D — Persistent Energy / Save-vs-Spend Across Waves**. ACTIVE GAMEPLAY SLICE / EXPERIMENTAL. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
+- Current slice: **P1-V14E — Multi-Wave Resource Commitment Integration Validation**. IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL. See `docs/P1-V14E-INTEGRATION-VALIDATION.md`.
+- V14E Integration Validation: 3-wave integration harness evaluating bodies vs STAR density, reserve vs attrition, combo to link shards, and energy spend vs save across `CONSERVE` and `COMMIT` policies without encoding winner semantics.
 - V14D Persistent Energy: `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves. Reset only on Restart / new Run. No storage cap.
 - V14C.1a.1 Timing State Hardening: Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
 - V14C.1a First-Match Start Buffer: `READY → first valid match → ACTIVE 12.0s timer`. Invalid input does not start timer.

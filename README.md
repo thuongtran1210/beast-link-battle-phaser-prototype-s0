@@ -67,6 +67,8 @@ Read:
 
 **Multi-Wave Resource Commitment Integration Validation**
 
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**
+
 V14E adds no new resource mechanic. It validates whether current V14 decisions create persistent, readable consequences across the existing three-Wave run.
 
 Required evidence:
@@ -110,7 +112,7 @@ V14D — Persistent Energy
 IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL
 ↓
 V14E — Multi-Wave Resource Commitment Integration Validation
-ACTIVE DESIGN SLICE / CODE NOT STARTED
+IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
