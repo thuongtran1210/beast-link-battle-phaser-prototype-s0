@@ -137,15 +137,15 @@ export class BattleSetupView {
   }
 
   private renderHeader(): void {
+    // Player-facing Wave/Threat belongs exclusively to GameTopHUD. Keep harness controls below it.
+    if (!this.onEnemyBoardEdit) return;
     // Wave is primary; phase/navigation is intentionally secondary.
-    this.text(26, 20, this.fixtureName ?? 'BATTLE SETUP', 18, HudTokens.colors.textPrimary, 'bold');
-    this.text(26, 44, `Threat · ${this.threatSummary ?? 'UNKNOWN'}`, 11, HudTokens.colors.textGold, 'bold');
-    if (this.onEnemyBoardEdit) this.text(26, 58, 'TEST HARNESS — ENEMY SCENARIO EDITOR', 10, '#fbbf24', 'bold');
+    this.text(26, 78, 'TEST HARNESS', 9, '#64748b', 'bold');
 
     // 2. Level title / Threat info
     const levelLabel = this.text(
       460,
-      20,
+      78,
       this.onCycleFixture ? '[E] CYCLE FIXTURE' : 'BATTLE SETUP',
       12,
       HudTokens.colors.textGold,
@@ -157,15 +157,15 @@ export class BattleSetupView {
     }
 
     if (this.threatSummary) {
-      this.text(460, 44, `⚠ ${this.threatSummary}`, 10, '#f59e0b', 'bold');
+      this.text(460, 92, '[DEBUG CONTROLS]', 8, '#64748b', 'bold');
     }
 
     // 3. Formation Presets Quick Select
     if (this.onSelectPresetA && this.onSelectPresetB) {
-      this.text(780, 20, 'PRESET:', 10, HudTokens.colors.textMuted, 'bold');
+      this.text(780, 78, 'PRESET:', 9, HudTokens.colors.textMuted, 'bold');
       const presetALabel = this.text(
         834,
-        20,
+        78,
         `[A] Response A`,
         10,
         this.activePresetKey === 'A' ? '#22c55e' : '#94a3b8',
@@ -177,7 +177,7 @@ export class BattleSetupView {
 
       const presetBLabel = this.text(
         940,
-        20,
+        78,
         `[B] Response B`,
         10,
         this.activePresetKey === 'B' ? '#22c55e' : '#94a3b8',
@@ -189,14 +189,14 @@ export class BattleSetupView {
     }
 
     // 4. Enemy validation tools
-    if (this.onEnemyBoardEdit) {
-      this.text(780, 46, 'ENEMY TOOLS:', 9, HudTokens.colors.textMuted, 'bold');
+    {
+      this.text(780, 92, 'ENEMY TOOLS:', 8, HudTokens.colors.textMuted, 'bold');
       (['Frontliner', 'Diver', 'Ranged', 'Erase'] as const).forEach((tool, index) => {
         const short = tool === 'Frontliner' ? 'FRONT' : tool === 'Ranged' ? 'RANGE' : tool.toUpperCase();
         const active = this.enemyTool === tool;
         const label = this.text(
           856 + index * 48,
-          46,
+          92,
           short,
           8,
           active ? '#fbbf24' : '#94a3b8',
@@ -245,12 +245,9 @@ export class BattleSetupView {
     const playerHeading = this.text(dividerX - 170, topLaneY - 58, '◀ MY FORMATION', 12, '#38bdf8', 'bold').setOrigin(0.5);
     const enemyHeadingText = this.onEnemyBoardEdit ? 'ENEMY FORMATION [Validation Edit] ▶' : 'ENEMY FORMATION ▶';
     const enemyHeading = this.text(dividerX + 180, topLaneY - 38, enemyHeadingText, 12, '#f87171', 'bold').setOrigin(0.5);
-    const squadTitle = this.text(dividerX - 385, topLaneY - 58, 'ACTIVE SQUAD', 9, '#7dd3fc', 'bold');
-    const meter = this.text(dividerX - 385, topLaneY - 42, squad.meter.map((filled) => filled ? '●' : '○').join(' '), 11, squad.isFull ? '#fbbf24' : '#38bdf8', 'bold');
-    const squadCount = this.text(dividerX - 318, topLaneY - 42, squad.countLabel, 10, '#ffffff', 'bold');
-    const squadLimit = this.text(dividerX - 385, topLaneY - 27, `ACTIVE SQUAD ${squad.countLabel}${squad.isFull ? ' · FULL' : ''} · GRID 18`, 8, squad.isFull ? '#fbbf24' : '#64748b', 'bold');
+    const squadTitle = this.text(dividerX - 280, topLaneY - 42, `ACTIVE ${squad.countLabel}${squad.isFull ? ' · FULL' : ''} · GRID 18`, 9, squad.isFull ? '#fbbf24' : '#7dd3fc', 'bold');
     const gridLabel = this.text(dividerX - 170, topLaneY - 38, '18 TACTICAL POSITIONS', 8, '#94a3b8', 'bold').setOrigin(0.5);
-    this.objects.push(playerHeading, enemyHeading, squadTitle, meter, squadCount, squadLimit, gridLabel);
+    this.objects.push(playerHeading, enemyHeading, squadTitle, gridLabel);
 
     // Row labels
     const playerFrontX = dividerX - 80;

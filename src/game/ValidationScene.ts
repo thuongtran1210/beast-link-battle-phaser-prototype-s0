@@ -472,7 +472,9 @@ export class ValidationScene extends Phaser.Scene {
   private syncTopHud(): void {
     const beastCount = this.battleQueue.entries().reduce((s, e) => s + e.count, 0);
     const energyCount = this.energyQueue.getTotalCharges();
-    this.topHud?.update(this.phaseController.phase, beastCount, energyCount);
+    const wave = this.waveRun.currentWave;
+    const setup = this.phaseController.phase === GamePhase.BattleSetup;
+    this.topHud?.update(this.phaseController.phase, beastCount, energyCount, setup ? { primaryTitle: `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${wave.name}`, secondaryTitle: `Threat · ${wave.threatLabel}`, linkShards: this.shardPool.count, hideBrand: true } : { linkShards: this.shardPool.count });
   }
 
   private enterBeastRush(): void {
