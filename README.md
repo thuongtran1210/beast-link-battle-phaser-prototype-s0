@@ -168,6 +168,24 @@ Read:
 
 `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 
+### Active implementation slice — P1-V14G.2
+
+**Tactical Energy Player Surface + G.1 Semantic Hardening**
+
+G.1 core is implemented at `1102a07`, but the player UI still uses legacy Frontline Heal language and routing.
+
+G.2 connects the tactical model to the player surface:
+- MEND / RESCUE / BREAK / PIERCE names;
+- READY / SUGGESTED / DISABLED;
+- contextual reason labels;
+- tactical cast routing;
+- actual target heal/damage feedback;
+- consistent normal + Showcase controls.
+
+Read:
+
+`docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+
 ## Current V14 roadmap
 
 ```text
@@ -207,8 +225,11 @@ IMPLEMENTED / DETERMINISTIC PASS / LIVE OPEN
 V14F.1c — Battle Setup Visual Closeout
 PLAYER-SURFACE CLOSEOUT / LIVE SCREENSHOT GATE OPEN
 ↓
-V14G — Energy Identity & Activation Grammar
-ACTIVE DESIGN SPEC / CODE NOT STARTED
+V14G.1 — Tactical Energy Core
+IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED
+↓
+V14G.2 — Tactical Energy Player Surface
+ACTIVE IMPLEMENTATION / OWNER AUTHORIZED / CODE NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
