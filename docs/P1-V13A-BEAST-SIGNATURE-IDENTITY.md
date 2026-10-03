@@ -1,6 +1,6 @@
 # P1-V13A — Beast Signature Identity
 
-Status: **Experimental / not adopted / implementation exists / live signature gate still open**.
+Status: **Experimental / not adopted / implementation exists / full live signature gate still open**.
 
 Commit:
 
@@ -28,7 +28,7 @@ These mappings are Experimental. They are not canonical Beast kits.
 - **Focus Shot** rewards protected uninterrupted Ranger HOLD time.
 - **Arcane Bloom** rewards Mage access to clustered enemies.
 
-The intent is to connect:
+The intended relationship is:
 
 ```text
 formation
@@ -37,54 +37,28 @@ formation
 → combat consequence
 ```
 
-rather than adding four generic timed damage abilities.
-
-## Implementation boundary
-
-Signatures use the existing deterministic fixed-step combat timeline.
-
-P1-V13A does not introduce:
-
-- mana
-- ultimate bars
-- player skill buttons
-- traits
-- items
-- economy
-- a generic RPG ability framework
-
-`P1V13A_SIGNATURE_FIXTURE` contains Experimental values. Current Gameplay Spec values are unchanged.
-
-Arcane Bloom evaluates its cluster at normal cast resolution in the current implementation.
-
 ## Verification status
 
-Agent report for the P1-V13A implementation stated:
+Implementation and deterministic-check evidence exists.
 
-- deterministic V13A checks passed
-- historical checks passed under `npm run check`
-- TypeScript compilation passed during the reported build run
-- the environment terminated the build before final Vite bundle completion
-- manual Tank / Assassin / Ranger / Mage live A/B observations were not performed at that point
+Full manual Tank / Assassin / Ranger / Mage A/B live verification remains open.
 
-Therefore do **not** describe P1-V13A as fully live-verified solely from the implementation report.
+Do not describe P1-V13A as adopted or fully live-verified solely because the code exists.
 
-## Current validation blocker
+## Current priority relationship
 
-P1-V13A live testing is currently blocked by Battle Setup / Test Harness usability.
+P1-V13A.1D Setup UX remains unresolved, but the project owner has reprioritized a more fundamental question:
 
-The owner needs to be able to deliberately create favorable and unfavorable conditions for each signature without source edits:
+> Does the core loop provide enough future horizon for Queue, STAR, Combo, formation and Energy decisions to matter?
 
-- Tank interception corridor for Guardian Brace
-- aligned vs delayed deep access for Ambush Strike
-- protected HOLD vs forced KITE for Focus Shot
-- clustered vs spread enemies for Arcane Bloom
+Therefore P1-V14 may proceed while the V13 live/UX gates remain explicitly open.
 
-P1-V13A.1 and P1-V13A.2 added enemy-level and drag/deployment tooling, but the current Setup UI has not passed owner UX review.
+This is a priority change, not a PASS.
 
 See:
 
 - `docs/P1-V13A1-TEST-HARNESS.md`
 - `docs/P1-V13A1D-DEPLOYMENT-WORKSPACE-UX.md`
+- `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
 
-Do not start P1-V13B Tactical Energy until this live-testability blocker is closed.
+Do not start Tactical Energy expansion before the V14 resource-horizon experiments clarify whether Energy depth is missing because of effect variety or because the single-Battle structure provides no reason to save resources.
