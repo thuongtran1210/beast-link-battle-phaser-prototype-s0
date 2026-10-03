@@ -181,6 +181,22 @@ No gameplay rule or balance value changes in E.1.
 Read:
 `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
 
+### P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability
+
+**ACTIVE player-surface corrective slice / owner authorized / code not started.**
+
+Purpose:
+- make Battle Setup state readable at a glance;
+- separate living Reserve from KO bodies;
+- make Active Squad cap 4 vs 18 formation positions explicit;
+- keep Setup Energy preview-only;
+- harden manual Frontline Heal cast eligibility and feedback;
+- prevent full-HP casts from consuming Energy;
+- preserve all V14 gameplay mechanics.
+
+Read:
+`docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+
 ### Future — Squad Capacity Upgrade
 
 Not started.
