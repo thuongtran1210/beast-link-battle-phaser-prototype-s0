@@ -9,8 +9,10 @@ Status: **Repository-local coding handoff**
 - V14B.3: implemented; code review PASS; live hypothesis validation open; not adopted.
 - V14C.1: implemented; deterministic/build PASS; owner live A–F open; Experimental / not adopted.
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
-- V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — First-Match Start Buffer for Beast Rush + Energy Rush. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
-- V14D and Squad Capacity Upgrade: not started.
+- V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — First-Match Start Buffer for Beast Rush + Energy Rush.
+- V14C.1a.1: **ACTIVE CLOSEOUT SLICE / OWNER AUTHORIZED** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
+- V14D: **NEXT GAMEPLAY SLICE / NOT STARTED**.
+- Squad Capacity Upgrade: not started.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
 
@@ -20,14 +22,15 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-4. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-5. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-6. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-7. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-8. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-9. relevant historical slice docs
-10. current code/tests
+3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+7. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+8. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+9. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+10. relevant historical slice docs
+11. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
@@ -75,101 +78,17 @@ Implemented and regression-covered:
 
 Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark B.1/B.2 owner-live PASS unless explicitly verified.
 
-## Current B.3 blocker discovered in code
+## Current implementation truth
 
-Current Battle Setup still uses greedy STAR conversion:
-Do not mark V14B.1/B.2 PASS until Live A–H are explicitly verified in browser, especially:
-- Wave 2 begins `ACTIVE 0 / 4`
-- injured survivor keeps exact remaining HP
-- fresh recruit and injured survivor coexist in Reserve
-- player can intentionally choose either
-- KO remains visible/unavailable
-- duplicate same-beast instances retain separate HP
-- Restart has no roster leakage.
+B.3 greedy auto-conversion is no longer the current blocker. Current remote implementation already supports separate 1★ recruitment plus manual Reserve-only STAR consolidation.
 
-## Active implementation sequence
+Current active closeout question:
+- can either puzzle timer restart after reaching ENDED?
+- repository review found that current `start()` can reload 12.0s after `remainingSeconds === 0`.
 
-### P1-V14B.3 — STAR Consolidation / Power Density
+P1-V14C.1a.1 must harden both Beast Rush and Energy Rush timers so only `reset()` may move ENDED back to READY.
 
-**Implementation status:** active Experimental slice, explicitly owner-authorized. Recruitment creates separate 1-star Run Units, and optional consolidation is Reserve-only, preserves aggregate HP condition, excludes KO units, and keeps the Active Squad cap at 4.
-
-### P1-V14B.1 — Partial Deployment + Persistent Reserve
-
-**Implementation status:** coded + deterministic regression evidence present; owner live gate still open.
-
-Current Experimental fixture:
-- Start Battle accepts a legal subset.
-- Active Squad cap = 4.
-- Reserve may remain non-empty.
-- deployment is per-Wave only.
-- next Wave Setup starts `ACTIVE 0 / 4`.
-
-### P1-V14B.2 — Persistent Unit Identity + HP Attrition
-
-**Implementation status:** coded + deterministic regression evidence present; owner live gate still open.
-
-Current behavior:
-- stable Run Unit instances persist across Waves.
-- HP / KO persist.
-- Battle spawns from persistent HP.
-- Battle result reconciles by instance ID.
-- temporary Battle runtime state resets.
-- no free post-Wave heal.
-- KO remains unavailable.
-
-## Model boundary
-
-Do not model surviving units as anonymous counts returning to Beast Queue.
-
-Use:
-
-```text
-BattleQueue count
-→ StarConverter.bulk(...)
-→ highestAffordable(...)
-→ automatic highest STAR
-```
-
-Therefore the player cannot currently choose:
-
-```text
-3 × 1★
-vs
-1 × 2★
-```
-
-That is the active B.3 problem.
-
-## Active B.3 target
-
-Hypothesis:
-
-**Higher STAR = power density per Active slot.**
-
-Desired trade-off:
-- several 1★ units = breadth / bodies / lane coverage / more independent actions
-- one higher-STAR unit = concentration / stronger per-slot body / stronger signature / slot efficiency
-
-Keep:
-- Active Squad cap = 4
-- STAR cost structure = 1 / 3 / 9
-- Formation Grid unchanged
-- `GRID CAPACITY ≠ SQUAD CAPACITY`
-
-Do not implement Squad Capacity upgrades in this slice.
-
-## Required B.3 direction
-
-1. Stop automatic greedy consolidation during recruitment.
-2. Recruit separate 1★ Run Unit instances.
-3. Add optional manual Reserve-only consolidation.
-4. Preserve one deterministic primary instance ID where practical.
-5. Do not use KO or deployed units as ingredients.
-6. Preserve attrition by health ratio; consolidation must not full-heal.
-7. Centralize STAR stat scaling into one gameplay source of truth.
-8. Scale existing signatures by STAR without changing signature identity.
-9. Validate Breadth vs Density against existing deterministic threat fixtures.
-10. Stop before V14C.
+After that closeout, the next gameplay slice is P1-V14D Persistent Energy.
 
 ## Important model boundaries
 
@@ -216,7 +135,7 @@ Do not implement in B.1/B.2:
 
 Read:
 
-`docs/P1-V14B3-STAR-POWER-DENSITY.md`
+`docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 
 ## UI Validation Update — Beast Rush Right Rail — 2026-10-03
 
