@@ -10,8 +10,7 @@ import { BattleSetupInteractionController, type DropOutcome } from './BattleSetu
 import type { RunRoster } from '../run/RunRoster';
 import { reservePage } from './ReservePagination';
 import { ACTIVE_SQUAD_LIMIT, activeSquadPresentation, reserveTargetAffordance } from './ActiveSquadPresentation';
-import { classifyBattleSetupRoster } from './BattleSetupPresentation';
-import { setupEnergyInventory } from './BattleSetupPresentation';
+import { classifyBattleSetupRoster, emptyFormationSlotLabel, enemyBoardCardLabel, formationBoardSummary, setupEnergyInventory } from './BattleSetupPresentation';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 
 export interface BattleSetupLayoutMetrics {
@@ -235,19 +234,16 @@ export class BattleSetupView {
     const divider = this.scene.add.rectangle(dividerX, arenaY + arenaH / 2 + 10, 2, arenaH - 50, 0x334155, 0.8);
     this.objects.push(divider);
 
-    // Frontline Direction indicator
-    const zoneBadge = this.scene.add.rectangle(dividerX, topLaneY - 38, 220, 24, 0x1e293b, 0.9).setStrokeStyle(1, 0x475569);
-    const zoneText = this.text(dividerX, topLaneY - 38, 'MY SIDE  →  BATTLE  ←  ENEMY SIDE', 9, '#94a3b8', 'bold').setOrigin(0.5);
-    this.objects.push(zoneBadge, zoneText);
+    // A compact clash marker preserves side orientation without competing with either board header.
+    const clash = this.text(dividerX, topLaneY - 40, '⚔', 16, '#94a3b8', 'bold').setOrigin(0.5);
+    this.objects.push(clash);
 
     // Board headers. Squad capacity is separate from the 3 × 6 position grid.
     const squad = this.squadPresentation();
     const playerHeading = this.text(dividerX - 170, topLaneY - 58, '◀ MY FORMATION', 12, '#38bdf8', 'bold').setOrigin(0.5);
-    const enemyHeadingText = this.onEnemyBoardEdit ? 'ENEMY FORMATION [Validation Edit] ▶' : 'ENEMY FORMATION ▶';
-    const enemyHeading = this.text(dividerX + 180, topLaneY - 38, enemyHeadingText, 12, '#f87171', 'bold').setOrigin(0.5);
-    const squadTitle = this.text(dividerX - 280, topLaneY - 42, `ACTIVE ${squad.countLabel}${squad.isFull ? ' · FULL' : ''} · GRID 18`, 9, squad.isFull ? '#fbbf24' : '#7dd3fc', 'bold');
-    const gridLabel = this.text(dividerX - 170, topLaneY - 38, '18 TACTICAL POSITIONS', 8, '#94a3b8', 'bold').setOrigin(0.5);
-    this.objects.push(playerHeading, enemyHeading, squadTitle, gridLabel);
+    const enemyHeading = this.text(dividerX + 180, topLaneY - 58, 'ENEMY FORMATION ▶', 12, '#f87171', 'bold').setOrigin(0.5);
+    const squadTitle = this.text(dividerX - 170, topLaneY - 42, formationBoardSummary(squad.activeCount), 9, squad.isFull ? '#fbbf24' : '#7dd3fc', 'bold').setOrigin(0.5);
+    this.objects.push(playerHeading, enemyHeading, squadTitle);
 
     // Row labels
     const playerFrontX = dividerX - 80;
@@ -269,7 +265,7 @@ export class BattleSetupView {
     // 6 Lanes L1..L6
     for (let column = 1; column <= 6; column += 1) {
       const laneY = topLaneY + (column - 1) * laneGap;
-      this.text(arenaX + 16, laneY, `L${column}`, 10, '#64748b', 'bold').setOrigin(0, 0.5);
+      this.text(playerBackX - slotW / 2 - 14, laneY, `L${column}`, 9, '#64748b', 'bold').setOrigin(0.5);
 
       // Player slots: Back, Mid, Front
       const playerRows: Array<{ row: FormationSlot['row']; x: number }> = [
@@ -320,7 +316,6 @@ export class BattleSetupView {
       const posY = topLaneY + (enemy.column - 1) * laneGap;
       const archetype = enemy.archetype ?? 'Frontliner';
       const strokeColor = archetype === 'Diver' ? 0xa855f7 : archetype === 'Ranged' ? 0x06b6d4 : 0xf87171;
-      const archetypeTag = archetype === 'Frontliner' ? 'FRONT' : archetype === 'Diver' ? 'DIVER' : 'RANGED';
 
       const body = this.scene.add
         .rectangle(rowX, posY, slotW - 8, slotH - 8, 0x450a0a, 0.95)
@@ -329,7 +324,7 @@ export class BattleSetupView {
       const label = this.text(
         rowX,
         posY - 2,
-        `[${archetypeTag}]\n${enemy.maxHp} HP\n⚔${enemy.damage}`,
+        enemyBoardCardLabel(archetype, enemy.maxHp, enemy.damage),
         8,
         '#ffffff',
         'bold',
@@ -393,15 +388,16 @@ export class BattleSetupView {
       const starLabel = this.text(x + 16, y + 6, stars, 9, HudTokens.colors.textGold, 'bold').setOrigin(0.5);
       this.objects.push(starLabel);
 
-      const sigLabel = this.text(
+      const rosterUnit = this.runRoster?.get(occupantUnit.unitId);
+      const hpLabel = this.text(
         x,
         y + 16,
-        signatureNameForBeast(occupantUnit.beastId),
+        rosterUnit ? `${rosterUnit.currentHp}/${rosterUnit.maxHp} HP` : 'HP',
         7,
         HudTokens.colors.textMuted,
         'bold',
       ).setOrigin(0.5);
-      this.objects.push(sigLabel);
+      this.objects.push(hpLabel);
 
       if (isSelected && this.scene.tweens) {
         this.scene.tweens.add({
@@ -437,17 +433,22 @@ export class BattleSetupView {
 
     // Empty Player Slot: a tactical position, not an additional squad slot.
     const squad = this.squadPresentation();
+    const isDragging = this.controller.state.mode !== 'idle';
     const blockedByFullSquad = reserveTargetAffordance(squad.activeCount, false, this.controller.state.mode === 'draggingFromTray') === 'blocked';
     const emptySlot = this.scene.add
       .rectangle(x, y, width, height, 0x1e293b, blockedByFullSquad ? 0.3 : 0.5)
       .setStrokeStyle(1.5, blockedByFullSquad ? 0x475569 : 0x3b82f6, blockedByFullSquad ? 0.35 : 0.4);
-    const footprint = this.text(x, y, blockedByFullSquad ? 'LOCK' : '+', blockedByFullSquad ? 7 : 12, blockedByFullSquad ? '#64748b' : '#3b82f6', 'bold').setOrigin(0.5).setAlpha(blockedByFullSquad ? 0.7 : 0.6);
-    this.objects.push(emptySlot, footprint);
+    const slotLabel = emptyFormationSlotLabel(isDragging, blockedByFullSquad);
+    const footprint = slotLabel
+      ? this.text(x, y, slotLabel, blockedByFullSquad ? 7 : 8, blockedByFullSquad ? '#64748b' : '#7dd3fc', 'bold').setOrigin(0.5).setAlpha(0.8)
+      : undefined;
+    this.objects.push(emptySlot);
+    if (footprint) this.objects.push(footprint);
 
     // Subtle first-time pulse on frontline empty slot
     if (this.controller.isFirstDeploymentPending && row === 'Front' && column === 3 && this.scene.tweens) {
       this.scene.tweens.add({
-        targets: [emptySlot, footprint],
+        targets: footprint ? [emptySlot, footprint] : [emptySlot],
         alpha: 0.9,
         duration: 700,
         yoyo: true,

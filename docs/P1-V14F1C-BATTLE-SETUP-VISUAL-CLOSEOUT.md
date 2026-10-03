@@ -1,6 +1,15 @@
 # P1-V14F.1c — Battle Setup Visual Closeout
 
-Status: **ACTIVE PLAYER-SURFACE VISUAL CLOSEOUT / OWNER AUTHORIZED / CODE NOT STARTED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **ACTIVE PLAYER-SURFACE VISUAL CLOSEOUT / P FORMATION-BOARD IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+
+## P — Formation Board Visual Hierarchy — 2026-10-03
+
+- Replaced the broad center side-direction banner with a compact clash marker.
+- Kept one `ACTIVE x / 4 · GRID 18` formation summary and removed the duplicate grid label.
+- Aligned player/enemy formation headings and removed validation wording from the player-facing enemy heading.
+- Idle empty cells now read as low-contrast tactical positions; `PLACE` / `SQUAD FULL` feedback appears only during drag.
+- Enemy cards present archetype, HP, then damage; lane labels sit adjacent to the player formation.
+- This is presentation-only: RunRoster identity, the 4-Beast active cap, and all 18 formation positions are unchanged.
 
 ## Why F.1c Exists
 
