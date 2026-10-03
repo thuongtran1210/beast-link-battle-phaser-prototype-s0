@@ -141,6 +141,33 @@ Read:
 
 `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 
+### Active design slice — P1-V14G
+
+**Energy Identity & Activation Grammar**
+
+Persistent Energy already creates save-vs-spend tension, but current Energy IDs do not yet tell the player which type to use, what it affects, or when it becomes relevant.
+
+V14G baseline:
+
+- **MEND** — heal frontmost ally up to 30.
+- **RESCUE** — heal the most damaged Mid/Back ally up to 30.
+- **BREAK** — deal 30 direct Energy damage to a Frontliner.
+- **PIERCE** — deal 30 direct Energy damage to a Ranged enemy.
+
+Battle UI grammar:
+
+```text
+DISABLED → cannot produce a legal effective result
+READY → legal to cast
+SUGGESTED → legal and current battle state matches its intended use
+```
+
+SUGGESTED never auto-casts and does not rank the player's choices.
+
+Read:
+
+`docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+
 ## Current V14 roadmap
 
 ```text
@@ -178,7 +205,10 @@ V14F.1 — Battle Setup UX + Energy Cast Reliability
 IMPLEMENTED / DETERMINISTIC PASS / LIVE OPEN
 ↓
 V14F.1c — Battle Setup Visual Closeout
-ACTIVE / OWNER AUTHORIZED / CODE NOT STARTED
+PLAYER-SURFACE CLOSEOUT / LIVE SCREENSHOT GATE OPEN
+↓
+V14G — Energy Identity & Activation Grammar
+ACTIVE DESIGN SPEC / CODE NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
