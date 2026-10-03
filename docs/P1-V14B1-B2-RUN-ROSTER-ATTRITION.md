@@ -1,6 +1,18 @@
 # P1-V14B.1/B.2 — Run Roster, Partial Deployment & Attrition
 
-Status: **Active Experimental implementation slice / not adopted**
+Status: **Core implementation baseline present / owner-live evidence gate still open / Experimental / not adopted**
+
+## Progress handoff — 2026-10-03
+
+The owner has explicitly authorized moving the active implementation slice to **P1-V14B.3 — STAR Consolidation / Power Density**.
+
+This does not retroactively mark B.1/B.2 owner-live PASS.
+
+Use this document as the B.1/B.2 foundation and evidence record. For current implementation work, read:
+
+`docs/P1-V14B3-STAR-POWER-DENSITY.md`
+
+The previous instruction "Do not start V14B.3 automatically" is superseded by explicit owner authorization.
 
 ## Read first — repository only
 
@@ -9,8 +21,9 @@ Coding agents must read:
 1. `AI_INSTRUCTIONS.md`
 2. `docs/CURRENT_REPO_HANDOFF.md`
 3. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-4. this file
-5. current code/tests
+4. `docs/P1-V14B3-STAR-POWER-DENSITY.md` when working on the current active slice
+5. this file
+6. current code/tests
 
 **Do not query Notion MCP for this implementation task.**
 
@@ -37,8 +50,8 @@ Owner-reported command evidence:
 - `npm run check` PASS
 - `npm run build` PASS
 
-**Status remains Active Experimental / not adopted.**
-Live A–H are still required before B.1/B.2 can be marked owner-live PASS.
+**Status remains Experimental / not adopted.**
+Core B.1/B.2 implementation is now treated as the baseline for B.3, while Live A–H remain a separate owner evidence gate.
 
 ## Owner evidence
 
@@ -332,6 +345,25 @@ PASS if they remain distinct without HP cross-write.
 ## Live H — Restart
 PASS if a fresh run has no prior HP/KO/instance state leakage.
 
+# Handoff to V14B.3
+
+B.1/B.2 established the persistent RunRoster / Reserve / attrition foundation needed for STAR slot-pressure testing.
+
+Owner-authorized next question:
+
+```text
+several 1★ bodies
+vs
+one higher-STAR slot-efficient Beast
+```
+
+Current B.3 code finding:
+- recruitment still greedily auto-converts through `StarConverter.bulk(...)`
+- player choice does not yet exist
+- B.3 must make consolidation optional while preserving the B.1/B.2 roster and HP rules
+
+See `docs/P1-V14B3-STAR-POWER-DENSITY.md`.
+
 # Strict non-goals
 
 Do NOT implement:
@@ -367,4 +399,4 @@ B.1/B.2 passes only when:
 
 Then stop.
 
-**Do not start P1-V14B.3 STAR redesign automatically.**
+**P1-V14B.3 is now owner-authorized and tracked in `docs/P1-V14B3-STAR-POWER-DENSITY.md`.**
