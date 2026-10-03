@@ -1,55 +1,62 @@
 # AGENTS.md — Beast Link Battle Repository Routing
 
-This file routes AI agents to the correct source of truth.
+This file routes AI agents to the correct repository-local source of truth.
 
-## Task routing
+## Gameplay / code / systems / validation
 
-### Gameplay / code / systems / validation
+**Do not call Notion MCP during normal coding work.**
 
-Read and obey:
+Read:
 
-1. `AI_INSTRUCTIONS.md`
-2. the canonical Notion sources listed there
-3. the active slice document in `docs/`
-4. current code
+1. `docs/CURRENT_REPO_HANDOFF.md`
+2. `AI_INSTRUCTIONS.md`
+3. active slice document under `docs/`
+4. current code/tests
 
-Do not infer gameplay rules from art documentation.
+Notion is synchronized separately only when the user explicitly requests it.
 
-### Art / visual assets / image generation / character design
+Current gameplay slice:
 
-Read and obey:
+**P1-V14B.1/B.2 — Run Roster, Partial Deployment & Attrition**
 
-1. Notion: **05 — Art Direction & AI Asset Style Lock — Cute Tactical Chibi**
-2. `ART_AGENT_INSTRUCTIONS.md`
-3. `art/style/STYLE_BIBLE.md`
-4. `art/style/STYLE_LOCK_PROMPT.md`
-5. `art/style/BEAST_VISUAL_GRAMMAR.md` or `art/style/ENEMY_VISUAL_GRAMMAR.md`
-6. `art/style/ASSET_QA_CHECKLIST.md`
-7. `art/style/ASSET_MANIFEST.md`
+## Art / visual assets / image generation
 
-Do not generate a full roster before a Master Reference is explicitly owner-approved.
+Use repository-local art sources:
 
-### Mixed implementation + art task
+1. `ART_AGENT_INSTRUCTIONS.md`
+2. `art/style/STYLE_BIBLE.md`
+3. `art/style/STYLE_LOCK_PROMPT.md`
+4. relevant Beast/Enemy grammar
+5. `art/style/ASSET_QA_CHECKLIST.md`
+6. `art/style/ASSET_MANIFEST.md`
 
-Read both `AI_INSTRUCTIONS.md` and `ART_AGENT_INSTRUCTIONS.md`.
+Do not mass-generate a roster before owner approval of the Master Reference.
 
-Gameplay rules remain owned by the gameplay sources. Art may communicate gameplay but must not silently invent new mechanics, roles, stats, STAR rules, skills, elements, or enemy behaviors.
+## Mixed code + art task
 
-## Current project split
+Read both coding and art instructions.
 
-- GAME = player-facing experience.
-- TEST HARNESS = internal validation tooling.
-- P1-V14A = current gameplay implementation slice.
-- Cute Tactical Chibi = current art direction.
-- Snowguard / Tanker = first Master Reference target.
+Gameplay facts must come from gameplay docs/code.
+Art docs may communicate mechanics but must not invent them.
+
+## Project split
+
+- GAME = player-facing.
+- TEST HARNESS = internal validation.
+- V14B.1/B.2 = active gameplay implementation.
+- Cute Tactical Chibi = art direction.
+- Snowguard / Tanker = first art Master Reference target.
 
 ## Status discipline
 
-Never treat any of these as equivalent:
+Do not equate:
+- code exists
+- checks pass
+- live pass
+- adopted design
 
+For art, do not equate:
 - generated
 - reviewed
 - STYLE APPROVED
 - GAME READY
-
-Likewise, never treat code existence as gameplay validation or design adoption.
