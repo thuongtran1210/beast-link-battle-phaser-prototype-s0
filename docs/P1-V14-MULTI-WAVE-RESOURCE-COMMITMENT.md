@@ -214,6 +214,31 @@ No gameplay mechanic changes.
 Read:
 `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 
+### P1-V14G — Energy Identity & Activation Grammar
+
+**ACTIVE DESIGN SPEC / owner authorized / code not started / Experimental / not adopted.**
+
+Purpose:
+- turn anonymous Energy tokens into readable tactical choices;
+- communicate what each Energy affects and when it can activate;
+- preserve manual player agency;
+- preserve Persistent Energy save-vs-spend pressure.
+
+V14G baseline:
+- `energy-a → MEND`: frontmost ally heal up to 30.
+- `energy-b → RESCUE`: most damaged Mid/Back ally heal up to 30.
+- `energy-c → BREAK`: 30 direct Energy damage to a living Frontliner.
+- `energy-d → PIERCE`: 30 direct Energy damage to a living Ranged enemy.
+- Battle states: `DISABLED / READY / SUGGESTED`.
+- Setup remains preview-only.
+- no auto-cast.
+- no manual target selection in baseline.
+- V14G Energy Rush player pool uses A–D only.
+- energy-e/f remain historical generic compatibility IDs.
+
+Read:
+`docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+
 ### Future — Squad Capacity Upgrade
 
 Not started.
@@ -250,7 +275,7 @@ Do not reconstruct damaged units from anonymous counts after Battle.
 
 Still deferred outside the active V14 integration-validation work:
 - Squad Capacity upgrades (not started)
-- new Tactical Energy types
+- additional Tactical Energy types beyond the V14G four-type baseline
 - revive / resting recovery
 - post-Wave healing rewards
 - items / equipment / traits
