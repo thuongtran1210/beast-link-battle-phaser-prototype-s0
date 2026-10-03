@@ -8,6 +8,7 @@ import { beastDisplayName } from './icons/UnitIconRegistry';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 import { BattleSetupInteractionController, type DropOutcome } from './BattleSetupInteractionController';
 import type { RunRoster } from '../run/RunRoster';
+import { reservePage } from './ReservePagination';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -46,6 +47,7 @@ export class BattleSetupView {
   private pointerMoveHandler?: (pointer: Phaser.Input.Pointer) => void;
   private pointerUpHandler?: (pointer: Phaser.Input.Pointer) => void;
   private enemyTool: EnemyArchetype | 'Erase' = 'Frontliner';
+  private reservePageIndex = 0;
   private trayBounds = { x: 24, y: 495, width: 956, height: 210 };
 
   constructor(
@@ -470,6 +472,8 @@ export class BattleSetupView {
     this.objects.push(trayBg);
 
     const unplaced = this.controller.getUnplacedUnits();
+    const page = reservePage(unplaced, this.reservePageIndex);
+    this.reservePageIndex = page.pageIndex;
     const hasUnplaced = unplaced.length > 0;
 
     // Tray Heading
@@ -510,10 +514,18 @@ export class BattleSetupView {
     const startY = y + 44;
     const gap = 16;
 
-    unplaced.forEach((unit, index) => {
+    page.items.forEach((unit, index) => {
       const cardX = startX + index * (cardW + gap);
       this.renderTrayCard(unit, cardX, startY, cardW, cardH, index === 0 && this.controller.isFirstDeploymentPending);
     });
+    if (page.pageCount > 1) {
+      const info = this.text(x + width - 160, y + 15, `${page.start + 1}-${page.end} / ${unplaced.length}`, 10, '#cbd5e1', 'bold');
+      const prev = this.text(x + width - 220, y + 15, '< PREV', 10, page.pageIndex > 0 ? '#fbbf24' : '#475569', 'bold');
+      const next = this.text(x + width - 78, y + 15, 'NEXT >', 10, page.pageIndex < page.pageCount - 1 ? '#fbbf24' : '#475569', 'bold');
+      if (page.pageIndex > 0) prev.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.reservePageIndex -= 1; this.render(); });
+      if (page.pageIndex < page.pageCount - 1) next.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.reservePageIndex += 1; this.render(); });
+      this.objects.push(info, prev, next);
+    }
   }
 
   private renderTrayCard(
@@ -609,7 +621,7 @@ export class BattleSetupView {
     // START BATTLE CTA button
     const activeCount = this.formation.units.filter((unit) => unit.slotId !== null).length;
     const allPlaced = activeCount >= 1 && activeCount <= 4;
-    const totalUnplaced = this.controller.getUnplacedUnits().length;
+    const totalUnplaced = this.controller.getUnplacedUnits().filter((unit) => this.runRoster?.canDeploy(unit.unitId) ?? true).length;
     const btnW = w - 28;
     const btnH = 54;
     const btnX = x + w / 2;
