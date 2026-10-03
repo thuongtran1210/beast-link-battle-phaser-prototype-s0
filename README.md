@@ -10,12 +10,13 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-7. supporting V14 docs
-8. current code/tests
+3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+8. supporting V14 docs
+9. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -46,7 +47,26 @@ Current implementation evidence:
 
 Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
 
-### Active closeout slice — P1-V14C.1a.1
+### Active gameplay slice — P1-V14D
+
+**Persistent Energy / Save-vs-Spend Across Waves**
+
+V14D tests whether unused Stored Energy should persist across Waves so the player must choose between protecting the current roster and saving tactical healing for later threats.
+
+Locked baseline:
+- unused Energy persists across Wave transition;
+- valid match still adds exactly +1 selected Energy-ID charge;
+- successful Battle cast still consumes exactly 1 selected-ID charge;
+- Restart/new Run clears Energy;
+- no decay, free refill, Energy Combo, or new Energy types;
+- no new storage cap in V14D baseline;
+- historical `RuleConfig.energyMax = 20` is not a P1 persistent-charge cap.
+
+Read:
+
+`docs/P1-V14D-PERSISTENT-ENERGY.md`
+
+### Completed closeout — P1-V14C.1a.1
 
 **Timing State Hardening & Repo Closeout**
 
@@ -81,10 +101,10 @@ V14C.1a — First-Match Start Buffer
 IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN
 ↓
 V14C.1a.1 — Timing State Hardening & Repo Closeout
-ACTIVE CLOSEOUT SLICE / DETERMINISTIC PASS
+IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED
 ↓
 V14D — Persistent Energy
-NEXT GAMEPLAY SLICE / NOT STARTED
+ACTIVE / OWNER AUTHORIZED / CODE NOT IMPLEMENTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
