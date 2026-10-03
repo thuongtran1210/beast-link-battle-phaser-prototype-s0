@@ -71,7 +71,8 @@ import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
 import { ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
-import { getIconDefinition } from './ui/icons/UnitIconRegistry';
+import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
+import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
 
 import {
   V11D_PRESETS,
@@ -173,7 +174,8 @@ export class ValidationScene extends Phaser.Scene {
   private showcaseMode = false;
   private showcasePaused = false;
   private showcaseCleanFrame = false;
-  private recentActionText = 'Awaiting first match...';
+  private recentActionText = '';
+  private beastRushEvent: BeastRushEvent = { kind: 'idle' };
 
   constructor() {
     super('ValidationScene');
@@ -443,7 +445,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterBeastRush(): void {
-    this.recentActionText = 'Match identical Beast pairs with ≤ 2 turns.';
+    this.beastRushEvent = { kind: 'idle' };
+    this.recentActionText = '';
     this.createPuzzleBoard(
       'BEAST RUSH',
       'Match 6×6 Beast pairs to recruit combat units into your battle queue.',
@@ -779,6 +782,11 @@ export class ValidationScene extends Phaser.Scene {
         onInvalidSelection: () => {
           if (this.phaseController.phase === (type === 'Beast' ? GamePhase.BeastRush : GamePhase.EnergyRush)) {
             this.metrics.invalid();
+            if (type === 'Beast') {
+              this.beastRushEvent = { kind: 'invalid' };
+              this.recentActionText = compactEventLabel(this.beastRushEvent);
+              this.refreshBeastHUD();
+            }
           }
         },
         onMatchRemoved: (result, contentId, midpoint) => onMatch(contentId, result.turnCount, midpoint),
@@ -796,8 +804,8 @@ export class ValidationScene extends Phaser.Scene {
     this.boardView.render();
 
     const def = getIconDefinition(contentId);
-    const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
-    this.recentActionText = `Matched ${def.name} (${def.letter}) in ${turns} turn(s). Queue +1.${reshuffle}`;
+    this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboBonus: .3 };
+    this.recentActionText = compactEventLabel(this.beastRushEvent);
 
     this.refreshBeastHUD();
     this.syncTopHud();
@@ -879,10 +887,10 @@ export class ValidationScene extends Phaser.Scene {
     const combo = this.comboSystem.snapshot;
     this.phaseStatusPanel?.render({
       phaseTitle: 'BEAST RUSH',
-      phaseSubtitle: 'Match 6×6 Beast pairs with ≤ 2 turns to recruit combat units',
+      phaseSubtitle: '',
       timerSeconds: combo.remainingSeconds,
-      timerLabel: 'Combo Timer',
-      timerSubtext: '+0.3s per match · 12.0s cap',
+      timerLabel: 'Combo',
+      timerSubtext: '',
       statusBadge: {
         text: combo.active ? 'ACTIVE' : 'READY',
         active: combo.active,
@@ -898,6 +906,7 @@ export class ValidationScene extends Phaser.Scene {
         };
       }),
       recentAction: this.recentActionText,
+      beastRushHud: true,
     });
   }
 
