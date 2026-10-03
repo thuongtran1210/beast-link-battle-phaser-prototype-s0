@@ -18,9 +18,10 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
-4. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
-5. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+3. active player-surface corrective slice: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
+4. completed corrective validation slice: `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`
+5. integration baseline: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+6. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
 6. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 7. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 8. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
@@ -39,7 +40,7 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14E.1 — Policy Semantics & Evidence Hardening**. IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. See `docs/P1-V14E1-POLICY-EVIDENCE-HARDENING.md`.
+- Current slice: **P1-V14F.1 — Battle Setup UX Clarity + Energy Cast Reliability**. ACTIVE / owner authorized / code not started / Experimental / not adopted. See `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`.
 - V14E Multi-Wave Resource Commitment Integration Validation: IMPLEMENTED / DETERMINISTIC EVIDENCE HARDENED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED. 70 deterministic checks pass. Controlled SAVE vs SPEND fixture verified; Energy policy ownership made explicit; Link Shard accounting corrected; divergence count aligned with harness output; production squad-cap constant verified.
 - V14D Persistent Energy: `EnergyQueue` is Run-scoped; unused stored Energy persists across Waves. Reset only on Restart / new Run. No storage cap.
 - V14C.1a.1 Timing State Hardening: Enforces strict terminal state rule: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0; only `reset()` returns `ENDED → READY 12.0s`.
@@ -62,39 +63,39 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active corrective validation — P1-V14E.1
+## Active player-surface correction — P1-V14F.1
 
 Purpose:
 
-**Harden policy semantics and evidence quality without adding gameplay mechanics.**
+**Make Battle Setup readable and manual Energy casting visibly reliable without adding a new gameplay mechanic.**
 
 Required:
-- CONSERVE and COMMIT must not share one unconditional Energy auto-cast loop.
-- Make Energy decision ownership explicit.
-- Add / reuse a controlled same-fixture SAVE vs SPEND comparison.
-- SAVE must spend 0; SPEND must spend at least 1 when heal threshold occurs.
-- SAVE carry-out must exceed SPEND carry-out in the controlled fixture.
-- Correct Link Shard accounting from actual earned / spent / remaining values.
-- Documented divergence count must equal actual `comparison.divergences.length`.
-- If Run Status is listed as a divergence, actual final statuses must differ.
-- Import production Active Squad cap instead of using an always-true helper.
-- `SIMULATION_STEP = 0.1` means 100 ms; comments/docs must use correct math.
-- preserve all V14A–D production mechanics.
-- Live A–H remain open unless browser evidence is actually recorded.
+- separate Reserve / Deployed / KO presentation;
+- KO stays visible but non-deployable and visually disabled;
+- Active Squad cap 4 vs Formation Grid 18 must be explicit;
+- simplify Battle Setup header and enemy-card hierarchy;
+- Setup Stored Energy is preview-only;
+- Battle Energy controls are interactive and stateful;
+- manual cast is eligible only in Running Battle with charge, living frontline, and missing HP;
+- full-HP frontline consumes 0 Energy;
+- success consumes exactly 1 selected charge and shows actual +heal feedback;
+- invalid casts expose deterministic reason text/state;
+- normal Battle and Showcase HUD use the same eligibility/cast semantics;
+- preserve V14A–E.1 mechanics and evidence.
 
-## E.1 non-goals
+## F.1 non-goals
 
 Do NOT implement:
+- arbitrary Energy target selection;
+- new Energy effects;
 - Energy cap / decay;
 - Energy Combo;
-- new Energy spells;
 - Squad Capacity upgrade;
-- new Wave fixtures;
-- gameplay rebalance;
 - revive / recovery;
-- items / economy / shop;
+- economy / shop;
 - meta progression;
-- broad UI redesign.
+- broad scene rewrite;
+- final production art.
 
 ## Verification discipline
 
@@ -107,37 +108,35 @@ Keep separate:
 6. owner verification passes
 7. design is adopted
 
-## Required E.1 workflow
+## Required F.1 workflow
 
 1. Read repo-local sources only.
-2. Reproduce / inspect the policy Energy branch defect.
-3. Make Energy policy ownership explicit.
-4. Add controlled SAVE vs SPEND evidence on identical Battle conditions.
-5. Correct Link Shard accounting evidence.
-6. Make divergence reporting derive from actual comparison output.
-7. Replace fake squad-cap helper with production constant.
-8. Correct simulation timing wording.
-9. Add deterministic E.1 checks.
-10. Run all historical regressions.
-11. Run `npm run check`.
-12. Run `npm run build`.
-13. Do not claim Live A–H unless actually recorded.
-14. STOP after E.1 implementation report.
+2. Inspect current BattleSetupView, ValidationScene.castEnergy, ShowcaseBattleHUDView, BattleActionView, and AutonomousBattleModel.castFrontlineHeal.
+3. Implement Battle Setup hierarchy / Reserve / KO correction.
+4. Introduce one shared deterministic Energy cast eligibility/result seam.
+5. Prevent full-HP cast from consuming a charge.
+6. Add visible success and failure feedback.
+7. Route normal Battle and Showcase HUD through the same semantics.
+8. Add deterministic F.1 checks.
+9. Run historical regressions.
+10. Run `npm run check`.
+11. Run `npm run build`.
+12. Record Live A–H only if browser evidence is actually available.
+13. STOP after F.1 report.
 
 ## Completion report
 
 Report:
 - final commit SHA
 - files changed
-- exact Energy policy fix
-- controlled SAVE / SPEND fixture
-- Energy carry-out / HP evidence
-- exact Link earned / spent / remaining accounting
-- actual divergence list and count
-- production squad-cap constant check
-- corrected simulation timing
-- E.1 deterministic checks
-- historical regressions
+- Setup layout changes
+- Reserve / Deployed / KO classification
+- exact cast eligibility rules
+- full-HP protection
+- success/failure result behavior
+- normal vs Showcase shared path
+- deterministic F.1 checks
+- regressions
 - `npm run check`
 - `npm run build`
 - Live A–H status
@@ -146,12 +145,12 @@ Report:
 Explicitly state:
 
 ```text
-P1-V14E.1 ADDS NO GAMEPLAY MECHANIC.
-ENERGY POLICY OWNERSHIP IS EXPLICIT.
-CONTROLLED SAVE VS SPEND USES IDENTICAL BATTLE CONDITIONS.
-DIVERGENCE COUNT COMES FROM ACTUAL HARNESS OUTPUT.
-ACTIVE SQUAD CAP CHECK USES PRODUCTION TRUTH.
-SIMULATION_STEP 0.1 = 100 MS.
+P1-V14F.1 ADDS NO NEW ENERGY MECHANIC.
+FULL-HP FRONTLINE CAST CONSUMES 0 ENERGY.
+SUCCESSFUL EFFECTIVE HEAL CONSUMES EXACTLY 1 SELECTED CHARGE.
+SETUP ENERGY IS PREVIEW-ONLY.
+ACTIVE SQUAD CAP REMAINS 4.
+FORMATION GRID REMAINS 18 POSITIONS.
 LIVE A–H REMAIN OPEN UNLESS ACTUALLY RECORDED.
 ENERGY CAP / DECAY NOT STARTED.
 SQUAD CAPACITY UPGRADE NOT STARTED.
