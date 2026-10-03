@@ -26,6 +26,26 @@ export function ensureIconTextures(scene: Phaser.Scene): void {
     g.generateTexture(key, TEXTURE_BASE_SIZE, TEXTURE_BASE_SIZE);
     g.destroy();
   });
+
+  const roleConfigs: Record<string, { symbol: IconDefinition['symbol']; primaryColor: number; accentColor: number }> = {
+    Tanker: { symbol: 'shield', primaryColor: 0xfacc15, accentColor: 0xfef08a },
+    Assassin: { symbol: 'daggers', primaryColor: 0xf97316, accentColor: 0xffedd5 },
+    Ranger: { symbol: 'bow', primaryColor: 0x22c55e, accentColor: 0xbbf7d0 },
+    Mage: { symbol: 'orb', primaryColor: 0xa855f7, accentColor: 0xf3e8ff },
+  };
+
+  Object.entries(roleConfigs).forEach(([role, cfg]) => {
+    const key = `proto-role-${role}`;
+    if (scene.textures.exists(key)) return;
+    const g = scene.make.graphics();
+    g.fillStyle(0x0f172a, 0.95);
+    g.fillCircle(TEXTURE_BASE_SIZE / 2, TEXTURE_BASE_SIZE / 2, TEXTURE_BASE_SIZE / 2 - 2);
+    g.lineStyle(2, cfg.primaryColor, 0.9);
+    g.strokeCircle(TEXTURE_BASE_SIZE / 2, TEXTURE_BASE_SIZE / 2, TEXTURE_BASE_SIZE / 2 - 2);
+    drawSymbol(g, cfg.symbol, TEXTURE_BASE_SIZE / 2, TEXTURE_BASE_SIZE / 2, TEXTURE_BASE_SIZE * 0.65, cfg.primaryColor, cfg.accentColor, 1);
+    g.generateTexture(key, TEXTURE_BASE_SIZE, TEXTURE_BASE_SIZE);
+    g.destroy();
+  });
 }
 
 export function getIconTextureKey(id: string): string {
@@ -45,6 +65,23 @@ export function createIconImage(
 ): Phaser.GameObjects.Image {
   ensureIconTextures(scene);
   const key = getIconTextureKey(id);
+  const img = scene.add.image(x, y, key);
+  img.setDisplaySize(displaySize, displaySize);
+  return img;
+}
+
+/**
+ * Creates a ready-to-use Phaser Image object displaying a role symbol (shield, dagger, bow, orb).
+ */
+export function createRoleIconImage(
+  scene: Phaser.Scene,
+  role: string,
+  x: number,
+  y: number,
+  displaySize = 22,
+): Phaser.GameObjects.Image {
+  ensureIconTextures(scene);
+  const key = `proto-role-${role}`;
   const img = scene.add.image(x, y, key);
   img.setDisplaySize(displaySize, displaySize);
   return img;

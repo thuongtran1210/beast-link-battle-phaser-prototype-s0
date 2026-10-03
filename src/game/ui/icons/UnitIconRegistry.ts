@@ -209,3 +209,19 @@ export function getIconDefinition(id: string): IconDefinition {
 
   return BEAST_ICON_DEFINITIONS['beast-a'];
 }
+
+export const BEAST_NAMES: Record<string, string> = {
+  'beast-a': 'SNOWGUARD',
+  'beast-b': 'SHADOWCLAW',
+  'beast-c': 'WINDSTRIDER',
+  'beast-d': 'STARCALLER',
+  'beast-e': 'IRONCLAD',
+  'beast-f': 'SWIFTWING',
+};
+
+export function beastDisplayName(beastId: string): string {
+  const normalized = beastId.toLowerCase();
+  if (BEAST_NAMES[normalized]) return BEAST_NAMES[normalized];
+  const def = getIconDefinition(beastId);
+  return def.name.toUpperCase();
+}

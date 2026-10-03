@@ -27,6 +27,7 @@ import {
 import { EnemyBoardState, fixturesForLevel, P1V13A1_LEVELS } from './battle/ValidationLevels';
 import { runP1V13AChecks } from './battle/P1V13AChecks';
 import { runP1V13A1Checks } from './battle/P1V13A1Checks';
+import { runP1V13A2Checks } from './ui/P1V13A2Checks';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
 import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
@@ -194,6 +195,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V12AChecks();
       runP1V13AChecks();
       runP1V13A1Checks();
+      runP1V13A2Checks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
@@ -250,6 +252,26 @@ export class ValidationScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-THREE', () => this.setEnemyFixturePreset(2));
     this.input.keyboard?.on('keydown-A', () => this.loadFormationPreset('A'));
     this.input.keyboard?.on('keydown-B', () => this.loadFormationPreset('B'));
+    this.input.keyboard?.on('keydown-S', () => {
+      if (this.phaseController.phase === GamePhase.BeastRush) {
+        if (this.battleQueue.entries().length === 0) {
+          this.battleQueue.addBeastMatch('beast-a');
+          this.battleQueue.addBeastMatch('beast-b');
+          this.battleQueue.addBeastMatch('beast-c');
+          this.battleQueue.addBeastMatch('beast-d');
+        }
+        this.phaseController.setPhase(GamePhase.EnergyRush);
+      }
+      if (this.phaseController.phase === GamePhase.EnergyRush) {
+        if (this.battleQueue.entries().length === 0) {
+          this.battleQueue.addBeastMatch('beast-a');
+          this.battleQueue.addBeastMatch('beast-b');
+          this.battleQueue.addBeastMatch('beast-c');
+          this.battleQueue.addBeastMatch('beast-d');
+        }
+        this.phaseController.setPhase(GamePhase.BattleSetup);
+      }
+    });
 
     // When BeastRush combo ends: disable puzzle input immediately & start transition cue
     this.comboSystem.onEnded(() => {

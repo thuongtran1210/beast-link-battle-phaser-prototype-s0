@@ -19,6 +19,8 @@ export class BattleFormation {
   get units(): FormationUnit[] { return [...this.unitsById.values()].map((unit) => ({ ...unit })); }
   get slots(): FormationSlot[] { return [...this.slotsById.values()].map((slot) => ({ ...slot })); }
   get allPlaced(): boolean { return this.units.length > 0 && this.units.every((unit) => unit.slotId !== null); }
+  getUnit(unitId: string): FormationUnit | undefined { const u = this.unitsById.get(unitId); return u ? { ...u } : undefined; }
+  getSlot(slotId: string): FormationSlot | undefined { const s = this.slotsById.get(slotId); return s ? { ...s } : undefined; }
   place(unitId: string, slotId: string): boolean {
     const unit = this.unitsById.get(unitId); const destination = this.slotsById.get(slotId);
     if (!unit || !destination || (destination.unitId !== null && destination.unitId !== unitId)) return false;
@@ -26,6 +28,47 @@ export class BattleFormation {
     if (unit.slotId) { const previous = this.slotsById.get(unit.slotId); if (previous) previous.unitId = null; }
     destination.unitId = unitId; unit.slotId = slotId;
     return true;
+  }
+  unplace(unitId: string): boolean {
+    const unit = this.unitsById.get(unitId);
+    if (!unit || unit.slotId === null) return false;
+    const slot = this.slotsById.get(unit.slotId);
+    if (slot) slot.unitId = null;
+    unit.slotId = null;
+    return true;
+  }
+  swap(unitIdA: string, unitIdB: string): boolean {
+    const unitA = this.unitsById.get(unitIdA);
+    const unitB = this.unitsById.get(unitIdB);
+    if (!unitA || !unitB || unitA.unitId === unitB.unitId) return false;
+    if (unitA.slotId && unitB.slotId) {
+      const slotA = this.slotsById.get(unitA.slotId);
+      const slotB = this.slotsById.get(unitB.slotId);
+      if (!slotA || !slotB) return false;
+      const tempSlotId = unitA.slotId;
+      unitA.slotId = unitB.slotId;
+      unitB.slotId = tempSlotId;
+      slotA.unitId = unitB.unitId;
+      slotB.unitId = unitA.unitId;
+      return true;
+    }
+    if (!unitA.slotId && unitB.slotId) {
+      const slotB = this.slotsById.get(unitB.slotId);
+      if (!slotB) return false;
+      unitA.slotId = unitB.slotId;
+      slotB.unitId = unitA.unitId;
+      unitB.slotId = null;
+      return true;
+    }
+    if (unitA.slotId && !unitB.slotId) {
+      const slotA = this.slotsById.get(unitA.slotId);
+      if (!slotA) return false;
+      unitB.slotId = unitA.slotId;
+      slotA.unitId = unitB.unitId;
+      unitA.slotId = null;
+      return true;
+    }
+    return false;
   }
   reset(): void { this.unitsById.forEach((unit) => { unit.slotId = null; }); this.slotsById.forEach((slot) => { slot.unitId = null; }); }
 }
