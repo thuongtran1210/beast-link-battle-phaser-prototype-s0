@@ -5,6 +5,7 @@ import {
   getIconDefinition,
   type IconDefinition,
 } from './UnitIconRegistry';
+import { resolveRuntimeIconTextureKey } from '../../assets/AssetLoader';
 
 const TEXTURE_BASE_SIZE = 64;
 
@@ -64,7 +65,7 @@ export function createIconImage(
   displaySize = 48,
 ): Phaser.GameObjects.Image {
   ensureIconTextures(scene);
-  const key = getIconTextureKey(id);
+  const key = resolveRuntimeIconTextureKey(scene, id) ?? getIconTextureKey(id);
   const img = scene.add.image(x, y, key);
   img.setDisplaySize(displaySize, displaySize);
   return img;

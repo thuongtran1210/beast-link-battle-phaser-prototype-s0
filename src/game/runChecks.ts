@@ -39,7 +39,9 @@ import { runP1S5Checks } from './metrics/P1S5Checks';
 import { runOnetMatcherChecks } from './puzzle/OnetMatcherChecks';
 import { runS3Checks } from './queue/S3Checks';
 import { runP1S0Checks } from './state/P1S0Checks';
+import { runAssetPipelineChecks } from './assets/AssetPipelineChecks';
 
+runAssetPipelineChecks();
 runOnetMatcherChecks();
 runS2Checks();
 runS3Checks();
@@ -81,4 +83,4 @@ runP1V14B3Checks();
 runP1V14C2Checks();
 runReservePaginationChecks();
 runBeastRushHudPresentationChecks();
-console.log('S1/S2/S3/S4/S5, Battle exhaustion, P1-S0..P1-S5, P1-V1..P1-V13A.2, P1-V14A..P1-V14E checks passed.');
+console.log('Asset pipeline, S1/S2/S3/S4/S5, Battle exhaustion, P1-S0..P1-S5, P1-V1..P1-V13A.2, P1-V14A..P1-V14E checks passed.');
