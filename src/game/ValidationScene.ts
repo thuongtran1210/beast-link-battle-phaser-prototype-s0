@@ -494,11 +494,11 @@ export class ValidationScene extends Phaser.Scene {
         this.metrics.arrangementChanged();
       },
       `LEVEL ${this.enemyFixturePresetIndex + 1} — ${level.name}${isTestHarness() && this.enemyBoard?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
-      () => this.cycleEnemyFixture(),
+      isTestHarness() ? () => this.cycleEnemyFixture() : undefined,
       `Threat: ${level.threatLabel}`,
-      this.activePresetKey,
-      () => this.loadFormationPreset('A'),
-      () => this.loadFormationPreset('B'),
+      isTestHarness() ? this.activePresetKey : undefined,
+      isTestHarness() ? () => this.loadFormationPreset('A') : undefined,
+      isTestHarness() ? () => this.loadFormationPreset('B') : undefined,
       isTestHarness() ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
     );
     this.battleSetupView.render();
