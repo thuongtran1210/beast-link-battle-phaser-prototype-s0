@@ -29,7 +29,7 @@ export class BeastRushPhaseTimer {
   }
 
   start(): Readonly<BeastRushPhaseTimerState> {
-    if (this.state.active) return this.snapshot;
+    if (this.state.active || this.isEnded) return this.snapshot;
     this.state = {
       active: true,
       remainingSeconds: this.state.remainingSeconds > 0 ? this.state.remainingSeconds : this.durationSeconds,

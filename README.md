@@ -14,8 +14,8 @@ Read:
 4. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
 5. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
 6. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-6. supporting V14 docs
-7. current code/tests
+7. supporting V14 docs
+8. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -50,35 +50,14 @@ Owner-live A–H remains a separate evidence gate and must not be inferred as PA
 
 **Timing State Hardening & Repo Closeout**
 
-C.1a first-match start behavior is implemented. Repository review found one terminal-state edge case: after a timer reaches ENDED, calling `start()` can currently reload the full duration. C.1a.1 hardens both Beast Rush and Energy Rush so:
-
-```text
-READY → ACTIVE → ENDED
-ENDED → start() = NO-OP
-ENDED → reset() → READY
-```
-
-No gameplay reward/balance rules change in this closeout.
-
-Previous corrective behavior remains:
-
-**First-Match Start Buffer**
-
-Owner review found that both puzzle phases currently start consuming timed execution budget as soon as the board appears. The corrective experiment changes both Beast Rush and Energy Rush to:
-
-```text
-READY → FIRST VALID MATCH → ACTIVE 12.0s TIMER
-```
-
-- player may inspect the board while READY;
-- invalid input does not start the timer;
-- first valid match resolves normally and starts the timer exactly once;
-- no READY safety timeout is added yet;
-- C.1 Combo quality and C.2 Link Shard behavior remain unchanged.
+Technical closeout slice following P1-V14C.1a:
+- Hardens `BeastRushPhaseTimer` and `EnergyRushTimer` state machine: terminal `ENDED` state makes subsequent `start()` calls NO-OPs.
+- `remainingSeconds` remains 0; no reloading 12.0s without an explicit `reset()`.
+- Extends deterministic verification to cover full 26-check state machine.
 
 Read:
 
-`docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+`docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 
 ## Current V14 roadmap
 
@@ -99,10 +78,10 @@ V14C.2 — Link Shard Consolidation Efficiency
 IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL
 ↓
 V14C.1a — First-Match Start Buffer
-IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL
+IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN
 ↓
-V14C.1a.1 — Timing State Hardening
-ACTIVE CLOSEOUT SLICE / OWNER AUTHORIZED
+V14C.1a.1 — Timing State Hardening & Repo Closeout
+ACTIVE CLOSEOUT SLICE / DETERMINISTIC PASS
 ↓
 V14D — Persistent Energy
 NEXT GAMEPLAY SLICE / NOT STARTED

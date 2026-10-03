@@ -173,4 +173,114 @@ export function runP1V14C1aChecks(): void {
   // 35. Energy transition to Battle Setup remains correct
   energyTimer.reset();
   expect(energyTimer.isReady && energyTimer.snapshot.remainingSeconds === 12, '35. Energy timer resets cleanly to READY for next Wave / Run');
+
+  // ==========================================
+  // Section 35: P1-V14C.1a.1 TIMING STATE HARDENING CHECKS (1–26)
+  // ==========================================
+
+  // --- BEAST TIMER CHECKS (1–13) ---
+  // 1. fresh timer = READY 12.0s.
+  const bTimer = new BeastRushPhaseTimer(12);
+  expect(bTimer.isReady && !bTimer.isActive && !bTimer.isEnded && bTimer.snapshot.remainingSeconds === 12, 'H1. fresh Beast timer = READY 12.0s');
+
+  // 2. READY start() → ACTIVE.
+  bTimer.start();
+  expect(bTimer.isActive && !bTimer.isReady && !bTimer.isEnded && bTimer.snapshot.remainingSeconds === 12, 'H2. READY start() -> ACTIVE');
+
+  // 3. ACTIVE update reduces time.
+  bTimer.update(4);
+  expect(bTimer.isActive && bTimer.snapshot.remainingSeconds === 8, 'H3. ACTIVE update reduces time to 8s');
+
+  // 4. ACTIVE repeated start() does not reset time.
+  bTimer.start();
+  expect(bTimer.isActive && bTimer.snapshot.remainingSeconds === 8, 'H4. ACTIVE repeated start() does not reset time');
+
+  // 5. ACTIVE reaches 0 → ENDED.
+  let bEndEvents = 0;
+  bTimer.onEnded(() => { bEndEvents += 1; });
+  bTimer.update(8);
+  expect(bTimer.isEnded && !bTimer.isActive && !bTimer.isReady && bTimer.snapshot.remainingSeconds === 0, 'H5. ACTIVE reaches 0 -> ENDED');
+
+  // 6. end event fires exactly once.
+  expect(bEndEvents === 1, 'H6. end event fires exactly once');
+
+  // 7. ENDED start() remains ENDED.
+  bTimer.start();
+  expect(bTimer.isEnded && !bTimer.isActive, 'H7. ENDED start() remains ENDED');
+
+  // 8. ENDED start() keeps remainingSeconds = 0.
+  expect(bTimer.snapshot.remainingSeconds === 0, 'H8. ENDED start() keeps remainingSeconds = 0');
+
+  // 9. repeated ENDED start() remains ENDED.
+  bTimer.start();
+  bTimer.start();
+  expect(bTimer.isEnded && !bTimer.isActive && bTimer.snapshot.remainingSeconds === 0, 'H9. repeated ENDED start() remains ENDED');
+
+  // 10. ENDED update(5) remains 0 / ENDED.
+  bTimer.update(5);
+  expect(bTimer.isEnded && !bTimer.isActive && bTimer.snapshot.remainingSeconds === 0, 'H10. ENDED update(5) remains 0 / ENDED');
+
+  // 11. ENDED does not emit another end event.
+  expect(bEndEvents === 1, 'H11. ENDED does not emit another end event');
+
+  // 12. ENDED reset() → READY 12.0s.
+  bTimer.reset();
+  expect(bTimer.isReady && !bTimer.isActive && !bTimer.isEnded && bTimer.snapshot.remainingSeconds === 12, 'H12. ENDED reset() -> READY 12.0s');
+
+  // 13. after reset, start() works normally again.
+  bTimer.start();
+  expect(bTimer.isActive && !bTimer.isReady && !bTimer.isEnded && bTimer.snapshot.remainingSeconds === 12, 'H13. after reset, start() works normally again');
+
+  // --- ENERGY TIMER CHECKS (14–26) ---
+  // 14. fresh Energy timer = READY 12.0s.
+  const eTimer = new EnergyRushTimer(12.0);
+  expect(eTimer.isReady && !eTimer.isActive && !eTimer.isEnded && eTimer.snapshot.remainingSeconds === 12, 'H14. fresh Energy timer = READY 12.0s');
+
+  // 15. READY start() → ACTIVE.
+  eTimer.start();
+  expect(eTimer.isActive && !eTimer.isReady && !eTimer.isEnded && eTimer.snapshot.remainingSeconds === 12, 'H15. READY start() -> ACTIVE');
+
+  // 16. ACTIVE update reduces time.
+  eTimer.update(4);
+  expect(eTimer.isActive && eTimer.snapshot.remainingSeconds === 8, 'H16. ACTIVE update reduces time to 8s');
+
+  // 17. ACTIVE repeated start() does not reset time.
+  eTimer.start();
+  expect(eTimer.isActive && eTimer.snapshot.remainingSeconds === 8, 'H17. ACTIVE repeated start() does not reset time');
+
+  // 18. ACTIVE reaches 0 → ENDED.
+  let eEndEvents = 0;
+  eTimer.onEnded(() => { eEndEvents += 1; });
+  eTimer.update(8);
+  expect(eTimer.isEnded && !eTimer.isActive && !eTimer.isReady && eTimer.snapshot.remainingSeconds === 0, 'H18. ACTIVE reaches 0 -> ENDED');
+
+  // 19. end event fires exactly once.
+  expect(eEndEvents === 1, 'H19. end event fires exactly once');
+
+  // 20. ENDED start() remains ENDED.
+  eTimer.start();
+  expect(eTimer.isEnded && !eTimer.isActive, 'H20. ENDED start() remains ENDED');
+
+  // 21. ENDED remainingSeconds remains 0.
+  expect(eTimer.snapshot.remainingSeconds === 0, 'H21. ENDED remainingSeconds remains 0');
+
+  // 22. repeated ENDED start() remains ENDED.
+  eTimer.start();
+  eTimer.start();
+  expect(eTimer.isEnded && !eTimer.isActive && eTimer.snapshot.remainingSeconds === 0, 'H22. repeated ENDED start() remains ENDED');
+
+  // 23. ENDED update() remains 0.
+  eTimer.update(5);
+  expect(eTimer.isEnded && !eTimer.isActive && eTimer.snapshot.remainingSeconds === 0, 'H23. ENDED update() remains 0');
+
+  // 24. no duplicate end event.
+  expect(eEndEvents === 1, 'H24. no duplicate end event');
+
+  // 25. reset() → READY 12.0s.
+  eTimer.reset();
+  expect(eTimer.isReady && !eTimer.isActive && !eTimer.isEnded && eTimer.snapshot.remainingSeconds === 12, 'H25. reset() -> READY 12.0s');
+
+  // 26. post-reset start() works normally.
+  eTimer.start();
+  expect(eTimer.isActive && !eTimer.isReady && !eTimer.isEnded && eTimer.snapshot.remainingSeconds === 12, 'H26. post-reset start() works normally');
 }

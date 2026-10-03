@@ -4,15 +4,15 @@ Status: **Repository-local coding handoff**
 
 ## Current status — 2026-10-03
 
-- V14A: owner structural PASS / Experimental / not adopted.
-- V14B.1/B.2: core implemented; owner-live evidence remains open.
-- V14B.3: implemented; code review PASS; live hypothesis validation open; not adopted.
-- V14C.1: implemented; deterministic/build PASS; owner live A–F open; Experimental / not adopted.
-- V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
-- V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — First-Match Start Buffer for Beast Rush + Energy Rush.
-- V14C.1a.1: **ACTIVE CLOSEOUT SLICE / OWNER AUTHORIZED** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
-- V14D: **NEXT GAMEPLAY SLICE / NOT STARTED**.
-- Squad Capacity Upgrade: not started.
+- V14A: **OWNER STRUCTURAL PASS** / Experimental / not adopted.
+- V14B.1/B.2: **CORE IMPLEMENTED**; owner-live evidence open.
+- V14B.3: **IMPLEMENTED**; code review PASS; live hypothesis validation open.
+- V14C.1: **IMPLEMENTED**; deterministic/build evidence PASS; owner-live open.
+- V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
+- V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
+- V14C.1a.1: **ACTIVE CLOSEOUT SLICE** — Timing State Hardening & Repo Closeout. See `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`.
+- V14D: **NEXT GAMEPLAY SLICE** / not started.
+- Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
 
@@ -36,25 +36,21 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14C.1a — First-Match Start Buffer (Corrective Timing Slice)**
+**P1-V14C.1a.1 — Timing State Hardening & Repo Closeout (Active Closeout Slice)**
 
-Owner identified a UX/game-feel defect after C.1/C.2 implementation: Beast Rush and Energy Rush currently consume timed execution budget immediately when the board appears, before the player has time to read the board.
-
-Approved corrective rule:
-
-```text
-READY
-→ observe board freely
-→ FIRST VALID MATCH
-→ ACTIVE 12.0s timer
-→ 0s → phase end
-```
-
-This applies to both Beast Rush and Energy Rush. Invalid input must not start the timer. No READY safety timeout is added in this experiment.
-
-C.1 remains: MATCH COUNT = Beast quantity; COMBO = quality signal. C.2 Link Shard rules remain implemented and must be preserved. V14D Energy persistence remains not started.
-
-P1-V14A multi-Wave flow is owner-confirmed structurally correct enough to continue.
+Technical closeout slice following P1-V14C.1a before P1-V14D Persistent Energy:
+- Fixes state machine defect where invoking `start()` on an `isEnded` timer improperly reloaded `durationSeconds` (12.0s) and reactivated the phase countdown.
+- Enforces strict terminal state machine for both `BeastRushPhaseTimer` and `EnergyRushTimer`:
+  - `READY`: `isReady = true`, `isActive = false`, `isEnded = false`, `remainingSeconds = 12.0`
+  - `READY start()` → `ACTIVE`
+  - `ACTIVE`: repeated `start()` is a NO-OP; `update()` decrements countdown normally
+  - At 0: → `ENDED`; single end event fires exactly once
+  - `ENDED`: `start()` is a strict NO-OP; `update()` is a NO-OP; `remainingSeconds` stays 0
+  - Only `reset()` returns `ENDED → READY 12.0s`
+- Preserves all C.1a, C.1, C.2, and B.3 invariants.
+- Deterministic checks (26 checks across Beast and Energy timers) added in `P1V14C1aChecks.ts`.
+- Next gameplay slice: `P1-V14D — Persistent Energy` (not started).
+- Squad Capacity Upgrade: not started.
 
 ## B.1/B.2 implementation baseline
 
@@ -78,64 +74,74 @@ Implemented and regression-covered:
 
 Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark B.1/B.2 owner-live PASS unless explicitly verified.
 
-## Current implementation truth
+## Implemented Slice History & Operational Status
 
-B.3 greedy auto-conversion is no longer the current blocker. Current remote implementation already supports separate 1★ recruitment plus manual Reserve-only STAR consolidation.
+### P1-V14B.1 / B.2 — Run Roster, Partial Deployment & Attrition
+- Persistent `RunRoster` maintains stable unit instances across Waves.
+- Partial deployment allows deploying 1–4 units (Active Squad cap = 4).
+- Persistent HP and KO status reconcile back to Roster after Battle.
+- Wave transition clears deployment slots (`ACTIVE 0 / 4` at each setup).
+- Old living units and new recruits coexist in Reserve.
+- Core implemented; deterministic checks pass; owner-live A–H open.
 
-Current active closeout question:
-- can either puzzle timer restart after reaching ENDED?
-- repository review found that current `start()` can reload 12.0s after `remainingSeconds === 0`.
+### P1-V14B.3 — STAR Consolidation / Power Density
+- Automatic greedy conversion stopped: recruitment produces separate 1★ Run Unit instances.
+- Optional manual Reserve-only consolidation (cost structure: 1 / 3 / 9).
+- Aggregate health ratio preserved (no full-heal upon consolidation).
+- KO and deployed units excluded from consolidation.
+- Centralized STAR stat profile and signature scaling.
+- Implemented; code review PASS; live hypothesis validation open.
 
-P1-V14C.1a.1 must harden both Beast Rush and Energy Rush timers so only `reset()` may move ENDED back to READY.
+### P1-V14C.1 — Combo Quality Signal
+- Decoupled 12.0s phase timer from 1.5s Combo link window.
+- Match count = Beast quantity; Combo streak = quality signal.
+- Implemented; deterministic/build PASS; owner-live open.
 
-After that closeout, the next gameplay slice is P1-V14D Persistent Energy.
+### P1-V14C.2 — Link Shard Consolidation Efficiency
+- Best streak in Beast Rush awards Link Shards (streak 4–6: 1, 7+: 2, max 2/rush, run cap 3).
+- Shards persist across Waves and substitute for 1 missing copy in Reserve consolidation.
+- Requires minimum 2 real Beast bodies; 0 phantom HP.
+- Implemented / deterministic PASS / Experimental; live evidence open.
 
-## Important model boundaries
+### P1-V14C.1a — First-Match Start Buffer
+- Both Beast Rush and Energy Rush enter `READY 12.0s`.
+- Player observes board freely; invalid input does not start timer.
+- First valid match starts the timer exactly once.
+- Implemented / deterministic PASS / owner-live open.
 
-```text
-Beast Queue
-= preparation / recruitment output
+### P1-V14C.1a.1 — Timing State Hardening & Repo Closeout
+- Active closeout slice.
+- Terminal state rule enforced: `ENDED → start()` is a NO-OP; `ENDED → update()` is a NO-OP; `remainingSeconds` stays 0.
+- Only `reset()` returns `ENDED → READY 12.0s`.
+- Implemented / deterministic PASS.
 
-Run Roster / Reserve
-= persistent player unit instances
+## Next Gameplay Slices & Deferred Complexity
 
-BattleFormation
-= per-Wave deployment state
+- **P1-V14D — Persistent Energy**: Next gameplay slice. NOT STARTED.
+- **Squad Capacity Upgrade**: Future experiment. NOT STARTED.
+- **Still deferred**:
+  - new Tactical Energy types
+  - revive / resting recovery
+  - post-Wave healing rewards
+  - items / equipment / traits
+  - economy / meta progression
+  - procedural Waves
+  - final STAR evolution art
 
-AutonomousBattleModel
-= one Battle simulation
-```
-
-Do not reconstruct persistent units from anonymous counts after Battle.
-
-## Still deferred
-
-Do not implement in B.3:
-- Squad Capacity upgrade
-Do not implement in B.1/B.2:
-- Combo redesign
-- Link Shard
-- Energy persistence redesign
-- new Tactical Energy types
-- revive / resting recovery
-- post-Wave healing rewards
-- items / equipment / traits
-- economy / meta progression
-- procedural Waves
-- final STAR evolution art
-
-## Open earlier evidence gates
+## Open Earlier Evidence Gates
 
 - B.1/B.2 owner-live A–H remains unclosed unless explicitly verified.
 - P1-V13A full live signature A/B verification remains open.
 - P1-V13A.1D Deployment Workspace UX remains not passed.
-- These are not silently closed by B.3.
+- These are not silently closed by V14 slices.
 
-## Current active doc
-
+## Active Documentation
 Read:
-
-`docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+- `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+- `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+- `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+- `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+- `docs/P1-V14B3-STAR-POWER-DENSITY.md`
 
 ## UI Validation Update — Beast Rush Right Rail — 2026-10-03
 
