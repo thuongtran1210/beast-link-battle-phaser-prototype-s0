@@ -11,7 +11,8 @@ Status: **Repository-local coding handoff**
 - V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL**; live evidence open — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
 - V14C.1a: **IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN** — First-Match Start Buffer. See `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`.
 - V14C.1a.1: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED** — Timing State Hardening & Repo Closeout. Remote implementation: `1833f5a746cc414e5fdfc489b244c7969a61670c`.
-- V14D: **ACTIVE GAMEPLAY SLICE / IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — Persistent Energy / Save-vs-Spend. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
+- V14D: **IMPLEMENTED / DETERMINISTIC PASS / LIVE A–H OPEN / EXPERIMENTAL** — Persistent Energy / Save-vs-Spend. See `docs/P1-V14D-PERSISTENT-ENERGY.md`.
+- V14E: **ACTIVE VALIDATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED** — Multi-Wave Resource Commitment Integration Validation. See `docs/P1-V14E-INTEGRATION-VALIDATION.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -22,32 +23,52 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
-4. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
-5. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
-6. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
-7. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-8. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-9. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-10. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-11. relevant historical slice docs
-12. current code/tests
+3. active validation slice: `docs/P1-V14E-INTEGRATION-VALIDATION.md`
+4. implemented gameplay slice: `docs/P1-V14D-PERSISTENT-ENERGY.md`
+5. completed closeout slice: `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
+6. previous corrective slice: `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
+7. implemented reward slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+8. previous timing slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+9. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+10. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+11. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+12. relevant historical slice docs
+13. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
-**P1-V14D — Persistent Energy / Save-vs-Spend Across Waves (Active Gameplay Slice)**
+**P1-V14E — Multi-Wave Resource Commitment Integration Validation**
 
-Persistent Energy allows unused stored Energy charges to carry across Waves:
-- `EnergyQueue` is Run-scoped as single source of truth; resets only on `restartRun()`.
-- Wave transition (`resetWavePreparation()`) preserves unused Energy charges intact.
-- Valid Energy matches add +1 to selected ID without wiping carried charges.
-- Battle casts consume exactly 1 selected charge; failed/post-end casts consume 0.
-- No storage cap is imposed: accumulation above 6 and above 20 is legal (`RuleConfig.energyMax` does not cap persistent charges).
-- UI shows `CARRY IN ×N` and `STORED ×N` in Energy Rush, and `ENERGY CARRIED ×N` at Wave Result.
-- Preserves all C.1a/C.1a.1, C.1, C.2, B.3, and B.1/B.2 invariants.
-- Deterministic checks (28 checks + harness) in `P1V14DChecks.ts`.
+V14E adds no new economy/resource mechanic. It validates the current V14 systems together across the existing three-Wave horizon.
+
+Core validation target:
+
+```text
+choice now
+→ persistent consequence
+→ later-Wave option changes
+→ readable reason for the difference
+```
+
+Decision axes under validation:
+- bodies vs STAR density;
+- deployed bodies vs preserved Reserve;
+- Combo quality → Link Shard efficiency;
+- Energy spend-now vs save-for-later;
+- persistent HP / KO consequences across Waves.
+
+Required deterministic work:
+- three-Wave integration harness using existing gameplay-domain classes;
+- at least two legal policy traces from equivalent starting fixtures;
+- at least three factual cross-policy divergences;
+- no winner/ranking semantics;
+- repo hygiene checks for merge markers / machine-local links;
+- no rebalance of current mechanics.
+
+Read:
+`docs/P1-V14E-INTEGRATION-VALIDATION.md`
 
 ## B.1/B.2 implementation baseline
 
@@ -120,8 +141,9 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 - No storage cap (charges may exceed 6 and 20).
 - Implemented / deterministic PASS / Experimental.
 
-## Next Gameplay Slices & Deferred Complexity
+## Active / Deferred Gameplay Slices
 
+- **P1-V14E — Integration Validation**: ACTIVE / owner authorized / code not started.
 - **Squad Capacity Upgrade**: Future experiment. NOT STARTED.
 - **Still deferred**:
   - new Tactical Energy types
@@ -141,6 +163,7 @@ Owner-live A–H remains a separate evidence gate. Do **not** retroactively mark
 
 ## Active Documentation
 Read:
+- `docs/P1-V14E-INTEGRATION-VALIDATION.md`
 - `docs/P1-V14D-PERSISTENT-ENERGY.md`
 - `docs/P1-V14C1A1-TIMING-STATE-HARDENING.md`
 - `docs/P1-V14C1A-FIRST-MATCH-START-BUFFER.md`
