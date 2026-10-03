@@ -18,15 +18,13 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-4. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-5. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-6. relevant historical docs
-7. current code/tests
-3. active slice doc: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-4. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-5. relevant historical docs
-6. current code/tests
+3. active slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+4. previous slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+5. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+6. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+7. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+8. relevant historical docs
+9. current code/tests
 
 If repo docs and code conflict:
 - inspect current code
@@ -36,16 +34,11 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Active implementation: **P1-V14C.1 — Combo Decoupling / Quality Signal**. See `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`.
-- V14B.3 is implemented, code-review PASS, Experimental/not adopted; live hypothesis validation remains open.
-- V14B.1/B.2 remain implemented; their owner browser live gate is unrecorded and is not retroactively PASS.
-
-- V11D tactical formation validation: owner live PASS for its tested ruleset.
-- V13 signatures exist but full live A/B verification remains open.
-- V13A.1D Deployment Workspace UX remains not passed.
-- V14A multi-Wave flow is owner-confirmed structurally correct enough to continue.
-- V14B.1/B.2 core RunRoster / partial deployment / attrition implementation exists.
-- Owner explicitly authorized starting **P1-V14B.3 — STAR Consolidation / Power Density**.
+- Current slice: **P1-V14C.2 — Combo Quality → Consolidation Efficiency (Link Shard Experiment)**. See `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
+- V14C.1 is implemented, deterministic/build PASS, Experimental / not adopted; owner live A–F open.
+- V14B.3 is implemented, code-review PASS, Experimental / not adopted; live hypothesis validation open.
+- V14B.1/B.2 remain implemented; their owner browser live gate remains open.
+- V14D (Energy persistence) and Squad Capacity upgrades are not started.
 - V14 remains Experimental / not adopted.
 
 ## B.1/B.2 baseline

@@ -6,6 +6,7 @@ import { RuleConfig } from './config/RuleConfig';
 import { isTestHarness } from './config/RuntimeMode';
 import { WaveRunController } from './run/WaveRunController';
 import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster } from './run/RunRoster';
+import { RunLinkShardPool, evaluateLinkShardReward } from './run/RunLinkShardPool';
 import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
 import { runP1S1Checks } from './energy/P1S1Checks';
@@ -13,6 +14,8 @@ import { EnergyRushTimer } from './energy/EnergyRushTimer';
 import { runP1V1Checks } from './energy/P1V1Checks';
 import { runP1V2Checks } from './combo/P1V2Checks';
 import { runP1V3Checks } from './combo/P1V3Checks';
+import { runP1V14C1Checks } from './combo/P1V14C1Checks';
+import { runP1V14C2Checks } from './run/P1V14C2Checks';
 import { BattleFormation } from './battle/BattleFormation';
 import { runP1S2Checks } from './battle/P1S2Checks';
 import {
@@ -150,6 +153,7 @@ export class ValidationScene extends Phaser.Scene {
   private battleOutcome?: 'Win' | 'Lose';
   private readonly waveRun = new WaveRunController();
   private readonly runRoster = new RunRoster();
+  private readonly shardPool = new RunLinkShardPool();
   private readonly waveResultObjects: Phaser.GameObjects.GameObject[] = [];
   private readonly metrics = new SessionMetrics();
 
@@ -211,6 +215,8 @@ export class ValidationScene extends Phaser.Scene {
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
+      runP1V14C1Checks();
+      runP1V14C2Checks();
     } catch (error) {
       this.renderStartupFailure(error);
       return;
@@ -394,6 +400,23 @@ export class ValidationScene extends Phaser.Scene {
 
   private handleBeastRushEnded(): void {
     this.boardView?.setInputEnabled(false);
+    const bestStreak = this.comboQuality.snapshot.bestStreak;
+    const reward = evaluateLinkShardReward(bestStreak);
+    if (reward > 0) {
+      const awarded = this.shardPool.award(reward);
+      if (awarded > 0) {
+        this.metrics.recordLinkShardsEarned(awarded);
+        FeedbackEffects.floatText(
+          this,
+          640,
+          260,
+          `BEST ×${bestStreak}  ·  +${awarded} LINK SHARD${awarded > 1 ? 'S' : ''}`,
+          '#38bdf8',
+          '16px',
+          1100,
+        );
+      }
+    }
     this.isShowingTransitionCue = true;
     this.transitionCueTimer = 1.0;
     this.transitionCue?.show('ENERGY RUSH', 'Collect Energy for Battle');
@@ -520,6 +543,7 @@ export class ValidationScene extends Phaser.Scene {
       isTestHarness() ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
       this.runRoster,
       (selectedUnitId) => this.consolidateReserveUnit(selectedUnitId),
+      this.shardPool,
     );
     this.battleSetupView.render();
     this.syncTopHud();
@@ -954,8 +978,14 @@ export class ValidationScene extends Phaser.Scene {
   private consolidateReserveUnit(selectedUnitId: string): string | undefined {
     if (!this.formation) return undefined;
     const deployedIds = new Set(this.formation.units.filter((unit) => unit.slotId !== null).map((unit) => unit.unitId));
-    const result = this.runRoster.consolidate(selectedUnitId, deployedIds);
+    const result = this.runRoster.consolidate(selectedUnitId, deployedIds, this.shardPool);
     if (!result) return undefined;
+    if (result.shardsSpent > 0) {
+      this.metrics.recordLinkShardsSpent(result.shardsSpent);
+    }
+    if (result.isShardAssisted) {
+      this.metrics.recordAssistedConsolidation();
+    }
     result.consumedIds.forEach((unitId) => this.formation?.removeUnplacedUnit(unitId));
     this.formation.updateUnplacedUnitStar(result.upgraded.instanceId, result.upgraded.star);
     return result.upgraded.instanceId;
@@ -994,6 +1024,7 @@ export class ValidationScene extends Phaser.Scene {
     this.transitionCue?.hide();
     this.beastRushTimer.reset();
     this.comboQuality.reset();
+    this.shardPool.reset();
     this.energyTimer.reset();
     this.battleQueue.clear();
     this.energyQueue.reset();

@@ -10,9 +10,10 @@ Read:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. `AI_INSTRUCTIONS.md`
-3. active slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-4. supporting V14 docs
-5. current code/tests
+3. active slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+4. previous slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+5. supporting V14 docs
+6. current code/tests
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
@@ -43,41 +44,18 @@ Current implementation evidence:
 
 Owner-live A–H remains a separate evidence gate and must not be inferred as PASS.
 
-### Active slice — P1-V14B.3
+### Active slice — P1-V14C.2
 
-**STAR Consolidation / Power Density**
+**Combo Quality → Consolidation Efficiency (Link Shard Experiment)**
 
-Owner explicitly authorized starting B.3.
-
-Current code finding:
-
-```text
-BattleQueue count
-→ StarConverter.bulk(...)
-→ automatic highest STAR
-```
-
-This prevents the player from choosing:
-
-```text
-3 × 1★
-vs
-1 × 2★
-```
-
-B.3 will test whether higher STAR creates **power density per Active slot** while separate 1★ units retain meaningful breadth.
-
-Keep:
-- Active Squad cap = 4
-- STAR cost structure = 1 / 3 / 9
-- Formation Grid unchanged
-- `GRID CAPACITY ≠ SQUAD CAPACITY`
-
-Do not implement Squad Capacity upgrades in this slice.
+- MATCH COUNT strictly controls Beast quantity (1 match = 1 recruited Beast).
+- COMBO QUALITY (`bestStreak`) earns Link Shards (up to 2 per Beast Rush, cap 3).
+- Link Shards substitute for 1 missing same-STAR copy in Reserve consolidation (min 2 real bodies, 0 phantom HP).
+- Active Squad cap remains 4; Energy persistence (V14D) not started.
 
 Read:
 
-`docs/P1-V14B3-STAR-POWER-DENSITY.md`
+`docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
 
 ## Current V14 roadmap
 
@@ -85,20 +63,20 @@ Read:
 V14A — Multi-Wave Structure
 OWNER STRUCTURAL PASS
 ↓
-V14B.1 — Partial Deployment + Persistent Reserve
-CORE IMPLEMENTED / OWNER-LIVE EVIDENCE STILL SEPARATE
-↓
-V14B.2 — Persistent Unit Identity + HP Attrition
-CORE IMPLEMENTED / OWNER-LIVE EVIDENCE STILL SEPARATE
+V14B.1 / B.2 — Run Roster & Attrition
+CORE IMPLEMENTED / OWNER-LIVE EVIDENCE OPEN
 ↓
 V14B.3 — STAR Consolidation / Power Density
-ACTIVE — OWNER AUTHORIZED
+IMPLEMENTED / CODE REVIEW PASS / LIVE HYPOTHESIS OPEN
 ↓
-V14C — Combo Rework
-DEFERRED
+V14C.1 — Combo Quality Signal
+IMPLEMENTED / DETERMINISTIC PASS / OWNER-LIVE OPEN
+↓
+V14C.2 — Link Shard Consolidation Efficiency
+IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL
 ↓
 V14D — Persistent Energy
-DEFERRED
+DEFERRED / NOT STARTED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED

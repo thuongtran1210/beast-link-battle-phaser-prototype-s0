@@ -5,10 +5,11 @@ Status: **Repository-local coding handoff**
 ## Current status — 2026-10-03
 
 - V14A: owner structural PASS / Experimental / not adopted.
-- V14B.1/B.2: core implemented; owner-live evidence remains separate.
+- V14B.1/B.2: core implemented; owner-live evidence remains open.
 - V14B.3: implemented; code review PASS; live hypothesis validation open; not adopted.
-- V14C.1: **ACTIVE / owner authorized** — `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`.
-- V14C.2, V14D, and Squad Capacity Upgrade: not started.
+- V14C.1: implemented; deterministic/build PASS; owner live A–F open; Experimental / not adopted.
+- V14C.2: **IMPLEMENTED / DETERMINISTIC PASS / EXPERIMENTAL** — `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`.
+- V14D and Squad Capacity Upgrade: not started.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
 
@@ -18,30 +19,22 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
-4. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
-5. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-6. relevant historical slice docs
-7. current code/tests
-3. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
-4. active slice: `docs/P1-V14B3-STAR-POWER-DENSITY.md`
-5. relevant historical slice docs
-6. current code/tests
+3. active slice: `docs/P1-V14C2-LINK-SHARD-CONSOLIDATION-EFFICIENCY.md`
+4. previous slice: `docs/P1-V14C1-COMBO-QUALITY-SIGNAL.md`
+5. `docs/P1-V14B3-STAR-POWER-DENSITY.md`
+6. `docs/P1-V14B1-B2-RUN-ROSTER-ATTRITION.md`
+7. `docs/P1-V14-MULTI-WAVE-RESOURCE-COMMITMENT.md`
+8. relevant historical slice docs
+9. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
 
 ## Current milestone
 
-**P1-V14B.3 — STAR Consolidation / Power Density**
-**Active Experimental slice: P1-V14B.3 — STAR Consolidation / Power Density.**
+**P1-V14C.2 — Combo Quality → Consolidation Efficiency (Link Shard Experiment)**
 
-The owner explicitly authorized B.3. V14B.1/B.2 remain implemented and their owner browser live gate remains unrecorded; beginning B.3 does not mark that evidence PASS. Preserve persistent RunRoster identity, HP/KO attrition, per-Wave deployment reset, and the Experimental Active Squad cap of 4.
-
-**P1-V14B — Run Roster, Partial Deployment & Attrition**
-
-Owner explicitly authorized starting B.3.
-
-V14 remains **Experimental / not adopted**.
+The owner explicitly authorized C.2. C.1 and B.3 owner-live gates remain open.
+MATCH COUNT strictly determines Beast quantity. Combo quality awards Link Shards (up to 2 per Rush, cap 3) which enable 2-copy + 1-shard consolidation with zero phantom HP. Active Squad cap remains 4. Energy persistence (V14D) not started.
 
 P1-V14A multi-Wave flow is owner-confirmed structurally correct enough to continue.
 

@@ -109,23 +109,22 @@ Read:
 
 ### P1-V14C — Combo Rework: Preparation Efficiency
 
-Deferred until B.3 evidence is reviewed.
+- **P1-V14C.1 — Combo Quality Signal**: Implemented / deterministic PASS. Decoupled 12.0s phase timer and 1.5s Combo window. MATCH COUNT = Beast quantity; COMBO = independent quality signal. Owner live gate open.
+- **P1-V14C.2 — Link Shard Consolidation Efficiency**: Implemented / deterministic PASS. Best streak awards Link Shards (up to 2, cap 3) which substitute for 1 missing copy in Reserve consolidation (min 2 real bodies, 0 phantom HP).
 
-Direction:
+Direction verified:
 
 ```text
 match count
-→ quantity
+→ Beast quantity
 
 Combo quality
-→ efficiency / quality
+→ consolidation efficiency (Link Shard)
 ```
-
-Exact rewards remain open.
 
 ### P1-V14D — Persistent Energy / Save-vs-Spend
 
-Deferred.
+Deferred / not started.
 
 Test later:
 
