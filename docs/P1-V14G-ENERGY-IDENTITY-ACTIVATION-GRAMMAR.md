@@ -1,6 +1,6 @@
 # P1-V14G — Energy Identity & Activation Grammar
 
-Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 BATTLE SYSTEM OWNER-LIVE PASS / P1-V14G.4 ENERGY RUSH IDENTITY DESIGN ACTIVE / EXPERIMENTAL / NOT ADOPTED**.
+Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 BATTLE OWNER-LIVE PASS / P1-V14G.4A ENERGY RUSH OWNER-LIVE PASS / P1-V14G.5 ADOPTION REVIEW ACTIVE / EXPERIMENTAL / NOT ADOPTED**.
 
 ## P1-V14G.1 Implementation Evidence — 2026-10-03
 
@@ -943,3 +943,24 @@ Read:
 `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
 
 Implementation remains blocked until explicit owner approval.
+
+
+## P1-V14G.5 — Tactical Energy Review / Adoption Gate
+
+Status: **ACTIVE REVIEW / OWNER DECISION REQUIRED / NO NEW GAMEPLAY IMPLEMENTATION**.
+
+The Battle surface and Energy Rush tactical identity have now passed owner live review.
+
+G.5 does not add mechanics. It decides whether V14G should become baseline gameplay.
+
+Valid outcomes:
+- ADOPT;
+- CONDITIONAL HOLD;
+- DO NOT ADOPT.
+
+G.4B NEXT THREAT remains deferred unless a demonstrated live problem proves it is necessary.
+
+Read:
+`docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
+
+Until explicit owner decision, V14G remains **Experimental / not adopted**.
