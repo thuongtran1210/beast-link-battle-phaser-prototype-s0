@@ -106,7 +106,7 @@ export class PrototypeFlowPanel {
     }
 
     if (energyRows && energyRows.length > 0) {
-      const rowHeight = 50;
+      const rowHeight = 56;
       energyRows.forEach((row) => {
         const rowBg = this.scene.add
           .rectangle(this.x + w / 2, nextActionY + rowHeight / 2, w - 32, rowHeight, row.suggested ? 0x3f3515 : 0x111827, 0.9)
@@ -120,7 +120,8 @@ export class PrototypeFlowPanel {
           color: '#f8fafc',
           fontStyle: 'bold',
         });
-        const description = this.scene.add.text(this.x + 46, nextActionY + 21, row.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
+        const description = this.scene.add.text(this.x + 46, nextActionY + 22, row.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
+        const state = this.scene.add.text(this.x + 46, nextActionY + 38, `${row.stateLabel}${row.reasonLabel ? ` · ${row.reasonLabel}` : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: row.suggested ? '#fbbf24' : row.enabled ? '#7dd3fc' : '#94a3b8', fontStyle: 'bold' });
 
         const buttonBg = this.scene.add
           .rectangle(this.x + w - 54, nextActionY + rowHeight / 2, 64, 24, row.enabled ? 0x0284c7 : 0x334155, row.enabled ? 1 : .65)
@@ -136,7 +137,7 @@ export class PrototypeFlowPanel {
           .setOrigin(0.5);
 
         if (row.enabled) { buttonBg.setInteractive({ useHandCursor: true }); buttonText.setInteractive({ useHandCursor: true }); buttonBg.on('pointerup', row.onAction); buttonText.on('pointerup', row.onAction); }
-        this.objects.push(rowBg, tokenIcon, label, description, buttonBg, buttonText);
+        this.objects.push(rowBg, tokenIcon, label, description, state, buttonBg, buttonText);
         nextActionY += rowHeight + 4;
       });
     }

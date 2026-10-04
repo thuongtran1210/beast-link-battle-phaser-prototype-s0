@@ -133,7 +133,7 @@ export class ShowcaseBattleHUDView {
     // CARD 4: STORED ENERGY & HEAL BUTTONS
     const activeEntries = energyEntries.filter((e) => e.charges > 0);
     const totalCharges = activeEntries.reduce((sum, entry) => sum + entry.charges, 0);
-    const rowHeight = 50;
+    const rowHeight = 56;
     const energyCardH = Math.max(120, 52 + Math.max(1, activeEntries.length) * (rowHeight + 4) + 26);
     const energyBg = drawCard(this.scene, this.x, currY, w, energyCardH, HudTokens.colors.bgSurfaceElevated, 0.94);
 
@@ -181,7 +181,8 @@ export class ShowcaseBattleHUDView {
             fontStyle: 'bold',
           },
         );
-        const description = this.scene.add.text(this.x + 48, rowY + 25, castState.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
+        const description = this.scene.add.text(this.x + 48, rowY + 24, castState.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
+        const state = this.scene.add.text(this.x + 48, rowY + 40, `${castState.stateLabel}${castState.reasonLabel ? ` · ${castState.reasonLabel}` : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: castState.suggested ? '#fbbf24' : castState.enabled ? '#7dd3fc' : '#94a3b8', fontStyle: 'bold' });
 
         const healBtnBg = this.scene.add
           .rectangle(this.x + w - 58, rowY + rowHeight / 2, 70, 26, castState.enabled ? 0x0284c7 : 0x334155, castState.enabled ? 1 : .65)
@@ -198,7 +199,7 @@ export class ShowcaseBattleHUDView {
 
         if (castState.enabled) { healBtnBg.setInteractive({ useHandCursor: true }); healBtnText.setInteractive({ useHandCursor: true }); const castAction = () => onCast(entry.energyId); healBtnBg.on('pointerdown', castAction); healBtnText.on('pointerdown', castAction); }
 
-        this.objects.push(rowBg, tokenIcon, label, description, healBtnBg, healBtnText);
+        this.objects.push(rowBg, tokenIcon, label, description, state, healBtnBg, healBtnText);
         rowY += rowHeight + 4;
       });
     }
