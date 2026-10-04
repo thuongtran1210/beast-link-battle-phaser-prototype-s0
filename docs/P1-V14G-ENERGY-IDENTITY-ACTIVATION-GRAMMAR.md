@@ -1,6 +1,6 @@
 # P1-V14G — Energy Identity & Activation Grammar
 
-Status: **P1-V14G.1 CORE IMPLEMENTED / P1-V14G.2 ACTIVE IMPLEMENTATION / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 LIVE VALIDATION ACTIVE + NOT PASSED / EXPERIMENTAL / NOT ADOPTED**.
 
 ## P1-V14G.1 Implementation Evidence — 2026-10-03
 
@@ -8,7 +8,7 @@ Status: **P1-V14G.1 CORE IMPLEMENTED / P1-V14G.2 ACTIVE IMPLEMENTATION / LIVE NO
 - `AutonomousBattleModel` owns tactical eligibility and cast results, including stale-state re-evaluation and effective-result-first charge consumption.
 - MEND delegates to the existing Frontline Heal semantics. RESCUE, BREAK, and PIERCE use deterministic target selection and share existing enemy aggregate/terminal synchronization.
 - `energy-e` and `energy-f` remain valid generic `EnergyQueue` data but are unsupported tactical casts.
-- G.2 is reserved for player-facing naming, readiness, and suggested-state presentation.
+- G.2 player-facing naming, readiness, suggested-state presentation, and cast feedback are implemented; Live G.3 remains open.
 
 ## Why V14G Exists
 
@@ -901,3 +901,21 @@ Active player-surface continuation:
 `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
 
 G.2 also hardens RESCUE suggestion semantics so Diver pressure on any Mid/Back body can make RESCUE SUGGESTED even when the deterministic heal target is another more-damaged Mid/Back unit.
+
+
+## P1-V14G.3 — Live Validation Gate
+
+Status: **ACTIVE / LIVE NOT RECORDED / NOT PASSED**.
+
+This gate adds no new Energy mechanic. It validates the implemented V14G system in live play.
+
+Required owner/browser questions:
+1. Can the player identify MEND / RESCUE / BREAK / PIERCE without internal A/B/C/D knowledge?
+2. Can the player understand what each Energy affects?
+3. Can the player distinguish READY / SUGGESTED / DISABLED?
+4. Can the player understand why an Energy becomes SUGGESTED?
+5. Does cast feedback visibly connect the Energy to the actual model target?
+6. Does SUGGESTED remain guidance rather than forced action?
+7. Does save-now-vs-later remain understandable across Waves?
+
+Deterministic evidence does not close this gate. V14G remains Experimental / not adopted until a later explicit adoption decision.
