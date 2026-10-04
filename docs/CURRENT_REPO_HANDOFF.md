@@ -18,7 +18,7 @@ Status: **Repository-local coding handoff**
 - P1-V14G.1: **CORE IMPLEMENTED / DETERMINISTIC PASS / REMOTE VERIFIED / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — Tactical Energy Core at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
 - P1-V14G.2: **PLAYER SURFACE IMPLEMENTED / G.2-SPECIFIC DETERMINISTIC PASS / CHECK-BUILD PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — evidence through `3659e75313c80b0910509050ac2979e028684470`.
 - P1-V14G.2.3: **PRE-LIVE CLOSEOUT COMPLETE** — three-layer Battle Energy rows, canonical Beast feedback, canonical-name regression check.
-- P1-V14G.3: **ACTIVE LIVE VALIDATION GATE / NOT PASSED / OWNER EVIDENCE REQUIRED** — no new gameplay implementation authorized.
+- P1-V14G.3: **BATTLE SYSTEM OWNER-LIVE PASS / ENERGY RUSH IDENTITY STILL OPEN / EXPERIMENTAL / NOT ADOPTED** — Battle-time tactical Energy communication accepted by owner; no new Battle mechanic authorized.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -54,7 +54,7 @@ If repository docs conflict with current code, inspect the code and report the c
 
 **P1-V14G.3 — Tactical Energy Live Validation Gate**
 
-Status: **ACTIVE LIVE VALIDATION / owner evidence required / NOT PASSED / Experimental / not adopted**
+Status: **BATTLE SYSTEM OWNER-LIVE PASS / Energy Rush identity closeout still open / Experimental / not adopted**
 
 Deterministic implementation baseline:
 - G.1 core implemented and remote verified.
@@ -63,18 +63,22 @@ Deterministic implementation baseline:
 - `runP1V14G2Checks()` remains wired into `npm run check`.
 - separate `runP1V14G23Checks()` proves `MEND → SNOWGUARD +30`.
 - check/build PASS is owner-reported from the final pre-live run.
-- Live A–H has not been recorded.
+- Owner live evidence now confirms the **V14G Battle system PASS**: tactical names/effects, READY/SUGGESTED/DISABLED grammar, contextual suggestion reason, and actual-target cast feedback are accepted.
+- Energy Rush identity remains a separate open communication issue because the timed puzzle still reads primarily as A/B/C/D + ENERGY rather than MEND/RESCUE/BREAK/PIERCE.
 
-G.3 adds no new Energy mechanics. Validate the existing implementation only. Do not rebalance, expand Energy types, add cooldown/target-selection/auto-cast/cap/decay, or mark adoption from automated evidence.
+G.3 Battle validation is owner-passed. Do not add or rebalance Battle Energy mechanics. The remaining V14G live issue is Energy Rush identity communication; any follow-up must stay presentation-only unless the owner opens a new gameplay spec.
 
-Live questions:
-1. Can the player identify MEND / RESCUE / BREAK / PIERCE without A/B/C/D knowledge?
-2. Can the player tell what each Energy affects?
-3. Can the player distinguish READY / SUGGESTED / DISABLED?
-4. Can the player understand why an Energy is SUGGESTED?
-5. Does cast feedback connect Energy to the actual target?
-6. Does SUGGESTED feel informative rather than forced?
-7. Does save-now-vs-later remain understandable across Waves?
+Owner live Battle result:
+- tactical identity in Setup/Battle: PASS;
+- effect readability in Battle: PASS;
+- READY / SUGGESTED / DISABLED distinction: PASS;
+- contextual SUGGESTED reason: PASS;
+- actual-target cast feedback: PASS;
+- SUGGESTED remains manual guidance: PASS.
+
+Still open outside the accepted Battle system:
+- Energy Rush tactical identity readability remains partial because cells still communicate A/B/C/D + ENERGY more strongly than MEND/RESCUE/BREAK/PIERCE;
+- cross-Wave save-vs-later live evidence remains a separate integration question and is not required to revoke the owner Battle PASS.
 
 F.1c visual screenshot closeout remains separately open.
 
