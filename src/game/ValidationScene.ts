@@ -80,6 +80,7 @@ import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
 import { tacticalEnergyControl } from './ui/TacticalEnergyPresentation';
+import { tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
 import { tacticalEnergyDefinition } from './energy/TacticalEnergyCatalog';
 
 import {
@@ -697,6 +698,8 @@ export class ValidationScene extends Phaser.Scene {
       this.battleActionView?.render(after);
       if (result.kind === 'Mend' || result.kind === 'Rescue') this.battleActionView?.playHeal({ unitId: result.targetUnitId, amount: result.amount });
       else this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
+      const identity = tacticalEnergyCastFeedback(result, after);
+      if (identity) FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, identity, '#fbbf24');
       this.renderBattle();
       this.syncTopHud();
     } else {

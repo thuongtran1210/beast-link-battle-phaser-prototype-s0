@@ -120,6 +120,7 @@ export class PrototypeFlowPanel {
           color: '#f8fafc',
           fontStyle: 'bold',
         });
+        const description = this.scene.add.text(this.x + 46, nextActionY + 21, row.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
 
         const buttonBg = this.scene.add
           .rectangle(this.x + w - 54, nextActionY + rowHeight / 2, 64, 24, row.enabled ? 0x0284c7 : 0x334155, row.enabled ? 1 : .65)
@@ -135,7 +136,7 @@ export class PrototypeFlowPanel {
           .setOrigin(0.5);
 
         if (row.enabled) { buttonBg.setInteractive({ useHandCursor: true }); buttonText.setInteractive({ useHandCursor: true }); buttonBg.on('pointerup', row.onAction); buttonText.on('pointerup', row.onAction); }
-        this.objects.push(rowBg, tokenIcon, label, buttonBg, buttonText);
+        this.objects.push(rowBg, tokenIcon, label, description, buttonBg, buttonText);
         nextActionY += rowHeight + 4;
       });
     }

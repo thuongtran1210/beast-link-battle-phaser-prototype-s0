@@ -181,6 +181,7 @@ export class ShowcaseBattleHUDView {
             fontStyle: 'bold',
           },
         );
+        const description = this.scene.add.text(this.x + 48, rowY + 25, castState.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
 
         const healBtnBg = this.scene.add
           .rectangle(this.x + w - 58, rowY + rowHeight / 2, 70, 26, castState.enabled ? 0x0284c7 : 0x334155, castState.enabled ? 1 : .65)
@@ -197,7 +198,7 @@ export class ShowcaseBattleHUDView {
 
         if (castState.enabled) { healBtnBg.setInteractive({ useHandCursor: true }); healBtnText.setInteractive({ useHandCursor: true }); const castAction = () => onCast(entry.energyId); healBtnBg.on('pointerdown', castAction); healBtnText.on('pointerdown', castAction); }
 
-        this.objects.push(rowBg, tokenIcon, label, healBtnBg, healBtnText);
+        this.objects.push(rowBg, tokenIcon, label, description, healBtnBg, healBtnText);
         rowY += rowHeight + 4;
       });
     }

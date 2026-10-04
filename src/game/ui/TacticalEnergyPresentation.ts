@@ -1,5 +1,6 @@
 import type { TacticalEnergyEligibility } from '../battle/AutonomousBattleModel';
 import { tacticalEnergyDefinition } from '../energy/TacticalEnergyCatalog';
+import type { AutonomousBattleSnapshot, TacticalEnergyCastResult } from '../battle/AutonomousBattleModel';
 
 export interface TacticalEnergyControlPresentation { energyId: string; displayName: string; shortDescription: string; charges: number; stateLabel: 'DISABLED' | 'READY' | 'SUGGESTED'; reasonLabel?: string; enabled: boolean; suggested: boolean; }
 const reasonLabels: Record<string, string> = { 'battle-not-running': 'BATTLE ENDED', 'no-charge': 'NO CHARGE', 'no-target': 'NO VALID TARGET', 'target-full-hp': 'FRONTLINE FULL', 'no-frontliner': 'NO FRONTLINER', 'no-ranged': 'NO RANGED', 'unsupported-energy': 'UNAVAILABLE' };
@@ -10,3 +11,8 @@ export function tacticalEnergyControl(eligibility: TacticalEnergyEligibility, ch
   return { energyId: definition.energyId, displayName: definition.displayName, shortDescription: definition.shortDescription, charges, stateLabel: suggested ? 'SUGGESTED' : enabled ? 'READY' : 'DISABLED', reasonLabel: suggested ? eligibility.suggestedReason : enabled ? undefined : reasonLabels[eligibility.reason], enabled, suggested };
 }
 export function tacticalEnergyPlayerName(energyId: string): string { return tacticalEnergyDefinition(energyId)?.displayName ?? 'TACTICAL ENERGY'; }
+export function tacticalEnergyCastFeedback(result: TacticalEnergyCastResult, battle: AutonomousBattleSnapshot): string | undefined {
+  if (!result.success || !result.kind || result.amount <= 0) return undefined;
+  if (result.targetUnitId) { const unit = battle.units.find((entry) => entry.unitId === result.targetUnitId); return `${result.kind.toUpperCase()} → ${unit?.beastId ? unit.beastId.replace('beast-', '').toUpperCase() : 'ALLY'} +${result.amount}`; }
+  const enemy = battle.enemies.find((entry) => entry.enemyId === result.targetEnemyId); return `${result.kind.toUpperCase()} → ${(enemy?.archetype ?? 'ENEMY').toUpperCase()} -${result.amount}`;
+}
