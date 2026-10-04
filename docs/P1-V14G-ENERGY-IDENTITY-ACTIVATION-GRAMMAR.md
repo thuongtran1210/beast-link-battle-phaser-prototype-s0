@@ -1,6 +1,6 @@
 # P1-V14G — Energy Identity & Activation Grammar
 
-Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 BATTLE SYSTEM OWNER-LIVE PASS / ENERGY RUSH IDENTITY OPEN / EXPERIMENTAL / NOT ADOPTED**.
+Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 BATTLE SYSTEM OWNER-LIVE PASS / P1-V14G.4 ENERGY RUSH IDENTITY DESIGN ACTIVE / EXPERIMENTAL / NOT ADOPTED**.
 
 ## P1-V14G.1 Implementation Evidence — 2026-10-03
 
@@ -922,3 +922,24 @@ Open live issue:
 - cross-Wave save-vs-later evidence remains an integration question rather than a blocker to the scoped Battle-system PASS.
 
 V14G remains Experimental / not adopted until a later explicit adoption decision.
+
+
+## P1-V14G.4 — Energy Rush Tactical Identity Closeout
+
+Status: **ACTIVE DESIGN SPEC / OWNER REVIEW / CODE NOT STARTED / PRESENTATION-ONLY**.
+
+G.3 owner-live evidence accepts the Battle system. G.4 addresses only the remaining collection-phase identity gap: Energy Rush still reads primarily as A/B/C/D + generic ENERGY.
+
+Locked direction:
+- tile primary identity = MEND / RESCUE / BREAK / PIERCE;
+- no need to memorize A/B/C/D in normal player mode;
+- right rail always shows all four tactical types and current counts, including zero;
+- compact effect hints derive from TacticalEnergyCatalog;
+- compact current-Wave threat context may be shown as information only;
+- no READY/SUGGESTED/DISABLED in Rush;
+- no ranking, recommendation, spawn weighting, or Battle mechanic changes.
+
+Read:
+`docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
+
+Implementation remains blocked until explicit owner approval.
