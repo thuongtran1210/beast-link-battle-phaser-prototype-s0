@@ -2,9 +2,14 @@
 
 Status: **Experimental design direction / not adopted**.
 
-## P1-V14G.1 Tactical Energy Core
+## P1-V14G Tactical Energy Progress
 
-Core implemented with deterministic evidence; player-surface G.2 and live validation remain pending. The Run-scoped generic `EnergyQueue` remains uncapped and keeps historical `energy-e` / `energy-f` compatibility while new Energy Rush generation uses tactical A-D only.
+- **V14G.1 Tactical Energy Core**: implemented / deterministic PASS.
+- **V14G.2 Tactical Energy Player Surface**: implemented / G.2-specific deterministic PASS.
+- **V14G.2.3 Pre-live closeout**: complete.
+- **V14G.3 Tactical Energy Live Validation Gate**: ACTIVE / Live not recorded / NOT PASSED.
+
+The Run-scoped generic `EnergyQueue` remains uncapped and keeps historical `energy-e` / `energy-f` compatibility while new Energy Rush generation uses tactical A-D only.
 
 ## Problem statement
 
@@ -259,6 +264,23 @@ G.2:
 
 Read:
 `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+
+### P1-V14G.3 — Tactical Energy Live Validation Gate
+
+**ACTIVE LIVE VALIDATION / owner evidence required / NOT PASSED / Experimental / not adopted.**
+
+No new Energy mechanic is authorized in G.3.
+
+Validate the existing system against:
+- tactical identity readability;
+- effect readability;
+- READY / SUGGESTED / DISABLED distinction;
+- suggested-reason clarity;
+- actual-target cast feedback;
+- SUGGESTED as guidance rather than forced action;
+- save-now-vs-later readability across Waves.
+
+Automated evidence cannot close this gate.
 
 ### Future — Squad Capacity Upgrade
 
