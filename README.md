@@ -194,9 +194,9 @@ Read:
 
 **G.2.3 Pre-live closeout** — complete. Battle Energy rows use identity → effect → activation state, ally success feedback uses canonical Beast names, and the canonical feedback path has a regression check.
 
-**G.3 Tactical Energy Live Validation Gate** — **ACTIVE / LIVE NOT RECORDED / NOT PASSED**.
+**G.3 Tactical Energy Live Validation Gate** — **BATTLE SYSTEM OWNER-LIVE PASS / ENERGY RUSH IDENTITY OPEN / V14G NOT ADOPTED**.
 
-G.3 adds no new mechanic. Owner/browser evidence must determine whether players can understand MEND / RESCUE / BREAK / PIERCE, READY / SUGGESTED / DISABLED, contextual suggestions, target feedback, and save-vs-spend tension.
+Owner/browser evidence accepts the Battle system: tactical identities/effects, READY / SUGGESTED / DISABLED, contextual suggestions, and actual-target cast feedback are readable. The remaining V14G communication gap is Energy Rush, whose cells still emphasize A/B/C/D + ENERGY. Save-vs-spend across Waves remains a broader integration evidence question.
 
 Read:
 - `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
