@@ -1,6 +1,6 @@
 # P1-V14G — Energy Identity & Activation Grammar
 
-Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 LIVE VALIDATION ACTIVE + NOT PASSED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **P1-V14G.1 IMPLEMENTED / P1-V14G.2 IMPLEMENTED + DETERMINISTIC PASS / P1-V14G.2.3 COMPLETE / P1-V14G.3 BATTLE SYSTEM OWNER-LIVE PASS / ENERGY RUSH IDENTITY OPEN / EXPERIMENTAL / NOT ADOPTED**.
 
 ## P1-V14G.1 Implementation Evidence — 2026-10-03
 
@@ -905,17 +905,20 @@ G.2 also hardens RESCUE suggestion semantics so Diver pressure on any Mid/Back b
 
 ## P1-V14G.3 — Live Validation Gate
 
-Status: **ACTIVE / LIVE NOT RECORDED / NOT PASSED**.
+Status: **BATTLE SYSTEM OWNER-LIVE PASS / ENERGY RUSH IDENTITY OPEN / V14G NOT ADOPTED**.
 
-This gate adds no new Energy mechanic. It validates the implemented V14G system in live play.
+This gate adds no new Energy mechanic. Owner live review now accepts the **V14G Battle system**. The remaining live communication issue is the Energy Rush collection surface.
 
-Required owner/browser questions:
-1. Can the player identify MEND / RESCUE / BREAK / PIERCE without internal A/B/C/D knowledge?
-2. Can the player understand what each Energy affects?
-3. Can the player distinguish READY / SUGGESTED / DISABLED?
-4. Can the player understand why an Energy becomes SUGGESTED?
-5. Does cast feedback visibly connect the Energy to the actual model target?
-6. Does SUGGESTED remain guidance rather than forced action?
-7. Does save-now-vs-later remain understandable across Waves?
+Owner live Battle evidence:
+- Setup/Battle tactical identities are readable: PASS.
+- Effect categories are readable: PASS.
+- READY / SUGGESTED / DISABLED grammar is readable: PASS.
+- SUGGESTED reason is understandable in Battle: PASS.
+- successful cast feedback connects to the actual model target and actual amount: PASS.
+- SUGGESTED remains manual guidance rather than forced action: PASS.
 
-Deterministic evidence does not close this gate. V14G remains Experimental / not adopted until a later explicit adoption decision.
+Open live issue:
+- Energy Rush cells still communicate internal A/B/C/D + `ENERGY` more strongly than MEND / RESCUE / BREAK / PIERCE, so collection-phase tactical identity remains partial.
+- cross-Wave save-vs-later evidence remains an integration question rather than a blocker to the scoped Battle-system PASS.
+
+V14G remains Experimental / not adopted until a later explicit adoption decision.
