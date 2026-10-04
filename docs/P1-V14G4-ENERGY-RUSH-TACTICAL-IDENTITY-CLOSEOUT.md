@@ -1,6 +1,6 @@
 # P1-V14G.4 — Energy Rush Tactical Identity Closeout
 
-Status: **G.4A CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER SCREENSHOT REQUIRED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **G.4A CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER LIVE PASS / EXPERIMENTAL / NOT ADOPTED**.
 
 ## 1. Why G.4 Exists
 
@@ -621,3 +621,22 @@ Implemented the core identity surface only:
 - Deterministic presentation checks are wired into `npm run check`.
 
 Deferred to G.4B or later: NEXT THREAT context, threat-context data, threat-based presentation, adoption review, and broad HUD redesign. The Battle system is unchanged.
+
+
+## 43. G.4A Live Validation Record — 2026-10-04
+
+Owner screenshot review: **PASS**.
+
+Live evidence confirms:
+- board tiles read MEND / RESCUE / BREAK / PIERCE directly;
+- internal A/B/C/D letters are no longer required in normal Energy Rush;
+- RESCUE / PIERCE fit cleanly on tiles;
+- the right rail shows all four tactical types with per-type counts and compact effect hints;
+- zero-count types remain visible;
+- carry-in presentation remains readable;
+- Battle vocabulary remains consistent and the owner-passed Battle surface is unchanged.
+
+G.4B NEXT THREAT is **not required by default**. It remains deferred unless a later live problem demonstrates that players understand Energy identities but cannot connect collection choices to the upcoming threat.
+
+Next gate:
+`docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
