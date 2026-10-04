@@ -186,6 +186,23 @@ Read:
 
 `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
 
+### Tactical Energy status — P1-V14G
+
+**G.1 Tactical Energy Core** — implemented.
+
+**G.2 Tactical Energy Player Surface** — implemented / G.2-specific deterministic PASS.
+
+**G.2.3 Pre-live closeout** — complete. Battle Energy rows use identity → effect → activation state, ally success feedback uses canonical Beast names, and the canonical feedback path has a regression check.
+
+**G.3 Tactical Energy Live Validation Gate** — **ACTIVE / LIVE NOT RECORDED / NOT PASSED**.
+
+G.3 adds no new mechanic. Owner/browser evidence must determine whether players can understand MEND / RESCUE / BREAK / PIERCE, READY / SUGGESTED / DISABLED, contextual suggestions, target feedback, and save-vs-spend tension.
+
+Read:
+- `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+- `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+- `docs/P1-V14G23-LIVE-GATE-PREP-DOC-SYNC.md`
+
 ## Current V14 roadmap
 
 ```text
@@ -226,10 +243,16 @@ V14F.1c — Battle Setup Visual Closeout
 PLAYER-SURFACE CLOSEOUT / LIVE SCREENSHOT GATE OPEN
 ↓
 V14G.1 — Tactical Energy Core
-IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED
+IMPLEMENTED / DETERMINISTIC PASS
 ↓
 V14G.2 — Tactical Energy Player Surface
-ACTIVE IMPLEMENTATION / OWNER AUTHORIZED / CODE NOT STARTED
+IMPLEMENTED / G.2 DETERMINISTIC PASS
+↓
+V14G.2.3 — Pre-live closeout
+COMPLETE
+↓
+V14G.3 — Tactical Energy Live Validation
+ACTIVE / LIVE NOT RECORDED / NOT PASSED
 ↓
 Future Experiment — Squad Capacity Upgrade
 NOT STARTED
