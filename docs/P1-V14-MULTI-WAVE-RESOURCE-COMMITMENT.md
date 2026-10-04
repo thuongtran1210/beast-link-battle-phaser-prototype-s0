@@ -7,7 +7,7 @@ Status: **Experimental design direction / not adopted**.
 - **V14G.1 Tactical Energy Core**: implemented / deterministic PASS.
 - **V14G.2 Tactical Energy Player Surface**: implemented / G.2-specific deterministic PASS.
 - **V14G.2.3 Pre-live closeout**: complete.
-- **V14G.3 Tactical Energy Live Validation Gate**: ACTIVE / Live not recorded / NOT PASSED.
+- **V14G.3 Tactical Energy Live Validation Gate**: **Battle system owner-live PASS / Energy Rush identity open / V14G not adopted**.
 
 The Run-scoped generic `EnergyQueue` remains uncapped and keeps historical `energy-e` / `energy-f` compatibility while new Energy Rush generation uses tactical A-D only.
 
@@ -267,20 +267,19 @@ Read:
 
 ### P1-V14G.3 — Tactical Energy Live Validation Gate
 
-**ACTIVE LIVE VALIDATION / owner evidence required / NOT PASSED / Experimental / not adopted.**
+**BATTLE SYSTEM OWNER-LIVE PASS / ENERGY RUSH IDENTITY OPEN / Experimental / not adopted.**
 
-No new Energy mechanic is authorized in G.3.
+No new Battle Energy mechanic is authorized in G.3.
 
-Validate the existing system against:
-- tactical identity readability;
-- effect readability;
-- READY / SUGGESTED / DISABLED distinction;
-- suggested-reason clarity;
-- actual-target cast feedback;
-- SUGGESTED as guidance rather than forced action;
-- save-now-vs-later readability across Waves.
+Owner live Battle result:
+- tactical identity readability: PASS;
+- effect readability: PASS;
+- READY / SUGGESTED / DISABLED distinction: PASS;
+- suggested-reason clarity: PASS;
+- actual-target cast feedback: PASS;
+- SUGGESTED as guidance rather than forced action: PASS.
 
-Automated evidence cannot close this gate.
+Open V14G item: Energy Rush collection-phase identity remains partial because tiles still emphasize A/B/C/D + ENERGY. Save-now-vs-later remains a broader multi-Wave integration question. V14G remains Experimental / not adopted.
 
 ### Future — Squad Capacity Upgrade
 
