@@ -4,6 +4,7 @@ import { type MatchResult, OnetMatcher } from '../puzzle/OnetMatcher';
 import { HudTokens } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
+import { energyRushTilePresentation } from './EnergyRushPresentation';
 
 export interface BoardViewEvents {
   onMatchRemoved: (result: MatchResult, contentId: string, midpoint?: { x: number; y: number }) => void;
@@ -78,6 +79,7 @@ export class BoardView {
 
       const letter = displayLabel(contentId.contentId);
       const isEnergy = contentId.contentId.startsWith('energy-');
+      const energyPresentation = isEnergy ? energyRushTilePresentation(contentId.contentId) : undefined;
       const tileColor = isEnergy ? energyColor(letter) : beastColor(letter);
 
       const fill = !this.inputEnabled
@@ -113,8 +115,9 @@ export class BoardView {
         iconImage.setAlpha(0.45);
       }
 
-      // Top-right corner small fallback ID letter
-      const idTag = this.scene.add
+      // Beast tiles retain their established internal-letter presentation. Known tactical
+      // Energy tiles use their player-facing name instead and hide the implementation ID.
+      const idTag = energyPresentation?.showInternalLetter === false ? undefined : this.scene.add
         .text(this.cellSize / 2 - 7, -this.cellSize / 2 + 6, letter, {
           fontFamily: HudTokens.fonts.family,
           fontSize: `${Math.max(9, Math.round(this.cellSize * 0.13))}px`,
@@ -123,18 +126,18 @@ export class BoardView {
         })
         .setOrigin(1, 0);
 
-      // Subtle type subscript
-      const roleText = isEnergy ? 'ENERGY' : beastSubscript(letter);
+      // Tactical Energy uses its catalog identity; Beast Rush remains unchanged.
+      const roleText = energyPresentation?.displayName ?? (isEnergy ? 'ENERGY' : beastSubscript(letter));
       const subLabel = this.scene.add
         .text(0, this.cellSize * 0.35, roleText, {
           fontFamily: HudTokens.fonts.family,
-          fontSize: `${Math.max(8, Math.round(this.cellSize * 0.11))}px`,
+          fontSize: `${energyPresentation ? Math.max(9, Math.round(this.cellSize * 0.13)) : Math.max(8, Math.round(this.cellSize * 0.11))}px`,
           color: selected ? '#93c5fd' : '#cbd5e1',
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
 
-      tileContainer.add([cell, strip, iconImage, idTag, subLabel]);
+      tileContainer.add([cell, strip, iconImage, subLabel, ...(idTag ? [idTag] : [])]);
       this.container.add(tileContainer);
 
       const key = `${position.row},${position.col}`;

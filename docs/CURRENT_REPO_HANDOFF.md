@@ -19,7 +19,7 @@ Status: **Repository-local coding handoff**
 - P1-V14G.2: **PLAYER SURFACE IMPLEMENTED / G.2-SPECIFIC DETERMINISTIC PASS / CHECK-BUILD PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — evidence through `3659e75313c80b0910509050ac2979e028684470`.
 - P1-V14G.2.3: **PRE-LIVE CLOSEOUT COMPLETE** — three-layer Battle Energy rows, canonical Beast feedback, canonical-name regression check.
 - P1-V14G.3: **BATTLE SYSTEM OWNER-LIVE PASS / EXPERIMENTAL / NOT ADOPTED** — Battle-time tactical Energy communication accepted by owner.
-- P1-V14G.4: **IMPLEMENTATION AUTHORIZED / ACTIVE PRESENTATION SLICE / CODE NOT STARTED** — Energy Rush Tactical Identity Closeout. See `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`.
+- P1-V14G.4A: **CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER SCREENSHOT REQUIRED / EXPERIMENTAL / NOT ADOPTED** — Energy Rush tactical names, complete zero-count inventory, and catalog effect hints are implemented. G.4B threat context is not implemented. See `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -54,9 +54,9 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14G.4 — Energy Rush Tactical Identity Closeout**
+**P1-V14G.4A — Energy Rush Core Identity Surface**
 
-Status: **IMPLEMENTATION AUTHORIZED / active presentation slice / Experimental / not adopted**
+Status: **IMPLEMENTED / DETERMINISTIC PASS / OWNER SCREENSHOT REQUIRED / Experimental / not adopted**
 
 Reason:
 - V14G Battle system has owner-live PASS.

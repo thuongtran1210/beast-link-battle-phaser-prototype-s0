@@ -82,6 +82,7 @@ import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresent
 import { tacticalEnergyControl } from './ui/TacticalEnergyPresentation';
 import { tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
 import { tacticalEnergyDefinition } from './energy/TacticalEnergyCatalog';
+import { energyRushInventory, energyRushMatchLabel } from './ui/EnergyRushPresentation';
 
 import {
   V11D_PRESETS,
@@ -908,9 +909,8 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const def = getIconDefinition(contentId); const tactical = tacticalEnergyDefinition(contentId);
     const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
-    this.recentActionText = `+1 ${tactical?.displayName ?? def.name}.${reshuffle}`;
+    this.recentActionText = `${energyRushMatchLabel(contentId)}.${reshuffle}`;
 
     this.refreshEnergyHUD();
     this.syncTopHud();
@@ -924,7 +924,7 @@ export class ValidationScene extends Phaser.Scene {
       FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
         this.phaseStatusPanel?.pulseQueueRow(contentId);
       });
-      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, `+1 ${tactical?.displayName ?? 'Charge'}`, '#38bdf8');
+      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, energyRushMatchLabel(contentId), '#38bdf8');
     }
 
     // Deadlock reshuffle notification
@@ -998,13 +998,12 @@ export class ValidationScene extends Phaser.Scene {
       },
       matchCount: this.metrics.snapshot.energyMatches,
       queueTitle,
-      queueItems: this.energyQueue.getAll().map((e) => {
-        return {
-          id: e.energyId,
-          name: tacticalEnergyDefinition(e.energyId)?.displayName ?? e.energyId,
-          count: e.charges,
-        };
-      }),
+      queueItems: energyRushInventory((energyId) => this.energyQueue.getCharges(energyId)).map((entry) => ({
+        id: entry.energyId,
+        name: entry.displayName,
+        description: entry.shortDescription,
+        count: entry.charges,
+      })),
       recentAction: this.recentActionText,
       isReady,
     });

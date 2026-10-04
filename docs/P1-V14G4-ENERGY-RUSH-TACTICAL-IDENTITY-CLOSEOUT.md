@@ -1,6 +1,6 @@
 # P1-V14G.4 — Energy Rush Tactical Identity Closeout
 
-Status: **IMPLEMENTATION AUTHORIZED / ACTIVE PRESENTATION SLICE / EXPERIMENTAL / NOT ADOPTED**.
+Status: **G.4A CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER SCREENSHOT REQUIRED / EXPERIMENTAL / NOT ADOPTED**.
 
 ## 1. Why G.4 Exists
 
@@ -611,3 +611,13 @@ V14G Review / Adoption Gate
 V14G remains **Experimental / not adopted** until an explicit owner decision after G.4 live validation.
 
 G.4 implementation alone does not adopt V14G.
+
+## 42. G.4A Implementation Record — 2026-10-04
+
+Implemented the core identity surface only:
+- Energy Rush tiles use catalog tactical names (MEND / RESCUE / BREAK / PIERCE) and hide A/B/C/D in normal player view.
+- The Energy Rush rail always renders the four catalog entries in stable order, including zero counts and catalog short descriptions.
+- Match feedback uses the same tactical identity and existing fly-token targeting now resolves to pre-rendered zero-count rows.
+- Deterministic presentation checks are wired into `npm run check`.
+
+Deferred to G.4B or later: NEXT THREAT context, threat-context data, threat-based presentation, adoption review, and broad HUD redesign. The Battle system is unchanged.

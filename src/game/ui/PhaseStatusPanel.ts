@@ -9,6 +9,7 @@ export interface StatusQueueItem {
   name: string;
   count: number;
   color?: number;
+  description?: string;
 }
 
 export interface PhaseStatusData {
@@ -146,8 +147,9 @@ export class PhaseStatusPanel {
 
     // CARD 4: QUEUE / STORED CHARGES CARD
     const maxItems = 6;
-    const itemRows = Math.min(maxItems, data.queueItems.length);
-    const queueCardH = Math.max(105, 52 + itemRows * 30);
+    const visibleItems = data.queueItems.slice(0, maxItems);
+    const queueRowsH = visibleItems.reduce((height, item) => height + (item.description ? 42 : 30), 0);
+    const queueCardH = Math.max(105, 52 + queueRowsH);
     const queueBg = drawCard(this.scene, this.x, currY, w, queueCardH, HudTokens.colors.bgSurface, 0.94);
     this.queueCenter = { x: this.x + w / 2, y: currY + 40 };
 
@@ -170,12 +172,13 @@ export class PhaseStatusPanel {
       this.objects.push(emptyText);
     } else {
       let itemY = currY + 40;
-      data.queueItems.slice(0, maxItems).forEach((item) => {
+      visibleItems.forEach((item) => {
+        const rowH = item.description ? 42 : 30;
         const rowBg = this.scene.add
-          .rectangle(this.x + w / 2, itemY + 12, w - 32, 26, 0x111827, 0.7)
+          .rectangle(this.x + w / 2, itemY + rowH / 2, w - 32, rowH - 4, 0x111827, 0.7)
           .setStrokeStyle(1, 0x334155, 0.7);
 
-        const icon = createIconImage(this.scene, item.id, this.x + 30, itemY + 12, 22);
+        const icon = createIconImage(this.scene, item.id, this.x + 30, itemY + rowH / 2, 22);
 
         const itemName = this.scene.add.text(this.x + 48, itemY + 5, item.name, {
           fontFamily: HudTokens.fonts.family,
@@ -195,11 +198,19 @@ export class PhaseStatusPanel {
           bg: rowBg,
           count: itemCount,
           x: this.x + 30,
-          y: itemY + 12,
+          y: itemY + rowH / 2,
         });
 
         this.objects.push(rowBg, icon, itemName, itemCount);
-        itemY += 30;
+        if (item.description) {
+          const itemDescription = this.scene.add.text(this.x + 48, itemY + 21, item.description, {
+            fontFamily: HudTokens.fonts.family,
+            fontSize: '10px',
+            color: HudTokens.colors.textMuted,
+          });
+          this.objects.push(itemDescription);
+        }
+        itemY += rowH;
       });
     }
     currY += queueCardH + 10;
