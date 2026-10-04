@@ -80,7 +80,7 @@ Purpose:
 
 This is a presentation-only spec.
 
-Do not implement until owner explicitly approves code.
+Implementation is now owner-authorized. Preserve the presentation-only boundary.
 
 Locked design:
 - tile = icon + tactical name;
