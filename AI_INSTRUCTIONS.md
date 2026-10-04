@@ -18,7 +18,8 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active live-validation gate: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+3. active review gate: `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
+4. completed Energy Rush identity slice: `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
 4. completed player-surface slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
 5. completed pre-live closeout: `docs/P1-V14G23-LIVE-GATE-PREP-DOC-SYNC.md`
 4. parent tactical Energy spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
@@ -45,8 +46,10 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14G.4 — Energy Rush Tactical Identity Closeout**. ACTIVE DESIGN SPEC / owner review / CODE NOT STARTED / presentation-only / Experimental / not adopted. See `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`.
-- V14G Battle system remains OWNER-LIVE PASS and must not be changed by G.4.
+- Current slice: **P1-V14G.5 — Tactical Energy Review / Adoption Gate**. ACTIVE REVIEW / owner adoption decision required / NO NEW GAMEPLAY IMPLEMENTATION / Experimental / not adopted. See `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`.
+- V14G.3 Battle system is OWNER-LIVE PASS.
+- V14G.4A Energy Rush identity is OWNER-LIVE PASS.
+- G.4B NEXT THREAT is deferred by default and must not be implemented without a demonstrated live need.
 - G.1 core is remote verified at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
 - F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
@@ -72,37 +75,41 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active design — P1-V14G.4 Energy Rush Tactical Identity Closeout
+## Active review — P1-V14G.5 Tactical Energy Review / Adoption Gate
 
 Purpose:
 
-**Make Energy Rush communicate MEND / RESCUE / BREAK / PIERCE directly instead of asking the player to learn A/B/C/D.**
+**Decide whether the complete Tactical Energy experiment should become baseline gameplay.**
 
-This is a presentation-only spec.
+This is a review/decision gate, not an implementation slice.
 
-Implementation is now owner-authorized. Preserve the presentation-only boundary.
+Current accepted evidence:
+- G.1 tactical core implemented / deterministic pass;
+- G.2 player surface implemented / deterministic pass;
+- G.3 Battle owner-live PASS;
+- G.4A Energy Rush identity owner-live PASS;
+- V14D persistent Energy implemented;
+- V14E deterministic SAVE vs SPEND evidence exists.
 
-Locked design:
-- tile = icon + tactical name;
-- generic ENERGY is not the primary tile label;
-- A/B/C/D may be hidden in normal mode and remain debug-only if needed;
-- right rail always shows all four tactical types, including ×0;
-- per-type count uses current Run-scoped EnergyQueue;
-- effect hint comes from TacticalEnergyCatalog;
-- show compact current Wave threat context;
-- no READY/SUGGESTED/DISABLED in Rush;
-- no best/optimal recommendation;
-- no threat-based spawn weighting;
-- preserve 6×6 Onet, first-match start buffer, +1 matching charge, persistence, no cap/decay;
-- preserve owner-passed Battle system unchanged.
+Valid owner outcomes:
+- ADOPT;
+- CONDITIONAL HOLD;
+- DO NOT ADOPT.
+
+Do not:
+- add new Energy mechanics;
+- add G.4B NEXT THREAT by default;
+- rebalance Energy;
+- add cooldown, cap, decay, rarity, upgrades, manual target selection, or auto-cast;
+- start Squad Capacity work.
+
+If the owner selects ADOPT, update repo-local docs to mark only V14G as adopted and record the exact baseline semantics.
+
+If the owner selects CONDITIONAL HOLD, record exactly one unresolved adoption question and authorize only evidence work necessary to answer it.
+
+If the owner selects DO NOT ADOPT, preserve working code until a separate cleanup/revert decision.
 
 Read:
-`docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
+`docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
 
-Next workflow:
-1. owner reviews spec;
-2. only after approval, issue one repo-only coding prompt;
-3. implementation + deterministic evidence;
-4. owner screenshot gate;
-5. V14G Review / Adoption Gate.
-
+V14G remains Experimental / not adopted until explicit owner decision.
