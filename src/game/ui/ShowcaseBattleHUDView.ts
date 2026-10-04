@@ -133,7 +133,7 @@ export class ShowcaseBattleHUDView {
     // CARD 4: STORED ENERGY & HEAL BUTTONS
     const activeEntries = energyEntries.filter((e) => e.charges > 0);
     const totalCharges = activeEntries.reduce((sum, entry) => sum + entry.charges, 0);
-    const rowHeight = 36;
+    const rowHeight = 50;
     const energyCardH = Math.max(120, 52 + Math.max(1, activeEntries.length) * (rowHeight + 4) + 26);
     const energyBg = drawCard(this.scene, this.x, currY, w, energyCardH, HudTokens.colors.bgSurfaceElevated, 0.94);
 
@@ -165,8 +165,8 @@ export class ShowcaseBattleHUDView {
       activeEntries.forEach((entry) => {
         const castState = castStateFor(entry.energyId); if (!castState) return;
         const rowBg = this.scene.add
-          .rectangle(this.x + w / 2, rowY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
-          .setStrokeStyle(1, 0x334155);
+          .rectangle(this.x + w / 2, rowY + rowHeight / 2, w - 32, rowHeight, castState.suggested ? 0x3f3515 : 0x111827, 0.9)
+          .setStrokeStyle(1.5, castState.suggested ? 0xfbbf24 : castState.enabled ? 0x38bdf8 : 0x64748b);
 
         const tokenIcon = createIconImage(this.scene, entry.energyId, this.x + 32, rowY + rowHeight / 2, 24);
 

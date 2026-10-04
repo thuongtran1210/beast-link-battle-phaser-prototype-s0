@@ -710,8 +710,8 @@ export class AutonomousBattleModel {
       if (!target) return { energyId, kind: definition.kind, availability: 'disabled', reason: 'no-target' };
       const diverPressure = this.state.enemies.some((enemy) => {
         if (enemy.currentHp <= 0 || enemy.archetype !== 'Diver') return false;
-        const pressured = this.state.units.find((unit) => unit.unitId === (enemy.engagedTargetId ?? enemy.targetUnitId));
-        return Boolean(pressured && pressured.currentHp > 0 && (pressured.row === 'Mid' || pressured.row === 'Back'));
+        const isBackline = (id: string | undefined) => { const pressured = this.state.units.find((unit) => unit.unitId === id); return Boolean(pressured && pressured.currentHp > 0 && (pressured.row === 'Mid' || pressured.row === 'Back')); };
+        return isBackline(enemy.engagedTargetId) || isBackline(enemy.targetUnitId);
       });
       const lowHp = target.currentHp / target.maxHp <= 0.60;
       return { energyId, kind: definition.kind, availability: diverPressure || lowHp ? 'suggested' : 'ready', reason: 'ok', targetUnitId: target.unitId, suggestedReason: diverPressure ? 'DIVER PRESSURE' : lowHp ? 'BACKLINE HIT' : undefined };

@@ -9,3 +9,4 @@ export function tacticalEnergyControl(eligibility: TacticalEnergyEligibility, ch
   const suggested = eligibility.availability === 'suggested'; const enabled = eligibility.availability !== 'disabled';
   return { energyId: definition.energyId, displayName: definition.displayName, shortDescription: definition.shortDescription, charges, stateLabel: suggested ? 'SUGGESTED' : enabled ? 'READY' : 'DISABLED', reasonLabel: suggested ? eligibility.suggestedReason : enabled ? undefined : reasonLabels[eligibility.reason], enabled, suggested };
 }
+export function tacticalEnergyPlayerName(energyId: string): string { return tacticalEnergyDefinition(energyId)?.displayName ?? 'TACTICAL ENERGY'; }

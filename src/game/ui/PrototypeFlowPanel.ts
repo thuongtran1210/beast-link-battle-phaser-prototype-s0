@@ -7,7 +7,7 @@ export interface FlowPanelAction {
   onAction: () => void;
 }
 export interface FlowPanelEnergyRow {
-  energyId: string; displayName: string; charges: number; stateLabel: string; reasonLabel?: string; enabled: boolean;
+  energyId: string; displayName: string; shortDescription: string; charges: number; stateLabel: string; reasonLabel?: string; enabled: boolean; suggested: boolean;
   onAction: () => void;
 }
 
@@ -106,11 +106,11 @@ export class PrototypeFlowPanel {
     }
 
     if (energyRows && energyRows.length > 0) {
-      const rowHeight = 32;
+      const rowHeight = 50;
       energyRows.forEach((row) => {
         const rowBg = this.scene.add
-          .rectangle(this.x + w / 2, nextActionY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
-          .setStrokeStyle(1, 0x334155);
+          .rectangle(this.x + w / 2, nextActionY + rowHeight / 2, w - 32, rowHeight, row.suggested ? 0x3f3515 : 0x111827, 0.9)
+          .setStrokeStyle(1.5, row.suggested ? 0xfbbf24 : row.enabled ? 0x38bdf8 : 0x64748b);
 
         const tokenIcon = createIconImage(this.scene, row.energyId, this.x + 30, nextActionY + rowHeight / 2, 22);
 

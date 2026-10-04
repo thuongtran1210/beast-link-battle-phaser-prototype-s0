@@ -500,10 +500,10 @@ export class ValidationScene extends Phaser.Scene {
     this.energyTimer.reset();
     this.energyCarryIn = this.energyQueue.getTotalCharges();
     this.metrics.recordEnergyCarryIn(this.energyCarryIn);
-    this.recentActionText = 'Match identical Energy pairs to store Frontline Heal charges.';
+    this.recentActionText = 'Match identical Energy pairs to store Tactical Energy.';
     this.createPuzzleBoard(
       'ENERGY RUSH',
-      'Match 6×6 Energy pairs to store Frontline Heal charges for battle.',
+      'Match Energy pairs to store tactical charges for Battle.',
       V14G_ENERGY_RUSH_POOL,
       'Energy',
       (contentId, _turns, midpoint) => this.onEnergyMatch(contentId, midpoint),
@@ -737,10 +737,12 @@ export class ValidationScene extends Phaser.Scene {
               label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
               energyId: entry.energyId,
               displayName: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.displayName ?? entry.energyId,
+              shortDescription: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.shortDescription ?? '',
               charges: entry.charges,
               stateLabel: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.stateLabel ?? 'DISABLED',
               reasonLabel: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.reasonLabel,
               enabled: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.enabled ?? false,
+              suggested: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.suggested ?? false,
               onAction: () => this.castEnergy(entry.energyId),
             }))
           : undefined;
@@ -861,7 +863,7 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const def = getIconDefinition(contentId); const tactical = tacticalEnergyDefinition(contentId);
+    const def = getIconDefinition(contentId);
     this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboStreak: combo.currentStreak };
     this.recentActionText = compactEventLabel(this.beastRushEvent);
 
@@ -919,7 +921,7 @@ export class ValidationScene extends Phaser.Scene {
       FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
         this.phaseStatusPanel?.pulseQueueRow(contentId);
       });
-      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, '+1 Charge', '#38bdf8');
+      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, `+1 ${tactical?.displayName ?? 'Charge'}`, '#38bdf8');
     }
 
     // Deadlock reshuffle notification
@@ -938,7 +940,7 @@ export class ValidationScene extends Phaser.Scene {
   private storedEnergyLines(): string {
     const entries = this.energyQueue.getAll();
     if (!entries.length) return 'No stored Energy charges.\nTotal: 0';
-    return `${entries.map((entry) => `${entry.energyId}: ${entry.charges}`).join('\n')}\nTotal: ${this.energyQueue.getTotalCharges()}`;
+    return `${entries.map((entry) => `${tacticalEnergyDefinition(entry.energyId)?.displayName ?? entry.energyId}: ${entry.charges}`).join('\n')}\nTotal: ${this.energyQueue.getTotalCharges()}`;
   }
 
   private refreshBeastHUD(): void {
@@ -983,7 +985,7 @@ export class ValidationScene extends Phaser.Scene {
     const queueTitle = carryIn > 0 ? `STORED ×${total} (CARRY IN ×${carryIn})` : `STORED ×${total}`;
     this.phaseStatusPanel?.render({
       phaseTitle: 'ENERGY RUSH',
-      phaseSubtitle: 'Match 6×6 Energy pairs to collect Frontline Heal charges',
+      phaseSubtitle: 'Match Energy pairs to collect Tactical Energy',
       timerSeconds: remaining,
       timerLabel: isReady ? 'Energy' : 'Countdown',
       timerSubtext: isReady ? 'READY · FIRST VALID MATCH STARTS TIMER' : '12.0s timed lock · Prepare for battle',
@@ -994,10 +996,9 @@ export class ValidationScene extends Phaser.Scene {
       matchCount: this.metrics.snapshot.energyMatches,
       queueTitle,
       queueItems: this.energyQueue.getAll().map((e) => {
-        const def = getIconDefinition(e.energyId);
         return {
           id: e.energyId,
-          name: `${def.name} (${def.letter})`,
+          name: tacticalEnergyDefinition(e.energyId)?.displayName ?? e.energyId,
           count: e.charges,
         };
       }),
