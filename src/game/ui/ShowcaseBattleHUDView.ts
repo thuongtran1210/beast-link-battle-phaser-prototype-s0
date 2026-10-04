@@ -173,7 +173,7 @@ export class ShowcaseBattleHUDView {
         const label = this.scene.add.text(
           this.x + 48,
           rowY + 11,
-          `${castState.displayName} ×${entry.charges}\n${castState.stateLabel}${castState.reasonLabel ? ` · ${castState.reasonLabel}` : ''}`,
+          `${castState.displayName} ×${entry.charges}`,
           {
             fontFamily: HudTokens.fonts.family,
             fontSize: '11px',

@@ -114,7 +114,7 @@ export class PrototypeFlowPanel {
 
         const tokenIcon = createIconImage(this.scene, row.energyId, this.x + 30, nextActionY + rowHeight / 2, 22);
 
-        const label = this.scene.add.text(this.x + 46, nextActionY + 5, `${row.displayName} ×${row.charges}\n${row.stateLabel}${row.reasonLabel ? ` · ${row.reasonLabel}` : ''}`, {
+        const label = this.scene.add.text(this.x + 46, nextActionY + 5, `${row.displayName} ×${row.charges}`, {
           fontFamily: HudTokens.fonts.family,
           fontSize: '11px',
           color: '#f8fafc',
