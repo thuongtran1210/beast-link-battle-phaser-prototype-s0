@@ -1,6 +1,6 @@
 # P1-V14G.2 — Tactical Energy Player Surface + G.1 Semantic Hardening
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **IMPLEMENTED / G.2-SPECIFIC DETERMINISTIC PASS / CHECK-BUILD PASS / PRE-LIVE CLOSEOUT COMPLETE / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
 
 ## Implementation Evidence — 2026-10-04
 
@@ -26,9 +26,9 @@ The model now knows:
 - charge consumption;
 - READY / SUGGESTED / DISABLED availability.
 
-However the current player-facing Battle UI still routes all Energy through the old Frontline Heal path and still presents generic technical IDs / heal language.
+**Pre-G.2 problem statement:** the player-facing Battle UI still routed all Energy through the old Frontline Heal path and presented generic technical IDs / heal language.
 
-Current player surface still contains patterns such as:
+Before G.2, the player surface contained patterns such as:
 
 ```text
 ENERGY-A · 2 charges
@@ -849,3 +849,27 @@ Required:
 Then STOP for owner live review.
 
 V14G remains Experimental / not adopted.
+
+
+## Final G.2 Evidence Closeout
+
+Remote implementation/evidence milestones:
+- `c62ef1029170851a579420afb467faf32b15082d` — tactical player surface.
+- `8894c320f42c32cdf37eca026b8b23c95b3d7156` — communication hardening.
+- `0bb88cc780ae594d25a1eab3abf9ec4c8fd812c3` — G.2 check wiring and named feedback.
+- `998e64d9f1fab467bcc575b376530bf37353a58c` — canonical Beast display-name feedback.
+- `bbc5a608e838f7aeed508947fd8443ce5e7adf07` — three-layer Battle Energy rows.
+- `3659e75313c80b0910509050ac2979e028684470` — canonical-name regression in the standard check runner.
+
+Current implemented player surface:
+- Setup / Energy Rush / Battle use MEND / RESCUE / BREAK / PIERCE.
+- player casts route through `castTacticalEnergy()`.
+- Battle exposes DISABLED / READY / SUGGESTED.
+- normal and Showcase rows use identity → effect → activation state.
+- RESCUE Diver pressure checks targeting OR engaging any living Mid/Back body.
+- success feedback uses actual model result target and amount.
+- ally feedback uses canonical Beast display names.
+- G.2 checks are wired into `npm run check`.
+- Live validation remains unrecorded.
+
+Next gate: **P1-V14G.3 — Tactical Energy Live Validation**. No new gameplay mechanic is authorized by that gate.
