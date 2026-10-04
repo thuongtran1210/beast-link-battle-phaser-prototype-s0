@@ -45,7 +45,7 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14G.3 — Tactical Energy Live Validation Gate**. ACTIVE LIVE VALIDATION / owner evidence required / NOT PASSED / Experimental / not adopted. No new Energy implementation is authorized in G.3.
+- Current slice: **P1-V14G.3 — Tactical Energy Live Validation Gate**. **BATTLE SYSTEM OWNER-LIVE PASS** / Energy Rush identity communication still open / Experimental / not adopted. No new Battle Energy implementation is authorized.
 - G.1 core is remote verified at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
 - F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
@@ -84,26 +84,25 @@ Current implementation evidence:
 - ally cast feedback uses canonical Beast display names.
 - G.2 deterministic checks are wired into `npm run check`.
 - separate G.2.3 regression proves `MEND → SNOWGUARD +30`.
-- Live evidence is NOT recorded.
+- Owner live evidence records the **V14G Battle system PASS**. Energy Rush identity remains partially unresolved.
 
-G.3 rules:
-- add no new tactical Energy mechanic;
-- do not rebalance Energy;
+G.3 rules after owner Battle PASS:
+- preserve current Battle tactical Energy mechanics;
+- do not rebalance Battle Energy;
 - do not add Energy types;
 - do not add cooldown;
 - do not add manual target selection;
 - do not add auto-cast;
 - do not add cap or decay;
-- deterministic PASS does not equal live PASS;
-- only fix defects demonstrated by owner/browser evidence.
+- Battle owner PASS is scoped to the Battle system, not full V14G adoption;
+- Energy Rush identity may receive a presentation-only follow-up after owner/spec authorization.
 
-Live questions:
-1. Can the player identify MEND / RESCUE / BREAK / PIERCE?
-2. Can the player understand each effect?
-3. Can the player distinguish READY / SUGGESTED / DISABLED?
-4. Can the player understand why SUGGESTED appears?
-5. Does cast feedback visibly connect to the actual target?
-6. Does SUGGESTED remain guidance rather than forced action?
-7. Does save-now-vs-later remain understandable across Waves?
+Owner live Battle answers:
+- identify tactical Energy in Battle: PASS;
+- understand effect: PASS;
+- READY / SUGGESTED / DISABLED: PASS;
+- understand SUGGESTED reason: PASS;
+- cast feedback to actual target: PASS;
+- SUGGESTED remains manual guidance: PASS.
 
-Stop after live evidence review. V14G remains Experimental / not adopted.
+Open: Energy Rush still emphasizes A/B/C/D + ENERGY, so collection-phase tactical identity is not yet fully passed. Cross-Wave save-vs-later remains an integration evidence question. V14G remains Experimental / not adopted.
