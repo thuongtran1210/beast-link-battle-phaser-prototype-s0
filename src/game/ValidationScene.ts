@@ -40,7 +40,7 @@ import { runP1V13A1Checks } from './battle/P1V13A1Checks';
 import { runP1V13A2Checks } from './ui/P1V13A2Checks';
 import { runP1S3Checks } from './battle/P1S3Checks';
 import { runP1S4Checks } from './battle/P1S4Checks';
-import { deriveBattleHealPresentation, deriveBattleTickPresentation } from './battle/BattlePresentation';
+import { deriveBattleTickPresentation } from './battle/BattlePresentation';
 import { runP1V4Checks } from './battle/P1V4Checks';
 import { runP1V5Checks } from './battle/P1V5Checks';
 import { P1V7_ENEMY_FIXTURES, runP1V7Checks } from './battle/P1V7Checks';
@@ -79,7 +79,8 @@ import { ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
-import { castControlState } from './ui/BattleSetupPresentation';
+import { tacticalEnergyControl } from './ui/TacticalEnergyPresentation';
+import { tacticalEnergyDefinition } from './energy/TacticalEnergyCatalog';
 
 import {
   V11D_PRESETS,
@@ -689,17 +690,18 @@ export class ValidationScene extends Phaser.Scene {
     if (this.phaseController.phase !== GamePhase.Battle || !this.battleModel) return;
     const before = this.battleModel.snapshot;
     const armyHp = before.units.reduce((sum, unit) => sum + unit.currentHp, 0);
-    const result = this.battleModel.castFrontlineHealResult(energyId, this.energyQueue);
+    const result = this.battleModel.castTacticalEnergy(energyId, this.energyQueue);
     if (result.success) {
       const after = this.battleModel.snapshot;
       this.metrics.successfulCast(armyHp, before.enemyHp);
       this.battleActionView?.render(after);
-      this.battleActionView?.playHeal(deriveBattleHealPresentation(before, after));
+      if (result.kind === 'Mend' || result.kind === 'Rescue') this.battleActionView?.playHeal({ unitId: result.targetUnitId, amount: result.amount });
+      else this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
       this.renderBattle();
       this.syncTopHud();
     } else {
-      const labels: Record<typeof result.reason, string> = { ok: '', 'battle-not-running': 'BATTLE ENDED', 'no-charge': 'NO CHARGES', 'no-target': 'NO FRONTLINE', 'target-full-hp': 'FRONTLINE FULL' };
-      FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, labels[result.reason], '#fbbf24');
+      const control = tacticalEnergyControl(this.battleModel.tacticalEnergyEligibility(energyId, this.energyQueue), this.energyQueue.getCharges(energyId), this.showcasePaused);
+      FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, control?.reasonLabel ?? 'UNAVAILABLE', '#fbbf24');
     }
   }
 
@@ -725,7 +727,7 @@ export class ValidationScene extends Phaser.Scene {
         frontlineDisplay,
         (energyId) => this.castEnergy(energyId),
         this.showcasePaused,
-        (energyId) => castControlState(this.battleModel!.frontlineHealEligibility(energyId, this.energyQueue).reason, this.showcasePaused),
+        (energyId) => tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(energyId, this.energyQueue), this.energyQueue.getCharges(energyId), this.showcasePaused),
       );
     } else {
       this.showcaseBattleHud?.setVisible(false);
@@ -733,7 +735,12 @@ export class ValidationScene extends Phaser.Scene {
         isRunning && energyEntries.length > 0
           ? energyEntries.map((entry) => ({
               label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
-              actionLabel: 'CAST HEAL',
+              energyId: entry.energyId,
+              displayName: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.displayName ?? entry.energyId,
+              charges: entry.charges,
+              stateLabel: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.stateLabel ?? 'DISABLED',
+              reasonLabel: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.reasonLabel,
+              enabled: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.enabled ?? false,
               onAction: () => this.castEnergy(entry.energyId),
             }))
           : undefined;
@@ -746,7 +753,7 @@ export class ValidationScene extends Phaser.Scene {
           `FRONTLINE: ${frontlineDisplay}`,
           '',
           'STORED ENERGY (TIMED CAST)',
-          'Each Energy ID casts a Frontline Heal.',
+          'Tactical Energy: 1 charge per effective cast.',
           `Enemy pressure: ${formatNumber(battle.enemyDamage)} total dmg / tick.`,
           'Battle ticks automatically every 1.0 second.',
           ...(isRunning
@@ -854,7 +861,7 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const def = getIconDefinition(contentId);
+    const def = getIconDefinition(contentId); const tactical = tacticalEnergyDefinition(contentId);
     this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboStreak: combo.currentStreak };
     this.recentActionText = compactEventLabel(this.beastRushEvent);
 
@@ -896,9 +903,9 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const def = getIconDefinition(contentId);
+    const def = getIconDefinition(contentId); const tactical = tacticalEnergyDefinition(contentId);
     const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
-    this.recentActionText = `Matched ${def.name} (${def.letter}). Stored charge +1.${reshuffle}`;
+    this.recentActionText = `+1 ${tactical?.displayName ?? def.name}.${reshuffle}`;
 
     this.refreshEnergyHUD();
     this.syncTopHud();

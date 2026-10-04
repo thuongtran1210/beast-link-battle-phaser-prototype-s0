@@ -2,6 +2,7 @@ import type { FormationUnit } from '../battle/BattleFormation';
 import type { RunUnitInstance } from '../run/RunRoster';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { P1V14B_ACTIVE_SQUAD_LIMIT } from '../run/RunRoster';
+import { tacticalEnergyDefinition } from '../energy/TacticalEnergyCatalog';
 
 export interface SetupRosterGroups { deployed: FormationUnit[]; reserve: FormationUnit[]; ko: FormationUnit[]; }
 /** Pure visual grouping; RunRoster and BattleFormation remain authoritative. */
@@ -23,7 +24,7 @@ export function castControlState(reason: string, paused: boolean): CastControlSt
   if (reason === 'ok') return { enabled: true, label: 'CAST' };
   return { enabled: false, label: ({ 'target-full-hp': 'FULL', 'no-charge': 'NO CHARGE', 'no-target': 'NO FRONTLINE', 'battle-not-running': 'ENDED' } as Record<string, string>)[reason] ?? 'UNAVAILABLE' };
 }
-export function setupEnergyInventory(entries: ReadonlyArray<EnergyQueueEntry>): Array<EnergyQueueEntry & { shortLabel: string }> { return entries.filter(entry => entry.charges > 0).map(entry => ({ ...entry, shortLabel: entry.energyId.replace('energy-', '').toUpperCase() })); }
+export function setupEnergyInventory(entries: ReadonlyArray<EnergyQueueEntry>): Array<EnergyQueueEntry & { shortLabel: string; displayName: string; shortDescription: string }> { return entries.filter(entry => entry.charges > 0).map(entry => { const definition = tacticalEnergyDefinition(entry.energyId); return { ...entry, shortLabel: entry.energyId.replace('energy-', '').toUpperCase(), displayName: definition?.displayName ?? entry.energyId, shortDescription: definition?.shortDescription ?? 'Stored Energy' }; }); }
 
 /** Display-only formation summary. The squad cap and board capacity intentionally remain separate. */
 export function formationBoardSummary(activeCount: number, gridPositions = 18): string {

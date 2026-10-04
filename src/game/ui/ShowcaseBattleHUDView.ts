@@ -3,7 +3,7 @@ import type { AutonomousBattleSnapshot } from '../battle/AutonomousBattleModel';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
-import type { CastControlState } from './BattleSetupPresentation';
+import type { TacticalEnergyControlPresentation } from './TacticalEnergyPresentation';
 
 export class ShowcaseBattleHUDView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -22,7 +22,7 @@ export class ShowcaseBattleHUDView {
     frontlineLabel: string,
     onCast: (energyId: string) => void,
     paused: boolean,
-    castStateFor: (energyId: string) => CastControlState,
+    castStateFor: (energyId: string) => TacticalEnergyControlPresentation | undefined,
   ): void {
     this.destroyObjects();
 
@@ -163,7 +163,7 @@ export class ShowcaseBattleHUDView {
       this.objects.push(empty);
     } else {
       activeEntries.forEach((entry) => {
-        const castState = castStateFor(entry.energyId);
+        const castState = castStateFor(entry.energyId); if (!castState) return;
         const rowBg = this.scene.add
           .rectangle(this.x + w / 2, rowY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
           .setStrokeStyle(1, 0x334155);
@@ -173,7 +173,7 @@ export class ShowcaseBattleHUDView {
         const label = this.scene.add.text(
           this.x + 48,
           rowY + 11,
-          `${entry.energyId.replace('energy-', '').toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
+          `${castState.displayName} ×${entry.charges}\n${castState.stateLabel}${castState.reasonLabel ? ` · ${castState.reasonLabel}` : ''}`,
           {
             fontFamily: HudTokens.fonts.family,
             fontSize: '11px',
@@ -187,7 +187,7 @@ export class ShowcaseBattleHUDView {
           .setStrokeStyle(1, castState.enabled ? 0x38bdf8 : 0x64748b);
 
         const healBtnText = this.scene.add
-          .text(this.x + w - 58, rowY + rowHeight / 2, castState.label, {
+          .text(this.x + w - 58, rowY + rowHeight / 2, castState.enabled ? 'CAST' : '—', {
             fontFamily: HudTokens.fonts.family,
             fontSize: '10px',
             color: '#ffffff',
@@ -205,7 +205,7 @@ export class ShowcaseBattleHUDView {
     const hint = this.scene.add.text(
       this.x + 16,
       currY + energyCardH - 22,
-      'Cast instantly heals the frontline unit.',
+      'Tactical Energy · 1 charge per effective cast.',
       {
         fontFamily: HudTokens.fonts.family,
         fontSize: '10px',

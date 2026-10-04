@@ -1,6 +1,13 @@
 # P1-V14G.2 — Tactical Energy Player Surface + G.1 Semantic Hardening
 
-Status: **ACTIVE IMPLEMENTATION SLICE / OWNER AUTHORIZED / CODE NOT STARTED / EXPERIMENTAL / NOT ADOPTED**.
+Status: **IMPLEMENTED / DETERMINISTIC PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED**.
+
+## Implementation Evidence — 2026-10-04
+
+- Shared tactical presentation derives names, effect hints, availability, reasons, and enabled state from the catalog plus model eligibility.
+- Player casts route through `castTacticalEnergy()`; target-specific heal and Energy-damage feedback use the model result target IDs.
+- RESCUE now detects Diver pressure on any living Mid/Back body, independently of the deterministic heal target.
+- G.2 remains a player-surface implementation only; no auto-cast, ranking, cap, or decay was added.
 
 ## Why G.2 Exists
 

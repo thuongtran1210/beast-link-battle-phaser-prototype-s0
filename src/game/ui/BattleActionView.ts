@@ -257,6 +257,15 @@ export class BattleActionView {
     });
   }
 
+  playEnergyDamage(enemyId: string | undefined, amount: number): void {
+    if (!enemyId || amount <= 0) return;
+    const visual = this.enemies.get(enemyId);
+    if (!visual) return;
+    this.flash(visual.body, 0xfbbf24, 120);
+    FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xfbbf24, 38);
+    this.floatCombatText(visual.container.x, visual.container.y, `-${formatNumber(amount)}`, '#fbbf24', `energy-${enemyId}`);
+  }
+
   destroy(): void {
     this.scene.tweens.killTweensOf([...this.objects]);
     this.objects.splice(0).forEach((object) => object.destroy());

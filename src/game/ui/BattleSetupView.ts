@@ -632,7 +632,7 @@ export class BattleSetupView {
     // Stored Energy section
     const rawEnergy = this.storedEnergy(); const energyEntries = setupEnergyInventory(Array.isArray(rawEnergy) ? rawEnergy : []); const totalEnergy = energyEntries.reduce((sum, entry) => sum + entry.charges, 0);
     const energyTitle = this.text(x + 14, y + 14, `⚡ STORED ENERGY ×${totalEnergy}`, 11, HudTokens.colors.textGold, 'bold'); this.objects.push(energyTitle);
-    energyEntries.slice(0, 6).forEach((entry, index) => { const px = x + 24 + Math.floor(index / 3) * 106; const py = y + 39 + (index % 3) * 21; const icon = createIconImage(this.scene, entry.energyId, px, py, 16); const label = this.text(px + 14, py - 6, `${entry.shortLabel} ×${entry.charges}`, 9, '#fef3c7', 'bold'); this.objects.push(icon, label); });
+    energyEntries.slice(0, 4).forEach((entry, index) => { const px = x + 24 + Math.floor(index / 2) * 118; const py = y + 39 + (index % 2) * 32; const icon = createIconImage(this.scene, entry.energyId, px, py, 16); const label = this.text(px + 14, py - 8, `${entry.displayName} ×${entry.charges}`, 9, '#fef3c7', 'bold'); const hint = this.text(px + 14, py + 4, entry.shortDescription, 7, '#94a3b8'); this.objects.push(icon, label, hint); });
 
     // Global Link Shard count
     const shards = this.shardPool?.count ?? 0;

@@ -7,8 +7,7 @@ export interface FlowPanelAction {
   onAction: () => void;
 }
 export interface FlowPanelEnergyRow {
-  label: string;
-  actionLabel: string;
+  energyId: string; displayName: string; charges: number; stateLabel: string; reasonLabel?: string; enabled: boolean;
   onAction: () => void;
 }
 
@@ -113,11 +112,9 @@ export class PrototypeFlowPanel {
           .rectangle(this.x + w / 2, nextActionY + rowHeight / 2, w - 32, rowHeight, 0x111827, 0.9)
           .setStrokeStyle(1, 0x334155);
 
-        const match = row.label.match(/(ENERGY-[A-F])/i);
-        const energyId = match ? match[1].toLowerCase() : 'energy-a';
-        const tokenIcon = createIconImage(this.scene, energyId, this.x + 30, nextActionY + rowHeight / 2, 22);
+        const tokenIcon = createIconImage(this.scene, row.energyId, this.x + 30, nextActionY + rowHeight / 2, 22);
 
-        const label = this.scene.add.text(this.x + 46, nextActionY + 9, row.label, {
+        const label = this.scene.add.text(this.x + 46, nextActionY + 5, `${row.displayName} ×${row.charges}\n${row.stateLabel}${row.reasonLabel ? ` · ${row.reasonLabel}` : ''}`, {
           fontFamily: HudTokens.fonts.family,
           fontSize: '11px',
           color: '#f8fafc',
@@ -125,22 +122,19 @@ export class PrototypeFlowPanel {
         });
 
         const buttonBg = this.scene.add
-          .rectangle(this.x + w - 54, nextActionY + rowHeight / 2, 64, 24, 0x0284c7, 1)
-          .setStrokeStyle(1, 0x38bdf8)
-          .setInteractive({ useHandCursor: true });
+          .rectangle(this.x + w - 54, nextActionY + rowHeight / 2, 64, 24, row.enabled ? 0x0284c7 : 0x334155, row.enabled ? 1 : .65)
+          .setStrokeStyle(1, row.enabled ? 0x38bdf8 : 0x64748b);
 
         const buttonText = this.scene.add
-          .text(this.x + w - 54, nextActionY + rowHeight / 2, row.actionLabel, {
+          .text(this.x + w - 54, nextActionY + rowHeight / 2, row.enabled ? 'CAST' : '—', {
             fontFamily: HudTokens.fonts.family,
             fontSize: '10px',
             color: '#ffffff',
             fontStyle: 'bold',
           })
-          .setOrigin(0.5)
-          .setInteractive({ useHandCursor: true });
+          .setOrigin(0.5);
 
-        buttonBg.on('pointerup', row.onAction);
-        buttonText.on('pointerup', row.onAction);
+        if (row.enabled) { buttonBg.setInteractive({ useHandCursor: true }); buttonText.setInteractive({ useHandCursor: true }); buttonBg.on('pointerup', row.onAction); buttonText.on('pointerup', row.onAction); }
         this.objects.push(rowBg, tokenIcon, label, buttonBg, buttonText);
         nextActionY += rowHeight + 4;
       });
