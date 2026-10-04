@@ -19,7 +19,8 @@ Status: **Repository-local coding handoff**
 - P1-V14G.2: **PLAYER SURFACE IMPLEMENTED / G.2-SPECIFIC DETERMINISTIC PASS / CHECK-BUILD PASS / LIVE NOT RECORDED / EXPERIMENTAL / NOT ADOPTED** — evidence through `3659e75313c80b0910509050ac2979e028684470`.
 - P1-V14G.2.3: **PRE-LIVE CLOSEOUT COMPLETE** — three-layer Battle Energy rows, canonical Beast feedback, canonical-name regression check.
 - P1-V14G.3: **BATTLE SYSTEM OWNER-LIVE PASS / EXPERIMENTAL / NOT ADOPTED** — Battle-time tactical Energy communication accepted by owner.
-- P1-V14G.4A: **CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER SCREENSHOT REQUIRED / EXPERIMENTAL / NOT ADOPTED** — Energy Rush tactical names, complete zero-count inventory, and catalog effect hints are implemented. G.4B threat context is not implemented. See `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`.
+- P1-V14G.4A: **CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER LIVE PASS / EXPERIMENTAL / NOT ADOPTED** — Energy Rush tactical names, complete zero-count inventory, and catalog effect hints are accepted live. G.4B NEXT THREAT remains deferred by default.
+- P1-V14G.5: **ACTIVE REVIEW / OWNER ADOPTION DECISION REQUIRED / NO NEW GAMEPLAY IMPLEMENTATION** — see `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -30,7 +31,8 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active design spec: `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
+3. active review gate: `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
+4. completed Energy Rush identity slice: `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
 4. parent V14G spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 4. completed player-surface slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
 5. completed pre-live closeout: `docs/P1-V14G23-LIVE-GATE-PREP-DOC-SYNC.md`
@@ -54,31 +56,35 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14G.4A — Energy Rush Core Identity Surface**
+**P1-V14G.5 — Tactical Energy Review / Adoption Gate**
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / OWNER SCREENSHOT REQUIRED / Experimental / not adopted**
+Status: **ACTIVE REVIEW / owner decision required / NO NEW GAMEPLAY IMPLEMENTATION / Experimental / not adopted**
 
-Reason:
-- V14G Battle system has owner-live PASS.
-- Energy Rush still communicates A/B/C/D + generic ENERGY more strongly than MEND / RESCUE / BREAK / PIERCE.
-- G.4 closes that collection-phase identity gap without changing mechanics.
+Entry evidence:
+- G.1 tactical Energy core implemented and deterministic.
+- G.2 player surface implemented and deterministic.
+- G.3 Battle system owner-live PASS.
+- G.4A Energy Rush tactical identity owner-live PASS.
+- V14D persistent Energy implemented.
+- V14E deterministic SAVE vs SPEND evidence exists.
 
-Locked design direction:
-- Energy Rush tile primary identity = tactical name;
-- normal player mode does not require visible A/B/C/D letters;
-- tile remains icon + short tactical name only;
-- right rail always shows all four tactical types, including zero counts;
-- right rail uses catalog short effect hints;
-- current Wave threat is shown as compact information only;
-- no READY / SUGGESTED / DISABLED in Rush;
-- no best/optimal recommendation;
-- no threat-based spawn weighting;
-- no Battle changes.
+G.5 asks one question:
+
+**Does Tactical Energy now add enough understandable tactical value to become baseline gameplay?**
+
+Legitimate outcomes:
+1. ADOPT
+2. CONDITIONAL HOLD
+3. DO NOT ADOPT
+
+No new Energy mechanic is authorized in this gate.
+
+G.4B NEXT THREAT is deferred unless the review identifies a demonstrated live context problem.
 
 Read:
-`docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
+`docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
 
-Implementation is owner-authorized. Follow this spec without expanding gameplay scope.
+V14G remains Experimental / not adopted until the owner explicitly selects an adoption outcome.
 
 ## B.1/B.2 implementation baseline
 
