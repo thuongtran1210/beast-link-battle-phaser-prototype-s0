@@ -18,7 +18,9 @@ Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
 2. this file
-3. active implementation slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+3. active live-validation gate: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
+4. completed player-surface slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
+5. completed pre-live closeout: `docs/P1-V14G23-LIVE-GATE-PREP-DOC-SYNC.md`
 4. parent tactical Energy spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 4. player-surface visual closeout: `docs/P1-V14F1C-BATTLE-SETUP-VISUAL-CLOSEOUT.md`
 4. implemented F.1 baseline: `docs/P1-V14F1-BATTLE-UX-ENERGY-CAST-RELIABILITY.md`
@@ -43,7 +45,7 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14G.2 — Tactical Energy Player Surface + G.1 Semantic Hardening**. ACTIVE IMPLEMENTATION / owner authorized / code not started / Experimental / not adopted. See `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`.
+- Current slice: **P1-V14G.3 — Tactical Energy Live Validation Gate**. ACTIVE LIVE VALIDATION / owner evidence required / NOT PASSED / Experimental / not adopted. No new Energy implementation is authorized in G.3.
 - G.1 core is remote verified at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
 - F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
@@ -69,89 +71,39 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active implementation — P1-V14G.2 Tactical Energy Player Surface
+## Active validation — P1-V14G.3 Tactical Energy Live Validation Gate
 
 Purpose:
 
-**Make the G.1 tactical Energy model visible, understandable, and actually used by player gameplay.**
+**Validate whether the implemented tactical Energy system is understandable in live play.**
 
-Required:
-- harden RESCUE Diver-pressure suggestion so ANY Diver pressure on ANY Mid/Back body can suggest RESCUE;
-- route player `castEnergy()` through `castTacticalEnergy()`;
-- Setup shows MEND / RESCUE / BREAK / PIERCE names and one-line effect hints;
-- Energy Rush player-facing HUD / match feedback uses tactical names;
-- normal Battle and Showcase derive availability from `tacticalEnergyEligibility()`;
-- surface `DISABLED / READY / SUGGESTED`;
-- use compact deterministic reason labels;
-- SUGGESTED remains guidance only;
-- successful MEND/RESCUE display heal feedback on actual target;
-- successful BREAK/PIERCE display Energy-damage feedback on actual enemy target;
-- disabled controls consume 0 and do not invoke cast;
-- no universal `CAST HEAL` text for damage Energy;
-- internal A/B/C/D IDs are not primary player labels.
+Current implementation evidence:
+- G.1 core implemented.
+- G.2 player surface implemented.
+- normal and Showcase Battle rows present identity → effect → activation state.
+- ally cast feedback uses canonical Beast display names.
+- G.2 deterministic checks are wired into `npm run check`.
+- separate G.2.3 regression proves `MEND → SNOWGUARD +30`.
+- Live evidence is NOT recorded.
 
-## G.2 non-goals
+G.3 rules:
+- add no new tactical Energy mechanic;
+- do not rebalance Energy;
+- do not add Energy types;
+- do not add cooldown;
+- do not add manual target selection;
+- do not add auto-cast;
+- do not add cap or decay;
+- deterministic PASS does not equal live PASS;
+- only fix defects demonstrated by owner/browser evidence.
 
-Do NOT implement:
-- new Energy types;
-- manual Energy target selection;
-- Energy cooldown;
-- Energy cap / decay;
-- Energy Combo;
-- crafting / rarity / upgrades;
-- auto-cast;
-- best/optimal Energy ranking;
-- new Wave mechanics;
-- final art.
+Live questions:
+1. Can the player identify MEND / RESCUE / BREAK / PIERCE?
+2. Can the player understand each effect?
+3. Can the player distinguish READY / SUGGESTED / DISABLED?
+4. Can the player understand why SUGGESTED appears?
+5. Does cast feedback visibly connect to the actual target?
+6. Does SUGGESTED remain guidance rather than forced action?
+7. Does save-now-vs-later remain understandable across Waves?
 
-## Required workflow
-
-1. Read repo-local sources only.
-2. Verify G.1 remote baseline and current player-surface mismatch.
-3. Fix RESCUE suggestion semantics first.
-4. Create one shared pure tactical Energy presentation helper.
-5. Route player cast through tactical model result.
-6. Update Setup / Energy Rush HUD / normal Battle / Showcase presentation.
-7. Add target-correct heal/damage feedback.
-8. Add deterministic G.2 checks.
-9. Run all historical regressions.
-10. Run `npm run check`.
-11. Run `npm run build`.
-12. Record Live A–H only if actually observed.
-13. STOP for owner live review.
-
-## Completion report
-
-Report:
-- final origin/main SHA
-- files changed
-- RESCUE hardening
-- player cast routing
-- Setup tactical identity
-- Energy Rush tactical identity
-- normal Battle states
-- Showcase states
-- READY/SUGGESTED/DISABLED grammar
-- success feedback per kind
-- failure reason mapping
-- deterministic checks
-- regressions
-- check/build
-- live status
-- known limitations
-
-Explicitly state:
-
-```text
-PLAYER GAMEPLAY NOW ROUTES TACTICAL ENERGY THROUGH CASTTACTICALENERGY.
-
-MEND / RESCUE / BREAK / PIERCE ARE PRIMARY PLAYER-FACING IDENTITIES.
-
-SUGGESTED IS GUIDANCE ONLY AND NEVER AUTO-CASTS.
-
-SUCCESSFUL EFFECTIVE CAST CONSUMES EXACTLY 1 SELECTED CHARGE.
-
-FAILED / DISABLED / STALE CAST CONSUMES 0.
-
-V14G REMAINS EXPERIMENTAL / NOT ADOPTED.
-```
+Stop after live evidence review. V14G remains Experimental / not adopted.
