@@ -45,7 +45,8 @@ If repo docs and code conflict:
 
 ## Current project state
 
-- Current slice: **P1-V14G.3 — Tactical Energy Live Validation Gate**. **BATTLE SYSTEM OWNER-LIVE PASS** / Energy Rush identity communication still open / Experimental / not adopted. No new Battle Energy implementation is authorized.
+- Current slice: **P1-V14G.4 — Energy Rush Tactical Identity Closeout**. ACTIVE DESIGN SPEC / owner review / CODE NOT STARTED / presentation-only / Experimental / not adopted. See `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`.
+- V14G Battle system remains OWNER-LIVE PASS and must not be changed by G.4.
 - G.1 core is remote verified at `1102a0771c1c086a2bc85b30bd57c449877aba7d`.
 - F.1c player-surface visual closeout remains a separate live screenshot gate.
 - F.1 baseline is implemented on remote main at `8666a5eeb27c6bc4ef0ef9fdc918d23524adc5f8`; Energy cast reliability is complete, but owner screenshot shows remaining Setup visual closeout work.
@@ -71,38 +72,37 @@ If repo docs and code conflict:
 - Active Squad cap remains 4.
 - Formation Grid capacity remains independent of squad capacity.
 
-## Active validation — P1-V14G.3 Tactical Energy Live Validation Gate
+## Active design — P1-V14G.4 Energy Rush Tactical Identity Closeout
 
 Purpose:
 
-**Validate whether the implemented tactical Energy system is understandable in live play.**
+**Make Energy Rush communicate MEND / RESCUE / BREAK / PIERCE directly instead of asking the player to learn A/B/C/D.**
 
-Current implementation evidence:
-- G.1 core implemented.
-- G.2 player surface implemented.
-- normal and Showcase Battle rows present identity → effect → activation state.
-- ally cast feedback uses canonical Beast display names.
-- G.2 deterministic checks are wired into `npm run check`.
-- separate G.2.3 regression proves `MEND → SNOWGUARD +30`.
-- Owner live evidence records the **V14G Battle system PASS**. Energy Rush identity remains partially unresolved.
+This is a presentation-only spec.
 
-G.3 rules after owner Battle PASS:
-- preserve current Battle tactical Energy mechanics;
-- do not rebalance Battle Energy;
-- do not add Energy types;
-- do not add cooldown;
-- do not add manual target selection;
-- do not add auto-cast;
-- do not add cap or decay;
-- Battle owner PASS is scoped to the Battle system, not full V14G adoption;
-- Energy Rush identity may receive a presentation-only follow-up after owner/spec authorization.
+Do not implement until owner explicitly approves code.
 
-Owner live Battle answers:
-- identify tactical Energy in Battle: PASS;
-- understand effect: PASS;
-- READY / SUGGESTED / DISABLED: PASS;
-- understand SUGGESTED reason: PASS;
-- cast feedback to actual target: PASS;
-- SUGGESTED remains manual guidance: PASS.
+Locked design:
+- tile = icon + tactical name;
+- generic ENERGY is not the primary tile label;
+- A/B/C/D may be hidden in normal mode and remain debug-only if needed;
+- right rail always shows all four tactical types, including ×0;
+- per-type count uses current Run-scoped EnergyQueue;
+- effect hint comes from TacticalEnergyCatalog;
+- show compact current Wave threat context;
+- no READY/SUGGESTED/DISABLED in Rush;
+- no best/optimal recommendation;
+- no threat-based spawn weighting;
+- preserve 6×6 Onet, first-match start buffer, +1 matching charge, persistence, no cap/decay;
+- preserve owner-passed Battle system unchanged.
 
-Open: Energy Rush still emphasizes A/B/C/D + ENERGY, so collection-phase tactical identity is not yet fully passed. Cross-Wave save-vs-later remains an integration evidence question. V14G remains Experimental / not adopted.
+Read:
+`docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
+
+Next workflow:
+1. owner reviews spec;
+2. only after approval, issue one repo-only coding prompt;
+3. implementation + deterministic evidence;
+4. owner screenshot gate;
+5. V14G Review / Adoption Gate.
+
