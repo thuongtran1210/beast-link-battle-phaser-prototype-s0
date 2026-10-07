@@ -24,6 +24,19 @@ export class PhaseController {
     return true;
   }
 
+  /**
+   * Tooling-only phase jump for deterministic capture/setup workflows.
+   * Never use this method from gameplay logic.
+   */
+  setPhaseForTools(nextPhase: GamePhase): void {
+    if (nextPhase === this.currentPhase) {
+      for (const listener of this.listeners) listener(this.currentPhase);
+      return;
+    }
+    this.currentPhase = nextPhase;
+    for (const listener of this.listeners) listener(this.currentPhase);
+  }
+
   subscribe(listener: PhaseChangedHandler): () => void {
     this.listeners.add(listener);
     listener(this.currentPhase);
