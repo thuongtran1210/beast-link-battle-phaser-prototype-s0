@@ -101,6 +101,27 @@ Portfolio guidance:
 - Use a **separate Signature hero frame** for unit identity.
 - Use a **separate Tactical Energy frame** for READY / SUGGESTED / DISABLED. Do not force both systems to be perfectly readable in the same paused screenshot.
 
+## Final art direction lock
+
+Runtime evidence has now demonstrated the gameplay systems. The next portfolio-quality gap is character presentation.
+
+Final rule:
+```text
+Battle Setup = cards / tactical information
+Battle       = mini full-body casual chibi characters
+```
+
+Use `docs/BATTLE-UNIT-ART-FINAL-SPEC.md` as the source of truth for:
+- six Beast silhouettes;
+- color/prop identity;
+- STAR visual progression;
+- minimum animation set;
+- enemy archetype art;
+- Setup-vs-Battle asset usage;
+- final portfolio capture targets.
+
+The current procedural portraits and rectangular Battle bodies are temporary fallback art and should not be treated as final portfolio character assets.
+
 ## Still open
 
 - Live browser visual QA after this code pass.
