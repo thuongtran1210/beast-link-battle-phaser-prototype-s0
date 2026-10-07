@@ -297,6 +297,12 @@ export class ValidationScene extends Phaser.Scene {
       }
     });
 
+    // Portfolio capture controls.
+    // O = showcase UI, P = pause/resume Battle, C = clean-frame HUD toggle.
+    this.input.keyboard?.on('keydown-O', () => this.toggleShowcaseMode());
+    this.input.keyboard?.on('keydown-P', () => this.toggleShowcasePause());
+    this.input.keyboard?.on('keydown-C', () => this.toggleShowcaseCleanFrame());
+
     // P1-V14C.1: fixed phase time, never Combo expiry, ends Beast Rush.
     this.beastRushTimer.onEnded(() => {
       this.handleBeastRushEnded();
@@ -353,7 +359,7 @@ export class ValidationScene extends Phaser.Scene {
     if (
       this.phaseController.phase === GamePhase.Battle &&
       this.battleModel?.snapshot.status === 'Running' &&
-      true
+      (!this.showcaseMode || !this.showcasePaused)
     ) {
       this.battleTickAccumulator += delta;
       let ticked = false;
