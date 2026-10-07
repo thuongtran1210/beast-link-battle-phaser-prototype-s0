@@ -607,7 +607,7 @@ export class BattleSetupView {
       7,
       stateColor,
       'bold',
-      HudTokens.colors.bgSurfaceDark === 0 ? undefined : '#151a31',
+      '#151a31',
       { x: 5, y: 2 },
     );
     const signature = signatureForBeast(unit.beastId);
