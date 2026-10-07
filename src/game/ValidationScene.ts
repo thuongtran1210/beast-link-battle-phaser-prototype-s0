@@ -77,7 +77,7 @@ import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
 import { createIconImage, ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
-import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
+import { beastDisplayName } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
 import { tacticalEnergyControl } from './ui/TacticalEnergyPresentation';
 import { tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
@@ -974,7 +974,7 @@ export class ValidationScene extends Phaser.Scene {
     const recovery = this.deadlockResolver.ensurePlayable(this.board);
     this.boardView.render();
 
-    const def = getIconDefinition(contentId);
+
     this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboStreak: combo.currentStreak };
     this.recentActionText = compactEventLabel(this.beastRushEvent);
 
