@@ -22,10 +22,12 @@ import { createIconImage } from './icons/IconFactory';
 import { beastDisplayName, getIconDefinition } from './icons/UnitIconRegistry';
 import { signatureTierLabel } from '../run/StarProfile';
 import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
+import { BattleCharacterView } from './art/BattleCharacterView';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
+  characterView: BattleCharacterView;
   body: Phaser.GameObjects.Rectangle;
   icon: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
@@ -92,6 +94,10 @@ export class BattleActionView {
           : this.enemies.get(windup.unitId);
         if (!visual || visual.container.alpha <= 0.2) return;
 
+        if (windup.isPlayer) {
+          this.units.get(windup.unitId)?.characterView.playAttack(260);
+        }
+
         const leanX = windup.isPlayer ? 4 : -4;
         this.scene.tweens.add({
           targets: visual.container,
@@ -139,7 +145,9 @@ export class BattleActionView {
         const visual = this.units.get(unitDamage.unitId);
         if (!visual) return;
 
-        // Hit flash
+        // Hit flash / pose. Fallback body keeps the original flash while authored art
+        // receives a presentation-only hit pose/tint.
+        visual.characterView.playHit(180);
         this.flash(visual.body, 0xffffff, 70, () => {
           this.flash(visual.body, 0xef4444, 50);
         });
@@ -163,6 +171,7 @@ export class BattleActionView {
       // Fallback for single targetDamage
       const visual = this.units.get(event.enemyTargetId);
       if (visual) {
+        visual.characterView.playHit(180);
         this.flash(visual.body, 0xffffff, 70, () => {
           this.flash(visual.body, 0xef4444, 50);
         });
@@ -186,6 +195,7 @@ export class BattleActionView {
       const visual = this.units.get(unitId);
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
+      visual.characterView.setAlive(false);
       this.scene.tweens.killTweensOf(visual.container);
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
@@ -224,12 +234,15 @@ export class BattleActionView {
     const source = this.units.get(event.unitId);
     if (!source || !source.container.active) return;
 
+    source.characterView.playSignature(event.signatureId === 'ArcaneBloom' ? 1100 : 820);
+    const sourcePoint = source.characterView.getEffectPoint(source.container.x, source.container.y);
+
     const targets = event.targetIds
       .map((id) => this.enemies.get(id))
       .filter((visual): visual is EnemyVisual => Boolean(visual));
 
     const addLabel = (label: string, color: string, holdMs = 520) => {
-      const text = this.scene.add.text(source.container.x, source.container.y - 52, label, {
+      const text = this.scene.add.text(sourcePoint.x, sourcePoint.y - 46, label, {
         fontFamily: 'Arial, sans-serif',
         fontSize: '12px',
         color,
@@ -261,7 +274,7 @@ export class BattleActionView {
       graphics.lineStyle(width, color, .9);
       targets.forEach((target) => {
         graphics.beginPath();
-        graphics.moveTo(source.container.x + 12, source.container.y);
+        graphics.moveTo(sourcePoint.x + 12, sourcePoint.y);
         graphics.lineTo(target.container.x - 12, target.container.y);
         graphics.strokePath();
       });
@@ -346,7 +359,7 @@ export class BattleActionView {
         bloomLinks.lineStyle(5, 0xc084fc, 0.78);
         targets.forEach((target) => {
           bloomLinks.beginPath();
-          bloomLinks.moveTo(source.container.x + 12, source.container.y - 4);
+          bloomLinks.moveTo(sourcePoint.x + 12, sourcePoint.y - 4);
           bloomLinks.lineTo(target.container.x - 10, target.container.y);
           bloomLinks.strokePath();
         });
@@ -526,6 +539,7 @@ export class BattleActionView {
   }
 
   destroy(): void {
+    this.units.forEach((visual) => visual.characterView.dispose());
     this.scene.tweens.killTweensOf([...this.objects]);
     this.objects.splice(0).forEach((object) => object.destroy());
     this.gridObjects.splice(0);
@@ -663,6 +677,10 @@ export class BattleActionView {
         `${'★'.repeat(unit.star)} ${formatNumber(unit.currentHp)}${stateBadge}`,
       );
     }
+    visual.characterView.setFacing('right');
+    visual.label.setVisible(!visual.characterView.isAuthored || !this.showcaseMode);
+    visual.hpBarContainer.y = visual.characterView.hpAnchorY;
+    visual.signatureRing.y = visual.characterView.effectAnchorY;
 
     const readyColor =
       (unit.temporaryShieldHp ?? 0) > 0 ? 0x72bff5
@@ -819,28 +837,35 @@ export class BattleActionView {
   private createUnit(unit: CombatUnit): UnitVisual {
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     const beastDef = getIconDefinition(unit.beastId);
-    const body = this.scene.add
-      .rectangle(0, 0, this.showcaseMode ? 66 : 54, this.showcaseMode ? 60 : 48, beastDef.bgFill, this.showcaseMode ? 0.38 : 0.95)
-      .setStrokeStyle(this.showcaseMode ? 2.5 : 2, this.showcaseMode ? beastDef.borderColor : roleFill(unit.role));
+
+    const characterView = new BattleCharacterView(
+      this.scene,
+      unit.beastId,
+      this.showcaseMode,
+      roleFill(unit.role),
+    );
+    characterView.setFacing('right');
+
+    // Existing fallback objects remain available to hit flashes and validation
+    // presentation. Authored mode hides them inside BattleCharacterView.
+    const body = characterView.fallbackBody;
+    const icon = characterView.fallbackIcon;
 
     const signatureRing = this.scene.add
-      .circle(0, -6, this.showcaseMode ? 34 : 23, 0x000000, 0)
+      .circle(0, characterView.effectAnchorY, this.showcaseMode ? 34 : 23, 0x000000, 0)
       .setStrokeStyle(2, beastDef.accentColor, 0.85)
       .setVisible(false);
 
-    const icon = createIconImage(this.scene, unit.beastId, 0, -7, this.showcaseMode ? 54 : 36);
-
     const label = this.scene.add.text(0, 14, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: this.showcaseMode ? '8px' : '8px',
+      fontSize: '8px',
       color: this.showcaseMode ? '#fff8ef' : '#fbbf24',
       align: 'center',
       fontStyle: 'bold',
       lineSpacing: -2,
     }).setOrigin(0.5);
 
-    // HP Bar above unit (y = -29)
-    const hpBarContainer = this.scene.add.container(0, -29);
+    const hpBarContainer = this.scene.add.container(0, characterView.hpAnchorY);
     const hpBorder = this.scene.add.rectangle(0, 0, 48, 6, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
     const ghostFill = this.scene.add.rectangle(-23, 0, 46, 4, 0xfca5a5, 0.9).setOrigin(0, 0.5);
     const hpFill = this.scene.add.rectangle(-23, 0, 46, 4, 0x22c55e, 1.0).setOrigin(0, 0.5);
@@ -849,12 +874,13 @@ export class BattleActionView {
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [body, signatureRing, icon, label, hpBarContainer],
+      [characterView.root, signatureRing, label, hpBarContainer],
     );
 
     this.objects.push(container);
     return {
       container,
+      characterView,
       body,
       icon,
       label,
