@@ -61,6 +61,9 @@ export function arcaneBloomEchoRatio(star: StarLevel): number {
 export function ironRamKnockbackForStar(star: StarLevel): number {
   return star === 1 ? 0.35 : star === 2 ? 0.55 : 0.7;
 }
+export function ironRamStaggerForStar(star: StarLevel): number {
+  return star === 1 ? 0 : star === 2 ? 0.35 : 0.55;
+}
 export function ironRamCleaveTargets(star: StarLevel): number {
   return star === 3 ? 1 : 0;
 }
