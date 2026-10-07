@@ -898,6 +898,8 @@ export class ValidationScene extends Phaser.Scene {
   private toggleShowcaseMode(): void {
     this.showcaseMode = !this.showcaseMode;
     this.showcasePaused = false;
+    this.tweens.resumeAll();
+    this.tweens.resumeAll();
     this.showcaseCleanFrame = false;
     this.battleActionView?.setShowcaseMode(this.showcaseMode);
     if (this.phaseController.phase === GamePhase.BattleSetup) {
@@ -912,6 +914,15 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.showcaseMode || this.phaseController.phase !== GamePhase.Battle) return;
     this.showcasePaused = !this.showcasePaused;
     this.renderBattle();
+
+    // Capture pause freezes presentation tweens as well as model ticking, so
+    // Signature labels / rings can be held on-screen for a portfolio frame.
+    if (this.showcasePaused) {
+      this.tweens.pauseAll();
+    } else {
+      this.tweens.resumeAll();
+    }
+
     this.syncTopHud();
   }
 
