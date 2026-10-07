@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **M2 STARCALLER PASS / M3A SNOWGUARD NEXT / GAMEPLAY FROZEN**
+Status: **M3A SNOWGUARD IMPLEMENTED / CI PASS / LIVE VISUAL QA NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -561,6 +561,32 @@ M2 is closed.
 
 Do not begin Snowguard rollout until this live visual gate passes.
 
+## M3A — Snowguard authored integration
+
+Status: **IMPLEMENTED / CI PASS / LIVE VISUAL QA OPEN**
+
+Implemented:
+- Snowguard authored idle / attack / Guardian Brace / hit / KO poses;
+- authored portrait source;
+- manifest paths + HP/effect anchors;
+- deterministic Snowguard art-contract checks;
+- Starcaller remains authored;
+- Shadowclaw / Windstrider / Ironclad / Swiftwing remain fallback-only.
+
+Visual intent:
+- broad friendly Tanker;
+- warm gold / cream / pale-blue;
+- circular guardian shield;
+- protection fantasy, not impact/disruption.
+
+Evidence:
+- latest complete Snowguard package GitHub Actions run 113 PASS.
+
+Remaining gate:
+- live Battle capture confirming transparent sprite, protector silhouette, HP anchor and Guardian Brace alignment.
+
+Do not start Ironclad until Snowguard passes this gate.
+
 ## M3 — Remaining Beast rollout
 
 Integrate five remaining Beasts using the same manifest.
@@ -656,25 +682,21 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**M3A — Snowguard Authored Character**
+**M3A Live Visual QA — Snowguard**
 
-Goal:
-- establish the first Tanker authored sprite using the same BattleCharacterView pipeline;
-- prove that authored art can differentiate protector Tanker from Starcaller Mage and later Ironclad disruptor.
+1. refresh latest build;
+2. press `L`;
+3. verify Snowguard appears as authored full-body protector, not a rectangular fallback;
+4. inspect HP bar above the head;
+5. wait for Guardian Brace activation;
+6. press `P` while shield/VFX are visible;
+7. capture the frame.
 
-Required poses:
-- idle;
-- attack;
-- signature / Guardian Brace;
-- hit;
-- KO.
+Acceptance:
+- broad friendly silhouette reads as Tanker/protector;
+- gold/cream/sky-blue identity is distinct from Starcaller;
+- circular shield is readable at battle scale;
+- Guardian Brace effect centers on Snowguard correctly;
+- HP bar and feet anchor remain stable.
 
-Visual gate:
-- broad, friendly protector silhouette;
-- warm gold / cream / pale-blue identity;
-- shield/guardian motif;
-- Guardian Brace visibly reads as protection;
-- no rectangular Battle card chrome;
-- HP/effect anchors remain stable.
-
-Do not alter Guardian Brace gameplay semantics.
+Only after PASS: **M3B — Ironclad authored character**.
