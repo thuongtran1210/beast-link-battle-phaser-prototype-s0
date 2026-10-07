@@ -149,8 +149,144 @@ export function drawIconBadge(
     g.lineStyle(1 * scale, 0xffffff, 0.15);
     g.strokeRoundedRect(cx - w / 2 + 3 * scale, cy - h / 2 + 8 * scale, w - 6 * scale, h - 11 * scale, 4 * scale);
 
-    // Main heraldic beast symbol
-    drawSymbol(g, def.symbol, cx, cy + 2 * scale, size * 0.62, def.primaryColor, def.accentColor, scale);
+    // Main procedural Beast portrait. This keeps the validation build asset-free
+    // while making unit identity read as a character rather than a debug glyph.
+    drawBeastPortrait(g, def, cx, cy + 3 * scale, size * 0.72, scale);
+  }
+}
+
+/**
+ * Lightweight procedural Beast portraits used by the portfolio/runtime build.
+ * They intentionally follow the Cute Tactical Chibi silhouette grammar without
+ * claiming to be final production character art.
+ */
+function drawBeastPortrait(
+  g: Phaser.GameObjects.Graphics,
+  def: IconDefinition,
+  cx: number,
+  cy: number,
+  size: number,
+  scale: number,
+): void {
+  const s = size / 64;
+  const dark = 0x111827;
+
+  // Shoulder/body mass gives the badge a character silhouette instead of an emblem.
+  g.fillStyle(def.secondaryColor, 0.95);
+  g.fillEllipse(cx, cy + 17 * s, 34 * s, 24 * s);
+
+  // Identity silhouettes: ears / horns / wing language remain readable at icon scale.
+  g.fillStyle(def.primaryColor, 1);
+  switch (def.id) {
+    case 'beast-a': // Snowguard — broad, rounded Tanker
+      g.fillCircle(cx - 16 * s, cy - 13 * s, 8 * s);
+      g.fillCircle(cx + 16 * s, cy - 13 * s, 8 * s);
+      g.fillRoundedRect(cx - 23 * s, cy - 13 * s, 46 * s, 37 * s, 14 * s);
+      break;
+    case 'beast-b': // Assassin — sharp ears / forward silhouette
+      g.beginPath();
+      g.moveTo(cx - 20 * s, cy - 6 * s);
+      g.lineTo(cx - 10 * s, cy - 27 * s);
+      g.lineTo(cx - 3 * s, cy - 8 * s);
+      g.closePath();
+      g.fillPath();
+      g.beginPath();
+      g.moveTo(cx + 20 * s, cy - 6 * s);
+      g.lineTo(cx + 11 * s, cy - 27 * s);
+      g.lineTo(cx + 3 * s, cy - 8 * s);
+      g.closePath();
+      g.fillPath();
+      g.fillRoundedRect(cx - 20 * s, cy - 12 * s, 40 * s, 34 * s, 11 * s);
+      break;
+    case 'beast-c': // Ranger — compact face + directional feather ears
+      g.beginPath();
+      g.moveTo(cx - 18 * s, cy - 8 * s);
+      g.lineTo(cx - 28 * s, cy - 19 * s);
+      g.lineTo(cx - 7 * s, cy - 14 * s);
+      g.closePath();
+      g.fillPath();
+      g.beginPath();
+      g.moveTo(cx + 18 * s, cy - 8 * s);
+      g.lineTo(cx + 29 * s, cy - 15 * s);
+      g.lineTo(cx + 7 * s, cy - 14 * s);
+      g.closePath();
+      g.fillPath();
+      g.fillRoundedRect(cx - 19 * s, cy - 12 * s, 38 * s, 34 * s, 13 * s);
+      break;
+    case 'beast-d': // Mage — round open silhouette + arcane crown
+      g.fillCircle(cx, cy + 1 * s, 21 * s);
+      g.beginPath();
+      g.moveTo(cx, cy - 29 * s);
+      g.lineTo(cx + 6 * s, cy - 17 * s);
+      g.lineTo(cx, cy - 12 * s);
+      g.lineTo(cx - 6 * s, cy - 17 * s);
+      g.closePath();
+      g.fillPath();
+      break;
+    case 'beast-e': // Heavy Tanker — squared brow + central horn
+      g.fillRoundedRect(cx - 23 * s, cy - 12 * s, 46 * s, 36 * s, 9 * s);
+      g.beginPath();
+      g.moveTo(cx, cy - 29 * s);
+      g.lineTo(cx + 7 * s, cy - 11 * s);
+      g.lineTo(cx - 7 * s, cy - 11 * s);
+      g.closePath();
+      g.fillPath();
+      break;
+    case 'beast-f': // Swift Ranger — wing-like side silhouette
+      g.fillRoundedRect(cx - 18 * s, cy - 12 * s, 36 * s, 34 * s, 13 * s);
+      g.beginPath();
+      g.moveTo(cx - 14 * s, cy - 2 * s);
+      g.lineTo(cx - 30 * s, cy - 14 * s);
+      g.lineTo(cx - 25 * s, cy + 7 * s);
+      g.closePath();
+      g.fillPath();
+      g.beginPath();
+      g.moveTo(cx + 14 * s, cy - 2 * s);
+      g.lineTo(cx + 30 * s, cy - 14 * s);
+      g.lineTo(cx + 25 * s, cy + 7 * s);
+      g.closePath();
+      g.fillPath();
+      break;
+    default:
+      g.fillCircle(cx, cy, 21 * s);
+  }
+
+  // Face plane.
+  g.fillStyle(def.accentColor, 0.2);
+  g.fillEllipse(cx, cy + 4 * s, 31 * s, 24 * s);
+
+  // Eyes: compact and expressive, deliberately not oversized anime eyes.
+  const eyeY = cy - 1 * s;
+  g.fillStyle(dark, 0.95);
+  if (def.role === 'Assassin') {
+    g.fillEllipse(cx - 8 * s, eyeY, 7 * s, 3 * s);
+    g.fillEllipse(cx + 8 * s, eyeY - 1 * s, 7 * s, 3 * s);
+  } else {
+    g.fillCircle(cx - 8 * s, eyeY, 2.7 * s);
+    g.fillCircle(cx + 8 * s, eyeY, 2.7 * s);
+  }
+
+  // Muzzle / nose anchor.
+  g.fillStyle(dark, 0.9);
+  g.fillCircle(cx, cy + 7 * s, 2.2 * s);
+  g.lineStyle(Math.max(1, 1.2 * scale), dark, 0.75);
+  g.lineBetween(cx, cy + 9 * s, cx - 4 * s, cy + 12 * s);
+  g.lineBetween(cx, cy + 9 * s, cx + 4 * s, cy + 12 * s);
+
+  // One restrained role/identity accent so the portrait still reads tactically.
+  g.lineStyle(Math.max(1, 1.3 * scale), def.accentColor, 0.9);
+  if (def.role === 'Tanker') {
+    g.strokeCircle(cx, cy + 18 * s, 7 * s);
+  } else if (def.role === 'Assassin') {
+    g.lineBetween(cx - 15 * s, cy + 16 * s, cx - 5 * s, cy + 10 * s);
+    g.lineBetween(cx + 15 * s, cy + 16 * s, cx + 5 * s, cy + 10 * s);
+  } else if (def.role === 'Ranger') {
+    g.lineBetween(cx - 12 * s, cy + 18 * s, cx + 13 * s, cy + 18 * s);
+    g.lineBetween(cx + 13 * s, cy + 18 * s, cx + 8 * s, cy + 14 * s);
+  } else {
+    g.strokeCircle(cx, cy + 17 * s, 6 * s);
+    g.fillStyle(def.accentColor, 0.9);
+    g.fillCircle(cx, cy + 17 * s, 2 * s);
   }
 }
 
