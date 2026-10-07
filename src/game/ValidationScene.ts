@@ -306,6 +306,7 @@ export class ValidationScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-P', () => this.toggleShowcasePause());
     this.input.keyboard?.on('keydown-C', () => this.toggleShowcaseCleanFrame());
     this.input.keyboard?.on('keydown-K', () => this.loadV15ACaptureFixture());
+    this.input.keyboard?.on('keydown-L', () => this.startV15AHeroBattle());
 
     // P1-V14C.1: fixed phase time, never Combo expiry, ends Beast Rush.
     this.beastRushTimer.onEnded(() => {
@@ -902,6 +903,13 @@ export class ValidationScene extends Phaser.Scene {
       );
     }
     this.syncTopHud();
+  }
+
+  private startV15AHeroBattle(): void {
+    this.loadV15ACaptureFixture();
+    if (this.phaseController.phase === GamePhase.BattleSetup) {
+      this.startBattle();
+    }
   }
 
   private loadV15ACaptureFixture(): void {
