@@ -77,3 +77,51 @@ export function twinVolleyAttackThreshold(star: StarLevel): number {
 export function twinVolleySecondaryTargets(star: StarLevel): number {
   return star === 3 ? 2 : 1;
 }
+
+
+export function signatureTierLabel(signature: BeastSignatureId, star: StarLevel): string {
+  const roman = star === 1 ? 'I' : star === 2 ? 'II' : 'III';
+  const name = signature.replace(/([A-Z])/g, ' $1').trim().toUpperCase();
+  return `${name} ${roman}`;
+}
+
+export function signatureTierSummary(signature: BeastSignatureId, star: StarLevel): string {
+  switch (signature) {
+    case 'GuardianBrace':
+      return star === 1
+        ? 'Shield the first intercept'
+        : star === 2
+        ? 'Can Brace a second intercept'
+        : 'Shares part of Brace with an injured ally';
+    case 'AmbushStrike':
+      return star === 1
+        ? 'Burst the first deep target'
+        : star === 2
+        ? 'Re-arms for a second deep target'
+        : 'Ambush kill chains a follow-up strike';
+    case 'FocusShot':
+      return star === 1
+        ? 'Hold safely to charge Focus'
+        : star === 2
+        ? 'Focus charges faster'
+        : 'Focused shot pierces one extra target';
+    case 'ArcaneBloom':
+      return star === 1
+        ? 'Clustered enemies trigger splash'
+        : star === 2
+        ? 'Bloom reaches a wider cluster'
+        : 'Bloom echoes into a second impact';
+    case 'IronRam':
+      return star === 1
+        ? 'Opening ram knocks the Frontliner back'
+        : star === 2
+        ? 'Ram also staggers the target'
+        : 'Ram cleaves one nearby enemy';
+    case 'TwinVolley':
+      return star === 1
+        ? 'Every third shot fires a second arrow'
+        : star === 2
+        ? 'Every second shot triggers Volley'
+        : 'Every shot can hit two extra targets';
+  }
+}
