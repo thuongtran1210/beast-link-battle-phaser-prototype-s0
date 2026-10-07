@@ -3,7 +3,7 @@ import { type BattleFormation, type FormationSlot, type FormationUnit } from '..
 import type { EnemyArchetype, EnemyFixture } from '../battle/AutonomousBattleModel';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { signatureForBeast } from '../battle/BeastRoles';
-import { signatureTierLabel, signatureTierSummary } from '../run/StarProfile';
+import { signatureTierLabel, signatureTierTagline } from '../run/StarProfile';
 import { createIconImage, createRoleIconImage } from './icons/IconFactory';
 import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
 import { beastDisplayName } from './icons/UnitIconRegistry';
@@ -622,11 +622,11 @@ export class BattleSetupView {
     const skillSummary = this.text(
       cx,
       cy + 41,
-      signatureTierSummary(signature, unit.star),
+      signatureTierTagline(signature, unit.star),
       7,
       HudTokens.colors.textMuted,
       '',
-    ).setOrigin(0.5).setWordWrapWidth(w - 18, false);
+    ).setOrigin(0.5);
     this.objects.push(nameLabel, roleLabel, state, skillLabel, skillSummary);
 
     const barW = 104;
