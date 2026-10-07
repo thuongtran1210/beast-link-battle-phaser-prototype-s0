@@ -90,7 +90,11 @@ export class PhaseStatusPanel {
     const timerLabel = this.scene.add.text(this.x + 16, currY + 12, data.timerLabel.toUpperCase(), {
       fontFamily: HudTokens.fonts.family,
       fontSize: '11px',
-      color: isUrgent ? HudTokens.colors.textRed : HudTokens.colors.textGold,
+      color: isUrgent
+        ? HudTokens.colors.textRed
+        : data.phaseTitle.toUpperCase().includes('ENERGY') || data.phaseTitle.toUpperCase().includes('TACTICAL')
+        ? HudTokens.colors.textBlue
+        : HudTokens.colors.textGold,
       fontStyle: 'bold',
       letterSpacing: 1,
     });
@@ -99,7 +103,11 @@ export class PhaseStatusPanel {
     const timerValue = this.scene.add.text(this.x + 16, currY + 28, formattedTime, {
       fontFamily: HudTokens.fonts.family,
       fontSize: '42px',
-      color: isUrgent ? HudTokens.colors.textRed : HudTokens.colors.textGold,
+      color: isUrgent
+        ? HudTokens.colors.textRed
+        : data.phaseTitle.toUpperCase().includes('ENERGY') || data.phaseTitle.toUpperCase().includes('TACTICAL')
+        ? HudTokens.colors.textBlue
+        : HudTokens.colors.textGold,
       fontStyle: 'bold',
     });
 
@@ -404,7 +412,7 @@ export class PhaseStatusPanel {
     // The queue is a compact roster summary rather than six empty debug slots.
     const entries = queueDisplayEntries(data.queueItems).slice(0, 6);
     const queueRows = Math.max(1, Math.ceil(entries.length / 2));
-    const queueH = 44 + queueRows * 48;
+    const queueH = 38 + queueRows * 42;
     const queueBg = drawCard(this.scene, this.x, currY, w, queueH, HudTokens.colors.bgPhase, .98, HudTokens.colors.strokeViolet, 1.25);
     const heading = this.scene.add.text(this.x + 16, currY + 12, 'RECRUITED BEASTS', {
       fontFamily: HudTokens.fonts.family,
@@ -417,7 +425,7 @@ export class PhaseStatusPanel {
     this.queueCenter = { x: this.x + w / 2, y: currY + 50 };
 
     if (!entries.length) {
-      const empty = this.scene.add.text(this.x + 16, currY + 36, 'Match a pair to recruit your first Beast.', {
+      const empty = this.scene.add.text(this.x + 16, currY + 34, 'Match a pair to recruit your first Beast.', {
         fontFamily: HudTokens.fonts.family,
         fontSize: '10px',
         color: HudTokens.colors.textMuted,
@@ -428,12 +436,12 @@ export class PhaseStatusPanel {
         const col = index % 2;
         const row = Math.floor(index / 2);
         const cx = this.x + 86 + col * 164;
-        const cy = currY + 50 + row * 48;
+        const cy = currY + 45 + row * 42;
         const def = getIconDefinition(item.id);
         const bg = this.scene.add
-          .rectangle(cx, cy, 146, 38, def.bgFill, .45)
+          .rectangle(cx, cy, 146, 34, def.bgFill, .45)
           .setStrokeStyle(1.7, def.borderColor, .95);
-        const icon = createIconImage(this.scene, item.id, cx - 54, cy, 27);
+        const icon = createIconImage(this.scene, item.id, cx - 55, cy, 24);
         const name = this.scene.add.text(cx - 34, cy - 7, item.name, {
           fontFamily: HudTokens.fonts.family,
           fontSize: '8px',
