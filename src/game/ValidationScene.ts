@@ -185,7 +185,9 @@ export class ValidationScene extends Phaser.Scene {
   private summary?: SessionSummaryView;
   private showcaseBattleHud?: ShowcaseBattleHUDView;
 
-  private showcaseMode = false;
+  // Portfolio-first default: player-facing UI is the normal runtime surface.
+  // Press O to temporarily return to validation/debug presentation.
+  private showcaseMode = true;
   private showcasePaused = false;
   private showcaseCleanFrame = false;
   private recentActionText = '';
