@@ -77,6 +77,7 @@ import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
 import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
 import { createIconImage, ensureIconTextures } from './ui/icons/IconFactory';
+import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
@@ -196,6 +197,10 @@ export class ValidationScene extends Phaser.Scene {
 
   constructor() {
     super('ValidationScene');
+  }
+
+  preload(): void {
+    preloadBattleCharacterArt(this);
   }
 
   create(): void {
