@@ -3,7 +3,7 @@ import type {
   PlayerActionKind,
   EnemyArchetype,
 } from './AutonomousBattleModel';
-import type { BeastRole } from './BeastRoles';
+import type { BeastRole, BeastSignatureId } from './BeastRoles';
 
 export interface BattleAttackerPresentation {
   unitId: string;
@@ -43,6 +43,13 @@ export interface UnitHpBarPresentation {
   maxHp: number;
 }
 
+export interface SignatureFxPresentation {
+  unitId: string;
+  signatureId: BeastSignatureId;
+  targetIds: string[];
+  amount?: number;
+}
+
 export interface BattleTickPresentation {
   attackers: BattleAttackerPresentation[];
   enemyDamage: number;
@@ -53,6 +60,7 @@ export interface BattleTickPresentation {
   attackWindups: AttackWindupPresentation[];
   defeatedUnitIds: string[];
   defeatedEnemyIds: string[];
+  signatureFx: SignatureFxPresentation[];
   enemyDefeated: boolean;
 }
 
@@ -177,6 +185,20 @@ export function deriveBattleTickPresentation(
     }
   }
 
+  const beforeSignatureCount = before.signatureEvents?.length ?? 0;
+  const newSignatureEvents = (after.signatureEvents ?? []).slice(beforeSignatureCount);
+  const signatureFx: SignatureFxPresentation[] = newSignatureEvents
+    .filter((event) => event.type === 'SignatureActivated' || event.type === 'ShieldAbsorbed')
+    .map((event) => {
+      const action = actionMap.get(event.unitId);
+      return {
+        unitId: event.unitId,
+        signatureId: event.signatureId,
+        targetIds: action?.hits.map((hit) => hit.enemyId) ?? (event.targetId ? [event.targetId] : []),
+        amount: event.amount,
+      };
+    });
+
   return {
     attackers,
     enemyDamage,
@@ -187,6 +209,7 @@ export function deriveBattleTickPresentation(
     attackWindups,
     defeatedUnitIds,
     defeatedEnemyIds,
+    signatureFx,
     enemyDefeated: before.enemyHp > 0 && after.enemyHp === 0,
   };
 }
