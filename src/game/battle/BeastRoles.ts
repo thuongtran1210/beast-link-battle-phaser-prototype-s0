@@ -1,10 +1,14 @@
 export type BeastRole = 'Tanker' | 'Assassin' | 'Ranger' | 'Mage';
-export type BeastSignatureId = 'GuardianBrace' | 'AmbushStrike' | 'FocusShot' | 'ArcaneBloom';
+export type BeastSignatureId = 'GuardianBrace' | 'AmbushStrike' | 'FocusShot' | 'ArcaneBloom' | 'IronRam' | 'TwinVolley';
 
-/** Experimental V13A identity data. Signatures deliberately belong to beasts, never roles. */
+/** V15A identity baseline. Signatures belong to individual Beasts, never only to roles. */
 export const P1V13A_BEAST_SIGNATURES: Readonly<Record<string, BeastSignatureId>> = {
-  'beast-a': 'GuardianBrace', 'beast-b': 'AmbushStrike', 'beast-c': 'FocusShot',
-  'beast-d': 'ArcaneBloom', 'beast-e': 'GuardianBrace', 'beast-f': 'FocusShot',
+  'beast-a': 'GuardianBrace',
+  'beast-b': 'AmbushStrike',
+  'beast-c': 'FocusShot',
+  'beast-d': 'ArcaneBloom',
+  'beast-e': 'IronRam',
+  'beast-f': 'TwinVolley',
 };
 
 export function signatureForBeast(beastId: string): BeastSignatureId {
