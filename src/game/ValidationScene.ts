@@ -304,6 +304,7 @@ export class ValidationScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-O', () => this.toggleShowcaseMode());
     this.input.keyboard?.on('keydown-P', () => this.toggleShowcasePause());
     this.input.keyboard?.on('keydown-C', () => this.toggleShowcaseCleanFrame());
+    this.input.keyboard?.on('keydown-K', () => this.loadV15ACaptureFixture());
 
     // P1-V14C.1: fixed phase time, never Combo expiry, ends Beast Rush.
     this.beastRushTimer.onEnded(() => {
@@ -893,6 +894,63 @@ export class ValidationScene extends Phaser.Scene {
       );
     }
     this.syncTopHud();
+  }
+
+  private loadV15ACaptureFixture(): void {
+    if (!this.showcaseMode || this.phaseController.phase !== GamePhase.BattleSetup) {
+      FeedbackEffects.showToast(
+        this,
+        this.layout.leftCenter.x,
+        this.layout.leftCenter.y,
+        'OPEN BATTLE SETUP + SHOWCASE MODE FIRST',
+        '#f6d675',
+      );
+      return;
+    }
+
+    // Capture-only fixture. It deliberately bypasses Beast Rush output so a portfolio
+    // frame can demonstrate V15A STAR evolution consistently. It is never used by
+    // the normal run loop, deterministic gameplay checks, or adoption decisions.
+    this.runRoster.reset();
+    this.energyQueue.reset();
+    this.shardPool.reset();
+
+    this.runRoster.recruit([
+      { contentId: 'beast-d', star: 3 }, // Starcaller — Arcane Bloom III
+      { contentId: 'beast-e', star: 2 }, // Ironclad — Iron Ram II
+      { contentId: 'beast-f', star: 2 }, // Swiftwing — Twin Volley II
+      { contentId: 'beast-a', star: 1 }, // Snowguard — Guardian Brace I
+      { contentId: 'beast-c', star: 1 }, // Windstrider reserve
+      { contentId: 'beast-b', star: 3 }, // Shadowclaw reserve
+    ] as DeployedUnit[]);
+
+    this.formation = new BattleFormation(this.runRoster.formationUnits());
+    const units = this.runRoster.units;
+    const byBeast = (beastId: string) => units.find((unit) => unit.beastId === beastId)?.instanceId;
+
+    const placements: Array<[string | undefined, string]> = [
+      [byBeast('beast-d'), 'back-2'],
+      [byBeast('beast-e'), 'front-3'],
+      [byBeast('beast-f'), 'back-4'],
+      [byBeast('beast-a'), 'front-4'],
+    ];
+    placements.forEach(([unitId, slotId]) => {
+      if (unitId) this.formation?.place(unitId, slotId);
+    });
+
+    ['MEND', 'RESCUE', 'BREAK', 'PIERCE'].forEach((energyId) => {
+      this.energyQueue.addCharge(energyId, 3);
+    });
+    this.shardPool.award(2);
+
+    this.renderBattleSetup();
+    FeedbackEffects.showToast(
+      this,
+      this.layout.leftCenter.x,
+      this.layout.leftCenter.y,
+      'V15A CAPTURE FIXTURE LOADED',
+      '#8be2bd',
+    );
   }
 
   private toggleShowcaseMode(): void {
