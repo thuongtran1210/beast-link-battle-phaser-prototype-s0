@@ -1098,7 +1098,7 @@ export class ValidationScene extends Phaser.Scene {
       FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
         this.phaseStatusPanel?.pulseQueueRow(contentId);
       });
-      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, `COMBO ×${combo.currentStreak}`, '#fbbf24');
+      // Combo feedback is owned by the right rail to keep the puzzle board clean.
     }
     this.phaseStatusPanel?.pulseCombo();
     this.phaseStatusPanel?.pulseTimer(false);
@@ -1139,7 +1139,7 @@ export class ValidationScene extends Phaser.Scene {
       FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
         this.phaseStatusPanel?.pulseQueueRow(contentId);
       });
-      FeedbackEffects.floatText(this, midpoint.x, midpoint.y - 15, energyRushMatchLabel(contentId), '#38bdf8');
+      // Energy gain feedback is owned by Stored Energy + recent action in the right rail.
     }
 
     // Deadlock reshuffle notification
@@ -1199,13 +1199,13 @@ export class ValidationScene extends Phaser.Scene {
     const carryIn = this.energyCarryIn;
     const queueTitle = carryIn > 0 ? `STORED ×${total} (CARRY IN ×${carryIn})` : `STORED ×${total}`;
     this.phaseStatusPanel?.render({
-      phaseTitle: 'ENERGY RUSH',
-      phaseSubtitle: 'Match Energy pairs to collect Tactical Energy',
+      phaseTitle: 'TACTICAL CHARGE',
+      phaseSubtitle: 'MATCH PAIRS  →  STORE TACTICAL ENERGY',
       timerSeconds: remaining,
-      timerLabel: isReady ? 'Energy' : 'Countdown',
-      timerSubtext: isReady ? 'READY · MATCH TO START' : 'COLLECT BEFORE TIME ENDS',
+      timerLabel: isReady ? 'READY' : 'TIME LEFT',
+      timerSubtext: isReady ? 'READ THE BOARD · START WHEN READY' : 'MATCH FAST · BANK ENERGY FOR BATTLE',
       statusBadge: {
-        text: isReady ? 'READY' : 'COUNTDOWN',
+        text: isReady ? 'READY' : 'ACTIVE',
         active: !isReady,
       },
       matchCount: this.metrics.snapshot.energyMatches,
