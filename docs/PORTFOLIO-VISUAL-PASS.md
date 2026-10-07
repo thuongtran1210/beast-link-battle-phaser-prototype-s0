@@ -59,6 +59,7 @@ For portfolio capture:
 - Press **O** to toggle Showcase Mode.
 - Press **P** during Battle to pause/resume the simulation at a readable skill moment.
 - Press **C** while Showcase Mode is active to hide/show the global top HUD.
+- Press **K** in Battle Setup while Showcase Mode is active to load the deterministic **V15A capture fixture** (capture-only, not part of the normal run).
 
 Showcase Mode also suppresses Battle Setup harness controls so screenshots do not expose presets, fixture cycling or enemy-edit tools.
 
