@@ -147,6 +147,25 @@ CI:
 - `npm run check` — PASS after V15A wiring.
 - `npm run build` — PASS after V15A wiring.
 
+## Readability / capture pass — 2026-10-07
+
+Implemented after the first V15A behavior pass:
+
+- Battle showcase labels now use **Beast name + STAR** rather than role-only labels.
+- Player unit borders use each Beast's identity color instead of only shared role color.
+- Guardian Brace / Ambush / Focus expose a temporary readiness ring when their state is visually relevant.
+- Signature activation labels include the actual tier, e.g. `ARCANE BLOOM III`.
+- 3★ Arcane Bloom adds a delayed **ECHO** punctuation in presentation.
+- Battle Setup Signature copy was shortened to one-line card-safe taglines.
+- Showcase Mode now also removes Battle Setup harness controls.
+- Portfolio capture controls are wired:
+  - `O` → toggle Showcase Mode;
+  - `P` → pause / resume Battle while in Showcase Mode;
+  - `C` → toggle Clean Frame (hide global top HUD while preserving Battle / Tactical Energy evidence).
+- Showcase pause now stops model ticking rather than changing UI state only.
+
+This pass changes presentation/readability only; it does not add a seventh Beast, another skill system, mana, cooldown resources, or meta progression.
+
 ## Live QA gate
 
 Do not call V15A portfolio-ready until a live 1280×720 Battle confirms:
