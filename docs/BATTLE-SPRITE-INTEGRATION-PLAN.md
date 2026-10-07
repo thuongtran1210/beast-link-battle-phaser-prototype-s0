@@ -536,8 +536,17 @@ Implemented:
 Evidence:
 - GitHub Actions run 89 PASS.
 
+Live QA issue found:
+- authored Starcaller texture rendered as an opaque black square on the target runtime;
+- Arcane Bloom event/VFX anchoring itself was correct.
+
+Fix implemented:
+- SVG authored art now loads through the normal image pipeline;
+- explicit SVG dimensions / aspect-ratio metadata added;
+- latest combined build CI PASS (run 99).
+
 Remaining gate:
-- live Battle screenshot confirming scale, ground anchor, HP anchor and Arcane Bloom alignment.
+- repeat live Battle screenshot confirming transparent authored sprite, scale, ground anchor, HP anchor and Arcane Bloom alignment.
 
 Do not begin Snowguard rollout until this live visual gate passes.
 
