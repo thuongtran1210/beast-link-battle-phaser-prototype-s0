@@ -228,7 +228,7 @@ export class BattleActionView {
       .map((id) => this.enemies.get(id))
       .filter((visual): visual is EnemyVisual => Boolean(visual));
 
-    const addLabel = (label: string, color: string) => {
+    const addLabel = (label: string, color: string, holdMs = 520) => {
       const text = this.scene.add.text(source.container.x, source.container.y - 52, label, {
         fontFamily: 'Arial, sans-serif',
         fontSize: '12px',
@@ -244,7 +244,7 @@ export class BattleActionView {
         targets: text,
         y: text.y - 10,
         alpha: 0,
-        delay: 420,
+        delay: holdMs,
         duration: 430,
         ease: 'Cubic.Out',
         onComplete: () => {
@@ -295,22 +295,91 @@ export class BattleActionView {
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x8be2bd, 25));
         addLabel(signatureTierLabel(event.signatureId, event.star), '#b9f1d8');
         break;
-      case 'ArcaneBloom':
+      case 'ArcaneBloom': {
+        // Caster aura: clearly communicates "Mage cast" before the target explosions.
+        const aura = this.scene.add.circle(
+          source.container.x,
+          source.container.y - 4,
+          28,
+          0x7e22ce,
+          0.28,
+        ).setStrokeStyle(3, 0xe9d5ff, 0.95).setDepth(160);
+        const core = this.scene.add.circle(
+          source.container.x,
+          source.container.y - 4,
+          8,
+          0xf0abfc,
+          0.9,
+        ).setDepth(166);
+        this.objects.push(aura, core);
+
+        this.scene.tweens.add({
+          targets: aura,
+          scaleX: 1.65,
+          scaleY: 1.65,
+          alpha: 0.06,
+          duration: 820,
+          ease: 'Sine.Out',
+          onComplete: () => {
+            const index = this.objects.indexOf(aura);
+            if (index >= 0) this.objects.splice(index, 1);
+            aura.destroy();
+          },
+        });
+        this.scene.tweens.add({
+          targets: core,
+          scaleX: 1.8,
+          scaleY: 1.8,
+          alpha: 0,
+          delay: 220,
+          duration: 620,
+          ease: 'Cubic.Out',
+          onComplete: () => {
+            const index = this.objects.indexOf(core);
+            if (index >= 0) this.objects.splice(index, 1);
+            core.destroy();
+          },
+        });
+
+        // Arcane links make multi-target Mage identity readable even in a still frame.
+        const bloomLinks = this.scene.add.graphics().setDepth(164);
+        bloomLinks.lineStyle(5, 0xc084fc, 0.78);
+        targets.forEach((target) => {
+          bloomLinks.beginPath();
+          bloomLinks.moveTo(source.container.x + 12, source.container.y - 4);
+          bloomLinks.lineTo(target.container.x - 10, target.container.y);
+          bloomLinks.strokePath();
+        });
+        this.objects.push(bloomLinks);
+        this.scene.tweens.add({
+          targets: bloomLinks,
+          alpha: 0,
+          delay: 300,
+          duration: 620,
+          ease: 'Quad.Out',
+          onComplete: () => {
+            const index = this.objects.indexOf(bloomLinks);
+            if (index >= 0) this.objects.splice(index, 1);
+            bloomLinks.destroy();
+          },
+        });
+
         targets.forEach((target, index) => {
           const disc = this.scene.add.circle(
             target.container.x,
             target.container.y,
-            18 + index * 3,
+            22 + index * 3,
             0x9333ea,
-            0.22,
-          ).setDepth(158);
+            0.36,
+          ).setStrokeStyle(2, 0xf0abfc, 0.8).setDepth(158);
           this.objects.push(disc);
           this.scene.tweens.add({
             targets: disc,
-            scaleX: 2.2,
-            scaleY: 2.2,
+            scaleX: 2.35,
+            scaleY: 2.35,
             alpha: 0,
-            duration: 620,
+            delay: 180,
+            duration: 760,
             ease: 'Cubic.Out',
             onComplete: () => {
               const objectIndex = this.objects.indexOf(disc);
@@ -318,28 +387,54 @@ export class BattleActionView {
               disc.destroy();
             },
           });
-          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 34 + index * 5);
-          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf0abfc, 22 + index * 3);
+          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 39 + index * 5);
+          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf0abfc, 25 + index * 3);
         });
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#f3e8ff');
+
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#f3e8ff', 900);
+
         if (event.star === 3 && targets.length > 0) {
           const echo = targets[targets.length - 1];
-          this.scene.time.delayedCall(120, () => {
+          this.scene.time.delayedCall(280, () => {
             if (!echo.container.active) return;
-            FeedbackEffects.pulseRing(this.scene, echo.container.x, echo.container.y, 0xf6d675, 24);
-            const echoText = this.scene.add.text(echo.container.x, echo.container.y - 36, 'ECHO', {
+            const echoDisc = this.scene.add.circle(
+              echo.container.x,
+              echo.container.y,
+              16,
+              0xf6d675,
+              0.35,
+            ).setStrokeStyle(2, 0xfff1a8, 0.95).setDepth(170);
+            this.objects.push(echoDisc);
+            this.scene.tweens.add({
+              targets: echoDisc,
+              scaleX: 2,
+              scaleY: 2,
+              alpha: 0,
+              duration: 620,
+              ease: 'Cubic.Out',
+              onComplete: () => {
+                const index = this.objects.indexOf(echoDisc);
+                if (index >= 0) this.objects.splice(index, 1);
+                echoDisc.destroy();
+              },
+            });
+            FeedbackEffects.pulseRing(this.scene, echo.container.x, echo.container.y, 0xf6d675, 31);
+            const echoText = this.scene.add.text(echo.container.x, echo.container.y - 42, 'ECHO', {
               fontFamily: 'Arial, sans-serif',
-              fontSize: '9px',
-              color: '#f6d675',
+              fontSize: '11px',
+              color: '#fff1a8',
+              backgroundColor: '#3a2d12',
+              padding: { x: 6, y: 3 },
               fontStyle: 'bold',
               stroke: '#11152b',
-              strokeThickness: 3,
+              strokeThickness: 2,
             }).setOrigin(.5).setDepth(176);
             this.objects.push(echoText);
             this.scene.tweens.add({
               targets: echoText,
-              y: echoText.y - 12,
+              y: echoText.y - 10,
               alpha: 0,
+              delay: 500,
               duration: 420,
               ease: 'Cubic.Out',
               onComplete: () => {
@@ -351,6 +446,7 @@ export class BattleActionView {
           });
         }
         break;
+      }
       case 'IronRam':
         drawTrails(0x38bdf8, 7);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x38bdf8, 34));
