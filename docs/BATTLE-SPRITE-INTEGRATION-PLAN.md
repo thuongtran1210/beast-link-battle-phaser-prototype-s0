@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **V2-M1 CUTOUT MOTION INFRA COMPLETE / CI PASS / BASE-ART MIGRATION NEXT / GAMEPLAY FROZEN**
+Status: **V2-M2A SNOWGUARD BASE MIGRATED / CI PASS / LIVE QA NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -713,29 +713,36 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**V2-M2 — Simplified Base-Art Migration**
+**V2-M2A Live Visual QA — Snowguard Base Cutout**
 
-Order:
-1. Snowguard simple base art;
-2. Starcaller simple base art;
-3. Swiftwing;
-4. Windstrider;
-5. Ironclad;
-6. Shadowclaw.
+Implemented:
+- one simple `base_v2.svg`;
+- one simple `icon_v2.svg`;
+- Snowguard manifest has zero V1 pose dependencies;
+- no authored attack / hit / Signature / KO texture is required;
+- `TANK` motion profile drives Idle / Attack / Hit / KO;
+- Guardian Brace remains transform + VFX;
+- deterministic V2 contract PASS;
+- GitHub Actions run 133 PASS.
 
-For each Beast:
-- integrate one transparent base cutout;
-- optional Signature / KO only if needed;
-- use existing motionProfile for Attack / Hit / KO;
-- keep Signature VFX separate;
-- validate silhouette, HP anchor and ground anchor;
-- no gameplay changes.
+Live QA:
+1. refresh latest build;
+2. press `L`;
+3. inspect Snowguard idle movement;
+4. observe one basic attack;
+5. observe one hit/recoil;
+6. observe Guardian Brace;
+7. if possible observe KO.
 
-Technical state already complete:
-- V2 manifest supports `base`, optional `signature`, optional `ko`;
-- six motion profiles implemented;
-- Attack / Hit / KO now transform-driven;
-- V1 pose assets remain compatibility-only;
-- deterministic V2 art checks PASS;
-- GitHub Actions run 126 PASS.
+Acceptance:
+- simple cutout reads clearly at battle scale;
+- shield remains identifiable;
+- no rectangular card body appears;
+- transform animation feels intentional, not like image jitter;
+- ground anchor stays stable;
+- HP bar clears the head;
+- Guardian Brace effect remains centered.
+
+After PASS:
+**V2-M2B — Starcaller simplified base-art migration**.
 
