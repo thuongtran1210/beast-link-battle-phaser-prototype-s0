@@ -1,8 +1,39 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **M3A SNOWGUARD IMPLEMENTED / CI PASS / LIVE VISUAL QA NEXT / GAMEPLAY FROZEN**
+Status: **V1 POSE PIPELINE FROZEN / V2 CUTOUT-MOTION MIGRATION NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
+
+## V2 migration notice — 2026-10-07
+
+The pose-swap pipeline proved the runtime abstraction, fallback policy and anchor system, but live art review showed that requiring five authored poses per Beast is too expensive and visually inconsistent for this project scale.
+
+The V2 production target is now:
+
+```text
+base character
++ optional signature / KO art
++ reusable motion profile
++ Signature VFX
+```
+
+Keep from V1:
+- `BattleCharacterView`;
+- manifest-driven asset loading;
+- authored/fallback behavior;
+- ground / HP / effect anchors;
+- Signature event hooks;
+- deterministic art checks.
+
+Replace:
+- mandatory attack pose image;
+- mandatory hit pose image;
+- mandatory KO pose image;
+- per-action pose swaps as the default animation strategy.
+
+New sources of truth:
+- `docs/BATTLE-ART-DIRECTION-V2.md`
+- `docs/UNIT-PRODUCTION-BRIEF-V2.md`
 
 ## Goal
 
@@ -682,21 +713,25 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**M3A Live Visual QA — Snowguard**
+**V2-M1 — Cutout Motion Infrastructure**
 
-1. refresh latest build;
-2. press `L`;
-3. verify Snowguard appears as authored full-body protector, not a rectangular fallback;
-4. inspect HP bar above the head;
-5. wait for Guardian Brace activation;
-6. press `P` while shield/VFX are visible;
-7. capture the frame.
+Implement:
+1. simplify the art manifest to support `base`, optional `signature`, optional `ko`;
+2. add `motionProfile` to every Beast;
+3. keep backward compatibility for the current Starcaller/Snowguard pose assets during migration;
+4. add reusable transform animation profiles:
+   - TANK
+   - BRUISER
+   - MAGE
+   - RANGER_FAST
+   - RANGER_FOCUS
+   - ASSASSIN
+5. route Attack / Hit / KO / Signature presentation through transform animation first;
+6. only use authored pose art when explicitly supplied;
+7. keep current VFX hooks and combat semantics unchanged;
+8. run deterministic checks + production build.
 
-Acceptance:
-- broad friendly silhouette reads as Tanker/protector;
-- gold/cream/sky-blue identity is distinct from Starcaller;
-- circular shield is readable at battle scale;
-- Guardian Brace effect centers on Snowguard correctly;
-- HP bar and feet anchor remain stable.
+After V2-M1 passes:
+- replace Snowguard and Starcaller with simplified base-art assets;
+- then roll out the remaining roster.
 
-Only after PASS: **M3B — Ironclad authored character**.
