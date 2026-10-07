@@ -8,6 +8,7 @@ import type {
 import type {
   BattleHealPresentation,
   BattleTickPresentation,
+  SignatureFxPresentation,
 } from '../battle/BattlePresentation';
 import {
   battleModelPosition,
@@ -171,6 +172,9 @@ export class BattleActionView {
       }
     }
 
+    // Signature punctuation is layered on top of normal damage so identity stays readable.
+    event.signatureFx.forEach((fx) => this.playSignatureFx(fx));
+
     // 4. Defeated player units punctuation
     event.defeatedUnitIds.forEach((unitId) => {
       const visual = this.units.get(unitId);
@@ -208,6 +212,105 @@ export class BattleActionView {
         ease: 'Quad.In',
       });
     });
+  }
+
+  private playSignatureFx(event: SignatureFxPresentation): void {
+    const source = this.units.get(event.unitId);
+    if (!source || !source.container.active) return;
+
+    const targets = event.targetIds
+      .map((id) => this.enemies.get(id))
+      .filter((visual): visual is EnemyVisual => Boolean(visual));
+
+    const addLabel = (label: string, color: string) => {
+      const text = this.scene.add.text(source.container.x, source.container.y - 48, label, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '11px',
+        color,
+        fontStyle: 'bold',
+        stroke: '#11152b',
+        strokeThickness: 3,
+      }).setOrigin(.5).setDepth(175);
+      this.objects.push(text);
+      this.scene.tweens.add({
+        targets: text,
+        y: text.y - 16,
+        alpha: 0,
+        duration: 520,
+        ease: 'Cubic.Out',
+        onComplete: () => {
+          const index = this.objects.indexOf(text);
+          if (index >= 0) this.objects.splice(index, 1);
+          text.destroy();
+        },
+      });
+    };
+
+    const drawTrails = (color: number, width = 3) => {
+      if (!targets.length) return;
+      const graphics = this.scene.add.graphics().setDepth(165);
+      graphics.lineStyle(width, color, .9);
+      targets.forEach((target) => {
+        graphics.beginPath();
+        graphics.moveTo(source.container.x + 12, source.container.y);
+        graphics.lineTo(target.container.x - 12, target.container.y);
+        graphics.strokePath();
+      });
+      this.objects.push(graphics);
+      this.scene.tweens.add({
+        targets: graphics,
+        alpha: 0,
+        duration: 260,
+        ease: 'Quad.Out',
+        onComplete: () => {
+          const index = this.objects.indexOf(graphics);
+          if (index >= 0) this.objects.splice(index, 1);
+          graphics.destroy();
+        },
+      });
+    };
+
+    switch (event.signatureId) {
+      case 'GuardianBrace':
+        FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0x72bff5, 46);
+        FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0xf6d675, 35);
+        addLabel('GUARDIAN BRACE', '#bce4ff');
+        break;
+      case 'AmbushStrike':
+        drawTrails(0xfb7185, 4);
+        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xfb7185, 28));
+        addLabel('AMBUSH!', '#ff91a1');
+        break;
+      case 'FocusShot':
+        drawTrails(0x8be2bd, 3);
+        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x8be2bd, 25));
+        addLabel('FOCUS SHOT', '#b9f1d8');
+        break;
+      case 'ArcaneBloom':
+        targets.forEach((target, index) => {
+          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 30 + index * 4);
+          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x7c3aed, 19 + index * 3);
+        });
+        addLabel('ARCANE BLOOM', '#e9d5ff');
+        break;
+      case 'IronRam':
+        drawTrails(0x38bdf8, 5);
+        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x38bdf8, 34));
+        this.scene.tweens.add({
+          targets: source.container,
+          x: source.container.x + 8,
+          duration: 70,
+          yoyo: true,
+          ease: 'Quad.Out',
+        });
+        addLabel('IRON RAM', '#bcecff');
+        break;
+      case 'TwinVolley':
+        drawTrails(0xf472b6, 2);
+        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf472b6, 22));
+        addLabel('TWIN VOLLEY', '#fbcfe8');
+        break;
+    }
   }
 
   playHeal(event: BattleHealPresentation): void {
