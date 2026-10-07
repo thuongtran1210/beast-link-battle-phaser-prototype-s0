@@ -280,32 +280,32 @@ export class BattleActionView {
   private createBattleGrid(): void {
     const layout = this.layout;
 
-    this.pushGridText(
-      layout.baseX + 12,
-      layout.baseY + 72,
-      'BATTLE FIELD · PLAYER vs ENEMY',
-      14,
-      '#475569',
-      'bold',
-    );
-
-    this.pushGridText(
-      layout.playerFrontX - 145,
-      layout.baseY + 105,
-      'PLAYER  BACK  →  MID  →  FRONT',
-      10,
-      '#2563eb',
-      'bold',
-    );
-
-    this.pushGridText(
-      layout.enemyFrontX + 12,
-      layout.baseY + 105,
-      'FRONT  ←  MID  ←  BACK  ENEMY',
-      10,
-      '#b91c1c',
-      'bold',
-    );
+    if (!this.showcaseMode) {
+      this.pushGridText(
+        layout.baseX + 12,
+        layout.baseY + 72,
+        'BATTLE FIELD · PLAYER vs ENEMY',
+        14,
+        '#475569',
+        'bold',
+      );
+      this.pushGridText(
+        layout.playerFrontX - 145,
+        layout.baseY + 105,
+        'PLAYER  BACK  →  MID  →  FRONT',
+        10,
+        '#2563eb',
+        'bold',
+      );
+      this.pushGridText(
+        layout.enemyFrontX + 12,
+        layout.baseY + 105,
+        'FRONT  ←  MID  ←  BACK  ENEMY',
+        10,
+        '#b91c1c',
+        'bold',
+      );
+    }
 
     const divider = this.scene.add.rectangle(
       layout.dividerX,
@@ -323,22 +323,24 @@ export class BattleActionView {
       const playerTop = playerSlotPosition(layout, row, 1);
       const enemyTop = enemySlotPosition(layout, row, 1);
 
-      this.pushGridText(
-        playerTop.x - 22,
-        layout.topLaneY - 34,
-        row.toUpperCase(),
-        9,
-        '#64748b',
-        'bold',
-      );
-      this.pushGridText(
-        enemyTop.x - 22,
-        layout.topLaneY - 34,
-        row.toUpperCase(),
-        9,
-        '#991b1b',
-        'bold',
-      );
+      if (!this.showcaseMode) {
+        this.pushGridText(
+          playerTop.x - 22,
+          layout.topLaneY - 34,
+          row.toUpperCase(),
+          9,
+          '#64748b',
+          'bold',
+        );
+        this.pushGridText(
+          enemyTop.x - 22,
+          layout.topLaneY - 34,
+          row.toUpperCase(),
+          9,
+          '#991b1b',
+          'bold',
+        );
+      }
 
       for (let column = 1; column <= 6; column += 1) {
         const playerPos = playerSlotPosition(layout, row, column);
@@ -349,18 +351,18 @@ export class BattleActionView {
           playerPos.y,
           layout.slotWidth,
           layout.slotHeight,
-          0xeff6ff,
-          0.42,
-        ).setStrokeStyle(2, 0x93c5fd);
+          this.showcaseMode ? 0x243653 : 0xeff6ff,
+          this.showcaseMode ? 0.18 : 0.42,
+        ).setStrokeStyle(this.showcaseMode ? 1 : 2, 0x93c5fd, this.showcaseMode ? 0.25 : 1);
 
         const enemySlot = this.scene.add.rectangle(
           enemyPos.x,
           enemyPos.y,
           layout.slotWidth,
           layout.slotHeight,
-          0xfef2f2,
-          0.42,
-        ).setStrokeStyle(2, 0xfca5a5);
+          this.showcaseMode ? 0x412735 : 0xfef2f2,
+          this.showcaseMode ? 0.16 : 0.42,
+        ).setStrokeStyle(this.showcaseMode ? 1 : 2, 0xfca5a5, this.showcaseMode ? 0.22 : 1);
 
         this.objects.push(playerSlot, enemySlot);
         this.gridObjects.push(playerSlot, enemySlot);
@@ -369,14 +371,16 @@ export class BattleActionView {
 
     for (let column = 1; column <= 6; column += 1) {
       const lane = playerSlotPosition(layout, 'Front', column);
-      this.pushGridText(
-        layout.baseX + 6,
-        lane.y - 7,
-        `L${column}`,
-        9,
-        '#94a3b8',
-        'bold',
-      );
+      if (!this.showcaseMode) {
+        this.pushGridText(
+          layout.baseX + 6,
+          lane.y - 7,
+          `L${column}`,
+          9,
+          '#94a3b8',
+          'bold',
+        );
+      }
     }
   }
 
@@ -492,10 +496,10 @@ export class BattleActionView {
   private createUnit(unit: CombatUnit): UnitVisual {
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     const body = this.scene.add
-      .rectangle(0, 0, 52, 46, 0x1e293b, 0.95)
+      .rectangle(0, 0, 52, 46, 0x1e293b, this.showcaseMode ? 0.48 : 0.95)
       .setStrokeStyle(2, roleFill(unit.role));
 
-    const icon = createIconImage(this.scene, unit.beastId, 0, -4, 36);
+    const icon = createIconImage(this.scene, unit.beastId, 0, -4, this.showcaseMode ? 42 : 36);
 
     const label = this.scene.add.text(0, 15, '', {
       fontFamily: 'Arial, sans-serif',
@@ -537,10 +541,10 @@ export class BattleActionView {
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     const archetype = enemy.archetype ?? 'Frontliner';
     const body = this.scene.add
-      .rectangle(0, 0, 52, 46, 0x2b2030, 0.98)
+      .rectangle(0, 0, 52, 46, 0x2b2030, this.showcaseMode ? 0.5 : 0.98)
       .setStrokeStyle(2, 0x6b3b48);
 
-    const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -5, 31);
+    const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -5, this.showcaseMode ? 39 : 31);
 
     const label = this.scene.add.text(0, 16, '', {
       fontFamily: 'Arial, sans-serif',
@@ -578,13 +582,13 @@ export class BattleActionView {
   }
 
   private scheduleGridFade(): void {
-    this.scene.time.delayedCall(650, () => {
+    this.scene.time.delayedCall(this.showcaseMode ? 220 : 650, () => {
       const liveGridObjects = this.gridObjects.filter((object) => object.active);
       if (!liveGridObjects.length) return;
       this.scene.tweens.add({
         targets: liveGridObjects,
-        alpha: 0.08,
-        duration: 350,
+        alpha: this.showcaseMode ? 0.04 : 0.08,
+        duration: this.showcaseMode ? 220 : 350,
         ease: 'Sine.Out',
       });
     });
