@@ -18,20 +18,26 @@ export interface BattleCharacterArtDefinition {
 }
 
 /**
- * M2 registers Starcaller authored poses first.
+ * Authored rollout is incremental.
  *
- * All other Beasts intentionally keep empty pose maps and therefore preserve
- * the procedural portrait fallback until their rollout milestone.
+ * Starcaller (M2) and Snowguard (M3A) are registered. Remaining Beasts keep
+ * empty pose maps and preserve the procedural portrait fallback.
  */
 export const BATTLE_CHARACTER_ART: Readonly<Record<BeastId, BattleCharacterArtDefinition>> = {
   'beast-a': {
     beastId: 'beast-a',
     slug: 'snowguard',
-    displayHeight: 92,
-    groundOffsetY: 28,
-    effectAnchorY: -20,
-    hpAnchorY: -48,
-    poses: {},
+    displayHeight: 104,
+    groundOffsetY: 34,
+    effectAnchorY: -28,
+    hpAnchorY: -56,
+    poses: {
+      idle: '/assets/beasts/snowguard/battle_idle.svg',
+      attack: '/assets/beasts/snowguard/battle_attack.svg',
+      signature: '/assets/beasts/snowguard/battle_signature.svg',
+      hit: '/assets/beasts/snowguard/battle_hit.svg',
+      ko: '/assets/beasts/snowguard/battle_ko.svg',
+    },
   },
   'beast-b': {
     beastId: 'beast-b',
