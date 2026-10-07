@@ -229,13 +229,13 @@ export class BattleActionView {
       .filter((visual): visual is EnemyVisual => Boolean(visual));
 
     const addLabel = (label: string, color: string) => {
-      const text = this.scene.add.text(source.container.x, source.container.y - 40, label, {
+      const text = this.scene.add.text(source.container.x, source.container.y - 52, label, {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '10px',
+        fontSize: '12px',
         color,
         fontStyle: 'bold',
         backgroundColor: '#151a31',
-        padding: { x: 6, y: 3 },
+        padding: { x: 8, y: 4 },
         stroke: '#11152b',
         strokeThickness: 2,
       }).setOrigin(.5).setDepth(175);
@@ -255,7 +255,7 @@ export class BattleActionView {
       });
     };
 
-    const drawTrails = (color: number, width = 3) => {
+    const drawTrails = (color: number, width = 4) => {
       if (!targets.length) return;
       const graphics = this.scene.add.graphics().setDepth(165);
       graphics.lineStyle(width, color, .9);
@@ -269,7 +269,7 @@ export class BattleActionView {
       this.scene.tweens.add({
         targets: graphics,
         alpha: 0,
-        duration: 380,
+        duration: 520,
         ease: 'Quad.Out',
         onComplete: () => {
           const index = this.objects.indexOf(graphics);
@@ -286,21 +286,42 @@ export class BattleActionView {
         addLabel(signatureTierLabel(event.signatureId, event.star), '#bce4ff');
         break;
       case 'AmbushStrike':
-        drawTrails(0xfb7185, 4);
+        drawTrails(0xfb7185, 6);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xfb7185, 28));
         addLabel(signatureTierLabel(event.signatureId, event.star), '#ff91a1');
         break;
       case 'FocusShot':
-        drawTrails(0x8be2bd, 3);
+        drawTrails(0x8be2bd, 5);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x8be2bd, 25));
         addLabel(signatureTierLabel(event.signatureId, event.star), '#b9f1d8');
         break;
       case 'ArcaneBloom':
         targets.forEach((target, index) => {
-          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 30 + index * 4);
-          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x7c3aed, 19 + index * 3);
+          const disc = this.scene.add.circle(
+            target.container.x,
+            target.container.y,
+            18 + index * 3,
+            0x9333ea,
+            0.22,
+          ).setDepth(158);
+          this.objects.push(disc);
+          this.scene.tweens.add({
+            targets: disc,
+            scaleX: 2.2,
+            scaleY: 2.2,
+            alpha: 0,
+            duration: 620,
+            ease: 'Cubic.Out',
+            onComplete: () => {
+              const objectIndex = this.objects.indexOf(disc);
+              if (objectIndex >= 0) this.objects.splice(objectIndex, 1);
+              disc.destroy();
+            },
+          });
+          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 34 + index * 5);
+          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf0abfc, 22 + index * 3);
         });
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#e9d5ff');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#f3e8ff');
         if (event.star === 3 && targets.length > 0) {
           const echo = targets[targets.length - 1];
           this.scene.time.delayedCall(120, () => {
@@ -331,7 +352,7 @@ export class BattleActionView {
         }
         break;
       case 'IronRam':
-        drawTrails(0x38bdf8, 5);
+        drawTrails(0x38bdf8, 7);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x38bdf8, 34));
         this.scene.tweens.add({
           targets: source.container,
@@ -343,7 +364,7 @@ export class BattleActionView {
         addLabel(signatureTierLabel(event.signatureId, event.star), '#bcecff');
         break;
       case 'TwinVolley':
-        drawTrails(0xf472b6, 2);
+        drawTrails(0xf472b6, 4);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf472b6, 22));
         addLabel(signatureTierLabel(event.signatureId, event.star), '#fbcfe8');
         break;
@@ -625,8 +646,8 @@ export class BattleActionView {
     ) => {
       const sorted = [...entries].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
       const placed: Array<{ x: number; y: number; rank: number }> = [];
-      const yOffsets = [0, -17, 17, -31, 31];
-      const xOffsets = [0, -5, 5, -9, 9];
+      const yOffsets = [0, -22, 22, -40, 40];
+      const xOffsets = [0, -7, 7, -12, 12];
 
       sorted.forEach((entry) => {
         const nearby = placed.filter(
@@ -703,19 +724,19 @@ export class BattleActionView {
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     const beastDef = getIconDefinition(unit.beastId);
     const body = this.scene.add
-      .rectangle(0, 0, 54, 48, beastDef.bgFill, this.showcaseMode ? 0.34 : 0.95)
+      .rectangle(0, 0, this.showcaseMode ? 66 : 54, this.showcaseMode ? 60 : 48, beastDef.bgFill, this.showcaseMode ? 0.38 : 0.95)
       .setStrokeStyle(this.showcaseMode ? 2.5 : 2, this.showcaseMode ? beastDef.borderColor : roleFill(unit.role));
 
     const signatureRing = this.scene.add
-      .circle(0, -4, this.showcaseMode ? 27 : 23, 0x000000, 0)
+      .circle(0, -6, this.showcaseMode ? 34 : 23, 0x000000, 0)
       .setStrokeStyle(2, beastDef.accentColor, 0.85)
       .setVisible(false);
 
-    const icon = createIconImage(this.scene, unit.beastId, 0, -5, this.showcaseMode ? 43 : 36);
+    const icon = createIconImage(this.scene, unit.beastId, 0, -7, this.showcaseMode ? 54 : 36);
 
     const label = this.scene.add.text(0, 14, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: this.showcaseMode ? '7px' : '8px',
+      fontSize: this.showcaseMode ? '8px' : '8px',
       color: this.showcaseMode ? '#fff8ef' : '#fbbf24',
       align: 'center',
       fontStyle: 'bold',
@@ -754,10 +775,10 @@ export class BattleActionView {
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     const archetype = enemy.archetype ?? 'Frontliner';
     const body = this.scene.add
-      .rectangle(0, 0, 52, 46, 0x2b2030, this.showcaseMode ? 0.3 : 0.98)
+      .rectangle(0, 0, this.showcaseMode ? 62 : 52, this.showcaseMode ? 58 : 46, 0x2b2030, this.showcaseMode ? 0.34 : 0.98)
       .setStrokeStyle(2, 0x6b3b48);
 
-    const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -5, this.showcaseMode ? 39 : 31);
+    const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -6, this.showcaseMode ? 49 : 31);
 
     const label = this.scene.add.text(0, 16, '', {
       fontFamily: 'Arial, sans-serif',
