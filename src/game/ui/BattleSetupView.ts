@@ -4,6 +4,7 @@ import type { EnemyArchetype, EnemyFixture } from '../battle/AutonomousBattleMod
 import { recommendedRows, signatureNameForBeast } from '../battle/BeastRoles';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage, createRoleIconImage } from './icons/IconFactory';
+import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
 import { beastDisplayName } from './icons/UnitIconRegistry';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 import { BattleSetupInteractionController, type DropOutcome } from './BattleSetupInteractionController';
@@ -318,18 +319,19 @@ export class BattleSetupView {
       const strokeColor = archetype === 'Diver' ? 0xa855f7 : archetype === 'Ranged' ? 0x06b6d4 : 0xf87171;
 
       const body = this.scene.add
-        .rectangle(rowX, posY, slotW - 8, slotH - 8, 0x450a0a, 0.95)
+        .rectangle(rowX, posY, slotW - 4, slotH - 6, 0x2b2030, 0.98)
         .setStrokeStyle(1.5, strokeColor);
 
+      const icon = createEnemyArchetypeIcon(this.scene, archetype, rowX - 16, posY - 1, 27);
       const label = this.text(
-        rowX,
-        posY - 2,
+        rowX + 14,
+        posY - 1,
         enemyBoardCardLabel(archetype, enemy.maxHp, enemy.damage),
-        8,
-        '#ffffff',
+        7,
+        '#fff4f2',
         'bold',
       ).setOrigin(0.5);
-      this.objects.push(body, label);
+      this.objects.push(body, icon, label);
     });
 
     // First-time instructional arrow cue (disappears after first placement)
@@ -378,7 +380,7 @@ export class BattleSetupView {
         .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xfbbf24 : roleStrokeColor(occupantUnit.role));
       this.objects.push(body);
 
-      const icon = createIconImage(this.scene, occupantUnit.beastId, x - 15, y - 4, 32);
+      const icon = createIconImage(this.scene, occupantUnit.beastId, x - 15, y - 5, 36);
       this.objects.push(icon);
 
       const roleBadge = createRoleIconImage(this.scene, occupantUnit.role, x + 16, y - 10, 16);
