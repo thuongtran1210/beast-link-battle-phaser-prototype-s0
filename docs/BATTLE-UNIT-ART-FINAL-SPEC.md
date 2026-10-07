@@ -1,8 +1,15 @@
 # Battle Unit Art Final Spec — Casual Chibi Runtime
 
-Status: **ART DIRECTION LOCK / IMPLEMENTATION NEXT / GAMEPLAY FROZEN**
+Status: **SUPERSEDED BY V2 / REFERENCE ONLY / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
+
+> **V2 NOTE — 2026-10-07**
+>
+> The production target has moved to the simpler **Simple Chibi Cutout Battle Style**.
+> Read `docs/BATTLE-ART-DIRECTION-V2.md` and `docs/UNIT-PRODUCTION-BRIEF-V2.md` first.
+>
+> This document is retained only for identity/fantasy reference. Its pose-heavy asset requirements are no longer the default production contract.
 
 ## Purpose
 
