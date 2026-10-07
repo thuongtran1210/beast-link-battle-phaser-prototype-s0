@@ -18,6 +18,7 @@ import {
 } from './BattleFieldLayout';
 
 import { createIconImage } from './icons/IconFactory';
+import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 
 interface UnitVisual {
@@ -35,6 +36,7 @@ interface UnitVisual {
 interface EnemyVisual {
   container: Phaser.GameObjects.Container;
   body: Phaser.GameObjects.Rectangle;
+  icon: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
   hpBarContainer: Phaser.GameObjects.Container;
   hpBorder: Phaser.GameObjects.Rectangle;
@@ -493,7 +495,7 @@ export class BattleActionView {
       .rectangle(0, 0, 52, 46, 0x1e293b, 0.95)
       .setStrokeStyle(2, roleFill(unit.role));
 
-    const icon = createIconImage(this.scene, unit.beastId, 0, -2, 30);
+    const icon = createIconImage(this.scene, unit.beastId, 0, -4, 36);
 
     const label = this.scene.add.text(0, 15, '', {
       fontFamily: 'Arial, sans-serif',
@@ -533,14 +535,17 @@ export class BattleActionView {
 
   private createEnemy(enemy: EnemyCombatUnit): EnemyVisual {
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
+    const archetype = enemy.archetype ?? 'Frontliner';
     const body = this.scene.add
-      .rectangle(0, 0, 48, 42, 0x7f1d1d)
-      .setStrokeStyle(2, 0x450a0a);
+      .rectangle(0, 0, 52, 46, 0x2b2030, 0.98)
+      .setStrokeStyle(2, 0x6b3b48);
 
-    const label = this.scene.add.text(0, 5, '', {
+    const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -5, 31);
+
+    const label = this.scene.add.text(0, 16, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '8px',
-      color: '#ffffff',
+      fontSize: '7px',
+      color: '#fff4f2',
       align: 'center',
       fontStyle: 'bold',
     }).setOrigin(0.5);
@@ -555,13 +560,14 @@ export class BattleActionView {
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [body, label, hpBarContainer],
+      [body, icon, label, hpBarContainer],
     );
 
     this.objects.push(container);
     return {
       container,
       body,
+      icon,
       label,
       hpBarContainer,
       hpBorder,
