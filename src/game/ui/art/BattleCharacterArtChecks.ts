@@ -1,47 +1,53 @@
-import { BATTLE_CHARACTER_ART, type BattlePose } from './BattleCharacterManifest';
+import { BATTLE_CHARACTER_ART } from './BattleCharacterManifest';
+import { BATTLE_MOTION_PROFILES } from './BattleMotionProfiles';
 
 const expect = (value: boolean, message: string) => {
   if (!value) throw new Error(`Battle art check failed: ${message}`);
 };
 
 export function runBattleCharacterArtChecks(): void {
-  const starcaller = BATTLE_CHARACTER_ART['beast-d'];
-  const snowguard = BATTLE_CHARACTER_ART['beast-a'];
-  const required: BattlePose[] = ['idle', 'attack', 'signature', 'hit', 'ko'];
+  const expectedProfiles = {
+    'beast-a': 'TANK',
+    'beast-b': 'ASSASSIN',
+    'beast-c': 'RANGER_FOCUS',
+    'beast-d': 'MAGE',
+    'beast-e': 'BRUISER',
+    'beast-f': 'RANGER_FAST',
+  } as const;
 
-  required.forEach((pose) => {
-    expect(Boolean(starcaller.poses[pose]), `Starcaller registers ${pose} pose`);
-    expect(Boolean(snowguard.poses[pose]), `Snowguard registers ${pose} pose`);
+  Object.entries(expectedProfiles).forEach(([beastId, profile]) => {
+    const definition = BATTLE_CHARACTER_ART[beastId as keyof typeof BATTLE_CHARACTER_ART];
+    expect(Boolean(definition), `${beastId} has art definition`);
+    expect(definition.motionProfile === profile, `${beastId} uses ${profile} motion profile`);
+    expect(Boolean(BATTLE_MOTION_PROFILES[profile]), `${profile} motion profile exists`);
+    expect(definition.effectAnchorY < 0, `${beastId} effect anchor sits above ground`);
+    expect(definition.hpAnchorY < definition.effectAnchorY, `${beastId} HP anchor sits above effect anchor`);
   });
 
-  expect(
-    new Set(required.map((pose) => starcaller.poses[pose])).size === required.length,
-    'Starcaller required pose paths are unique',
-  );
-  expect(
-    new Set(required.map((pose) => snowguard.poses[pose])).size === required.length,
-    'Snowguard required pose paths are unique',
-  );
+  const starcaller = BATTLE_CHARACTER_ART['beast-d'];
+  const snowguard = BATTLE_CHARACTER_ART['beast-a'];
 
-  expect(
-    starcaller.poses.signature?.includes('starcaller/battle_signature.svg') ?? false,
-    'Starcaller Signature uses authored celestial cast pose',
-  );
-  expect(
-    snowguard.poses.signature?.includes('snowguard/battle_signature.svg') ?? false,
-    'Snowguard Signature uses authored Guardian Brace pose',
-  );
+  // Transitional authored bases: these two already passed live alpha/anchor QA.
+  expect(Boolean(starcaller.base), 'Starcaller registers V2 base art');
+  expect(Boolean(snowguard.base), 'Snowguard registers V2 base art');
 
-  const fallbackBeasts = ['beast-b', 'beast-c', 'beast-e', 'beast-f'] as const;
-  fallbackBeasts.forEach((beastId) => {
+  // Signature / KO art is optional in V2, but current migrated assets remain valid.
+  expect(Boolean(starcaller.signature), 'Starcaller keeps optional Signature art during migration');
+  expect(Boolean(snowguard.signature), 'Snowguard keeps optional Guardian Brace art during migration');
+
+  const remaining = ['beast-b', 'beast-c', 'beast-e', 'beast-f'] as const;
+  remaining.forEach((beastId) => {
     expect(
-      Object.keys(BATTLE_CHARACTER_ART[beastId].poses).length === 0,
-      `${beastId} remains fallback-only until its authored rollout`,
+      !BATTLE_CHARACTER_ART[beastId].base,
+      `${beastId} remains fallback-only until simple V2 base art is integrated`,
     );
   });
 
-  expect(starcaller.effectAnchorY < 0, 'Starcaller effect anchor sits above ground origin');
-  expect(starcaller.hpAnchorY < starcaller.effectAnchorY, 'Starcaller HP bar sits above effect anchor');
-  expect(snowguard.effectAnchorY < 0, 'Snowguard Guardian Brace anchor sits above ground origin');
-  expect(snowguard.hpAnchorY < snowguard.effectAnchorY, 'Snowguard HP bar sits above shield/effect anchor');
+  // Production-cost guardrail: new V2 art must not require attack/hit images.
+  remaining.forEach((beastId) => {
+    expect(
+      !BATTLE_CHARACTER_ART[beastId].poses.attack && !BATTLE_CHARACTER_ART[beastId].poses.hit,
+      `${beastId} has no mandatory V1 attack/hit pose dependency`,
+    );
+  });
 }
