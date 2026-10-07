@@ -60,6 +60,8 @@ For portfolio capture:
 - Press **P** during Battle to pause/resume the simulation at a readable skill moment.
 - Press **C** while Showcase Mode is active to hide/show the global top HUD.
 - Press **K** in Battle Setup while Showcase Mode is active to load the deterministic **V15A capture fixture** (capture-only, not part of the normal run).
+  - The fixture now also loads a capture enemy cluster with low damage and higher HP so Signature VFX have time to read.
+  - Tactical Energy cast feedback is anchored below the right HUD instead of covering the battlefield.
 
 Showcase Mode also suppresses Battle Setup harness controls so screenshots do not expose presets, fixture cycling or enemy-edit tools.
 
