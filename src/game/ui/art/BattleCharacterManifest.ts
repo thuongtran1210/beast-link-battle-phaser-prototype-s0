@@ -18,11 +18,10 @@ export interface BattleCharacterArtDefinition {
 }
 
 /**
- * M1 infrastructure intentionally ships with no authored paths.
+ * M2 registers Starcaller authored poses first.
  *
- * M2 adds Starcaller paths first. Keeping poses empty here guarantees that M1
- * never requests missing art and the current procedural portrait remains the
- * deterministic fallback.
+ * All other Beasts intentionally keep empty pose maps and therefore preserve
+ * the procedural portrait fallback until their rollout milestone.
  */
 export const BATTLE_CHARACTER_ART: Readonly<Record<BeastId, BattleCharacterArtDefinition>> = {
   'beast-a': {
@@ -55,11 +54,17 @@ export const BATTLE_CHARACTER_ART: Readonly<Record<BeastId, BattleCharacterArtDe
   'beast-d': {
     beastId: 'beast-d',
     slug: 'starcaller',
-    displayHeight: 94,
-    groundOffsetY: 30,
-    effectAnchorY: -24,
-    hpAnchorY: -50,
-    poses: {},
+    displayHeight: 108,
+    groundOffsetY: 34,
+    effectAnchorY: -32,
+    hpAnchorY: -58,
+    poses: {
+      idle: '/assets/beasts/starcaller/battle_idle.svg',
+      attack: '/assets/beasts/starcaller/battle_attack.svg',
+      signature: '/assets/beasts/starcaller/battle_signature.svg',
+      hit: '/assets/beasts/starcaller/battle_hit.svg',
+      ko: '/assets/beasts/starcaller/battle_ko.svg',
+    },
   },
   'beast-e': {
     beastId: 'beast-e',
