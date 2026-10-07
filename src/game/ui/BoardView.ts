@@ -56,10 +56,10 @@ export class BoardView {
         this.originY + totalSize / 2,
         totalSize + 16,
         totalSize + 16,
-        0x111827,
-        0.8,
+        HudTokens.colors.bgPhase,
+        0.96,
       )
-      .setStrokeStyle(1.5, HudTokens.colors.strokeHighlight);
+      .setStrokeStyle(2, HudTokens.colors.strokeHighlight, 0.75);
     this.container.add(boardMat);
 
     this.board.forEachPosition((position) => {
@@ -71,8 +71,8 @@ export class BoardView {
       if (!contentId) {
         // Empty slot
         const emptyCell = this.scene.add
-          .rectangle(x, y, this.cellSize, this.cellSize, 0x18212b, 0.35)
-          .setStrokeStyle(1, 0x243242, 0.4);
+          .rectangle(x, y, this.cellSize, this.cellSize, HudTokens.colors.bgSurfaceDark, 0.66)
+          .setStrokeStyle(1, HudTokens.colors.strokeDefault, 0.42);
         this.container.add(emptyCell);
         return;
       }
@@ -83,10 +83,10 @@ export class BoardView {
       const tileColor = isEnergy ? energyColor(letter) : beastColor(letter);
 
       const fill = !this.inputEnabled
-        ? 0x1e293b
+        ? HudTokens.colors.bgSurfaceDark
         : selected
-        ? 0x1d4ed8
-        : 0x1e293b;
+        ? 0x203a68
+        : HudTokens.colors.bgPhaseSoft;
 
       const stroke = !this.inputEnabled
         ? 0x334155
@@ -94,19 +94,24 @@ export class BoardView {
         ? 0xfbbf24
         : tileColor;
 
-      const strokeWidth = selected ? 3.5 : 1.5;
+      const strokeWidth = selected ? 3.5 : 2;
 
       // Group tile visuals inside container centered at (x, y) for smooth scaling/hover
       const tileContainer = this.scene.add.container(x, y);
 
+      // Soft halo under each tile gives Beast/Energy Rush the same neon language.
+      const glow = this.scene.add
+        .rectangle(0, 0, this.cellSize + 5, this.cellSize + 5, tileColor, selected ? 0.18 : 0.07)
+        .setStrokeStyle(selected ? 4 : 2, tileColor, selected ? 0.42 : 0.16);
+
       const cell = this.scene.add
-        .rectangle(0, 0, this.cellSize, this.cellSize, fill, 0.95)
+        .rectangle(0, 0, this.cellSize, this.cellSize, fill, 0.97)
         .setStrokeStyle(strokeWidth, stroke);
 
-      // Top color indicator strip
-      const stripH = Math.max(4, Math.round(this.cellSize * 0.08));
+      // Thin top accent keeps identity readable without the old debug-strip weight.
+      const stripH = Math.max(3, Math.round(this.cellSize * 0.055));
       const strip = this.scene.add
-        .rectangle(0, -this.cellSize / 2 + stripH / 2, this.cellSize - 4, stripH, tileColor, selected ? 1 : 0.9);
+        .rectangle(0, -this.cellSize / 2 + stripH / 2 + 2, this.cellSize - 12, stripH, tileColor, selected ? 1 : 0.82);
 
       // Center Icon Badge
       const iconSize = Math.round(this.cellSize * 0.62);
@@ -129,7 +134,7 @@ export class BoardView {
         })
         .setOrigin(0.5);
 
-      tileContainer.add([cell, strip, iconImage, subLabel, ...(idTag ? [idTag] : [])]);
+      tileContainer.add([glow, cell, strip, iconImage, subLabel, ...(idTag ? [idTag] : [])]);
       this.container.add(tileContainer);
 
       const key = `${position.row},${position.col}`;
@@ -155,7 +160,7 @@ export class BoardView {
               duration: 80,
               ease: 'Quad.Out',
             });
-            cell.setStrokeStyle(2.5, 0x38bdf8);
+            cell.setStrokeStyle(2.5, tileColor, 1);
           }
         };
 
@@ -356,8 +361,11 @@ export class BoardView {
 
   private drawPath(points: BoardPosition[]): void {
     this.pathGraphics.clear();
+    const firstContent = points.length ? this.board.getContent(points[0]) : undefined;
+    const pathColor = firstContent?.contentId.startsWith('energy-') ? HudTokens.colors.blue : HudTokens.colors.gold;
+
     // Glowing underlay
-    this.pathGraphics.lineStyle(10, 0xfbbf24, 0.45);
+    this.pathGraphics.lineStyle(11, pathColor, 0.38);
     points.forEach((point, index) => {
       const p = this.pixelPosition(point);
       if (index === 0) this.pathGraphics.beginPath().moveTo(p.x, p.y);
@@ -366,7 +374,7 @@ export class BoardView {
     this.pathGraphics.strokePath();
 
     // Sharp bright core line
-    this.pathGraphics.lineStyle(4, 0xffffff, 1.0);
+    this.pathGraphics.lineStyle(3.5, 0xf7fbff, 1.0);
     points.forEach((point, index) => {
       const p = this.pixelPosition(point);
       if (index === 0) this.pathGraphics.beginPath().moveTo(p.x, p.y);
