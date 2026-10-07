@@ -52,6 +52,16 @@ Procedural unit portraits and enemy silhouettes are **runtime placeholder art fo
 - Top HUD includes Wave Result in the visible phase flow.
 - GitHub Actions validation workflow added for `npm run check` + `npm run build`.
 
+## Runtime capture controls
+
+For portfolio capture:
+
+- Press **O** to toggle Showcase Mode.
+- Press **P** during Battle to pause/resume the simulation at a readable skill moment.
+- Press **C** while Showcase Mode is active to hide/show the global top HUD.
+
+Showcase Mode also suppresses Battle Setup harness controls so screenshots do not expose presets, fixture cycling or enemy-edit tools.
+
 ## Capture gate
 
 Do not call the runtime showcase-ready until live QA confirms at 1280×720:
