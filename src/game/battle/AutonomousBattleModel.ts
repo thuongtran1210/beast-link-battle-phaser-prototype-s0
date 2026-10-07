@@ -1,5 +1,24 @@
 import { type BattleFormation, type FormationUnit } from './BattleFormation';
-import { signatureStrengthForStar, starStatMultiplier } from '../run/StarProfile';
+import {
+  ambushActivationLimit,
+  ambushChainRatio,
+  arcaneBloomEchoRatio,
+  arcaneBloomRadiusForStar,
+  arcaneBloomSecondaryLimitForStar,
+  focusHoldThresholdForStar,
+  focusPierceRatio,
+  focusPierceTargets,
+  guardianBraceActivationLimit,
+  guardianBraceShareRatio,
+  ironRamCleaveRatio,
+  ironRamCleaveTargets,
+  ironRamKnockbackForStar,
+  ironRamStaggerForStar,
+  signatureStrengthForStar,
+  starStatMultiplier,
+  twinVolleyAttackThreshold,
+  twinVolleySecondaryTargets,
+} from '../run/StarProfile';
 import { signatureForBeast, type BeastRole, type BeastSignatureId } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/TacticalEnergyCatalog';
@@ -7,7 +26,7 @@ import type { FormationValidationMetrics } from './FormationValidationHarness';
 
 export type BattleStatus = 'Running' | 'Win' | 'Lose';
 export type BattleRow = 'Front' | 'Mid' | 'Back';
-export type PlayerActionKind = 'GuardStrike' | 'Dive' | 'Snipe' | 'ArcaneBurst';
+export type PlayerActionKind = 'GuardStrike' | 'Ram' | 'Dive' | 'Snipe' | 'Volley' | 'ArcaneBurst';
 export type CombatActionState = 'Moving' | 'Windup' | 'Recovering' | 'Idle' | 'Dead';
 export type RoleMovementState = 'Hold' | 'AdvanceToRange' | 'Kite' | 'Engage' | 'Dive' | 'Idle';
 
@@ -62,10 +81,13 @@ export interface CombatUnit {
   signatureActivationCount?: number;
   temporaryShieldHp?: number;
   temporaryShieldExpiresAt?: number;
+  temporaryShieldSourceSignatureId?: BeastSignatureId;
   ambushReady?: boolean;
   ambushTargetId?: string;
   continuousHoldTime?: number;
   focusReady?: boolean;
+  ramReady?: boolean;
+  volleyAttackCount?: number;
 }
 
 export interface SignatureBattleEvent { type: 'SignatureReady' | 'SignatureActivated' | 'ShieldAbsorbed'; unitId: string; signatureId: BeastSignatureId; targetId?: string; amount?: number; time: number; }
@@ -1216,8 +1238,11 @@ export class AutonomousBattleModel {
       signatureId: this.combatRules.signatures ? signatureForBeast(unit.beastId) : undefined,
       signatureActivationCount: 0,
       temporaryShieldHp: 0,
+      temporaryShieldSourceSignatureId: undefined,
       continuousHoldTime: 0,
       focusReady: false,
+      ramReady: true,
+      volleyAttackCount: 0,
     };
   }
 
@@ -1246,7 +1271,13 @@ export class AutonomousBattleModel {
         } else if (unit.role === 'Assassin') {
           target = this.nearestEnemyByRowPriority(unit.positionLane, ['Back', 'Mid', 'Front']);
           unit.targetEnemyId = target?.enemyId;
-          if (unit.signatureId === 'AmbushStrike' && target && target.row !== 'Front' && unit.ambushTargetId !== target.enemyId) {
+          if (
+            unit.signatureId === 'AmbushStrike' &&
+            target &&
+            target.row !== 'Front' &&
+            unit.ambushTargetId !== target.enemyId &&
+            (unit.signatureActivationCount ?? 0) < ambushActivationLimit(unit.star)
+          ) {
             unit.ambushTargetId = target.enemyId;
             unit.ambushReady = true;
             this.signatureEvents.push({ type: 'SignatureReady', unitId: unit.unitId, signatureId: 'AmbushStrike', targetId: target.enemyId, time: this.state.elapsedTime ?? 0 });
@@ -2115,45 +2146,206 @@ export class AutonomousBattleModel {
     const enemyHpBefore = target.currentHp;
 
     if (unit.role === 'Tanker') {
-      const damage = this.applyDamage(target, unit.damage);
-      if (damage > 0) this.recordAction(unit, 'GuardStrike', [{ enemyId: target.enemyId, damage }]);
+      const ram = unit.signatureId === 'IronRam' && unit.ramReady && target.currentHp > 0;
+      const hits: PlayerCombatHit[] = [];
+      const damage = this.applyDamage(
+        target,
+        unit.damage * (ram ? signatureStrengthForStar('IronRam', unit.star) : 1),
+      );
+      if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
+
+      if (ram) {
+        unit.ramReady = false;
+        target.positionX = clamp(
+          target.positionX + ironRamKnockbackForStar(unit.star),
+          ENEMY_MIN_X,
+          ENEMY_MAX_X,
+        );
+        const stagger = ironRamStaggerForStar(unit.star);
+        if (stagger > 0) {
+          target.attackCooldownRemaining = Math.max(target.attackCooldownRemaining ?? 0, stagger);
+          target.recoveryRemaining = Math.max(target.recoveryRemaining ?? 0, stagger);
+        }
+
+        const cleaveTargets = ironRamCleaveTargets(unit.star);
+        if (cleaveTargets > 0) {
+          const secondary = this.state.enemies
+            .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
+            .sort(
+              (a, b) =>
+                this.distance(a.positionX, a.positionLane, target.positionX, target.positionLane) -
+                  this.distance(b.positionX, b.positionLane, target.positionX, target.positionLane) ||
+                a.enemyId.localeCompare(b.enemyId),
+            )
+            .slice(0, cleaveTargets);
+          for (const enemy of secondary) {
+            const applied = this.applyDamage(enemy, unit.damage * ironRamCleaveRatio(unit.star));
+            if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
+          }
+        }
+
+        this.activateSignature(unit, target.enemyId);
+      }
+
+      if (hits.length) this.recordAction(unit, ram ? 'Ram' : 'GuardStrike', hits);
     } else if (unit.role === 'Assassin') {
       if (this.consequenceMetrics.firstAssassinContactTime === undefined) {
         this.consequenceMetrics.firstAssassinContactTime = this.state.elapsedTime ?? 0;
       }
-      const ambush = unit.signatureId === 'AmbushStrike' && unit.ambushReady && unit.ambushTargetId === target.enemyId;
-      const damage = this.applyDamage(target, unit.damage * (ambush ? signatureStrengthForStar('AmbushStrike', unit.star) : 1));
-      if (ambush) { this.activateSignature(unit, target.enemyId); unit.ambushReady = false; this.signatureMetrics.ambushStrikesResolved += 1; }
-      if (damage > 0) this.recordAction(unit, 'Dive', [{ enemyId: target.enemyId, damage }]);
+      const ambush =
+        unit.signatureId === 'AmbushStrike' &&
+        unit.ambushReady &&
+        unit.ambushTargetId === target.enemyId &&
+        (unit.signatureActivationCount ?? 0) < ambushActivationLimit(unit.star);
+
+      const hits: PlayerCombatHit[] = [];
+      const damage = this.applyDamage(
+        target,
+        unit.damage * (ambush ? signatureStrengthForStar('AmbushStrike', unit.star) : 1),
+      );
+      if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
+
+      if (ambush) {
+        this.activateSignature(unit, target.enemyId);
+        unit.ambushReady = false;
+        this.signatureMetrics.ambushStrikesResolved += 1;
+
+        // 3★ Shadowclaw converts an Ambush kill into one deterministic follow-up strike.
+        if (target.currentHp <= 0 && ambushChainRatio(unit.star) > 0) {
+          const chainTarget = this.state.enemies
+            .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
+            .sort(
+              (a, b) =>
+                rowOrder[b.row] - rowOrder[a.row] ||
+                a.currentHp - b.currentHp ||
+                a.enemyId.localeCompare(b.enemyId),
+            )[0];
+          if (chainTarget) {
+            const chained = this.applyDamage(chainTarget, unit.damage * ambushChainRatio(unit.star));
+            if (chained > 0) hits.push({ enemyId: chainTarget.enemyId, damage: chained });
+          }
+        }
+      }
+
+      if (hits.length) this.recordAction(unit, 'Dive', hits);
     } else if (unit.role === 'Ranger') {
-      const focus = unit.signatureId === 'FocusShot' && unit.focusReady;
-      const damage = this.applyDamage(target, unit.damage * (focus ? signatureStrengthForStar('FocusShot', unit.star) : 1));
-      if (focus) { this.activateSignature(unit, target.enemyId); unit.focusReady = false; unit.continuousHoldTime = 0; this.signatureMetrics.focusShotsResolved += 1; }
-      if (damage > 0) this.recordAction(unit, 'Snipe', [{ enemyId: target.enemyId, damage }]);
+      if (unit.signatureId === 'TwinVolley') {
+        const hits: PlayerCombatHit[] = [];
+        const primary = this.applyDamage(target, unit.damage);
+        if (primary > 0) hits.push({ enemyId: target.enemyId, damage: primary });
+
+        unit.volleyAttackCount = (unit.volleyAttackCount ?? 0) + 1;
+        const volley = unit.volleyAttackCount >= twinVolleyAttackThreshold(unit.star);
+        if (volley) {
+          unit.volleyAttackCount = 0;
+          const secondary = this.state.enemies
+            .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
+            .sort(
+              (a, b) =>
+                this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane) -
+                  this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane) ||
+                a.enemyId.localeCompare(b.enemyId),
+            )
+            .slice(0, twinVolleySecondaryTargets(unit.star));
+          for (const enemy of secondary) {
+            const applied = this.applyDamage(
+              enemy,
+              unit.damage * signatureStrengthForStar('TwinVolley', unit.star),
+            );
+            if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
+          }
+          this.activateSignature(unit, target.enemyId);
+        }
+        if (hits.length) this.recordAction(unit, volley ? 'Volley' : 'Snipe', hits);
+      } else {
+        const focus = unit.signatureId === 'FocusShot' && unit.focusReady;
+        const hits: PlayerCombatHit[] = [];
+        const damage = this.applyDamage(
+          target,
+          unit.damage * (focus ? signatureStrengthForStar('FocusShot', unit.star) : 1),
+        );
+        if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
+
+        if (focus) {
+          const pierceCount = focusPierceTargets(unit.star);
+          if (pierceCount > 0) {
+            const secondary = this.state.enemies
+              .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
+              .sort(
+                (a, b) =>
+                  this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane) -
+                    this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane) ||
+                  a.enemyId.localeCompare(b.enemyId),
+              )
+              .slice(0, pierceCount);
+            for (const enemy of secondary) {
+              const applied = this.applyDamage(enemy, unit.damage * focusPierceRatio(unit.star));
+              if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
+            }
+          }
+          this.activateSignature(unit, target.enemyId);
+          unit.focusReady = false;
+          unit.continuousHoldTime = 0;
+          this.signatureMetrics.focusShotsResolved += 1;
+        }
+
+        if (hits.length) this.recordAction(unit, 'Snipe', hits);
+      }
     } else {
-      // Mage
+      // Mage — STAR changes Bloom footprint and 3★ adds a visible Echo hit.
       const hits: PlayerCombatHit[] = [];
       const appliedPrimary = this.applyDamage(target, unit.damage);
       if (appliedPrimary > 0) hits.push({ enemyId: target.enemyId, damage: appliedPrimary });
-      // V13A snapshots the cluster at cast resolution. Legacy rules retain their old splash behavior.
-      const bloom = unit.signatureId === 'ArcaneBloom' && this.state.enemies.filter((enemy) => enemy.currentHp > 0 && this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= P1V13A_SIGNATURE_FIXTURE.arcaneBloomRadius).length >= 2;
+
+      const bloomRadius = arcaneBloomRadiusForStar(unit.star);
+      const nearbyCount = this.state.enemies.filter(
+        (enemy) =>
+          enemy.currentHp > 0 &&
+          this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius,
+      ).length;
+      const bloom = unit.signatureId === 'ArcaneBloom' && nearbyCount >= 2;
+
       const secondaryTargets = this.state.enemies
         .filter(
           (enemy) =>
             enemy.currentHp > 0 &&
             enemy.enemyId !== target.enemyId &&
-            (bloom ? this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= P1V13A_SIGNATURE_FIXTURE.arcaneBloomRadius : !this.combatRules.signatures && Math.abs(enemy.positionLane - target.positionLane) <= 1.05),
+            (bloom
+              ? this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius
+              : !this.combatRules.signatures && Math.abs(enemy.positionLane - target.positionLane) <= 1.05),
         )
         .sort(
-          (a, b) => this.distance(a.positionX, a.positionLane, target.positionX, target.positionLane) - this.distance(b.positionX, b.positionLane, target.positionX, target.positionLane) || a.enemyId.localeCompare(b.enemyId),
+          (a, b) =>
+            this.distance(a.positionX, a.positionLane, target.positionX, target.positionLane) -
+              this.distance(b.positionX, b.positionLane, target.positionX, target.positionLane) ||
+            a.enemyId.localeCompare(b.enemyId),
         );
 
-      for (const enemy of bloom ? secondaryTargets.slice(0, P1V13A_SIGNATURE_FIXTURE.arcaneBloomSecondaryLimit) : secondaryTargets) {
-        const applied = this.applyDamage(enemy, unit.damage * (bloom ? signatureStrengthForStar('ArcaneBloom', unit.star) : 0.5));
+      for (const enemy of bloom
+        ? secondaryTargets.slice(0, arcaneBloomSecondaryLimitForStar(unit.star))
+        : secondaryTargets) {
+        const applied = this.applyDamage(
+          enemy,
+          unit.damage * (bloom ? signatureStrengthForStar('ArcaneBloom', unit.star) : 0.5),
+        );
         if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
       }
 
-      if (bloom) { this.activateSignature(unit, target.enemyId); this.signatureMetrics.arcaneBloomTargetsHit += Math.max(0, hits.length - 1); }
+      if (bloom) {
+        this.activateSignature(unit, target.enemyId);
+        this.signatureMetrics.arcaneBloomTargetsHit += Math.max(0, hits.length - 1);
+
+        const echoRatio = arcaneBloomEchoRatio(unit.star);
+        if (echoRatio > 0) {
+          const echoTarget = this.state.enemies
+            .filter((enemy) => enemy.currentHp > 0)
+            .sort((a, b) => a.currentHp - b.currentHp || a.enemyId.localeCompare(b.enemyId))[0];
+          if (echoTarget) {
+            const echoDamage = this.applyDamage(echoTarget, unit.damage * echoRatio);
+            if (echoDamage > 0) hits.push({ enemyId: echoTarget.enemyId, damage: echoDamage });
+          }
+        }
+      }
 
       if (hits.length) this.recordAction(unit, 'ArcaneBurst', hits);
     }
@@ -2174,15 +2366,43 @@ export class AutonomousBattleModel {
     for (const enemy of this.state.enemies) if (enemy.currentHp > 0) nearest = Math.min(nearest, this.distance(unit.positionX, unit.positionLane, enemy.positionX, enemy.positionLane));
     if (unit.movementPolicyState === 'Hold' && dist <= profile.attackRange && nearest >= profile.dangerRange) {
       unit.continuousHoldTime = (unit.continuousHoldTime ?? 0) + deltaSeconds;
-      if (unit.continuousHoldTime >= P1V13A_SIGNATURE_FIXTURE.focusHoldThreshold) { unit.focusReady = true; this.signatureEvents.push({ type: 'SignatureReady', unitId: unit.unitId, signatureId: 'FocusShot', time: this.state.elapsedTime ?? 0 }); }
+      if (unit.continuousHoldTime >= focusHoldThresholdForStar(unit.star)) {
+        unit.focusReady = true;
+        this.signatureEvents.push({ type: 'SignatureReady', unitId: unit.unitId, signatureId: 'FocusShot', time: this.state.elapsedTime ?? 0 });
+      }
     } else if (unit.movementPolicyState === 'Kite' || unit.movementPolicyState === 'AdvanceToRange') { unit.continuousHoldTime = 0; }
   }
 
   private activateGuardianBrace(unit: CombatUnit, targetId: string): void {
-    if (!this.combatRules.signatures || unit.signatureId !== 'GuardianBrace' || (unit.signatureActivationCount ?? 0) > 0) return;
-    unit.temporaryShieldHp = signatureStrengthForStar('GuardianBrace', unit.star);
-    unit.temporaryShieldExpiresAt = (this.state.elapsedTime ?? 0) + P1V13A_SIGNATURE_FIXTURE.guardianBraceDuration;
+    if (
+      !this.combatRules.signatures ||
+      unit.signatureId !== 'GuardianBrace' ||
+      (unit.signatureActivationCount ?? 0) >= guardianBraceActivationLimit(unit.star)
+    ) return;
+
+    const shield = signatureStrengthForStar('GuardianBrace', unit.star);
+    const expiresAt = (this.state.elapsedTime ?? 0) + P1V13A_SIGNATURE_FIXTURE.guardianBraceDuration;
+    unit.temporaryShieldHp = Math.max(unit.temporaryShieldHp ?? 0, shield);
+    unit.temporaryShieldExpiresAt = expiresAt;
+    unit.temporaryShieldSourceSignatureId = 'GuardianBrace';
     this.activateSignature(unit, targetId);
+
+    // 3★ Snowguard extends part of the Brace to the most pressured ally.
+    const shareRatio = guardianBraceShareRatio(unit.star);
+    if (shareRatio > 0) {
+      const ally = this.state.units
+        .filter((candidate) => candidate.currentHp > 0 && candidate.unitId !== unit.unitId)
+        .sort(
+          (a, b) =>
+            a.currentHp / a.maxHp - b.currentHp / b.maxHp ||
+            a.unitId.localeCompare(b.unitId),
+        )[0];
+      if (ally) {
+        ally.temporaryShieldHp = Math.max(ally.temporaryShieldHp ?? 0, shield * shareRatio);
+        ally.temporaryShieldExpiresAt = expiresAt;
+        ally.temporaryShieldSourceSignatureId = 'GuardianBrace';
+      }
+    }
   }
 
   private activateSignature(unit: CombatUnit, targetId?: string): void {
@@ -2191,12 +2411,29 @@ export class AutonomousBattleModel {
     this.signatureEvents.push({ type: 'SignatureActivated', unitId: unit.unitId, signatureId: unit.signatureId!, targetId, time: this.state.elapsedTime ?? 0 });
   }
 
-  private expireShield(unit: CombatUnit): void { if ((unit.temporaryShieldExpiresAt ?? Infinity) <= (this.state.elapsedTime ?? 0)) { unit.temporaryShieldHp = 0; unit.temporaryShieldExpiresAt = undefined; } }
+  private expireShield(unit: CombatUnit): void {
+    if ((unit.temporaryShieldExpiresAt ?? Infinity) <= (this.state.elapsedTime ?? 0)) {
+      unit.temporaryShieldHp = 0;
+      unit.temporaryShieldExpiresAt = undefined;
+      unit.temporaryShieldSourceSignatureId = undefined;
+    }
+  }
 
   private applyDamageToUnit(unit: CombatUnit, incoming: number): number {
     this.expireShield(unit);
     const absorbed = Math.min(unit.temporaryShieldHp ?? 0, incoming);
-    if (absorbed > 0) { unit.temporaryShieldHp = (unit.temporaryShieldHp ?? 0) - absorbed; this.signatureMetrics.guardianBraceAbsorbed += absorbed; this.signatureMetrics.shieldDamageAbsorbedByUnit[unit.unitId] = (this.signatureMetrics.shieldDamageAbsorbedByUnit[unit.unitId] ?? 0) + absorbed; this.signatureEvents.push({ type: 'ShieldAbsorbed', unitId: unit.unitId, signatureId: unit.signatureId!, amount: absorbed, time: this.state.elapsedTime ?? 0 }); }
+    if (absorbed > 0) {
+      unit.temporaryShieldHp = (unit.temporaryShieldHp ?? 0) - absorbed;
+      this.signatureMetrics.guardianBraceAbsorbed += absorbed;
+      this.signatureMetrics.shieldDamageAbsorbedByUnit[unit.unitId] = (this.signatureMetrics.shieldDamageAbsorbedByUnit[unit.unitId] ?? 0) + absorbed;
+      this.signatureEvents.push({
+        type: 'ShieldAbsorbed',
+        unitId: unit.unitId,
+        signatureId: unit.temporaryShieldSourceSignatureId ?? unit.signatureId ?? 'GuardianBrace',
+        amount: absorbed,
+        time: this.state.elapsedTime ?? 0,
+      });
+    }
     const hpDamage = Math.min(unit.currentHp, incoming - absorbed); unit.currentHp = Math.max(0, unit.currentHp - hpDamage); return hpDamage;
   }
 
