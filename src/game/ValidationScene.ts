@@ -487,6 +487,7 @@ export class ValidationScene extends Phaser.Scene {
     const wave = this.waveRun.currentWave;
     const setup = this.phaseController.phase === GamePhase.BattleSetup;
     this.topHud?.update(this.phaseController.phase, beastCount, energyCount, setup ? { primaryTitle: `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${wave.name}`, secondaryTitle: `Threat · ${wave.threatLabel}`, linkShards: this.shardPool.count, hideBrand: true } : { linkShards: this.shardPool.count });
+    this.topHud?.setVisible(!(this.showcaseMode && this.showcaseCleanFrame));
   }
 
   private enterBeastRush(): void {
