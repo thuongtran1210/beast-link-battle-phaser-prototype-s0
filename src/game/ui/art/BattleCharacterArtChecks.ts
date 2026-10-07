@@ -27,13 +27,16 @@ export function runBattleCharacterArtChecks(): void {
   const starcaller = BATTLE_CHARACTER_ART['beast-d'];
   const snowguard = BATTLE_CHARACTER_ART['beast-a'];
 
-  // Transitional authored bases: these two already passed live alpha/anchor QA.
-  expect(Boolean(starcaller.base), 'Starcaller registers V2 base art');
-  expect(Boolean(snowguard.base), 'Snowguard registers V2 base art');
+  // Snowguard is the first pure V2 production unit.
+  expect(Boolean(snowguard.base), 'Snowguard registers simple V2 base art');
+  expect(Boolean(snowguard.icon), 'Snowguard registers simple V2 icon art');
+  expect(!snowguard.signature, 'Snowguard does not require authored Signature pose art');
+  expect(!snowguard.ko, 'Snowguard does not require authored KO pose art');
+  expect(Object.keys(snowguard.poses).length === 0, 'Snowguard has zero V1 pose dependencies');
 
-  // Signature / KO art is optional in V2, but current migrated assets remain valid.
+  // Starcaller remains the compatibility unit until its V2 base migration.
+  expect(Boolean(starcaller.base), 'Starcaller registers V2-compatible base art');
   expect(Boolean(starcaller.signature), 'Starcaller keeps optional Signature art during migration');
-  expect(Boolean(snowguard.signature), 'Snowguard keeps optional Guardian Brace art during migration');
 
   const remaining = ['beast-b', 'beast-c', 'beast-e', 'beast-f'] as const;
   remaining.forEach((beastId) => {
