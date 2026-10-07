@@ -19,6 +19,8 @@ import {
 } from './BattleFieldLayout';
 
 import { createIconImage } from './icons/IconFactory';
+import { beastDisplayName, getIconDefinition } from './icons/UnitIconRegistry';
+import { signatureTierLabel } from '../run/StarProfile';
 import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 
@@ -27,6 +29,7 @@ interface UnitVisual {
   body: Phaser.GameObjects.Rectangle;
   icon: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
+  signatureRing: Phaser.GameObjects.Arc;
   hpBarContainer: Phaser.GameObjects.Container;
   hpBorder: Phaser.GameObjects.Rectangle;
   ghostFill: Phaser.GameObjects.Rectangle;
@@ -274,24 +277,52 @@ export class BattleActionView {
       case 'GuardianBrace':
         FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0x72bff5, 46);
         FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0xf6d675, 35);
-        addLabel('GUARDIAN BRACE', '#bce4ff');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#bce4ff');
         break;
       case 'AmbushStrike':
         drawTrails(0xfb7185, 4);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xfb7185, 28));
-        addLabel('AMBUSH!', '#ff91a1');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#ff91a1');
         break;
       case 'FocusShot':
         drawTrails(0x8be2bd, 3);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x8be2bd, 25));
-        addLabel('FOCUS SHOT', '#b9f1d8');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#b9f1d8');
         break;
       case 'ArcaneBloom':
         targets.forEach((target, index) => {
           FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 30 + index * 4);
           FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x7c3aed, 19 + index * 3);
         });
-        addLabel('ARCANE BLOOM', '#e9d5ff');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#e9d5ff');
+        if (event.star === 3 && targets.length > 0) {
+          const echo = targets[targets.length - 1];
+          this.scene.time.delayedCall(120, () => {
+            if (!echo.container.active) return;
+            FeedbackEffects.pulseRing(this.scene, echo.container.x, echo.container.y, 0xf6d675, 24);
+            const echoText = this.scene.add.text(echo.container.x, echo.container.y - 36, 'ECHO', {
+              fontFamily: 'Arial, sans-serif',
+              fontSize: '9px',
+              color: '#f6d675',
+              fontStyle: 'bold',
+              stroke: '#11152b',
+              strokeThickness: 3,
+            }).setOrigin(.5).setDepth(176);
+            this.objects.push(echoText);
+            this.scene.tweens.add({
+              targets: echoText,
+              y: echoText.y - 12,
+              alpha: 0,
+              duration: 420,
+              ease: 'Cubic.Out',
+              onComplete: () => {
+                const index = this.objects.indexOf(echoText);
+                if (index >= 0) this.objects.splice(index, 1);
+                echoText.destroy();
+              },
+            });
+          });
+        }
         break;
       case 'IronRam':
         drawTrails(0x38bdf8, 5);
@@ -303,12 +334,12 @@ export class BattleActionView {
           yoyo: true,
           ease: 'Quad.Out',
         });
-        addLabel('IRON RAM', '#bcecff');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#bcecff');
         break;
       case 'TwinVolley':
         drawTrails(0xf472b6, 2);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf472b6, 22));
-        addLabel('TWIN VOLLEY', '#fbcfe8');
+        addLabel(signatureTierLabel(event.signatureId, event.star), '#fbcfe8');
         break;
     }
   }
@@ -498,7 +529,7 @@ export class BattleActionView {
     this.updateHpBar(visual, ratio, unit.currentHp <= 0);
 
     if (this.showcaseMode) {
-      visual.label.setText(`${'★'.repeat(unit.star)} ${unit.role.toUpperCase()}`);
+      visual.label.setText(`${beastDisplayName(unit.beastId)}\n${'★'.repeat(unit.star)}`);
     } else {
       const stateBadge = unit.movementPolicyState && unit.currentHp > 0
         ? `\n${unit.movementPolicyState.toUpperCase()}`
@@ -506,6 +537,17 @@ export class BattleActionView {
       visual.label.setText(
         `${'★'.repeat(unit.star)} ${formatNumber(unit.currentHp)}${stateBadge}`,
       );
+    }
+
+    const readyColor =
+      (unit.temporaryShieldHp ?? 0) > 0 ? 0x72bff5
+      : unit.ambushReady ? 0xfb7185
+      : unit.focusReady ? 0x8be2bd
+      : undefined;
+    if (readyColor !== undefined && unit.currentHp > 0) {
+      visual.signatureRing.setStrokeStyle(2, readyColor, 0.9).setVisible(true);
+    } else {
+      visual.signatureRing.setVisible(false);
     }
 
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
@@ -598,16 +640,22 @@ export class BattleActionView {
 
   private createUnit(unit: CombatUnit): UnitVisual {
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
+    const beastDef = getIconDefinition(unit.beastId);
     const body = this.scene.add
-      .rectangle(0, 0, 52, 46, 0x1e293b, this.showcaseMode ? 0.48 : 0.95)
-      .setStrokeStyle(2, roleFill(unit.role));
+      .rectangle(0, 0, 54, 48, beastDef.bgFill, this.showcaseMode ? 0.6 : 0.95)
+      .setStrokeStyle(this.showcaseMode ? 2.5 : 2, this.showcaseMode ? beastDef.borderColor : roleFill(unit.role));
 
-    const icon = createIconImage(this.scene, unit.beastId, 0, -4, this.showcaseMode ? 42 : 36);
+    const signatureRing = this.scene.add
+      .circle(0, -4, this.showcaseMode ? 27 : 23, 0x000000, 0)
+      .setStrokeStyle(2, beastDef.accentColor, 0.85)
+      .setVisible(false);
 
-    const label = this.scene.add.text(0, 15, '', {
+    const icon = createIconImage(this.scene, unit.beastId, 0, -5, this.showcaseMode ? 43 : 36);
+
+    const label = this.scene.add.text(0, 14, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '8px',
-      color: '#fbbf24',
+      fontSize: this.showcaseMode ? '7px' : '8px',
+      color: this.showcaseMode ? '#fff8ef' : '#fbbf24',
       align: 'center',
       fontStyle: 'bold',
       lineSpacing: -2,
@@ -623,7 +671,7 @@ export class BattleActionView {
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [body, icon, label, hpBarContainer],
+      [body, signatureRing, icon, label, hpBarContainer],
     );
 
     this.objects.push(container);
@@ -632,6 +680,7 @@ export class BattleActionView {
       body,
       icon,
       label,
+      signatureRing,
       hpBarContainer,
       hpBorder,
       ghostFill,
