@@ -28,193 +28,185 @@ export class ShowcaseBattleHUDView {
 
     const w = this.panelWidth;
     let currY = this.y;
-
-    // CARD 1: STATUS & TICK
-    const statusH = 74;
-    const isPaused = paused;
     const isRunning = battle.status === 'Running';
-    const statusBg = drawCard(this.scene, this.x, currY, w, statusH, HudTokens.colors.bgSurface, 0.94);
+    const statusText = paused ? 'PAUSED' : isRunning ? 'LIVE' : battle.status.toUpperCase();
 
-    const title = this.scene.add.text(this.x + 16, currY + 12, 'BATTLE IN PROGRESS', {
+    // Compact battle context. The battlefield should remain the visual hero.
+    const statusH = 70;
+    const statusBg = drawCard(this.scene, this.x, currY, w, statusH, HudTokens.colors.bgSurface, .95);
+    const title = this.scene.add.text(this.x + 16, currY + 12, 'AUTONOMOUS BATTLE', {
       fontFamily: HudTokens.fonts.family,
       fontSize: '13px',
-      color: HudTokens.colors.textMuted,
+      color: HudTokens.colors.textPrimary,
       fontStyle: 'bold',
       letterSpacing: 1,
     });
-
-    const statusBadgeText = isPaused ? 'PAUSED' : battle.status.toUpperCase();
-    const statusBadgeColor = isPaused ? 0xb45309 : isRunning ? 0x15803d : 0x475569;
-    const badgeBg = this.scene.add
-      .rectangle(this.x + 54, currY + 44, 76, 22, statusBadgeColor, 0.9)
-      .setStrokeStyle(1, isPaused ? 0xfbbf24 : 0x22c55e);
-
-    const badgeLabel = this.scene.add.text(this.x + 54, currY + 44, statusBadgeText, {
+    const subtitle = this.scene.add.text(this.x + 16, currY + 36, 'Formation resolves automatically · cast Energy when needed', {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '11px',
+      fontSize: '9px',
+      color: HudTokens.colors.textMuted,
+    });
+    const badgeBg = this.scene.add.rectangle(
+      this.x + w - 48,
+      currY + 22,
+      72,
+      24,
+      paused ? HudTokens.colors.goldDark : isRunning ? HudTokens.colors.greenDark : HudTokens.colors.bgSurfaceLight,
+      .95,
+    ).setStrokeStyle(1, paused ? HudTokens.colors.gold : isRunning ? HudTokens.colors.green : HudTokens.colors.strokeHighlight);
+    const badge = this.scene.add.text(this.x + w - 48, currY + 22, statusText, {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '10px',
       color: '#ffffff',
       fontStyle: 'bold',
-    }).setOrigin(0.5);
-
-    const tickText = this.scene.add.text(this.x + 150, currY + 44, `TICK ${battle.elapsedTicks}`, {
-      fontFamily: HudTokens.fonts.family,
-      fontSize: '15px',
-      color: HudTokens.colors.textPrimary,
-      fontStyle: 'bold',
-    }).setOrigin(0, 0.5);
-
-    this.objects.push(statusBg, title, badgeBg, badgeLabel, tickText);
+    }).setOrigin(.5);
+    this.objects.push(statusBg, title, subtitle, badgeBg, badge);
     currY += statusH + 10;
 
-    // CARD 2: ENEMY SQUAD HP & LIVING COUNT
-    const enemyH = 88;
-    const enemyBg = drawCard(this.scene, this.x, currY, w, enemyH, HudTokens.colors.bgSurface, 0.94);
+    // One threat card replaces Tick/debug-style readouts.
+    const threatH = 92;
+    const threatBg = drawCard(this.scene, this.x, currY, w, threatH, HudTokens.colors.bgSurface, .94);
     const enemiesAlive = battle.enemies.filter((enemy) => enemy.currentHp > 0).length;
-
-    const enemyTitle = this.scene.add.text(this.x + 16, currY + 12, 'ENEMY SQUAD', {
+    const enemyRatio = battle.enemyMaxHp > 0 ? Math.max(0, battle.enemyHp / battle.enemyMaxHp) : 0;
+    const threatTitle = this.scene.add.text(this.x + 16, currY + 12, 'THREAT STATUS', {
       fontFamily: HudTokens.fonts.family,
       fontSize: '11px',
       color: HudTokens.colors.textRed,
       fontStyle: 'bold',
       letterSpacing: 1,
     });
-
-    const enemyAliveText = this.scene.add.text(this.x + w - 16, currY + 12, `Living: ${enemiesAlive}/${battle.enemies.length}`, {
+    const alive = this.scene.add.text(this.x + w - 16, currY + 12, `${enemiesAlive} / ${battle.enemies.length} ACTIVE`, {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '11px',
+      fontSize: '10px',
       color: HudTokens.colors.textMuted,
+      fontStyle: 'bold',
     }).setOrigin(1, 0);
-
-    const enemyRatio = battle.enemyMaxHp > 0 ? Math.max(0, battle.enemyHp / battle.enemyMaxHp) : 0;
     const barW = w - 32;
-    const barH = 12;
-    const barBg = this.scene.add
-      .rectangle(this.x + 16 + barW / 2, currY + 38, barW, barH, 0x111827)
-      .setStrokeStyle(1, 0x334155);
-    const barFill = this.scene.add
-      .rectangle(this.x + 16, currY + 38, barW * enemyRatio, barH, 0xdc2626)
-      .setOrigin(0, 0.5);
-
-    const hpText = this.scene.add.text(
-      this.x + 16,
-      currY + 56,
-      `HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
-      {
-        fontFamily: HudTokens.fonts.family,
-        fontSize: '12px',
-        color: HudTokens.colors.textPrimary,
-        fontStyle: 'bold',
-      },
-    );
-
-    this.objects.push(enemyBg, enemyTitle, enemyAliveText, barBg, barFill, hpText);
-    currY += enemyH + 10;
-
-    // CARD 3: FRONTLINE UNIT
-    const frontH = 74;
-    const frontBg = drawCard(this.scene, this.x, currY, w, frontH, HudTokens.colors.bgSurface, 0.94);
-    const frontTitle = this.scene.add.text(this.x + 16, currY + 12, 'TARGET FRONTLINE', {
+    const barBg = this.scene.add.rectangle(this.x + 16 + barW / 2, currY + 37, barW, 11, HudTokens.colors.bgSurfaceDark, 1)
+      .setStrokeStyle(1, HudTokens.colors.strokeDefault);
+    const barFill = this.scene.add.rectangle(this.x + 16, currY + 37, barW * enemyRatio, 9, HudTokens.colors.red, .92).setOrigin(0, .5);
+    const hpText = this.scene.add.text(this.x + 16, currY + 51, `Enemy HP  ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`, {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '11px',
-      color: HudTokens.colors.textBlue,
+      fontSize: '10px',
+      color: HudTokens.colors.textSecondary,
+      fontStyle: 'bold',
+    });
+    const frontline = this.scene.add.text(this.x + 16, currY + 68, `Frontline · ${frontlineLabel}`, {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '9px',
+      color: HudTokens.colors.textMuted,
+      wordWrap: { width: w - 32 },
+    });
+    this.objects.push(threatBg, threatTitle, alive, barBg, barFill, hpText, frontline);
+    currY += threatH + 10;
+
+    // Tactical Energy is the primary player interaction during Battle.
+    const activeEntries = energyEntries.filter((entry) => entry.charges > 0).slice(0, 4);
+    const totalCharges = activeEntries.reduce((sum, entry) => sum + entry.charges, 0);
+    const cols = 2;
+    const cardGap = 10;
+    const innerPad = 14;
+    const tileW = (w - innerPad * 2 - cardGap) / 2;
+    const tileH = 96;
+    const rows = Math.max(1, Math.ceil(activeEntries.length / cols));
+    const energyH = 58 + rows * tileH + Math.max(0, rows - 1) * cardGap + 32;
+    const energyBg = drawCard(this.scene, this.x, currY, w, energyH, HudTokens.colors.bgSurfaceElevated, .96);
+    const energyTitle = this.scene.add.text(this.x + 16, currY + 13, 'TACTICAL ENERGY', {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '13px',
+      color: HudTokens.colors.textGold,
       fontStyle: 'bold',
       letterSpacing: 1,
     });
-
-    const frontContent = this.scene.add.text(this.x + 16, currY + 32, frontlineLabel, {
+    const chargeText = this.scene.add.text(this.x + w - 16, currY + 14, `×${totalCharges} STORED`, {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '12px',
-      color: HudTokens.colors.textPrimary,
-      wordWrap: { width: w - 32 },
+      fontSize: '10px',
+      color: HudTokens.colors.textMuted,
+      fontStyle: 'bold',
+    }).setOrigin(1, 0);
+    const instruction = this.scene.add.text(this.x + 16, currY + 34, 'SUGGESTED highlights relevance — you still choose.', {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '9px',
+      color: HudTokens.colors.textMuted,
     });
-    this.objects.push(frontBg, frontTitle, frontContent);
-    currY += frontH + 10;
-
-    // CARD 4: STORED ENERGY & HEAL BUTTONS
-    const activeEntries = energyEntries.filter((e) => e.charges > 0);
-    const totalCharges = activeEntries.reduce((sum, entry) => sum + entry.charges, 0);
-    const rowHeight = 56;
-    const energyCardH = Math.max(120, 52 + Math.max(1, activeEntries.length) * (rowHeight + 4) + 26);
-    const energyBg = drawCard(this.scene, this.x, currY, w, energyCardH, HudTokens.colors.bgSurfaceElevated, 0.94);
-
-    const energyHeading = this.scene.add.text(
-      this.x + 16,
-      currY + 14,
-      `STORED ENERGY · ${totalCharges} CHARGE${totalCharges === 1 ? '' : 'S'}`,
-      {
-        fontFamily: HudTokens.fonts.family,
-        fontSize: '12px',
-        color: HudTokens.colors.textGold,
-        fontStyle: 'bold',
-        letterSpacing: 1,
-      },
-    );
-    this.objects.push(energyBg, energyHeading);
-
-    let rowY = currY + 42;
+    this.objects.push(energyBg, energyTitle, chargeText, instruction);
 
     if (!activeEntries.length) {
-      const empty = this.scene.add.text(this.x + 16, rowY + 6, 'No stored Energy charges to cast.', {
+      const empty = this.scene.add.text(this.x + 16, currY + 68, 'No stored Tactical Energy.', {
         fontFamily: HudTokens.fonts.family,
-        fontSize: '12px',
+        fontSize: '11px',
         color: HudTokens.colors.textMuted,
         fontStyle: 'italic',
       });
       this.objects.push(empty);
     } else {
-      activeEntries.forEach((entry) => {
-        const castState = castStateFor(entry.energyId); if (!castState) return;
-        const rowBg = this.scene.add
-          .rectangle(this.x + w / 2, rowY + rowHeight / 2, w - 32, rowHeight, castState.suggested ? 0x3f3515 : 0x111827, 0.9)
-          .setStrokeStyle(1.5, castState.suggested ? 0xfbbf24 : castState.enabled ? 0x38bdf8 : 0x64748b);
+      activeEntries.forEach((entry, index) => {
+        const castState = castStateFor(entry.energyId);
+        if (!castState) return;
 
-        const tokenIcon = createIconImage(this.scene, entry.energyId, this.x + 32, rowY + rowHeight / 2, 24);
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const tileX = this.x + innerPad + col * (tileW + cardGap);
+        const tileY = currY + 57 + row * (tileH + cardGap);
+        const cx = tileX + tileW / 2;
+        const cy = tileY + tileH / 2;
+        const border = castState.suggested
+          ? HudTokens.colors.gold
+          : castState.enabled
+          ? HudTokens.colors.blue
+          : HudTokens.colors.strokeDefault;
+        const fill = castState.suggested
+          ? 0x40381f
+          : castState.enabled
+          ? HudTokens.colors.bgSurface
+          : HudTokens.colors.bgSurfaceDark;
 
-        const label = this.scene.add.text(
-          this.x + 48,
-          rowY + 11,
-          `${castState.displayName} ×${entry.charges}`,
-          {
-            fontFamily: HudTokens.fonts.family,
-            fontSize: '11px',
-            color: '#f8fafc',
-            fontStyle: 'bold',
-          },
-        );
-        const description = this.scene.add.text(this.x + 48, rowY + 24, castState.shortDescription, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted });
-        const state = this.scene.add.text(this.x + 48, rowY + 40, `${castState.stateLabel}${castState.reasonLabel ? ` · ${castState.reasonLabel}` : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: castState.suggested ? '#fbbf24' : castState.enabled ? '#7dd3fc' : '#94a3b8', fontStyle: 'bold' });
+        const tile = this.scene.add.rectangle(cx, cy, tileW, tileH, fill, castState.enabled ? .98 : .72)
+          .setStrokeStyle(castState.suggested ? 2 : 1.25, border, .95);
+        const icon = createIconImage(this.scene, entry.energyId, tileX + 24, tileY + 24, 30);
+        const name = this.scene.add.text(tileX + 45, tileY + 11, `${castState.displayName} ×${entry.charges}`, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '10px',
+          color: HudTokens.colors.textPrimary,
+          fontStyle: 'bold',
+        });
+        const desc = this.scene.add.text(tileX + 12, tileY + 43, castState.shortDescription, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '8px',
+          color: HudTokens.colors.textMuted,
+          wordWrap: { width: tileW - 24 },
+        });
+        const stateColor = castState.suggested
+          ? HudTokens.colors.textGold
+          : castState.enabled
+          ? HudTokens.colors.textBlue
+          : HudTokens.colors.textMuted;
+        const state = this.scene.add.text(tileX + 12, tileY + 70, castState.stateLabel, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '9px',
+          color: stateColor,
+          fontStyle: 'bold',
+        });
+        const action = this.scene.add.text(tileX + tileW - 12, tileY + 70, castState.enabled ? 'CAST' : '—', {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '9px',
+          color: castState.enabled ? '#ffffff' : HudTokens.colors.textMuted,
+          fontStyle: 'bold',
+          backgroundColor: castState.enabled ? '#407cb8' : undefined,
+          padding: castState.enabled ? { x: 6, y: 3 } : undefined,
+        }).setOrigin(1, 0);
 
-        const healBtnBg = this.scene.add
-          .rectangle(this.x + w - 58, rowY + rowHeight / 2, 70, 26, castState.enabled ? 0x0284c7 : 0x334155, castState.enabled ? 1 : .65)
-          .setStrokeStyle(1, castState.enabled ? 0x38bdf8 : 0x64748b);
+        if (castState.enabled) {
+          tile.setInteractive({ useHandCursor: true });
+          action.setInteractive({ useHandCursor: true });
+          const cast = () => onCast(entry.energyId);
+          tile.on('pointerup', cast);
+          action.on('pointerup', cast);
+        }
 
-        const healBtnText = this.scene.add
-          .text(this.x + w - 58, rowY + rowHeight / 2, castState.enabled ? 'CAST' : '—', {
-            fontFamily: HudTokens.fonts.family,
-            fontSize: '10px',
-            color: '#ffffff',
-            fontStyle: 'bold',
-          })
-          .setOrigin(0.5);
-
-        if (castState.enabled) { healBtnBg.setInteractive({ useHandCursor: true }); healBtnText.setInteractive({ useHandCursor: true }); const castAction = () => onCast(entry.energyId); healBtnBg.on('pointerdown', castAction); healBtnText.on('pointerdown', castAction); }
-
-        this.objects.push(rowBg, tokenIcon, label, description, state, healBtnBg, healBtnText);
-        rowY += rowHeight + 4;
+        this.objects.push(tile, icon, name, desc, state, action);
       });
     }
-
-    const hint = this.scene.add.text(
-      this.x + 16,
-      currY + energyCardH - 22,
-      'Tactical Energy · 1 charge per effective cast.',
-      {
-        fontFamily: HudTokens.fonts.family,
-        fontSize: '10px',
-        color: HudTokens.colors.textMuted,
-      },
-    );
-    this.objects.push(hint);
 
     this.setVisible(this.visible);
   }
