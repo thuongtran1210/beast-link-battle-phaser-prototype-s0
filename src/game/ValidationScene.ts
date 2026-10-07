@@ -938,7 +938,7 @@ export class ValidationScene extends Phaser.Scene {
       if (unitId) this.formation?.place(unitId, slotId);
     });
 
-    ['MEND', 'RESCUE', 'BREAK', 'PIERCE'].forEach((energyId) => {
+    ['energy-a', 'energy-b', 'energy-c', 'energy-d'].forEach((energyId) => {
       this.energyQueue.addCharge(energyId, 3);
     });
     this.shardPool.award(2);
