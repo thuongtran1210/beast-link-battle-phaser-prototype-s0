@@ -58,46 +58,36 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE V2 — Simplified Base-Art Migration**
+**FINAL ART PHASE V2 — Snowguard Base Cutout Live QA**
 
-Status: **V2 CUTOUT MOTION INFRA COMPLETE / CI PASS / BASE ART NEXT**
+Status: **SNOWGUARD V2 BASE-ONLY MIGRATION COMPLETE / CI PASS / LIVE QA REQUIRED**
 
 Primary sources:
 1. `docs/BATTLE-ART-DIRECTION-V2.md`
 2. `docs/UNIT-PRODUCTION-BRIEF-V2.md`
 3. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-V2-M1 implemented:
-- manifest supports one `base` cutout plus optional `signature` / `ko`;
-- six reusable motion profiles:
-  - TANK
-  - BRUISER
-  - MAGE
-  - RANGER_FAST
-  - RANGER_FOCUS
-  - ASSASSIN
-- Attack / Hit / KO use transform/tween motion by default;
-- Signature keeps optional pose override + VFX;
-- Starcaller/Snowguard V1 art remains compatibility base during migration;
-- four remaining Beasts stay fallback-only;
-- deterministic V2 art contract PASS;
-- GitHub Actions run 126 PASS.
+Snowguard V2 implemented:
+- `base_v2.svg`;
+- `icon_v2.svg`;
+- manifest uses one base cutout;
+- no V1 attack/hit/signature/KO pose dependency;
+- `TANK` transform profile drives motion;
+- Guardian Brace remains runtime VFX;
+- final deterministic/build gate GitHub Actions run 133 PASS.
 
-Immediate task — **V2-M2 Base-Art Migration**:
-1. Snowguard simple cutout base;
-2. Starcaller simple cutout base;
-3. Swiftwing;
-4. Windstrider;
-5. Ironclad;
-6. Shadowclaw.
+Immediate owner QA:
+1. refresh build;
+2. press `L`;
+3. inspect Snowguard at idle;
+4. watch attack + hit transform;
+5. inspect Guardian Brace;
+6. capture one representative frame.
 
-Per Beast:
-- one base image required;
-- icon required;
-- optional Signature/KO only when clearly useful;
-- animation via motion profile;
-- VFX carries Signature power;
-- gameplay remains frozen.
+After live PASS:
+**V2-M2B — Starcaller simplified base-art migration**.
+
+Gameplay remains frozen.
 
 ## B.1/B.2 implementation baseline
 
