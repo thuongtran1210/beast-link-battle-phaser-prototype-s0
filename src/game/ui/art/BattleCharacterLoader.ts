@@ -5,7 +5,7 @@ import {
   type BattlePose,
 } from './BattleCharacterManifest';
 
-export type BattleCharacterV2Asset = 'base' | 'signature' | 'ko';
+export type BattleCharacterV2Asset = 'base' | 'icon' | 'signature' | 'ko';
 
 export function battleCharacterTextureKey(beastId: string, pose: BattlePose): string {
   return `battle-${beastId.toLowerCase()}-${pose}`;
@@ -38,6 +38,11 @@ export function preloadBattleCharacterArt(scene: Phaser.Scene): void {
       scene,
       battleCharacterV2TextureKey(definition.beastId, 'base'),
       definition.base,
+    );
+    queueImage(
+      scene,
+      battleCharacterV2TextureKey(definition.beastId, 'icon'),
+      definition.icon,
     );
     queueImage(
       scene,
