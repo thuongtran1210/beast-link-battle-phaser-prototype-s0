@@ -125,3 +125,16 @@ export function signatureTierSummary(signature: BeastSignatureId, star: StarLeve
         : 'Every shot can hit two extra targets';
   }
 }
+
+
+/** Compact player-facing copy for Battle Setup cards; keep to one short line at 1280×720. */
+export function signatureTierTagline(signature: BeastSignatureId, star: StarLevel): string {
+  switch (signature) {
+    case 'GuardianBrace': return star === 1 ? '1st intercept shield' : star === 2 ? '2 intercept shields' : 'share shield with ally';
+    case 'AmbushStrike': return star === 1 ? 'deep-target burst' : star === 2 ? 're-arm once' : 'kill chains a strike';
+    case 'FocusShot': return star === 1 ? 'hold → charge Focus' : star === 2 ? 'faster Focus charge' : 'Focus pierces +1';
+    case 'ArcaneBloom': return star === 1 ? 'cluster splash' : star === 2 ? 'wider Bloom' : 'Bloom + Echo';
+    case 'IronRam': return star === 1 ? 'knockback Frontliner' : star === 2 ? 'Ram + stagger' : 'Ram + cleave';
+    case 'TwinVolley': return star === 1 ? 'Volley every 3rd' : star === 2 ? 'Volley every 2nd' : 'Volley every shot';
+  }
+}
