@@ -1022,11 +1022,14 @@ export class ValidationScene extends Phaser.Scene {
   ): void {
     const placement = this.layout.getPuzzleBoardPlacement(RuleConfig.boardSize);
 
-    this.boardTitle = this.add.text(placement.startX, placement.startY - 38, title, {
+    const phaseTitleColor = type === 'Energy' ? HudTokens.colors.textBlue : HudTokens.colors.textGold;
+    this.boardTitle = this.add.text(placement.startX, placement.startY - 40, title, {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '20px',
-      color: HudTokens.colors.textPrimary,
+      fontSize: '22px',
+      color: phaseTitleColor,
       fontStyle: 'bold',
+      letterSpacing: 1,
+      shadow: { offsetX: 0, offsetY: 2, color: '#000000', blur: 4, fill: true },
     });
 
     this.boardSubtitle = this.add.text(
@@ -1035,8 +1038,8 @@ export class ValidationScene extends Phaser.Scene {
       subtitle,
       {
         fontFamily: HudTokens.fonts.family,
-        fontSize: '12px',
-        color: HudTokens.colors.textMuted,
+        fontSize: '11px',
+        color: HudTokens.colors.textSecondary,
       },
     );
 
