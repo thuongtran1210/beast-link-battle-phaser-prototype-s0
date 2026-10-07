@@ -58,34 +58,29 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE — Battle Unit / Character Art**
+**FINAL ART PHASE — M1 Battle Sprite Infrastructure**
 
-Status: **ART DIRECTION LOCKED / GAMEPLAY PRESENTATION FROZEN / IMPLEMENTATION NEXT**
+Status: **PLANNED / GAMEPLAY FROZEN / IMPLEMENTATION NEXT**
 
-Source of truth:
+Primary source:
+`docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
+
+Art direction:
 `docs/BATTLE-UNIT-ART-FINAL-SPEC.md`
 
-Direction:
-- Battle Setup keeps portrait/card presentation.
-- Battle replaces temporary card-like combat tokens with mini full-body casual chibi characters.
-- Six Beasts retain V15A Signature + STAR behavior unchanged.
-- Art integration must not alter gameplay semantics, balancing, targeting or deterministic checks.
-- Procedural portraits/icons remain fallback assets only.
-- No new gameplay mechanic is authorized in this phase.
+Immediate task:
+1. create `BattleCharacterManifest.ts`;
+2. create `BattleCharacterLoader.ts`;
+3. create `BattleCharacterView.ts`;
+4. add minimal adapter in `BattleActionView.ts`;
+5. preserve current procedural portrait fallback;
+6. do not require authored art yet;
+7. run deterministic checks + production build.
 
-Production priority:
-1. Starcaller
-2. Snowguard
-3. Ironclad
-4. Windstrider
-5. Swiftwing
-6. Shadowclaw
-7. Frontliner
-8. Diver
-9. Ranged
+After M1 passes:
+**M2 — Starcaller authored sprite integration**
 
-V15A remains the gameplay identity source:
-`docs/P1-V15A-UNIT-IDENTITY-STAR-EVOLUTION.md`
+No gameplay mechanic, balance, targeting or Signature rule change is authorized in this phase.
 
 ## B.1/B.2 implementation baseline
 
