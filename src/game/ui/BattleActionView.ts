@@ -55,6 +55,8 @@ export class BattleActionView {
   private readonly units = new Map<string, UnitVisual>();
   private readonly enemies = new Map<string, EnemyVisual>();
   private readonly unitHitTracking = new Map<string, { time: number; count: number }>();
+  private readonly unitPresentationOffsets = new Map<string, { x: number; y: number }>();
+  private readonly enemyPresentationOffsets = new Map<string, { x: number; y: number }>();
   private readonly layout: BattleFieldLayout;
   private showcaseMode = false;
 
@@ -76,6 +78,7 @@ export class BattleActionView {
       this.scheduleGridFade();
     }
 
+    this.updatePresentationOffsets(snapshot);
     snapshot.units.forEach((unit) => this.syncUnit(unit));
     snapshot.enemies.forEach((enemy) => this.syncEnemy(enemy));
   }
@@ -409,6 +412,8 @@ export class BattleActionView {
     this.units.clear();
     this.enemies.clear();
     this.unitHitTracking.clear();
+    this.unitPresentationOffsets.clear();
+    this.enemyPresentationOffsets.clear();
   }
 
   private createBattleGrid(): void {
@@ -551,9 +556,10 @@ export class BattleActionView {
     }
 
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
+    const offset = this.unitPresentationOffsets.get(unit.unitId) ?? { x: 0, y: 0 };
     if (unit.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
-      this.moveVisual(visual.container, position.x, position.y);
+      this.moveVisual(visual.container, position.x + offset.x, position.y + offset.y);
     }
   }
 
@@ -597,10 +603,62 @@ export class BattleActionView {
     visual.body.setStrokeStyle(2, strokeColor);
 
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
+    const offset = this.enemyPresentationOffsets.get(enemy.enemyId) ?? { x: 0, y: 0 };
     if (enemy.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
-      this.moveVisual(visual.container, position.x, position.y);
+      this.moveVisual(visual.container, position.x + offset.x, position.y + offset.y);
     }
+  }
+
+  private updatePresentationOffsets(snapshot: AutonomousBattleSnapshot): void {
+    this.unitPresentationOffsets.clear();
+    this.enemyPresentationOffsets.clear();
+    if (!this.showcaseMode) return;
+
+    const assign = (
+      entries: Array<{ id: string; x: number; y: number }>,
+      output: Map<string, { x: number; y: number }>,
+      sideOffsetX: number,
+    ) => {
+      const sorted = [...entries].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
+      const placed: Array<{ x: number; y: number; rank: number }> = [];
+      const yOffsets = [0, -17, 17, -31, 31];
+      const xOffsets = [0, -5, 5, -9, 9];
+
+      sorted.forEach((entry) => {
+        const nearby = placed.filter(
+          (other) => Math.abs(other.x - entry.x) < 44 && Math.abs(other.y - entry.y) < 36,
+        );
+        const rank = Math.min(nearby.length, yOffsets.length - 1);
+        output.set(entry.id, {
+          x: sideOffsetX + xOffsets[rank],
+          y: yOffsets[rank],
+        });
+        placed.push({ x: entry.x, y: entry.y, rank });
+      });
+    };
+
+    assign(
+      snapshot.units
+        .filter((unit) => unit.currentHp > 0)
+        .map((unit) => {
+          const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
+          return { id: unit.unitId, x: position.x, y: position.y };
+        }),
+      this.unitPresentationOffsets,
+      -14,
+    );
+
+    assign(
+      snapshot.enemies
+        .filter((enemy) => enemy.currentHp > 0)
+        .map((enemy) => {
+          const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
+          return { id: enemy.enemyId, x: position.x, y: position.y };
+        }),
+      this.enemyPresentationOffsets,
+      14,
+    );
   }
 
   private updateHpBar(
@@ -642,7 +700,7 @@ export class BattleActionView {
     const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
     const beastDef = getIconDefinition(unit.beastId);
     const body = this.scene.add
-      .rectangle(0, 0, 54, 48, beastDef.bgFill, this.showcaseMode ? 0.6 : 0.95)
+      .rectangle(0, 0, 54, 48, beastDef.bgFill, this.showcaseMode ? 0.34 : 0.95)
       .setStrokeStyle(this.showcaseMode ? 2.5 : 2, this.showcaseMode ? beastDef.borderColor : roleFill(unit.role));
 
     const signatureRing = this.scene.add
@@ -693,7 +751,7 @@ export class BattleActionView {
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     const archetype = enemy.archetype ?? 'Frontliner';
     const body = this.scene.add
-      .rectangle(0, 0, 52, 46, 0x2b2030, this.showcaseMode ? 0.5 : 0.98)
+      .rectangle(0, 0, 52, 46, 0x2b2030, this.showcaseMode ? 0.3 : 0.98)
       .setStrokeStyle(2, 0x6b3b48);
 
     const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -5, this.showcaseMode ? 39 : 31);
