@@ -549,12 +549,12 @@ export class ValidationScene extends Phaser.Scene {
         this.metrics.arrangementChanged();
       },
       `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${this.waveRun.currentWave.name}${isTestHarness() && this.enemyBoard?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
-      isTestHarness() ? () => this.cycleEnemyFixture() : undefined,
+      isTestHarness() && !this.showcaseMode ? () => this.cycleEnemyFixture() : undefined,
       `Threat: ${this.waveRun.currentWave.threatLabel}`,
-      isTestHarness() ? this.activePresetKey : undefined,
-      isTestHarness() ? () => this.loadFormationPreset('A') : undefined,
-      isTestHarness() ? () => this.loadFormationPreset('B') : undefined,
-      isTestHarness() ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
+      isTestHarness() && !this.showcaseMode ? this.activePresetKey : undefined,
+      isTestHarness() && !this.showcaseMode ? () => this.loadFormationPreset('A') : undefined,
+      isTestHarness() && !this.showcaseMode ? () => this.loadFormationPreset('B') : undefined,
+      isTestHarness() && !this.showcaseMode ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
       this.runRoster,
       (selectedUnitId) => this.consolidateReserveUnit(selectedUnitId),
       this.shardPool,
@@ -891,7 +891,9 @@ export class ValidationScene extends Phaser.Scene {
     this.showcasePaused = false;
     this.showcaseCleanFrame = false;
     this.battleActionView?.setShowcaseMode(this.showcaseMode);
-    if (this.phaseController.phase === GamePhase.Battle) {
+    if (this.phaseController.phase === GamePhase.BattleSetup) {
+      this.renderBattleSetup();
+    } else if (this.phaseController.phase === GamePhase.Battle) {
       this.renderBattle();
     }
     this.syncTopHud();
