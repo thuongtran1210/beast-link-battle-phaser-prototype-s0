@@ -75,7 +75,7 @@ import { GameTopHUD } from './ui/GameTopHUD';
 import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
 import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
-import { ensureIconTextures } from './ui/icons/IconFactory';
+import { createIconImage, ensureIconTextures } from './ui/icons/IconFactory';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName, getIconDefinition } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
@@ -488,7 +488,7 @@ export class ValidationScene extends Phaser.Scene {
     this.recentActionText = '';
     this.createPuzzleBoard(
       'BEAST RUSH',
-      'Match 6×6 Beast pairs to recruit combat units into your battle queue.',
+      'Match Beast pairs to recruit units for this Wave.',
       ['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f'],
       'Beast',
       (contentId, turns, midpoint) => this.onBeastMatch(contentId, turns, midpoint),
@@ -505,7 +505,7 @@ export class ValidationScene extends Phaser.Scene {
     this.recentActionText = 'Match identical Energy pairs to store Tactical Energy.';
     this.createPuzzleBoard(
       'ENERGY RUSH',
-      'Match Energy pairs to store tactical charges for Battle.',
+      'Match Energy pairs to prepare tactical tools for Battle.',
       V14G_ENERGY_RUSH_POOL,
       'Energy',
       (contentId, _turns, midpoint) => this.onEnergyMatch(contentId, midpoint),
@@ -650,19 +650,126 @@ export class ValidationScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const current = this.waveRun.currentWave;
-    const next = this.waveRun.currentWaveIndex + 1 < this.waveRun.totalWaves
+    const nextDisplay = this.waveRun.currentWaveIndex + 1 < this.waveRun.totalWaves
       ? this.waveRun.currentWaveIndex + 2
       : undefined;
-    const nextWave = next ? this.waveRun.currentWaveIndex + 1 : undefined;
-    const panel = this.add.rectangle(width / 2, height / 2, 500, 250, 0x111827, .97).setStrokeStyle(2, 0x22c55e);
-    const title = this.add.text(width / 2, height / 2 - 78, `WAVE ${current.index + 1} / ${this.waveRun.totalWaves} CLEARED`, { fontFamily: HudTokens.fonts.family, fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(.5);
-    const threat = this.add.text(width / 2, height / 2 - 42, current.threatLabel, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#86efac', fontStyle: 'bold' }).setOrigin(.5);
+    const nextIndex = nextDisplay ? this.waveRun.currentWaveIndex + 1 : undefined;
+    const nextName = nextIndex !== undefined ? P1V13A1_LEVELS[nextIndex]?.name ?? '' : '';
     const carriedCharges = this.energyQueue.getTotalCharges();
-    const energyCarried = this.add.text(width / 2, height / 2 - 14, `ENERGY CARRIED ×${carriedCharges}`, { fontFamily: HudTokens.fonts.family, fontSize: '14px', color: '#fbbf24', fontStyle: 'bold' }).setOrigin(.5);
-    const nextText = this.add.text(width / 2, height / 2 + 16, `NEXT: WAVE ${next} — ${nextWave ? P1V13A1_LEVELS[nextWave].name : ''}`, { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#cbd5e1' }).setOrigin(.5);
-    const button = this.add.rectangle(width / 2, height / 2 + 68, 180, 42, 0xb45309, 1).setStrokeStyle(1, 0xfbbf24).setInteractive({ useHandCursor: true });
-    const label = this.add.text(width / 2, height / 2 + 68, 'CONTINUE', { fontFamily: HudTokens.fonts.family, fontSize: '14px', color: '#fff', fontStyle: 'bold' }).setOrigin(.5).setInteractive({ useHandCursor: true });
-    const proceed = () => this.advanceToNextWave(); button.on('pointerup', proceed); label.on('pointerup', proceed);
+
+    const roster = this.runRoster.units;
+    const fresh = roster.filter((unit) => unit.status === 'ready' && unit.currentHp >= unit.maxHp);
+    const injured = roster.filter((unit) => unit.status === 'ready' && unit.currentHp > 0 && unit.currentHp < unit.maxHp);
+    const ko = roster.filter((unit) => unit.status === 'ko' || unit.currentHp <= 0);
+
+    const panelW = 760;
+    const panelH = 390;
+    const panelX = width / 2;
+    const panelY = height / 2 + 12;
+    const panel = this.add
+      .rectangle(panelX, panelY, panelW, panelH, HudTokens.colors.bgSurfaceDark, 0.98)
+      .setStrokeStyle(2, HudTokens.colors.green);
+
+    const title = this.add.text(
+      panelX,
+      panelY - 160,
+      `WAVE ${current.index + 1} / ${this.waveRun.totalWaves} CLEARED`,
+      { fontFamily: HudTokens.fonts.family, fontSize: '26px', color: HudTokens.colors.textPrimary, fontStyle: 'bold' },
+    ).setOrigin(.5);
+
+    const threat = this.add.text(
+      panelX,
+      panelY - 128,
+      `SURVIVED · ${current.threatLabel}`,
+      { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: HudTokens.colors.textGreen, fontStyle: 'bold' },
+    ).setOrigin(.5);
+
+    const energyCarried = this.add.text(
+      panelX,
+      panelY - 100,
+      `⚡ ENERGY CARRIED ×${carriedCharges}     ◆ LINK ×${this.shardPool.count}`,
+      { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: HudTokens.colors.textGold, fontStyle: 'bold' },
+    ).setOrigin(.5);
+
+    const groups = [
+      { title: 'FRESH', units: fresh, color: HudTokens.colors.green, text: HudTokens.colors.textGreen },
+      { title: 'INJURED', units: injured, color: HudTokens.colors.gold, text: HudTokens.colors.textGold },
+      { title: 'KO', units: ko, color: HudTokens.colors.red, text: HudTokens.colors.textRed },
+    ];
+
+    const cardW = 216;
+    const cardH = 150;
+    const gap = 18;
+    const totalW = cardW * 3 + gap * 2;
+    const left = panelX - totalW / 2;
+
+    groups.forEach((group, groupIndex) => {
+      const x = left + groupIndex * (cardW + gap);
+      const y = panelY - 66;
+      const card = this.add
+        .rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, HudTokens.colors.bgSurface, 0.96)
+        .setStrokeStyle(1.5, group.color, 0.8);
+      const heading = this.add.text(
+        x + 14,
+        y + 12,
+        `${group.title}  ${group.units.length}`,
+        { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: group.text, fontStyle: 'bold' },
+      );
+
+      const visible = group.units.slice(0, 3);
+      visible.forEach((unit, index) => {
+        const rowY = y + 44 + index * 31;
+        const icon = createIconImage(this, unit.beastId, x + 29, rowY + 9, 26);
+        const stars = '★'.repeat(unit.star);
+        const label = this.add.text(
+          x + 49,
+          rowY,
+          `${beastDisplayName(unit.beastId)}  ${stars}\n${unit.status === 'ko' ? 'KO' : `${Math.round(unit.currentHp)} / ${Math.round(unit.maxHp)} HP`}`,
+          {
+            fontFamily: HudTokens.fonts.family,
+            fontSize: '9px',
+            color: group.title === 'KO' ? HudTokens.colors.textMuted : HudTokens.colors.textSecondary,
+            fontStyle: 'bold',
+            lineSpacing: -2,
+          },
+        );
+        this.waveResultObjects.push(icon, label);
+      });
+
+      if (group.units.length > visible.length) {
+        const more = this.add.text(
+          x + cardW - 14,
+          y + cardH - 18,
+          `+${group.units.length - visible.length} more`,
+          { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted, fontStyle: 'bold' },
+        ).setOrigin(1, 0);
+        this.waveResultObjects.push(more);
+      }
+
+      this.waveResultObjects.push(card, heading);
+    });
+
+    const nextText = this.add.text(
+      panelX,
+      panelY + 112,
+      nextDisplay ? `NEXT THREAT · WAVE ${nextDisplay} — ${nextName}` : 'RUN COMPLETE',
+      { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: HudTokens.colors.textSecondary, fontStyle: 'bold' },
+    ).setOrigin(.5);
+
+    const button = this.add
+      .rectangle(panelX, panelY + 155, 230, 46, HudTokens.colors.goldDark, 1)
+      .setStrokeStyle(1.5, HudTokens.colors.gold)
+      .setInteractive({ useHandCursor: true });
+    const label = this.add.text(
+      panelX,
+      panelY + 155,
+      nextDisplay ? 'PREPARE NEXT WAVE' : 'CONTINUE',
+      { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#ffffff', fontStyle: 'bold' },
+    ).setOrigin(.5).setInteractive({ useHandCursor: true });
+
+    const proceed = () => this.advanceToNextWave();
+    button.on('pointerup', proceed);
+    label.on('pointerup', proceed);
     this.waveResultObjects.push(panel, title, threat, energyCarried, nextText, button, label);
   }
 
@@ -962,15 +1069,12 @@ export class ValidationScene extends Phaser.Scene {
         active: combo.active,
       },
       matchCount: this.metrics.snapshot.beastMatches,
-      queueTitle: 'Beast Queue',
-      queueItems: this.battleQueue.entries().map((e) => {
-        const def = getIconDefinition(e.contentId);
-        return {
-          id: e.contentId,
-          name: `${def.name} (${def.letter})`,
-          count: e.count,
-        };
-      }),
+      queueTitle: 'Recruited Beasts',
+      queueItems: this.battleQueue.entries().map((e) => ({
+        id: e.contentId,
+        name: beastDisplayName(e.contentId),
+        count: e.count,
+      })),
       recentAction: this.recentActionText,
       beastRushHud: true,
       comboCurrent: combo.currentStreak,
@@ -991,7 +1095,7 @@ export class ValidationScene extends Phaser.Scene {
       phaseSubtitle: 'Match Energy pairs to collect Tactical Energy',
       timerSeconds: remaining,
       timerLabel: isReady ? 'Energy' : 'Countdown',
-      timerSubtext: isReady ? 'READY · FIRST VALID MATCH STARTS TIMER' : '12.0s timed lock · Prepare for battle',
+      timerSubtext: isReady ? 'READY · MATCH TO START' : 'COLLECT BEFORE TIME ENDS',
       statusBadge: {
         text: isReady ? 'READY' : 'COUNTDOWN',
         active: !isReady,
