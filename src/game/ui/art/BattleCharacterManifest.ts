@@ -17,6 +17,8 @@ export interface BattleCharacterArtDefinition {
   hpAnchorY: number;
   /** V2 primary cutout art. */
   base?: string;
+  /** V2 icon / portrait source for roster surfaces. */
+  icon?: string;
   /** Optional V2 Signature-specific cutout. */
   signature?: string;
   /** Optional V2 defeated cutout. */
@@ -36,19 +38,12 @@ export const BATTLE_CHARACTER_ART: Readonly<Record<BeastId, BattleCharacterArtDe
     slug: 'snowguard',
     displayHeight: 104,
     groundOffsetY: 34,
-    effectAnchorY: -28,
-    hpAnchorY: -56,
-    base: '/assets/beasts/snowguard/battle_idle.svg',
-    signature: '/assets/beasts/snowguard/battle_signature.svg',
-    ko: '/assets/beasts/snowguard/battle_ko.svg',
+    effectAnchorY: -30,
+    hpAnchorY: -60,
+    base: '/assets/beasts/snowguard/base_v2.svg',
+    icon: '/assets/beasts/snowguard/icon_v2.svg',
     motionProfile: 'TANK',
-    poses: {
-      idle: '/assets/beasts/snowguard/battle_idle.svg',
-      attack: '/assets/beasts/snowguard/battle_attack.svg',
-      signature: '/assets/beasts/snowguard/battle_signature.svg',
-      hit: '/assets/beasts/snowguard/battle_hit.svg',
-      ko: '/assets/beasts/snowguard/battle_ko.svg',
-    },
+    poses: {},
   },
   'beast-b': {
     beastId: 'beast-b',
