@@ -22,7 +22,8 @@ export function preloadBattleCharacterArt(scene: Phaser.Scene): void {
         if (!path) return;
         const key = battleCharacterTextureKey(definition.beastId, pose);
         if (scene.textures.exists(key)) return;
-        scene.load.image(key, path);
+        if (path.toLowerCase().endsWith('.svg')) scene.load.svg(key, path);
+        else scene.load.image(key, path);
       },
     );
   });
