@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { type BattleFormation, type FormationSlot, type FormationUnit } from '../battle/BattleFormation';
 import type { EnemyArchetype, EnemyFixture } from '../battle/AutonomousBattleModel';
 import { HudTokens, drawCard } from './layout/HudTokens';
+import { signatureForBeast } from '../battle/BeastRoles';
+import { signatureTierLabel, signatureTierSummary } from '../run/StarProfile';
 import { createIconImage, createRoleIconImage } from './icons/IconFactory';
 import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
 import { beastDisplayName } from './icons/UnitIconRegistry';
@@ -598,11 +600,37 @@ export class BattleSetupView {
       roleTextColor(unit.role),
       'bold',
     ).setOrigin(0.5);
-    const state = this.text(cx, cy + 31, stateLabel, 8, stateColor, 'bold').setOrigin(0.5);
-    this.objects.push(nameLabel, roleLabel, state);
+    const state = this.text(
+      cx - w / 2 + 9,
+      cy - h / 2 + 8,
+      stateLabel,
+      7,
+      stateColor,
+      'bold',
+      HudTokens.colors.bgSurfaceDark === 0 ? undefined : '#151a31',
+      { x: 5, y: 2 },
+    );
+    const signature = signatureForBeast(unit.beastId);
+    const skillLabel = this.text(
+      cx,
+      cy + 29,
+      signatureTierLabel(signature, unit.star),
+      8,
+      HudTokens.colors.textGold,
+      'bold',
+    ).setOrigin(0.5);
+    const skillSummary = this.text(
+      cx,
+      cy + 41,
+      signatureTierSummary(signature, unit.star),
+      7,
+      HudTokens.colors.textMuted,
+      '',
+    ).setOrigin(0.5).setWordWrapWidth(w - 18, false);
+    this.objects.push(nameLabel, roleLabel, state, skillLabel, skillSummary);
 
     const barW = 104;
-    const barY = cy + 48;
+    const barY = cy + 57;
     const hpBg = this.scene.add.rectangle(cx, barY, barW, 7, HudTokens.colors.bgSurfaceDark, 1)
       .setStrokeStyle(1, HudTokens.colors.strokeDefault, .8);
     const hpFill = this.scene.add.rectangle(
@@ -621,7 +649,7 @@ export class BattleSetupView {
     ).setOrigin(0, .5);
     const hpLabel = this.text(
       cx,
-      cy + 58,
+      cy + 65,
       rosterUnit ? `${Math.round(rosterUnit.currentHp)} / ${Math.round(rosterUnit.maxHp)} HP` : 'READY',
       7,
       HudTokens.colors.textMuted,
