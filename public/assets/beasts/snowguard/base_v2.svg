@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet">
+  <!-- V2 simple chibi cutout: Snowguard / protector Tanker -->
+  <g stroke="#171717" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <!-- back shield -->
+    <rect x="292" y="225" width="118" height="150" rx="36" fill="#9fddf1"/>
+    <rect x="314" y="248" width="74" height="105" rx="26" fill="#d8f5ff" stroke-width="12"/>
+    <path d="M351 269 l15 20 26 5 -19 17 4 26 -26 -12 -26 12 4 -26 -19 -17 26 -5z"
+          fill="#ffd84e" stroke-width="10"/>
+
+    <!-- body -->
+    <ellipse cx="228" cy="321" rx="105" ry="116" fill="#f7d56d"/>
+    <ellipse cx="228" cy="340" rx="76" ry="82" fill="#fff0c4" stroke-width="12"/>
+
+    <!-- head -->
+    <ellipse cx="222" cy="188" rx="100" ry="88" fill="#f7d56d"/>
+    <path d="M150 129 Q122 74 176 91 Q206 102 215 131" fill="#f7d56d"/>
+    <path d="M292 129 Q322 74 270 92 Q240 102 231 131" fill="#f7d56d"/>
+    <ellipse cx="222" cy="207" rx="60" ry="44" fill="#fff0c4" stroke-width="12"/>
+
+    <!-- face -->
+    <path d="M184 176 v18" />
+    <path d="M256 176 v18" />
+    <ellipse cx="221" cy="201" rx="12" ry="9" fill="#4c3827" stroke-width="8"/>
+    <path d="M198 221 Q221 239 244 221" fill="none" stroke-width="9"/>
+
+    <!-- small guardian crest -->
+    <path d="M222 92 l14 22 26 5 -19 18 4 27 -25 -12 -25 12 4 -27 -19 -18 26 -5z"
+          fill="#fff4a6" stroke-width="10"/>
+
+    <!-- arms / paws -->
+    <ellipse cx="133" cy="320" rx="36" ry="52" fill="#f7d56d"/>
+    <ellipse cx="306" cy="323" rx="36" ry="52" fill="#f7d56d"/>
+
+    <!-- boots -->
+    <rect x="159" y="405" width="62" height="38" rx="18" fill="#6a5429"/>
+    <rect x="236" y="405" width="62" height="38" rx="18" fill="#6a5429"/>
+
+    <!-- simple blue guardian sash -->
+    <path d="M160 300 Q224 334 288 300" fill="none" stroke="#65b9dd" stroke-width="16"/>
+  </g>
+</svg>
