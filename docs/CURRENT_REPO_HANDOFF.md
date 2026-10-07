@@ -58,31 +58,33 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE — M2 Starcaller Authored Sprite**
+**FINAL ART PHASE — M2 Starcaller Live Visual QA**
 
-Status: **M1 INFRASTRUCTURE COMPLETE / CI PASS / STARCALLER ART NEXT**
+Status: **AUTHORED STARCALLER IMPLEMENTED / CI PASS / LIVE QA REQUIRED**
 
 Primary source:
 `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-M1 evidence:
-- manifest implemented;
-- loader implemented;
-- authored-or-fallback character view implemented;
-- BattleActionView adapter implemented;
-- attack / Signature / hit / KO presentation hooks wired;
-- no authored paths declared yet, therefore no missing-asset requests;
-- GitHub Actions run 76 PASS.
+Implemented:
+- SVG-aware battle art loader;
+- Starcaller authored idle / attack / signature / hit / KO poses;
+- Starcaller authored portrait source;
+- authored sprite automatically replaces fallback when loaded;
+- pose events wired through BattleCharacterView;
+- HP / Signature effect anchors are manifest-driven;
+- five remaining Beasts stay fallback-only;
+- deterministic art-contract checks wired into CI + startup;
+- GitHub Actions run 89 PASS.
 
-Immediate task:
-1. produce Starcaller authored pose package;
-2. register its pose paths;
-3. validate authored sprite replacement;
-4. validate Arcane Bloom anchor and 3★ Echo;
-5. capture Starcaller hero frame.
+Immediate owner QA:
+1. refresh latest build;
+2. press `L`;
+3. verify authored Starcaller full-body sprite;
+4. wait for `ARCANE BLOOM III`;
+5. press `P`;
+6. capture screenshot.
 
-Art direction:
-`docs/BATTLE-UNIT-ART-FINAL-SPEC.md`
+Do not start Snowguard authored rollout until Starcaller passes this visual gate.
 
 Gameplay remains frozen.
 
