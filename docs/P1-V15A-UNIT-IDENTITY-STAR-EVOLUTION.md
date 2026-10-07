@@ -162,7 +162,7 @@ Implemented after the first V15A behavior pass:
   - `O` → toggle Showcase Mode;
   - `P` → pause / resume Battle while in Showcase Mode;
   - `C` → toggle Clean Frame (hide global top HUD while preserving Battle / Tactical Energy evidence).
-  - `K` → from Battle Setup, load the capture-only V15A roster: Starcaller 3★, Ironclad 2★, Swiftwing 2★, Snowguard 1★ active; Windstrider 1★ and Shadowclaw 3★ in Reserve; Tactical Energy seeded for presentation.
+  - `K` → from any phase, reset directly into the capture-only V15A Battle Setup roster: Starcaller 3★, Ironclad 2★, Swiftwing 2★, Snowguard 1★ active; Windstrider 1★ and Shadowclaw 3★ in Reserve; Tactical Energy seeded for presentation.
     The capture fixture also uses a low-damage capture threat with clustered Frontliner/Diver targets plus a Ranged target, giving Arcane Bloom, Iron Ram, Twin Volley, BREAK and PIERCE readable windows without changing normal gameplay fixtures.
 - Showcase pause now stops model ticking rather than changing UI state only.
 
