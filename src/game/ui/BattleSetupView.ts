@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { type BattleFormation, type FormationSlot, type FormationUnit } from '../battle/BattleFormation';
 import type { EnemyArchetype, EnemyFixture } from '../battle/AutonomousBattleModel';
-import { recommendedRows, signatureNameForBeast } from '../battle/BeastRoles';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage, createRoleIconImage } from './icons/IconFactory';
 import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
@@ -241,8 +240,8 @@ export class BattleSetupView {
 
     // Board headers. Squad capacity is separate from the 3 × 6 position grid.
     const squad = this.squadPresentation();
-    const playerHeading = this.text(dividerX - 170, topLaneY - 58, '◀ MY FORMATION', 12, '#38bdf8', 'bold').setOrigin(0.5);
-    const enemyHeading = this.text(dividerX + 180, topLaneY - 58, 'ENEMY FORMATION ▶', 12, '#f87171', 'bold').setOrigin(0.5);
+    const playerHeading = this.text(dividerX - 170, topLaneY - 58, '◀ YOUR SQUAD', 12, '#38bdf8', 'bold').setOrigin(0.5);
+    const enemyHeading = this.text(dividerX + 180, topLaneY - 58, 'ENEMY THREAT ▶', 12, '#f87171', 'bold').setOrigin(0.5);
     const squadTitle = this.text(dividerX - 170, topLaneY - 42, formationBoardSummary(squad.activeCount), 9, squad.isFull ? '#fbbf24' : '#7dd3fc', 'bold').setOrigin(0.5);
     this.objects.push(playerHeading, enemyHeading, squadTitle);
 
@@ -493,8 +492,8 @@ export class BattleSetupView {
       x + 130,
       y + 15,
       hasUnplaced
-        ? 'DRAG TO DEPLOY — Pick up a Beast card to place onto your formation grid'
-        : '✓ ALL BEASTS DEPLOYED — (Drag from board back here to bench)',
+        ? 'DRAG A BEAST INTO YOUR FORMATION'
+        : '✓ SQUAD DEPLOYED — DRAG BACK TO RESERVE TO BENCH',
       11,
       hasUnplaced ? '#38bdf8' : '#22c55e',
       'bold',
@@ -575,35 +574,60 @@ export class BattleSetupView {
       });
     }
 
-    // Beast Icon
-    const icon = createIconImage(this.scene, unit.beastId, cx - 36, cy - 36, 40);
-    this.objects.push(icon);
+    const rosterUnit = this.runRoster?.get(unit.unitId);
+    const hpRatio = rosterUnit && rosterUnit.maxHp > 0 ? Math.max(0, rosterUnit.currentHp / rosterUnit.maxHp) : 1;
+    const stateLabel = rosterUnit?.status === 'ko' ? 'KO' : hpRatio < 1 ? 'INJURED' : 'FRESH';
+    const stateColor = rosterUnit?.status === 'ko'
+      ? HudTokens.colors.textRed
+      : hpRatio < 1
+      ? HudTokens.colors.textGold
+      : HudTokens.colors.textGreen;
 
-    // Role Icon & role name
-    const roleIcon = createRoleIconImage(this.scene, unit.role, cx + 44, cy - 42, 22);
-    this.objects.push(roleIcon);
+    // Portrait-first card: identity reads before secondary stats.
+    const icon = createIconImage(this.scene, unit.beastId, cx, cy - 37, 52);
+    const roleIcon = createRoleIconImage(this.scene, unit.role, cx + 48, cy - 48, 20);
+    this.objects.push(icon, roleIcon);
 
     const beastName = beastDisplayName(unit.beastId);
-    const nameLabel = this.text(cx, cy - 8, beastName, 11, '#ffffff', 'bold').setOrigin(0.5);
-    this.objects.push(nameLabel);
-
+    const nameLabel = this.text(cx, cy - 2, beastName, 10, HudTokens.colors.textPrimary, 'bold').setOrigin(0.5);
     const roleLabel = this.text(
       cx,
-      cy + 8,
+      cy + 14,
       `${unit.role.toUpperCase()} · ${'★'.repeat(unit.star)}`,
-      10,
+      9,
       roleTextColor(unit.role),
       'bold',
     ).setOrigin(0.5);
-    this.objects.push(roleLabel);
+    const state = this.text(cx, cy + 31, stateLabel, 8, stateColor, 'bold').setOrigin(0.5);
+    this.objects.push(nameLabel, roleLabel, state);
 
-    const sigName = signatureNameForBeast(unit.beastId);
-    const sigLabel = this.text(cx, cy + 28, sigName, 9, '#94a3b8').setOrigin(0.5);
-    this.objects.push(sigLabel);
-
-    const rosterUnit = this.runRoster?.get(unit.unitId);
-    const hpLabel = this.text(cx, cy + 46, rosterUnit?.status === 'ko' ? 'KO' : rosterUnit ? `${rosterUnit.currentHp} / ${rosterUnit.maxHp} HP` : `Rec: ${recommendedRows(unit.role)}`, 8, rosterUnit?.status === 'ko' ? '#ef4444' : '#94a3b8', 'bold').setOrigin(0.5);
-    this.objects.push(hpLabel);
+    const barW = 104;
+    const barY = cy + 48;
+    const hpBg = this.scene.add.rectangle(cx, barY, barW, 7, HudTokens.colors.bgSurfaceDark, 1)
+      .setStrokeStyle(1, HudTokens.colors.strokeDefault, .8);
+    const hpFill = this.scene.add.rectangle(
+      cx - barW / 2 + 1,
+      barY,
+      Math.max(0, (barW - 2) * hpRatio),
+      5,
+      rosterUnit?.status === 'ko'
+        ? HudTokens.colors.red
+        : hpRatio < .35
+        ? HudTokens.colors.red
+        : hpRatio < 1
+        ? HudTokens.colors.gold
+        : HudTokens.colors.green,
+      .95,
+    ).setOrigin(0, .5);
+    const hpLabel = this.text(
+      cx,
+      cy + 58,
+      rosterUnit ? `${Math.round(rosterUnit.currentHp)} / ${Math.round(rosterUnit.maxHp)} HP` : 'READY',
+      7,
+      HudTokens.colors.textMuted,
+      'bold',
+    ).setOrigin(0.5);
+    this.objects.push(hpBg, hpFill, hpLabel);
 
     // Interactive Drag and Click Handlers
     const hitArea = this.scene.add
