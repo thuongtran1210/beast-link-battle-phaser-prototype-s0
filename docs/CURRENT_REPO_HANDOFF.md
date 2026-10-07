@@ -58,31 +58,28 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE — M3A Snowguard Authored Character**
+**FINAL ART PHASE — M3A Snowguard Live Visual QA**
 
-Status: **STARCALLER M2 LIVE PASS / SNOWGUARD NEXT / GAMEPLAY FROZEN**
+Status: **SNOWGUARD AUTHORED PACKAGE IMPLEMENTED / CI PASS / LIVE QA REQUIRED**
 
-M2 accepted runtime evidence:
-- authored Starcaller transparency fixed;
-- full-body chibi Mage visible at battle scale;
-- no rectangular fallback body;
-- HP bar clears halo/head;
-- ground anchor stable;
-- authored identity readable without role label.
+Implemented:
+- Snowguard idle / attack / Guardian Brace / hit / KO authored poses;
+- Snowguard portrait source;
+- manifest-driven HP / effect anchors;
+- art-contract checks extended to Snowguard;
+- Starcaller remains authored;
+- four remaining Beasts stay fallback-only;
+- latest complete Snowguard package GitHub Actions run 113 PASS.
 
-Primary source:
-`docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
+Immediate owner QA:
+1. refresh latest build;
+2. press `L`;
+3. inspect Snowguard authored sprite;
+4. wait for Guardian Brace;
+5. press `P`;
+6. capture screenshot.
 
-Immediate task:
-1. create Snowguard authored pose package;
-2. register Snowguard pose paths in the manifest;
-3. preserve Guardian Brace semantics;
-4. validate protector silhouette, HP anchor and shield effect anchor;
-5. run checks/build;
-6. live QA Snowguard before starting Ironclad.
-
-Art direction:
-`docs/BATTLE-UNIT-ART-FINAL-SPEC.md`
+Do not begin Ironclad authored rollout until Snowguard passes this visual gate.
 
 Gameplay remains frozen.
 
