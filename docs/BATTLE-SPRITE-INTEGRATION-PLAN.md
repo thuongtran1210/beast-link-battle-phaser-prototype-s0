@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **M1 COMPLETE / CI PASS / M2 STARCALLER NEXT / GAMEPLAY FROZEN**
+Status: **M2 IMPLEMENTED / CI PASS / STARCALLER LIVE VISUAL QA NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -521,13 +521,25 @@ Gate:
 
 ## M2 — Starcaller authored integration
 
-Files:
-- Starcaller assets;
-- `BattleActionView.ts` integration;
-- pose event mapping.
+Status: **IMPLEMENTED / CI PASS / LIVE VISUAL QA OPEN**
 
-Gate:
-- Arcane Bloom live screenshot.
+Implemented:
+- authored Starcaller idle / attack / signature / hit / KO vector poses;
+- authored portrait source;
+- SVG-aware manifest loader;
+- Starcaller pose paths registered;
+- attack / Signature / hit / KO event mapping through `BattleCharacterView`;
+- authored HP/effect anchors;
+- fallback retained for every other Beast;
+- deterministic Starcaller art-contract checks wired into CI and startup.
+
+Evidence:
+- GitHub Actions run 89 PASS.
+
+Remaining gate:
+- live Battle screenshot confirming scale, ground anchor, HP anchor and Arcane Bloom alignment.
+
+Do not begin Snowguard rollout until this live visual gate passes.
 
 ## M3 — Remaining Beast rollout
 
@@ -624,15 +636,22 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**M2 — Starcaller authored asset integration**
+**M2 Live Visual QA — Starcaller**
 
-Required:
-1. create the Starcaller final pose package;
-2. add Starcaller pose paths to `BattleCharacterManifest.ts`;
-3. verify authored sprite automatically replaces fallback;
-4. validate idle / attack / signature / hit / KO pose mapping;
-5. validate Arcane Bloom effect anchor against the authored character;
-6. capture one final Starcaller 3★ hero frame;
-7. run checks/build.
+1. refresh the latest build;
+2. press `L` to enter the V15A Hero Battle;
+3. confirm Starcaller appears as the authored full-body chibi Mage rather than a rectangular portrait token;
+4. inspect HP-bar height and feet/ground anchor;
+5. wait for `ARCANE BLOOM III`;
+6. press `P` while the signature pose + Bloom VFX are visible;
+7. capture the frame.
 
-Do not start Snowguard until Starcaller passes this gate.
+Acceptance:
+- no visible card body behind Starcaller;
+- Starcaller reads as Mage without a name/role label;
+- cast pose and purple aura are aligned;
+- HP bar does not intersect head/halo;
+- Bloom originates from the upper-body/orb area;
+- KO/hit pose does not jump the ground anchor.
+
+Only after this gate: **M3A Snowguard authored rollout**.
