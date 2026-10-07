@@ -78,6 +78,7 @@ import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
 import { createIconImage, ensureIconTextures } from './ui/icons/IconFactory';
 import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
+import { runBattleCharacterArtChecks } from './ui/art/BattleCharacterArtChecks';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName } from './ui/icons/UnitIconRegistry';
 import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
@@ -229,6 +230,7 @@ export class ValidationScene extends Phaser.Scene {
       runP1V13A1BChecks();
       runP1V13A2Checks();
       runP1V15AChecks();
+      runBattleCharacterArtChecks();
       runP1V1Checks();
       runP1V2Checks();
       runP1V3Checks();
