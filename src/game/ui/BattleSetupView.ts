@@ -488,21 +488,27 @@ export class BattleSetupView {
     this.reservePageIndex = page.pageIndex;
     const hasUnplaced = unplaced.length > 0;
 
-    // Tray Heading
-    const heading = this.text(x + 18, y + 14, `RESERVE ${groups.reserve.length}`, 13, '#ffffff', 'bold');
+    // Tray heading uses separate left/right zones so pagination never collides with state.
+    const heading = this.text(x + 18, y + 12, `RESERVE ${groups.reserve.length}`, 13, HudTokens.colors.textPrimary, 'bold');
     const subtext = this.text(
       x + 130,
-      y + 15,
+      y + 13,
       hasUnplaced
         ? 'DRAG A BEAST INTO YOUR FORMATION'
         : '✓ SQUAD DEPLOYED — DRAG BACK TO RESERVE TO BENCH',
-      11,
-      hasUnplaced ? '#38bdf8' : '#22c55e',
+      10,
+      hasUnplaced ? HudTokens.colors.textBlue : HudTokens.colors.textGreen,
       'bold',
     );
-    this.objects.push(heading, subtext);
-    const states = this.text(x + width - 210, y + 15, `DEPLOYED ${groups.deployed.length} · KO ${groups.ko.length}`, 10, groups.ko.length ? '#fb7185' : '#94a3b8', 'bold');
-    this.objects.push(states);
+    const states = this.text(
+      x + width - 18,
+      y + 12,
+      `ACTIVE ${groups.deployed.length}/${ACTIVE_SQUAD_LIMIT}   ·   KO ${groups.ko.length}`,
+      9,
+      groups.ko.length ? HudTokens.colors.textRed : HudTokens.colors.textMuted,
+      'bold',
+    ).setOrigin(1, 0);
+    this.objects.push(heading, subtext, states);
     if (groups.ko.length) {
       const koNames = groups.ko.slice(0, 3).map(unit => beastDisplayName(unit.beastId)).join(' · ');
       const koStrip = this.text(x + 18, y + height - 18, `KO  ${koNames}${groups.ko.length > 3 ? ` +${groups.ko.length - 3}` : ''}`, 9, '#fb7185', 'bold');
@@ -528,9 +534,9 @@ export class BattleSetupView {
 
     // Render horizontal row of Draggable Beast Cards
     const cardW = 142;
-    const cardH = 146;
+    const cardH = 138;
     const startX = x + 18;
-    const startY = y + 44;
+    const startY = y + 52;
     const gap = 16;
 
     page.items.forEach((unit, index) => {
@@ -538,9 +544,31 @@ export class BattleSetupView {
       this.renderTrayCard(unit, cardX, startY, cardW, cardH, index === 0 && this.controller.isFirstDeploymentPending);
     });
     if (page.pageCount > 1) {
-      const info = this.text(x + width - 160, y + 15, `${page.start + 1}-${page.end} / ${unplaced.length}`, 10, '#cbd5e1', 'bold');
-      const prev = this.text(x + width - 220, y + 15, '< PREV', 10, page.pageIndex > 0 ? '#fbbf24' : '#475569', 'bold');
-      const next = this.text(x + width - 78, y + 15, 'NEXT >', 10, page.pageIndex < page.pageCount - 1 ? '#fbbf24' : '#475569', 'bold');
+      const pagerY = y + 34;
+      const prev = this.text(
+        x + width - 194,
+        pagerY,
+        '‹ PREV',
+        9,
+        page.pageIndex > 0 ? HudTokens.colors.textGold : HudTokens.colors.textMuted,
+        'bold',
+      );
+      const info = this.text(
+        x + width - 112,
+        pagerY,
+        `PAGE ${page.pageIndex + 1} / ${page.pageCount}`,
+        9,
+        HudTokens.colors.textSecondary,
+        'bold',
+      ).setOrigin(.5, 0);
+      const next = this.text(
+        x + width - 30,
+        pagerY,
+        'NEXT ›',
+        9,
+        page.pageIndex < page.pageCount - 1 ? HudTokens.colors.textGold : HudTokens.colors.textMuted,
+        'bold',
+      ).setOrigin(1, 0);
       if (page.pageIndex > 0) prev.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.reservePageIndex -= 1; this.render(); });
       if (page.pageIndex < page.pageCount - 1) next.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.reservePageIndex += 1; this.render(); });
       this.objects.push(info, prev, next);
@@ -586,15 +614,15 @@ export class BattleSetupView {
       : HudTokens.colors.textGreen;
 
     // Portrait-first card: identity reads before secondary stats.
-    const icon = createIconImage(this.scene, unit.beastId, cx, cy - 37, 52);
-    const roleIcon = createRoleIconImage(this.scene, unit.role, cx + 48, cy - 48, 20);
+    const icon = createIconImage(this.scene, unit.beastId, cx, cy - 34, 48);
+    const roleIcon = createRoleIconImage(this.scene, unit.role, cx + 47, cy - 44, 18);
     this.objects.push(icon, roleIcon);
 
     const beastName = beastDisplayName(unit.beastId);
-    const nameLabel = this.text(cx, cy - 2, beastName, 10, HudTokens.colors.textPrimary, 'bold').setOrigin(0.5);
+    const nameLabel = this.text(cx, cy - 3, beastName, 9, HudTokens.colors.textPrimary, 'bold').setOrigin(0.5);
     const roleLabel = this.text(
       cx,
-      cy + 14,
+      cy + 12,
       `${unit.role.toUpperCase()} · ${'★'.repeat(unit.star)}`,
       9,
       roleTextColor(unit.role),
@@ -613,7 +641,7 @@ export class BattleSetupView {
     const signature = signatureForBeast(unit.beastId);
     const skillLabel = this.text(
       cx,
-      cy + 29,
+      cy + 27,
       signatureTierLabel(signature, unit.star),
       8,
       HudTokens.colors.textGold,
@@ -621,7 +649,7 @@ export class BattleSetupView {
     ).setOrigin(0.5);
     const skillSummary = this.text(
       cx,
-      cy + 41,
+      cy + 39,
       signatureTierTagline(signature, unit.star),
       7,
       HudTokens.colors.textMuted,
@@ -630,7 +658,7 @@ export class BattleSetupView {
     this.objects.push(nameLabel, roleLabel, state, skillLabel, skillSummary);
 
     const barW = 104;
-    const barY = cy + 57;
+    const barY = cy + 53;
     const hpBg = this.scene.add.rectangle(cx, barY, barW, 7, HudTokens.colors.bgSurfaceDark, 1)
       .setStrokeStyle(1, HudTokens.colors.strokeDefault, .8);
     const hpFill = this.scene.add.rectangle(
@@ -649,7 +677,7 @@ export class BattleSetupView {
     ).setOrigin(0, .5);
     const hpLabel = this.text(
       cx,
-      cy + 65,
+      cy + 60,
       rosterUnit ? `${Math.round(rosterUnit.currentHp)} / ${Math.round(rosterUnit.maxHp)} HP` : 'READY',
       7,
       HudTokens.colors.textMuted,
