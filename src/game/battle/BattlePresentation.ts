@@ -46,6 +46,7 @@ export interface UnitHpBarPresentation {
 export interface SignatureFxPresentation {
   unitId: string;
   signatureId: BeastSignatureId;
+  star: 1 | 2 | 3;
   targetIds: string[];
   amount?: number;
 }
@@ -191,9 +192,12 @@ export function deriveBattleTickPresentation(
     .filter((event) => event.type === 'SignatureActivated' || event.type === 'ShieldAbsorbed')
     .map((event) => {
       const action = actionMap.get(event.unitId);
+      const unit = after.units.find((candidate) => candidate.unitId === event.unitId)
+        ?? before.units.find((candidate) => candidate.unitId === event.unitId);
       return {
         unitId: event.unitId,
         signatureId: event.signatureId,
+        star: unit?.star ?? 1,
         targetIds: action?.hits.map((hit) => hit.enemyId) ?? (event.targetId ? [event.targetId] : []),
         amount: event.amount,
       };
