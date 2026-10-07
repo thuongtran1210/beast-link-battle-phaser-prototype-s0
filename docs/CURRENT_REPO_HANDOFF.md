@@ -58,37 +58,34 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V15A — Unit Identity & STAR Evolution**
+**FINAL ART PHASE — Battle Unit / Character Art**
 
-Status: **IMPLEMENTED / DETERMINISTIC PASS / BUILD PASS / LIVE VISUAL QA OPEN / EXPERIMENTAL**
+Status: **ART DIRECTION LOCKED / GAMEPLAY PRESENTATION FROZEN / IMPLEMENTATION NEXT**
 
-Owner direction on 2026-10-07 explicitly prioritized unit identity before final portfolio capture because the current Battle still made units feel too interchangeable, especially Mage.
+Source of truth:
+`docs/BATTLE-UNIT-ART-FINAL-SPEC.md`
 
-V15A asks:
+Direction:
+- Battle Setup keeps portrait/card presentation.
+- Battle replaces temporary card-like combat tokens with mini full-body casual chibi characters.
+- Six Beasts retain V15A Signature + STAR behavior unchanged.
+- Art integration must not alter gameplay semantics, balancing, targeting or deterministic checks.
+- Procedural portraits/icons remain fallback assets only.
+- No new gameplay mechanic is authorized in this phase.
 
-**Can six existing Beasts read as six distinct combat identities, and can STAR consolidation change behavior rather than only increase stats?**
+Production priority:
+1. Starcaller
+2. Snowguard
+3. Ironclad
+4. Windstrider
+5. Swiftwing
+6. Shadowclaw
+7. Frontliner
+8. Diver
+9. Ranged
 
-Implemented:
-- six Beasts now own six unique Signatures;
-- Snowguard / Ironclad are different Tanker fantasies;
-- Windstrider / Swiftwing are different Ranger fantasies;
-- Starcaller has explicit multi-target Arcane Bloom identity;
-- 1★ / 2★ / 3★ now alter Signature behavior;
-- player-facing Setup cards expose Signature tier;
-- Battle presentation receives Signature activation events and VFX;
-- deterministic V15A checks are wired into CI and prototype startup.
-
-Read:
+V15A remains the gameplay identity source:
 `docs/P1-V15A-UNIT-IDENTITY-STAR-EVOLUTION.md`
-
-### Parallel unresolved gate
-
-**P1-V14G.5 Tactical Energy Review remains open.**
-
-The V15A work does **not** imply Tactical Energy adoption. V14G remains Experimental / not adopted until an explicit adoption outcome is recorded.
-
-Read:
-`docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
 
 ## B.1/B.2 implementation baseline
 
