@@ -58,36 +58,31 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE — M2 Starcaller Live Visual QA**
+**FINAL ART PHASE — M3A Snowguard Authored Character**
 
-Status: **AUTHORED STARCALLER IMPLEMENTED / TRANSPARENCY FIX CI PASS / LIVE RE-QA REQUIRED**
+Status: **STARCALLER M2 LIVE PASS / SNOWGUARD NEXT / GAMEPLAY FROZEN**
+
+M2 accepted runtime evidence:
+- authored Starcaller transparency fixed;
+- full-body chibi Mage visible at battle scale;
+- no rectangular fallback body;
+- HP bar clears halo/head;
+- ground anchor stable;
+- authored identity readable without role label.
 
 Primary source:
 `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-Implemented:
-- SVG-aware battle art loader;
-- Starcaller authored idle / attack / signature / hit / KO poses;
-- Starcaller authored portrait source;
-- authored sprite automatically replaces fallback when loaded;
-- pose events wired through BattleCharacterView;
-- HP / Signature effect anchors are manifest-driven;
-- five remaining Beasts stay fallback-only;
-- deterministic art-contract checks wired into CI + startup;
-- GitHub Actions run 89 PASS.
-- First live QA exposed an opaque black SVG texture while gameplay/VFX anchors remained correct.
-- Runtime SVG compatibility fix applied: normal image loader + explicit SVG dimensions.
-- Latest combined build GitHub Actions run 99 PASS.
+Immediate task:
+1. create Snowguard authored pose package;
+2. register Snowguard pose paths in the manifest;
+3. preserve Guardian Brace semantics;
+4. validate protector silhouette, HP anchor and shield effect anchor;
+5. run checks/build;
+6. live QA Snowguard before starting Ironclad.
 
-Immediate owner QA:
-1. refresh latest build;
-2. press `L`;
-3. verify authored Starcaller full-body sprite;
-4. wait for `ARCANE BLOOM III`;
-5. press `P`;
-6. capture screenshot.
-
-Do not start Snowguard authored rollout until Starcaller passes this visual gate.
+Art direction:
+`docs/BATTLE-UNIT-ART-FINAL-SPEC.md`
 
 Gameplay remains frozen.
 
