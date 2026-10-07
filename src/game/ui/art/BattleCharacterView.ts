@@ -31,6 +31,7 @@ export class BattleCharacterView {
     private readonly scene: Phaser.Scene,
     readonly beastId: string,
     private readonly showcaseMode: boolean,
+    fallbackStrokeColor?: number,
   ) {
     const definition = battleCharacterDefinition(beastId);
     const iconDef = getIconDefinition(beastId);
@@ -44,7 +45,10 @@ export class BattleCharacterView {
         iconDef.bgFill,
         showcaseMode ? 0.38 : 0.95,
       )
-      .setStrokeStyle(showcaseMode ? 2.5 : 2, iconDef.borderColor);
+      .setStrokeStyle(
+        showcaseMode ? 2.5 : 2,
+        showcaseMode ? iconDef.borderColor : fallbackStrokeColor ?? iconDef.borderColor,
+      );
 
     this.fallbackIcon = createIconImage(
       scene,
