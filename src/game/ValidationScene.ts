@@ -905,23 +905,21 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private loadV15ACaptureFixture(): void {
-    if (!this.showcaseMode || this.phaseController.phase !== GamePhase.BattleSetup) {
-      FeedbackEffects.showToast(
-        this,
-        this.layout.leftCenter.x,
-        this.layout.leftCenter.y,
-        'OPEN BATTLE SETUP + SHOWCASE MODE FIRST',
-        '#f6d675',
-      );
-      return;
-    }
+    // Capture-only reset. K works from any phase so the operator cannot
+    // accidentally capture a normal run while assuming the fixture is active.
+    this.showcaseMode = true;
+    this.showcasePaused = false;
+    this.showcaseCleanFrame = false;
+    this.tweens.resumeAll();
 
-    // Capture-only fixture. It deliberately bypasses Beast Rush output so a portfolio
-    // frame can demonstrate V15A STAR evolution consistently. It is never used by
-    // the normal run loop, deterministic gameplay checks, or adoption decisions.
+    this.battleQueue.clear();
     this.runRoster.reset();
     this.energyQueue.reset();
     this.shardPool.reset();
+    this.formation = undefined;
+    this.battleModel = undefined;
+    this.battleOutcome = undefined;
+    this.activePresetKey = undefined;
 
     this.runRoster.recruit([
       { contentId: 'beast-d', star: 3 }, // Starcaller — Arcane Bloom III
@@ -942,7 +940,6 @@ export class ValidationScene extends Phaser.Scene {
     this.formation = new BattleFormation(this.runRoster.formationUnits());
     const units = this.runRoster.units;
     const byBeast = (beastId: string) => units.find((unit) => unit.beastId === beastId)?.instanceId;
-
     const placements: Array<[string | undefined, string]> = [
       [byBeast('beast-d'), 'back-2'],
       [byBeast('beast-e'), 'front-3'],
@@ -958,20 +955,23 @@ export class ValidationScene extends Phaser.Scene {
     });
     this.shardPool.award(2);
 
-    this.renderBattleSetup();
+    // Explicit tooling jump: re-renders a clean Battle Setup even when K is
+    // pressed during Battle/Result. Normal gameplay never calls this API.
+    this.phaseController.setPhaseForTools(GamePhase.BattleSetup);
+
     FeedbackEffects.showToast(
       this,
-      this.layout.leftCenter.x,
-      this.layout.leftCenter.y,
-      'V15A CAPTURE FIXTURE LOADED',
+      this.layout.rightCenter.x,
+      this.scale.height - 46,
+      'V15A FIXTURE READY · 4 ENEMIES · 1180 HP',
       '#8be2bd',
+      900,
     );
   }
 
   private toggleShowcaseMode(): void {
     this.showcaseMode = !this.showcaseMode;
     this.showcasePaused = false;
-    this.tweens.resumeAll();
     this.tweens.resumeAll();
     this.showcaseCleanFrame = false;
     this.battleActionView?.setShowcaseMode(this.showcaseMode);
