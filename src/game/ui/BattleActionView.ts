@@ -229,20 +229,23 @@ export class BattleActionView {
       .filter((visual): visual is EnemyVisual => Boolean(visual));
 
     const addLabel = (label: string, color: string) => {
-      const text = this.scene.add.text(source.container.x, source.container.y - 48, label, {
+      const text = this.scene.add.text(source.container.x, source.container.y - 40, label, {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '11px',
+        fontSize: '10px',
         color,
         fontStyle: 'bold',
+        backgroundColor: '#151a31',
+        padding: { x: 6, y: 3 },
         stroke: '#11152b',
-        strokeThickness: 3,
+        strokeThickness: 2,
       }).setOrigin(.5).setDepth(175);
       this.objects.push(text);
       this.scene.tweens.add({
         targets: text,
-        y: text.y - 16,
+        y: text.y - 10,
         alpha: 0,
-        duration: 520,
+        delay: 420,
+        duration: 430,
         ease: 'Cubic.Out',
         onComplete: () => {
           const index = this.objects.indexOf(text);
@@ -266,7 +269,7 @@ export class BattleActionView {
       this.scene.tweens.add({
         targets: graphics,
         alpha: 0,
-        duration: 260,
+        duration: 380,
         ease: 'Quad.Out',
         onComplete: () => {
           const index = this.objects.indexOf(graphics);
