@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **PLANNED / GAMEPLAY FROZEN / IMPLEMENTATION NOT STARTED**
+Status: **M1 COMPLETE / CI PASS / M2 STARCALLER NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -499,16 +499,25 @@ Enemies use the same renderer concept but less visual detail than player Beasts.
 
 ## M1 — Art infrastructure
 
-Files:
+Status: **COMPLETE / CI PASS**
+
+Implemented:
 - `BattleCharacterManifest.ts`
 - `BattleCharacterLoader.ts`
 - `BattleCharacterView.ts`
+- `ValidationScene.preload()` manifest loader hook
+- `BattleActionView` character-view adapter
+- attack / hit / Signature / KO pose event hooks
+- authored effect anchor support
+- permanent procedural fallback
 
-No visual behavior change yet.
+M1 deliberately declares no authored pose paths, so it performs zero missing-asset requests.
 
 Gate:
-- build/check pass;
-- fallback-only Battle identical enough to current implementation.
+- deterministic checks PASS;
+- production build PASS;
+- GitHub Actions run 76 PASS;
+- gameplay semantics unchanged.
 
 ## M2 — Starcaller authored integration
 
@@ -615,15 +624,15 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**M1 — Art infrastructure**
-
-Implement:
-1. `BattleCharacterManifest.ts`
-2. `BattleCharacterLoader.ts`
-3. `BattleCharacterView.ts`
-4. minimal `BattleActionView` adapter
-5. no authored asset required yet
-
-Then:
-
 **M2 — Starcaller authored asset integration**
+
+Required:
+1. create the Starcaller final pose package;
+2. add Starcaller pose paths to `BattleCharacterManifest.ts`;
+3. verify authored sprite automatically replaces fallback;
+4. validate idle / attack / signature / hit / KO pose mapping;
+5. validate Arcane Bloom effect anchor against the authored character;
+6. capture one final Starcaller 3★ hero frame;
+7. run checks/build.
+
+Do not start Snowguard until Starcaller passes this gate.
