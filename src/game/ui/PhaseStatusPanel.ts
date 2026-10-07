@@ -240,41 +240,207 @@ export class PhaseStatusPanel {
     const w = this.panelWidth;
     let currY = this.y;
     const add = (...objects: Phaser.GameObjects.GameObject[]) => this.objects.push(...objects);
-    const chip = (x: number, y: number, label: string) => {
-      const bg = this.scene.add.rectangle(x, y, 66, 22, 0x1e293b, .92).setStrokeStyle(1, 0x64748b, .7);
-      const text = this.scene.add.text(x, y, label, { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: '#e2e8f0', fontStyle: 'bold' }).setOrigin(.5);
-      add(bg, text);
-    };
-    const header = drawCard(this.scene, this.x, currY, w, 72, HudTokens.colors.bgSurface, .96, HudTokens.colors.strokeDefault);
-    const title = this.scene.add.text(this.x + 16, currY + 13, 'BEAST RUSH', { fontFamily: HudTokens.fonts.family, fontSize: '18px', color: HudTokens.colors.textPrimary, fontStyle: 'bold' });
-    const sub = this.scene.add.text(this.x + 16, currY + 41, 'MATCH → RECRUIT', { fontFamily: HudTokens.fonts.family, fontSize: '11px', color: HudTokens.colors.textGold, fontStyle: 'bold', letterSpacing: 1 });
-    add(header, title, sub); chip(this.x + w - 47, currY + 20, '6×6'); chip(this.x + w - 47, currY + 48, '≤2 TURN'); currY += 82;
 
+    // The board already owns the large BEAST RUSH title. Keep the rail contextual.
+    const headerH = 58;
+    const header = drawCard(
+      this.scene,
+      this.x,
+      currY,
+      w,
+      headerH,
+      HudTokens.colors.bgSurface,
+      .96,
+      HudTokens.colors.strokeDefault,
+    );
+    const eyebrow = this.scene.add.text(this.x + 16, currY + 11, 'RECRUIT PHASE', {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '10px',
+      color: HudTokens.colors.textMuted,
+      fontStyle: 'bold',
+      letterSpacing: 1,
+    });
+    const sub = this.scene.add.text(this.x + 16, currY + 29, 'MATCH PAIRS  →  BUILD YOUR SQUAD', {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '12px',
+      color: HudTokens.colors.textGold,
+      fontStyle: 'bold',
+    });
+    add(header, eyebrow, sub);
+    currY += headerH + 10;
+
+    // Dominant timer card. Use player language, not implementation labels.
     const state = comboVisualState(data.timerSeconds, true);
     const urgent = state === 'low';
-    const comboH = 142;
-    const comboBg = drawCard(this.scene, this.x, currY, w, comboH, HudTokens.colors.bgSurfaceElevated, .97, urgent ? HudTokens.colors.strokeRed : HudTokens.colors.strokeGold, 1.5);
-    const label = this.scene.add.text(this.x + w / 2, currY + 16, 'RUSH', { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: urgent ? HudTokens.colors.textRed : HudTokens.colors.textGold, fontStyle: 'bold', letterSpacing: 2 }).setOrigin(.5, 0);
-    const time = this.scene.add.text(this.x + w / 2, currY + 34, `${Math.max(0, data.timerSeconds).toFixed(1)}s`, { fontFamily: HudTokens.fonts.family, fontSize: '40px', color: urgent ? '#f87171' : HudTokens.colors.textGold, fontStyle: 'bold' }).setOrigin(.5, 0);
-    const meterX = this.x + 22; const meterY = currY + 91; const meterW = w - 44;
-    const meterBg = this.scene.add.rectangle(meterX, meterY, meterW, 13, 0x0f172a, 1).setOrigin(0, .5).setStrokeStyle(1, 0x475569);
-    const meterFill = this.scene.add.rectangle(meterX + 2, meterY, Math.max(0, (meterW - 4) * comboRatio(data.timerSeconds, 12)), 9, urgent ? 0xef4444 : 0xfbbf24, .95).setOrigin(0, .5);
-    const stateLabel = data.isReady ? 'READY' : state === 'expired' ? 'TIME UP' : 'FIXED 12s';
-    const meta = this.scene.add.text(this.x + 22, currY + 112, stateLabel, { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: data.isReady ? '#38bdf8' : HudTokens.colors.textMuted, fontStyle: 'bold' });
-    const cap = this.scene.add.text(this.x + w - 22, currY + 112, `COMBO ×${data.comboCurrent ?? 0}   BEST ×${data.comboBest ?? 0}`, { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: HudTokens.colors.textMuted, fontStyle: 'bold' }).setOrigin(1, 0);
-    this.timerValue = time; this.comboMeter = meterFill; add(comboBg, label, time, meterBg, meterFill, meta, cap); currY += comboH + 10;
+    const timerH = 126;
+    const timerBg = drawCard(
+      this.scene,
+      this.x,
+      currY,
+      w,
+      timerH,
+      HudTokens.colors.bgSurfaceElevated,
+      .97,
+      urgent ? HudTokens.colors.strokeRed : HudTokens.colors.strokeGold,
+      1.5,
+    );
+    const timerLabel = this.scene.add.text(this.x + w / 2, currY + 14, data.isReady ? 'READY' : 'TIME LEFT', {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '11px',
+      color: data.isReady ? HudTokens.colors.textBlue : urgent ? HudTokens.colors.textRed : HudTokens.colors.textGold,
+      fontStyle: 'bold',
+      letterSpacing: 2,
+    }).setOrigin(.5, 0);
+    const time = this.scene.add.text(
+      this.x + w / 2,
+      currY + 31,
+      data.isReady ? 'MATCH TO START' : `${Math.max(0, data.timerSeconds).toFixed(1)}s`,
+      {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: data.isReady ? '25px' : '40px',
+        color: data.isReady ? HudTokens.colors.textPrimary : urgent ? HudTokens.colors.textRed : HudTokens.colors.textGold,
+        fontStyle: 'bold',
+      },
+    ).setOrigin(.5, 0);
 
-    const countH = 70; const countBg = drawCard(this.scene, this.x, currY, w, countH, HudTokens.colors.bgSurface, .94);
+    const meterX = this.x + 22;
+    const meterY = currY + 84;
+    const meterW = w - 44;
+    const meterBg = this.scene.add.rectangle(
+      meterX,
+      meterY,
+      meterW,
+      12,
+      HudTokens.colors.bgSurfaceDark,
+      1,
+    ).setOrigin(0, .5).setStrokeStyle(1, HudTokens.colors.strokeHighlight);
+    const meterFill = this.scene.add.rectangle(
+      meterX + 2,
+      meterY,
+      data.isReady ? 0 : Math.max(0, (meterW - 4) * comboRatio(data.timerSeconds, 12)),
+      8,
+      urgent ? HudTokens.colors.red : HudTokens.colors.gold,
+      .95,
+    ).setOrigin(0, .5);
+
+    const stateLabel = this.scene.add.text(
+      this.x + 22,
+      currY + 101,
+      data.isReady ? 'READ THE BOARD · START WHEN READY' : `COMBO ×${data.comboCurrent ?? 0}`,
+      {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '9px',
+        color: data.isReady ? HudTokens.colors.textBlue : HudTokens.colors.textSecondary,
+        fontStyle: 'bold',
+      },
+    );
+    const best = this.scene.add.text(
+      this.x + w - 22,
+      currY + 101,
+      `BEST ×${data.comboBest ?? 0}`,
+      {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '9px',
+        color: HudTokens.colors.textMuted,
+        fontStyle: 'bold',
+      },
+    ).setOrigin(1, 0);
+
+    this.timerValue = time;
+    this.comboMeter = meterFill;
+    add(timerBg, timerLabel, time, meterBg, meterFill, stateLabel, best);
+    currY += timerH + 10;
+
+    // Compact phase outcomes.
+    const countH = 62;
+    const countBg = drawCard(this.scene, this.x, currY, w, countH, HudTokens.colors.bgSurface, .94);
     const recruited = recruitedTotal(data.queueItems);
-    const counter = (x: number, labelText: string, value: number) => { const l = this.scene.add.text(x, currY + 12, labelText, { fontFamily: HudTokens.fonts.family, fontSize: '10px', color: HudTokens.colors.textMuted, fontStyle: 'bold' }).setOrigin(.5, 0); const v = this.scene.add.text(x, currY + 28, String(value), { fontFamily: HudTokens.fonts.family, fontSize: '26px', color: HudTokens.colors.textPrimary, fontStyle: 'bold' }).setOrigin(.5, 0); add(l, v); return v; };
-    this.stat2Val = counter(this.x + w * .28, 'MATCHES', data.matchCount); counter(this.x + w * .72, 'RECRUITED', recruited); add(countBg); currY += countH + 10;
+    const counter = (x: number, labelText: string, value: number) => {
+      const l = this.scene.add.text(x, currY + 10, labelText, {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '9px',
+        color: HudTokens.colors.textMuted,
+        fontStyle: 'bold',
+      }).setOrigin(.5, 0);
+      const v = this.scene.add.text(x, currY + 25, String(value), {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '24px',
+        color: HudTokens.colors.textPrimary,
+        fontStyle: 'bold',
+      }).setOrigin(.5, 0);
+      add(l, v);
+      return v;
+    };
+    this.stat2Val = counter(this.x + w * .28, 'MATCHES', data.matchCount);
+    counter(this.x + w * .72, 'RECRUITED', recruited);
+    add(countBg);
+    currY += countH + 10;
 
-    const queueH = 172; const queueBg = drawCard(this.scene, this.x, currY, w, queueH, HudTokens.colors.bgSurface, .94); const heading = this.scene.add.text(this.x + 16, currY + 13, 'BEAST QUEUE', { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: HudTokens.colors.textSecondary, fontStyle: 'bold', letterSpacing: 1 }); add(queueBg, heading);
-    const entries = queueDisplayEntries(data.queueItems).slice(0, 6); this.queueCenter = { x: this.x + w / 2, y: currY + 103 };
-    for (let index = 0; index < 6; index++) { const col = index % 3; const row = Math.floor(index / 3); const cx = this.x + 63 + col * 108; const cy = currY + 67 + row * 58; const item = entries[index]; if (!item) { const slot = this.scene.add.rectangle(cx, cy, 92, 44, 0x0f172a, .32).setStrokeStyle(1, 0x475569, .38); add(slot); continue; } const def = getIconDefinition(item.id); const bg = this.scene.add.rectangle(cx, cy, 92, 44, def.bgFill, .95).setStrokeStyle(1.5, def.borderColor); const icon = createIconImage(this.scene, item.id, cx - 29, cy, 27); const count = this.scene.add.text(cx + 31, cy, `×${item.count}`, { fontFamily: HudTokens.fonts.family, fontSize: '17px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(.5); add(bg, icon, count); this.queueRowMap.set(item.id, { bg, count, x: cx, y: cy }); }
+    // The queue is a compact roster summary rather than six empty debug slots.
+    const entries = queueDisplayEntries(data.queueItems).slice(0, 6);
+    const queueRows = Math.max(1, Math.ceil(entries.length / 2));
+    const queueH = 44 + queueRows * 48;
+    const queueBg = drawCard(this.scene, this.x, currY, w, queueH, HudTokens.colors.bgSurface, .94);
+    const heading = this.scene.add.text(this.x + 16, currY + 12, 'RECRUITED BEASTS', {
+      fontFamily: HudTokens.fonts.family,
+      fontSize: '11px',
+      color: HudTokens.colors.textSecondary,
+      fontStyle: 'bold',
+      letterSpacing: 1,
+    });
+    add(queueBg, heading);
+    this.queueCenter = { x: this.x + w / 2, y: currY + 50 };
+
+    if (!entries.length) {
+      const empty = this.scene.add.text(this.x + 16, currY + 36, 'Match a pair to recruit your first Beast.', {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '10px',
+        color: HudTokens.colors.textMuted,
+      });
+      add(empty);
+    } else {
+      entries.forEach((item, index) => {
+        const col = index % 2;
+        const row = Math.floor(index / 2);
+        const cx = this.x + 86 + col * 164;
+        const cy = currY + 50 + row * 48;
+        const def = getIconDefinition(item.id);
+        const bg = this.scene.add
+          .rectangle(cx, cy, 146, 38, def.bgFill, .92)
+          .setStrokeStyle(1.5, def.borderColor, .9);
+        const icon = createIconImage(this.scene, item.id, cx - 54, cy, 27);
+        const name = this.scene.add.text(cx - 34, cy - 7, item.name, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '8px',
+          color: HudTokens.colors.textPrimary,
+          fontStyle: 'bold',
+        });
+        const count = this.scene.add.text(cx + 57, cy, `×${item.count}`, {
+          fontFamily: HudTokens.fonts.family,
+          fontSize: '15px',
+          color: HudTokens.colors.textGold,
+          fontStyle: 'bold',
+        }).setOrigin(.5);
+        add(bg, icon, name, count);
+        this.queueRowMap.set(item.id, { bg, count, x: cx - 54, y: cy });
+      });
+    }
     currY += queueH + 10;
 
-    const eventBg = drawCard(this.scene, this.x, currY, w, 42, HudTokens.colors.bgSurfaceElevated, .94); const event = this.scene.add.text(this.x + 16, currY + 13, data.recentAction, { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: HudTokens.colors.textPrimary, fontStyle: 'bold' }); add(eventBg, event);
+    // One clear feedback line; avoids a second, conflicting combo readout.
+    const eventBg = drawCard(this.scene, this.x, currY, w, 40, HudTokens.colors.bgSurfaceElevated, .94);
+    const event = this.scene.add.text(
+      this.x + 16,
+      currY + 12,
+      data.recentAction || 'Find a matching pair.',
+      {
+        fontFamily: HudTokens.fonts.family,
+        fontSize: '11px',
+        color: HudTokens.colors.textPrimary,
+        fontStyle: 'bold',
+      },
+    );
+    add(eventBg, event);
   }
 
   pulseCombo(): void {
