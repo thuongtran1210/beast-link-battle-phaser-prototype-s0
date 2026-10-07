@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **V1 POSE PIPELINE FROZEN / V2 CUTOUT-MOTION MIGRATION NEXT / GAMEPLAY FROZEN**
+Status: **V2-M1 CUTOUT MOTION INFRA COMPLETE / CI PASS / BASE-ART MIGRATION NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -713,25 +713,29 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**V2-M1 — Cutout Motion Infrastructure**
+**V2-M2 — Simplified Base-Art Migration**
 
-Implement:
-1. simplify the art manifest to support `base`, optional `signature`, optional `ko`;
-2. add `motionProfile` to every Beast;
-3. keep backward compatibility for the current Starcaller/Snowguard pose assets during migration;
-4. add reusable transform animation profiles:
-   - TANK
-   - BRUISER
-   - MAGE
-   - RANGER_FAST
-   - RANGER_FOCUS
-   - ASSASSIN
-5. route Attack / Hit / KO / Signature presentation through transform animation first;
-6. only use authored pose art when explicitly supplied;
-7. keep current VFX hooks and combat semantics unchanged;
-8. run deterministic checks + production build.
+Order:
+1. Snowguard simple base art;
+2. Starcaller simple base art;
+3. Swiftwing;
+4. Windstrider;
+5. Ironclad;
+6. Shadowclaw.
 
-After V2-M1 passes:
-- replace Snowguard and Starcaller with simplified base-art assets;
-- then roll out the remaining roster.
+For each Beast:
+- integrate one transparent base cutout;
+- optional Signature / KO only if needed;
+- use existing motionProfile for Attack / Hit / KO;
+- keep Signature VFX separate;
+- validate silhouette, HP anchor and ground anchor;
+- no gameplay changes.
+
+Technical state already complete:
+- V2 manifest supports `base`, optional `signature`, optional `ko`;
+- six motion profiles implemented;
+- Attack / Hit / KO now transform-driven;
+- V1 pose assets remain compatibility-only;
+- deterministic V2 art checks PASS;
+- GitHub Actions run 126 PASS.
 
