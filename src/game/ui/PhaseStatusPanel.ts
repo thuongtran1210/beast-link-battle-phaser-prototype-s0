@@ -58,7 +58,10 @@ export class PhaseStatusPanel {
 
     // CARD 1: Phase Header & Subtitle
     const headerH = 68;
-    const headerBg = drawCard(this.scene, this.x, currY, w, headerH, HudTokens.colors.bgSurface, 0.94, HudTokens.colors.strokeDefault);
+    const phaseAccent = data.phaseTitle.toUpperCase().includes('ENERGY')
+      ? HudTokens.colors.strokeBlue
+      : HudTokens.colors.strokeViolet;
+    const headerBg = drawCard(this.scene, this.x, currY, w, headerH, HudTokens.colors.bgPhase, 0.98, phaseAccent, 1.5);
     const titleText = this.scene.add.text(this.x + 16, currY + 12, data.phaseTitle, {
       fontFamily: HudTokens.fonts.family,
       fontSize: '18px',
@@ -77,8 +80,12 @@ export class PhaseStatusPanel {
     // CARD 2: DOMINANT TIMER CARD
     const timerH = 104;
     const isUrgent = !data.isReady && data.timerSeconds < 3.0;
-    const timerBorder = isUrgent ? HudTokens.colors.strokeRed : data.isReady ? 0x0284c7 : HudTokens.colors.strokeGold;
-    const timerBg = drawCard(this.scene, this.x, currY, w, timerH, HudTokens.colors.bgSurfaceElevated, 0.96, timerBorder, 1.5);
+    const timerBorder = isUrgent
+      ? HudTokens.colors.strokeRed
+      : data.isReady
+      ? phaseAccent
+      : HudTokens.colors.strokeGold;
+    const timerBg = drawCard(this.scene, this.x, currY, w, timerH, HudTokens.colors.bgPhaseSoft, 0.98, timerBorder, 2);
 
     const timerLabel = this.scene.add.text(this.x + 16, currY + 12, data.timerLabel.toUpperCase(), {
       fontFamily: HudTokens.fonts.family,
@@ -89,25 +96,42 @@ export class PhaseStatusPanel {
     });
 
     const formattedTime = `${Math.max(0, data.timerSeconds).toFixed(1)}s`;
-    const timerValue = this.scene.add.text(this.x + 16, currY + 30, formattedTime, {
+    const timerValue = this.scene.add.text(this.x + 16, currY + 28, formattedTime, {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '44px',
-      color: isUrgent ? '#f87171' : HudTokens.colors.textGold,
+      fontSize: '42px',
+      color: isUrgent ? HudTokens.colors.textRed : HudTokens.colors.textGold,
       fontStyle: 'bold',
     });
 
-    const timerSub = this.scene.add.text(this.x + 16, currY + 82, data.timerSubtext, {
+    const progressW = w - 32;
+    const progressX = this.x + 16;
+    const progressY = currY + 72;
+    const progressBg = this.scene.add
+      .rectangle(progressX, progressY, progressW, 9, HudTokens.colors.bgSurfaceDark, 1)
+      .setOrigin(0, .5)
+      .setStrokeStyle(1, HudTokens.colors.strokeDefault, .8);
+    const progressFill = this.scene.add
+      .rectangle(
+        progressX + 1,
+        progressY,
+        data.isReady ? 0 : Math.max(0, (progressW - 2) * Math.min(1, data.timerSeconds / 12)),
+        6,
+        isUrgent ? HudTokens.colors.red : phaseAccent,
+        .96,
+      )
+      .setOrigin(0, .5);
+    const timerSub = this.scene.add.text(this.x + 16, currY + 84, data.timerSubtext, {
       fontFamily: HudTokens.fonts.family,
-      fontSize: '11px',
+      fontSize: '10px',
       color: HudTokens.colors.textMuted,
     });
     this.timerValue = timerValue;
-    this.objects.push(timerBg, timerLabel, timerValue, timerSub);
+    this.objects.push(timerBg, timerLabel, timerValue, progressBg, progressFill, timerSub);
     currY += timerH + 10;
 
     // CARD 3: COMBO & STATS CARD
     const statsH = 76;
-    const statsBg = drawCard(this.scene, this.x, currY, w, statsH, HudTokens.colors.bgSurface, 0.94);
+    const statsBg = drawCard(this.scene, this.x, currY, w, statsH, HudTokens.colors.bgPhase, 0.97, HudTokens.colors.strokeDefault, 1.2);
 
     // Left Column: Status Badge
     const stat1Title = this.scene.add.text(this.x + 16, currY + 14, 'STATE', {
@@ -116,10 +140,10 @@ export class PhaseStatusPanel {
       color: HudTokens.colors.textMuted,
       fontStyle: 'bold',
     });
-    const badgeColor = data.isReady ? 0x0369a1 : data.statusBadge.active ? 0x15803d : 0x475569;
+    const badgeColor = data.isReady ? 0x12577d : data.statusBadge.active ? 0x176347 : 0x263755;
     const badgeBg = this.scene.add
       .rectangle(this.x + 58, currY + 44, 82, 22, badgeColor, 0.9)
-      .setStrokeStyle(1, data.isReady ? 0x38bdf8 : data.statusBadge.active ? 0x22c55e : 0x64748b);
+      .setStrokeStyle(1.5, data.isReady ? HudTokens.colors.strokeBlue : data.statusBadge.active ? HudTokens.colors.strokeGreen : HudTokens.colors.strokeDefault);
     const badgeLabel = this.scene.add.text(this.x + 58, currY + 44, data.statusBadge.text, {
       fontFamily: HudTokens.fonts.family,
       fontSize: '11px',
@@ -150,7 +174,7 @@ export class PhaseStatusPanel {
     const visibleItems = data.queueItems.slice(0, maxItems);
     const queueRowsH = visibleItems.reduce((height, item) => height + (item.description ? 42 : 30), 0);
     const queueCardH = Math.max(105, 52 + queueRowsH);
-    const queueBg = drawCard(this.scene, this.x, currY, w, queueCardH, HudTokens.colors.bgSurface, 0.94);
+    const queueBg = drawCard(this.scene, this.x, currY, w, queueCardH, HudTokens.colors.bgPhase, 0.98, phaseAccent, 1.25);
     this.queueCenter = { x: this.x + w / 2, y: currY + 40 };
 
     const queueHeading = this.scene.add.text(this.x + 16, currY + 14, data.queueTitle.toUpperCase(), {
@@ -174,11 +198,12 @@ export class PhaseStatusPanel {
       let itemY = currY + 40;
       visibleItems.forEach((item) => {
         const rowH = item.description ? 42 : 30;
+        const itemDef = getIconDefinition(item.id);
         const rowBg = this.scene.add
-          .rectangle(this.x + w / 2, itemY + rowH / 2, w - 32, rowH - 4, 0x111827, 0.7)
-          .setStrokeStyle(1, 0x334155, 0.7);
+          .rectangle(this.x + w / 2, itemY + rowH / 2, w - 32, rowH - 4, itemDef.bgFill, 0.28)
+          .setStrokeStyle(1.25, itemDef.borderColor, 0.72);
 
-        const icon = createIconImage(this.scene, item.id, this.x + 30, itemY + rowH / 2, 22);
+        const icon = createIconImage(this.scene, item.id, this.x + 30, itemY + rowH / 2, 24);
 
         const itemName = this.scene.add.text(this.x + 48, itemY + 5, item.name, {
           fontFamily: HudTokens.fonts.family,
@@ -217,7 +242,7 @@ export class PhaseStatusPanel {
 
     // CARD 5: RECENT ACTION & FEEDBACK CARD
     const actionH = 68;
-    const actionBg = drawCard(this.scene, this.x, currY, w, actionH, HudTokens.colors.bgSurfaceElevated, 0.94);
+    const actionBg = drawCard(this.scene, this.x, currY, w, actionH, HudTokens.colors.bgPhaseGlow, 0.88, HudTokens.colors.strokeViolet, 1.15);
     const actionTitle = this.scene.add.text(this.x + 16, currY + 12, 'RECENT ACTION', {
       fontFamily: HudTokens.fonts.family,
       fontSize: '10px',
@@ -249,9 +274,9 @@ export class PhaseStatusPanel {
       currY,
       w,
       headerH,
-      HudTokens.colors.bgSurface,
-      .96,
-      HudTokens.colors.strokeDefault,
+      HudTokens.colors.bgPhase,
+      .98,
+      HudTokens.colors.strokeViolet,
     );
     const eyebrow = this.scene.add.text(this.x + 16, currY + 11, 'RECRUIT PHASE', {
       fontFamily: HudTokens.fonts.family,
@@ -279,8 +304,8 @@ export class PhaseStatusPanel {
       currY,
       w,
       timerH,
-      HudTokens.colors.bgSurfaceElevated,
-      .97,
+      HudTokens.colors.bgPhaseSoft,
+      .98,
       urgent ? HudTokens.colors.strokeRed : HudTokens.colors.strokeGold,
       1.5,
     );
@@ -353,7 +378,7 @@ export class PhaseStatusPanel {
 
     // Compact phase outcomes.
     const countH = 62;
-    const countBg = drawCard(this.scene, this.x, currY, w, countH, HudTokens.colors.bgSurface, .94);
+    const countBg = drawCard(this.scene, this.x, currY, w, countH, HudTokens.colors.bgPhase, .98, HudTokens.colors.strokeDefault, 1.2);
     const recruited = recruitedTotal(data.queueItems);
     const counter = (x: number, labelText: string, value: number) => {
       const l = this.scene.add.text(x, currY + 10, labelText, {
@@ -380,7 +405,7 @@ export class PhaseStatusPanel {
     const entries = queueDisplayEntries(data.queueItems).slice(0, 6);
     const queueRows = Math.max(1, Math.ceil(entries.length / 2));
     const queueH = 44 + queueRows * 48;
-    const queueBg = drawCard(this.scene, this.x, currY, w, queueH, HudTokens.colors.bgSurface, .94);
+    const queueBg = drawCard(this.scene, this.x, currY, w, queueH, HudTokens.colors.bgPhase, .98, HudTokens.colors.strokeViolet, 1.25);
     const heading = this.scene.add.text(this.x + 16, currY + 12, 'RECRUITED BEASTS', {
       fontFamily: HudTokens.fonts.family,
       fontSize: '11px',
@@ -406,8 +431,8 @@ export class PhaseStatusPanel {
         const cy = currY + 50 + row * 48;
         const def = getIconDefinition(item.id);
         const bg = this.scene.add
-          .rectangle(cx, cy, 146, 38, def.bgFill, .92)
-          .setStrokeStyle(1.5, def.borderColor, .9);
+          .rectangle(cx, cy, 146, 38, def.bgFill, .45)
+          .setStrokeStyle(1.7, def.borderColor, .95);
         const icon = createIconImage(this.scene, item.id, cx - 54, cy, 27);
         const name = this.scene.add.text(cx - 34, cy - 7, item.name, {
           fontFamily: HudTokens.fonts.family,
@@ -428,7 +453,7 @@ export class PhaseStatusPanel {
     currY += queueH + 10;
 
     // One clear feedback line; avoids a second, conflicting combo readout.
-    const eventBg = drawCard(this.scene, this.x, currY, w, 40, HudTokens.colors.bgSurfaceElevated, .94);
+    const eventBg = drawCard(this.scene, this.x, currY, w, 40, HudTokens.colors.bgPhaseGlow, .88, HudTokens.colors.strokeViolet, 1.15);
     const event = this.scene.add.text(
       this.x + 16,
       currY + 12,
