@@ -22,8 +22,11 @@ export function preloadBattleCharacterArt(scene: Phaser.Scene): void {
         if (!path) return;
         const key = battleCharacterTextureKey(definition.beastId, pose);
         if (scene.textures.exists(key)) return;
-        if (path.toLowerCase().endsWith('.svg')) scene.load.svg(key, path);
-        else scene.load.image(key, path);
+        // SVG authored art is intentionally loaded through the regular image
+        // pipeline. On some mobile/browser combinations Phaser's SVG raster
+        // loader produced an opaque black texture despite transparent source.
+        // Browser image decoding preserves SVG alpha more reliably here.
+        scene.load.image(key, path);
       },
     );
   });
