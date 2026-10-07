@@ -21,20 +21,20 @@ export interface BattleFieldLayout {
  * Optimized for ~1280×720 resolution.
  */
 export function createBattleFieldLayout(baseX = 20, baseY = 80): BattleFieldLayout {
-  const dividerX = baseX + 420;
+  const dividerX = baseX + 400;
   return {
     baseX,
     baseY,
     dividerX,
     dividerY: baseY + 265,
     dividerHeight: 440,
-    playerFrontX: dividerX - 74,
-    enemyFrontX: dividerX + 74,
+    playerFrontX: dividerX - 70,
+    enemyFrontX: dividerX + 70,
     topLaneY: baseY + 96,
-    depthGap: 96,
-    laneGap: 66,
-    slotWidth: 62,
-    slotHeight: 52,
+    depthGap: 84,
+    laneGap: 70,
+    slotWidth: 68,
+    slotHeight: 58,
     panelX: 910,
   };
 }
