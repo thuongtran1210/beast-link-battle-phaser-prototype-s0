@@ -169,6 +169,25 @@ Implemented after the first V15A behavior pass:
 
 This pass changes presentation/readability only; it does not add a seventh Beast, another skill system, mana, cooldown resources, or meta progression.
 
+## Final combat presentation pass — 2026-10-07
+
+Evidence from live capture confirmed:
+- V15A capture fixture is active at **4 enemies / 1180 total HP**.
+- `FOCUS SHOT I` is readable in a paused frame.
+- `TWIN VOLLEY II` is readable with multi-target trails.
+- `ARCANE BLOOM III` is triggering at runtime, but the first live capture showed its visual emphasis was weaker than Twin Volley.
+
+Final Mage presentation changes:
+- Starcaller receives a visible purple caster aura/core at Bloom activation.
+- Arcane links connect the caster to affected targets.
+- Target explosion discs are brighter, larger and remain readable longer.
+- `ARCANE BLOOM III` banner holds longer than generic Signature labels.
+- 3★ `ECHO` receives its own gold impact disc + label.
+
+CI after the final Mage presentation pass: **PASS**.
+
+**Freeze rule:** no more combat-presentation expansion after this pass unless the final live Arcane Bloom capture reveals a clear readability defect. The next production focus is authored unit/character art.
+
 ## Live QA gate
 
 Do not call V15A portfolio-ready until a live 1280×720 Battle confirms:
