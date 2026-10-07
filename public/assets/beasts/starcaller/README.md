@@ -30,3 +30,15 @@ Why SVG in this milestone:
 - the same art can later be exported to PNG without changing the manifest contract.
 
 The authored art is presentation-only. It must not change combat behavior, STAR rules or Arcane Bloom semantics.
+
+
+## Runtime transparency compatibility
+
+Live QA initially exposed an opaque black square around the authored SVG texture on the target runtime.
+
+Compatibility fix:
+- authored SVG files now declare explicit `width`, `height` and `preserveAspectRatio`;
+- SVG files are loaded through Phaser's normal image pipeline rather than the SVG raster-loader path;
+- pose paths and gameplay-facing art contract remain unchanged.
+
+This is a rendering fix only. No Battle rule, STAR behavior or Arcane Bloom logic changed.
