@@ -60,7 +60,7 @@ If repository docs conflict with current code, inspect the code and report the c
 
 **FINAL ART PHASE — M2 Starcaller Live Visual QA**
 
-Status: **AUTHORED STARCALLER IMPLEMENTED / CI PASS / LIVE QA REQUIRED**
+Status: **AUTHORED STARCALLER IMPLEMENTED / TRANSPARENCY FIX CI PASS / LIVE RE-QA REQUIRED**
 
 Primary source:
 `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
@@ -75,6 +75,9 @@ Implemented:
 - five remaining Beasts stay fallback-only;
 - deterministic art-contract checks wired into CI + startup;
 - GitHub Actions run 89 PASS.
+- First live QA exposed an opaque black SVG texture while gameplay/VFX anchors remained correct.
+- Runtime SVG compatibility fix applied: normal image loader + explicit SVG dimensions.
+- Latest combined build GitHub Actions run 99 PASS.
 
 Immediate owner QA:
 1. refresh latest build;
