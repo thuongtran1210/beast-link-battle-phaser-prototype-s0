@@ -20,7 +20,8 @@ Status: **Repository-local coding handoff**
 - P1-V14G.2.3: **PRE-LIVE CLOSEOUT COMPLETE** — three-layer Battle Energy rows, canonical Beast feedback, canonical-name regression check.
 - P1-V14G.3: **BATTLE SYSTEM OWNER-LIVE PASS / EXPERIMENTAL / NOT ADOPTED** — Battle-time tactical Energy communication accepted by owner.
 - P1-V14G.4A: **CORE IDENTITY SURFACE IMPLEMENTED / DETERMINISTIC PASS / OWNER LIVE PASS / EXPERIMENTAL / NOT ADOPTED** — Energy Rush tactical names, complete zero-count inventory, and catalog effect hints are accepted live. G.4B NEXT THREAT remains deferred by default.
-- P1-V14G.5: **ACTIVE REVIEW / OWNER ADOPTION DECISION REQUIRED / NO NEW GAMEPLAY IMPLEMENTATION** — see `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`.
+- P1-V14G.5: **REVIEW STILL OPEN / Tactical Energy remains Experimental / not adopted** — see `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`.
+- P1-V15A: **IMPLEMENTED / DETERMINISTIC PASS / BUILD PASS / LIVE VISUAL QA OPEN / EXPERIMENTAL** — six unique Beast Signatures + behavioral STAR evolution. See `docs/P1-V15A-UNIT-IDENTITY-STAR-EVOLUTION.md`.
 - Squad Capacity Upgrade: **NOT STARTED**.
 
 This file mirrors the current implementation priorities so coding agents can work **without querying Notion MCP**.
@@ -31,7 +32,8 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 
 1. `AI_INSTRUCTIONS.md`
 2. this file
-3. active review gate: `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
+3. active V15A slice: `docs/P1-V15A-UNIT-IDENTITY-STAR-EVOLUTION.md`
+4. unresolved Tactical Energy review gate: `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
 4. completed Energy Rush identity slice: `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
 4. parent V14G spec: `docs/P1-V14G-ENERGY-IDENTITY-ACTIVATION-GRAMMAR.md`
 4. completed player-surface slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
@@ -56,35 +58,37 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**P1-V14G.5 — Tactical Energy Review / Adoption Gate**
+**P1-V15A — Unit Identity & STAR Evolution**
 
-Status: **ACTIVE REVIEW / owner decision required / NO NEW GAMEPLAY IMPLEMENTATION / Experimental / not adopted**
+Status: **IMPLEMENTED / DETERMINISTIC PASS / BUILD PASS / LIVE VISUAL QA OPEN / EXPERIMENTAL**
 
-Entry evidence:
-- G.1 tactical Energy core implemented and deterministic.
-- G.2 player surface implemented and deterministic.
-- G.3 Battle system owner-live PASS.
-- G.4A Energy Rush tactical identity owner-live PASS.
-- V14D persistent Energy implemented.
-- V14E deterministic SAVE vs SPEND evidence exists.
+Owner direction on 2026-10-07 explicitly prioritized unit identity before final portfolio capture because the current Battle still made units feel too interchangeable, especially Mage.
 
-G.5 asks one question:
+V15A asks:
 
-**Does Tactical Energy now add enough understandable tactical value to become baseline gameplay?**
+**Can six existing Beasts read as six distinct combat identities, and can STAR consolidation change behavior rather than only increase stats?**
 
-Legitimate outcomes:
-1. ADOPT
-2. CONDITIONAL HOLD
-3. DO NOT ADOPT
+Implemented:
+- six Beasts now own six unique Signatures;
+- Snowguard / Ironclad are different Tanker fantasies;
+- Windstrider / Swiftwing are different Ranger fantasies;
+- Starcaller has explicit multi-target Arcane Bloom identity;
+- 1★ / 2★ / 3★ now alter Signature behavior;
+- player-facing Setup cards expose Signature tier;
+- Battle presentation receives Signature activation events and VFX;
+- deterministic V15A checks are wired into CI and prototype startup.
 
-No new Energy mechanic is authorized in this gate.
+Read:
+`docs/P1-V15A-UNIT-IDENTITY-STAR-EVOLUTION.md`
 
-G.4B NEXT THREAT is deferred unless the review identifies a demonstrated live context problem.
+### Parallel unresolved gate
+
+**P1-V14G.5 Tactical Energy Review remains open.**
+
+The V15A work does **not** imply Tactical Energy adoption. V14G remains Experimental / not adopted until an explicit adoption outcome is recorded.
 
 Read:
 `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
-
-V14G remains Experimental / not adopted until the owner explicitly selects an adoption outcome.
 
 ## B.1/B.2 implementation baseline
 
