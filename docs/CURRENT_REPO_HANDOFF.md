@@ -58,28 +58,34 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE — M3A Snowguard Live Visual QA**
+**FINAL ART PHASE V2 — Simple Chibi Cutout / Transform Animation**
 
-Status: **SNOWGUARD AUTHORED PACKAGE IMPLEMENTED / CI PASS / LIVE QA REQUIRED**
+Status: **ART DIRECTION RESET / V2 SOURCE OF TRUTH LOCKED / TECH MIGRATION NEXT**
 
-Implemented:
-- Snowguard idle / attack / Guardian Brace / hit / KO authored poses;
-- Snowguard portrait source;
-- manifest-driven HP / effect anchors;
-- art-contract checks extended to Snowguard;
-- Starcaller remains authored;
-- four remaining Beasts stay fallback-only;
-- latest complete Snowguard package GitHub Actions run 113 PASS.
+Why:
+- live authored-sprite QA proved the Battle art abstraction works;
+- the five-pose character pipeline is too expensive and visually overbuilt;
+- the project now targets simple cutout characters animated mainly by scale / move / rotate / squash plus Signature VFX.
 
-Immediate owner QA:
-1. refresh latest build;
-2. press `L`;
-3. inspect Snowguard authored sprite;
-4. wait for Guardian Brace;
-5. press `P`;
-6. capture screenshot.
+Primary sources:
+1. `docs/BATTLE-ART-DIRECTION-V2.md`
+2. `docs/UNIT-PRODUCTION-BRIEF-V2.md`
+3. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md` — retained as technical migration history
 
-Do not begin Ironclad authored rollout until Snowguard passes this visual gate.
+Immediate task — **V2-M1 Cutout Motion Infrastructure**:
+1. migrate manifest to base-art + optional signature/KO;
+2. add reusable motion profiles;
+3. preserve V1 pose compatibility during migration;
+4. make Attack / Hit / KO primarily transform-driven;
+5. preserve Signature VFX and anchors;
+6. do not alter gameplay rules, balance, targeting or STAR semantics;
+7. run checks/build.
+
+Production target per Beast:
+- required: base + icon;
+- optional: signature + KO;
+- animation: transform/tween;
+- power readability: VFX.
 
 Gameplay remains frozen.
 
