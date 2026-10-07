@@ -115,18 +115,10 @@ export class BoardView {
         iconImage.setAlpha(0.45);
       }
 
-      // Beast tiles retain their established internal-letter presentation. Known tactical
-      // Energy tiles use their player-facing name instead and hide the implementation ID.
-      const idTag = energyPresentation?.showInternalLetter === false ? undefined : this.scene.add
-        .text(this.cellSize / 2 - 7, -this.cellSize / 2 + 6, letter, {
-          fontFamily: HudTokens.fonts.family,
-          fontSize: `${Math.max(9, Math.round(this.cellSize * 0.13))}px`,
-          color: selected ? '#fbbf24' : '#94a3b8',
-          fontStyle: 'bold',
-        })
-        .setOrigin(1, 0);
+      // Portfolio/game surface hides internal A/B/C implementation IDs.
+      // Identity should come from the portrait + role / Tactical Energy name.
+      const idTag = undefined;
 
-      // Tactical Energy uses its catalog identity; Beast Rush remains unchanged.
       const roleText = energyPresentation?.displayName ?? (isEnergy ? 'ENERGY' : beastSubscript(letter));
       const subLabel = this.scene.add
         .text(0, this.cellSize * 0.35, roleText, {
@@ -426,7 +418,7 @@ function beastColor(letter: string): number {
 function beastSubscript(letter: string): string {
   switch (letter) {
     case 'A': return 'TANK';
-    case 'B': return 'ASSS';
+    case 'B': return 'ASSN';
     case 'C': return 'RNGR';
     case 'D': return 'MAGE';
     case 'E': return 'TANK';
