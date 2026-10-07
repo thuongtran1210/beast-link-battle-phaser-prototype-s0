@@ -4,43 +4,51 @@
 export const HudTokens = {
   colors: {
     // Backgrounds & Surfaces
-    bgApp: 0x11152b,
-    bgGame: 0x171d36,
-    bgSurface: 0x242c4a,
-    bgSurfaceElevated: 0x303b60,
-    bgSurfaceLight: 0x435077,
-    bgSurfaceDark: 0x151a31,
+    bgApp: 0x070d1d,
+    bgGame: 0x0b1228,
+    bgSurface: 0x121d3b,
+    bgSurfaceElevated: 0x1a2850,
+    bgSurfaceLight: 0x293b69,
+    bgSurfaceDark: 0x091126,
+
+    // Celestial / neon phase surfaces
+    bgPhase: 0x0d1833,
+    bgPhaseSoft: 0x15244a,
+    bgPhaseGlow: 0x20164a,
 
     // Strokes & Borders
-    strokeDefault: 0x46516f,
-    strokeHighlight: 0x64739d,
-    strokeGold: 0xe9bd59,
-    strokeBlue: 0x72bff5,
-    strokeRed: 0xee7185,
+    strokeDefault: 0x334c7d,
+    strokeHighlight: 0x6086c2,
+    strokeGold: 0xf7c84b,
+    strokeBlue: 0x3fc8ff,
+    strokeViolet: 0xa66bff,
+    strokePink: 0xff5aa8,
+    strokeGreen: 0x45e3a5,
+    strokeRed: 0xf26b82,
 
     // Brand & Semantic
-    gold: 0xf6d675,
+    gold: 0xffd95c,
     goldDark: 0xc4943f,
     goldMuted: 0x70542e,
-    blue: 0x72bff5,
+    blue: 0x35c6ff,
     blueDark: 0x407cb8,
     blueLight: 0xbce4ff,
     red: 0xee7185,
     redDark: 0x98495a,
     redLight: 0xffbbc5,
-    green: 0x72d9ad,
+    green: 0x42e0a4,
     greenDark: 0x3a956f,
     greenLight: 0xb9f1d8,
 
     // Text (HEX strings for Phaser text)
-    textPrimary: '#fff8ef',
-    textSecondary: '#dfe6ff',
-    textMuted: '#9ba8c7',
+    textPrimary: '#f7f7ff',
+    textSecondary: '#d7e3ff',
+    textMuted: '#91a3c9',
     textDark: '#171d36',
-    textGold: '#f6d675',
-    textBlue: '#89d0ff',
+    textGold: '#ffdb62',
+    textBlue: '#73dbff',
     textRed: '#ff91a1',
-    textGreen: '#8be2bd',
+    textGreen: '#7ff0c5',
   },
 
   fonts: {
