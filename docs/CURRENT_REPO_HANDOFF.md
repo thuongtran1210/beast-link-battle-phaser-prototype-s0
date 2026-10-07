@@ -58,36 +58,46 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE V2 — Simple Chibi Cutout / Transform Animation**
+**FINAL ART PHASE V2 — Simplified Base-Art Migration**
 
-Status: **ART DIRECTION RESET / V2 SOURCE OF TRUTH LOCKED / TECH MIGRATION NEXT**
-
-Why:
-- live authored-sprite QA proved the Battle art abstraction works;
-- the five-pose character pipeline is too expensive and visually overbuilt;
-- the project now targets simple cutout characters animated mainly by scale / move / rotate / squash plus Signature VFX.
+Status: **V2 CUTOUT MOTION INFRA COMPLETE / CI PASS / BASE ART NEXT**
 
 Primary sources:
 1. `docs/BATTLE-ART-DIRECTION-V2.md`
 2. `docs/UNIT-PRODUCTION-BRIEF-V2.md`
-3. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md` — retained as technical migration history
+3. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-Immediate task — **V2-M1 Cutout Motion Infrastructure**:
-1. migrate manifest to base-art + optional signature/KO;
-2. add reusable motion profiles;
-3. preserve V1 pose compatibility during migration;
-4. make Attack / Hit / KO primarily transform-driven;
-5. preserve Signature VFX and anchors;
-6. do not alter gameplay rules, balance, targeting or STAR semantics;
-7. run checks/build.
+V2-M1 implemented:
+- manifest supports one `base` cutout plus optional `signature` / `ko`;
+- six reusable motion profiles:
+  - TANK
+  - BRUISER
+  - MAGE
+  - RANGER_FAST
+  - RANGER_FOCUS
+  - ASSASSIN
+- Attack / Hit / KO use transform/tween motion by default;
+- Signature keeps optional pose override + VFX;
+- Starcaller/Snowguard V1 art remains compatibility base during migration;
+- four remaining Beasts stay fallback-only;
+- deterministic V2 art contract PASS;
+- GitHub Actions run 126 PASS.
 
-Production target per Beast:
-- required: base + icon;
-- optional: signature + KO;
-- animation: transform/tween;
-- power readability: VFX.
+Immediate task — **V2-M2 Base-Art Migration**:
+1. Snowguard simple cutout base;
+2. Starcaller simple cutout base;
+3. Swiftwing;
+4. Windstrider;
+5. Ironclad;
+6. Shadowclaw.
 
-Gameplay remains frozen.
+Per Beast:
+- one base image required;
+- icon required;
+- optional Signature/KO only when clearly useful;
+- animation via motion profile;
+- VFX carries Signature power;
+- gameplay remains frozen.
 
 ## B.1/B.2 implementation baseline
 
