@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **M2 IMPLEMENTED / CI PASS / STARCALLER LIVE VISUAL QA NEXT / GAMEPLAY FROZEN**
+Status: **M2 STARCALLER PASS / M3A SNOWGUARD NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -545,8 +545,19 @@ Fix implemented:
 - explicit SVG dimensions / aspect-ratio metadata added;
 - latest combined build CI PASS (run 99).
 
-Remaining gate:
-- repeat live Battle screenshot confirming transparent authored sprite, scale, ground anchor, HP anchor and Arcane Bloom alignment.
+Live re-QA result: **PASS**
+
+Confirmed from runtime capture:
+- authored Starcaller renders with transparency;
+- full-body chibi silhouette is visible at battle scale;
+- Starcaller reads as a Mage without role/name text;
+- HP bar clears the halo/head silhouette;
+- ground anchor remains stable;
+- authored character replaces the rectangular fallback body correctly.
+
+Arcane Bloom hero-frame capture remains a portfolio evidence task, not an integration blocker.
+
+M2 is closed.
 
 Do not begin Snowguard rollout until this live visual gate passes.
 
@@ -645,22 +656,25 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**M2 Live Visual QA — Starcaller**
+**M3A — Snowguard Authored Character**
 
-1. refresh the latest build;
-2. press `L` to enter the V15A Hero Battle;
-3. confirm Starcaller appears as the authored full-body chibi Mage rather than a rectangular portrait token;
-4. inspect HP-bar height and feet/ground anchor;
-5. wait for `ARCANE BLOOM III`;
-6. press `P` while the signature pose + Bloom VFX are visible;
-7. capture the frame.
+Goal:
+- establish the first Tanker authored sprite using the same BattleCharacterView pipeline;
+- prove that authored art can differentiate protector Tanker from Starcaller Mage and later Ironclad disruptor.
 
-Acceptance:
-- no visible card body behind Starcaller;
-- Starcaller reads as Mage without a name/role label;
-- cast pose and purple aura are aligned;
-- HP bar does not intersect head/halo;
-- Bloom originates from the upper-body/orb area;
-- KO/hit pose does not jump the ground anchor.
+Required poses:
+- idle;
+- attack;
+- signature / Guardian Brace;
+- hit;
+- KO.
 
-Only after this gate: **M3A Snowguard authored rollout**.
+Visual gate:
+- broad, friendly protector silhouette;
+- warm gold / cream / pale-blue identity;
+- shield/guardian motif;
+- Guardian Brace visibly reads as protection;
+- no rectangular Battle card chrome;
+- HP/effect anchors remain stable.
+
+Do not alter Guardian Brace gameplay semantics.
