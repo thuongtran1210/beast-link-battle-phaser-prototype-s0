@@ -58,29 +58,33 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE — M1 Battle Sprite Infrastructure**
+**FINAL ART PHASE — M2 Starcaller Authored Sprite**
 
-Status: **PLANNED / GAMEPLAY FROZEN / IMPLEMENTATION NEXT**
+Status: **M1 INFRASTRUCTURE COMPLETE / CI PASS / STARCALLER ART NEXT**
 
 Primary source:
 `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
+M1 evidence:
+- manifest implemented;
+- loader implemented;
+- authored-or-fallback character view implemented;
+- BattleActionView adapter implemented;
+- attack / Signature / hit / KO presentation hooks wired;
+- no authored paths declared yet, therefore no missing-asset requests;
+- GitHub Actions run 76 PASS.
+
+Immediate task:
+1. produce Starcaller authored pose package;
+2. register its pose paths;
+3. validate authored sprite replacement;
+4. validate Arcane Bloom anchor and 3★ Echo;
+5. capture Starcaller hero frame.
+
 Art direction:
 `docs/BATTLE-UNIT-ART-FINAL-SPEC.md`
 
-Immediate task:
-1. create `BattleCharacterManifest.ts`;
-2. create `BattleCharacterLoader.ts`;
-3. create `BattleCharacterView.ts`;
-4. add minimal adapter in `BattleActionView.ts`;
-5. preserve current procedural portrait fallback;
-6. do not require authored art yet;
-7. run deterministic checks + production build.
-
-After M1 passes:
-**M2 — Starcaller authored sprite integration**
-
-No gameplay mechanic, balance, targeting or Signature rule change is authorized in this phase.
+Gameplay remains frozen.
 
 ## B.1/B.2 implementation baseline
 
