@@ -89,6 +89,18 @@ Do not call the runtime showcase-ready until live QA confirms at 1280×720:
    - next threat;
    - PREPARE NEXT WAVE.
 
+## V15A runtime evidence checkpoint
+
+Live screenshots now demonstrate real Signature execution rather than mockup-only intent:
+- Focus Shot readable in Battle.
+- Twin Volley II readable with multi-target trails.
+- Arcane Bloom III trigger confirmed.
+- Final Arcane Bloom hero-VFX pass implemented and CI-passed; one final live capture remains before freezing combat presentation.
+
+Portfolio guidance:
+- Use a **separate Signature hero frame** for unit identity.
+- Use a **separate Tactical Energy frame** for READY / SUGGESTED / DISABLED. Do not force both systems to be perfectly readable in the same paused screenshot.
+
 ## Still open
 
 - Live browser visual QA after this code pass.
