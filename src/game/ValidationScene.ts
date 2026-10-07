@@ -190,6 +190,7 @@ export class ValidationScene extends Phaser.Scene {
   private showcaseMode = true;
   private showcasePaused = false;
   private showcaseCleanFrame = false;
+  private captureEnemyFixtures?: ReadonlyArray<EnemyFixture>;
   private recentActionText = '';
   private beastRushEvent: BeastRushEvent = { kind: 'idle' };
 
@@ -551,7 +552,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleSetupView = new BattleSetupView(
       this,
       this.formation,
-      this.enemyBoard?.fixtures ?? this.waveRun.currentWave.enemyFixtures,
+      this.captureEnemyFixtures ?? this.enemyBoard?.fixtures ?? this.waveRun.currentWave.enemyFixtures,
       () => this.energyQueue.getAll(),
       () => this.startBattle(),
       () => {
@@ -609,7 +610,7 @@ export class ValidationScene extends Phaser.Scene {
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(
       this.formation,
-      isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : this.waveRun.currentWave.enemyFixtures,
+      this.captureEnemyFixtures ?? (isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : this.waveRun.currentWave.enemyFixtures),
       P1V13A_SIGNATURE_RULES,
       Object.fromEntries(this.runRoster.units.map((unit) => [unit.instanceId, unit.currentHp])),
     );
@@ -803,6 +804,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleModel = undefined;
     this.battleOutcome = undefined;
     this.activePresetKey = undefined;
+    this.captureEnemyFixtures = undefined;
     this.metrics.reset();
     this.enemyBoard = isTestHarness() ? new EnemyBoardState(P1V13A1_LEVELS[this.waveRun.currentWaveIndex]) : undefined;
   }
@@ -819,12 +821,18 @@ export class ValidationScene extends Phaser.Scene {
       if (result.kind === 'Mend' || result.kind === 'Rescue') this.battleActionView?.playHeal({ unitId: result.targetUnitId, amount: result.amount });
       else this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
       const identity = tacticalEnergyCastFeedback(result, after);
-      if (identity) FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, identity, '#fbbf24');
+      if (identity) {
+        const toastX = this.showcaseMode ? this.layout.rightCenter.x : this.layout.leftCenter.x;
+        const toastY = this.showcaseMode ? this.scale.height - 46 : this.layout.leftCenter.y;
+        FeedbackEffects.showToast(this, toastX, toastY, identity, '#f6d675', 760);
+      }
       this.renderBattle();
       this.syncTopHud();
     } else {
       const control = tacticalEnergyControl(this.battleModel.tacticalEnergyEligibility(energyId, this.energyQueue), this.energyQueue.getCharges(energyId), this.showcasePaused);
-      FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, control?.reasonLabel ?? 'UNAVAILABLE', '#fbbf24');
+      const toastX = this.showcaseMode ? this.layout.rightCenter.x : this.layout.leftCenter.x;
+      const toastY = this.showcaseMode ? this.scale.height - 46 : this.layout.leftCenter.y;
+      FeedbackEffects.showToast(this, toastX, toastY, control?.reasonLabel ?? 'UNAVAILABLE', '#f6d675', 760);
     }
   }
 
@@ -923,6 +931,13 @@ export class ValidationScene extends Phaser.Scene {
       { contentId: 'beast-c', star: 1 }, // Windstrider reserve
       { contentId: 'beast-b', star: 3 }, // Shadowclaw reserve
     ] as DeployedUnit[]);
+
+    this.captureEnemyFixtures = [
+      { enemyId: 'capture-front-2', slotId: 'enemy-front-2', row: 'Front', column: 2, maxHp: 320, damage: 3, archetype: 'Frontliner' },
+      { enemyId: 'capture-front-3', slotId: 'enemy-front-3', row: 'Front', column: 3, maxHp: 320, damage: 3, archetype: 'Frontliner' },
+      { enemyId: 'capture-diver-4', slotId: 'enemy-front-4', row: 'Front', column: 4, maxHp: 260, damage: 3, archetype: 'Diver' },
+      { enemyId: 'capture-ranged-3', slotId: 'enemy-back-3', row: 'Back', column: 3, maxHp: 280, damage: 3, archetype: 'Ranged' },
+    ];
 
     this.formation = new BattleFormation(this.runRoster.formationUnits());
     const units = this.runRoster.units;
