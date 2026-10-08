@@ -18,6 +18,7 @@ import {
   SIMULATION_STEP,
 } from './battle/AutonomousBattleModel';
 import { P1V13A1_LEVELS } from './battle/ValidationLevels';
+import { setupV15ACapturePreset } from './battle/V15ACaptureFixture';
 import { deriveBattleTickPresentation } from './battle/BattlePresentation';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
@@ -650,48 +651,18 @@ export class ValidationScene extends Phaser.Scene {
     this.showcaseCleanFrame = false;
     this.tweens.resumeAll();
 
-    this.battleQueue.clear();
-    this.runRoster.reset();
-    this.energyQueue.reset();
-    this.shardPool.reset();
-    this.formation = undefined;
     this.battleModel = undefined;
     this.battleOutcome = undefined;
-    this.fixtureManager.clearActiveKey();
 
-    this.runRoster.recruit([
-      { contentId: 'beast-d', star: 3 }, // Starcaller — Arcane Bloom III
-      { contentId: 'beast-e', star: 2 }, // Ironclad — Iron Ram II
-      { contentId: 'beast-f', star: 2 }, // Swiftwing — Twin Volley II
-      { contentId: 'beast-a', star: 1 }, // Snowguard — Guardian Brace I
-      { contentId: 'beast-c', star: 1 }, // Windstrider reserve
-      { contentId: 'beast-b', star: 3 }, // Shadowclaw reserve
-    ] as DeployedUnit[]);
-
-    this.captureEnemyFixtures = [
-      { enemyId: 'capture-front-2', slotId: 'enemy-front-2', row: 'Front', column: 2, maxHp: 320, damage: 3, archetype: 'Frontliner' },
-      { enemyId: 'capture-front-3', slotId: 'enemy-front-3', row: 'Front', column: 3, maxHp: 320, damage: 3, archetype: 'Frontliner' },
-      { enemyId: 'capture-diver-4', slotId: 'enemy-front-4', row: 'Front', column: 4, maxHp: 260, damage: 3, archetype: 'Diver' },
-      { enemyId: 'capture-ranged-3', slotId: 'enemy-back-3', row: 'Back', column: 3, maxHp: 280, damage: 3, archetype: 'Ranged' },
-    ];
-
-    this.formation = new BattleFormation(this.runRoster.formationUnits());
-    const units = this.runRoster.units;
-    const byBeast = (beastId: string) => units.find((unit) => unit.beastId === beastId)?.instanceId;
-    const placements: Array<[string | undefined, string]> = [
-      [byBeast('beast-d'), 'back-2'],
-      [byBeast('beast-e'), 'front-3'],
-      [byBeast('beast-f'), 'back-4'],
-      [byBeast('beast-a'), 'front-4'],
-    ];
-    placements.forEach(([unitId, slotId]) => {
-      if (unitId) this.formation?.place(unitId, slotId);
-    });
-
-    ['energy-a', 'energy-b', 'energy-c', 'energy-d'].forEach((energyId) => {
-      this.energyQueue.addCharge(energyId, 3);
-    });
-    this.shardPool.award(2);
+    const fixture = setupV15ACapturePreset(
+      this.battleQueue,
+      this.runRoster,
+      this.energyQueue,
+      this.shardPool,
+      this.fixtureManager,
+    );
+    this.formation = fixture.formation;
+    this.captureEnemyFixtures = fixture.captureEnemyFixtures;
 
     // Explicit tooling jump: re-renders a clean Battle Setup even when K is
     // pressed during Battle/Result. Normal gameplay never calls this API.
