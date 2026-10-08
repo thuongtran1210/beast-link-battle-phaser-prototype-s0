@@ -78,6 +78,7 @@ import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
 import { createIconImage, ensureIconTextures } from './ui/icons/IconFactory';
 import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
+import { preloadEnemyCharacterArt } from './ui/art/EnemyCharacterLoader';
 import { runBattleCharacterArtChecks } from './ui/art/BattleCharacterArtChecks';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
 import { beastDisplayName } from './ui/icons/UnitIconRegistry';
@@ -202,6 +203,7 @@ export class ValidationScene extends Phaser.Scene {
 
   preload(): void {
     preloadBattleCharacterArt(this);
+    preloadEnemyCharacterArt(this);
   }
 
   create(): void {
