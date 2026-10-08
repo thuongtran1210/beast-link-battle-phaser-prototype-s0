@@ -23,6 +23,35 @@ Read:
 
 Notion is synchronized separately when the project owner requests documentation updates.
 
+## Current presentation stage — 2026-10-08
+
+**V2-M4 — Simple Chibi Cutout / Scale, Spacing & Readability Live Re-QA**
+
+Presentation implementation is currently ahead of the older art notes in this README:
+
+- 6 / 6 player Beasts use V2 base cutouts.
+- 3 / 3 enemy archetypes use V2 base cutouts.
+- Battle no longer uses rectangular unit cards in authored mode.
+- Attack / Hit / KO presentation is transform-driven.
+- Signature power remains VFX-driven.
+- Player cutouts are tuned to 112–124 px reference height.
+- Enemy cutouts are tuned to 108–116 px.
+- Showcase declumping / center composition polish is implemented.
+- deterministic art/readability guards pass.
+- latest repository CI is green through run 165; M4 code gate passed at run 163.
+
+**Current blocker:** owner live re-QA of the latest build at 1280×720.  
+**Next action:** verify scale / overlap / HP anchors, then freeze final portfolio capture frames.
+
+Gameplay remains frozen during this presentation pass. Tactical Energy adoption remains a separate design decision and is not silently adopted by visual work.
+
+Read:
+- `docs/CURRENT_REPO_HANDOFF.md`
+- `docs/BATTLE-ART-DIRECTION-V2.md`
+- `docs/UNIT-PRODUCTION-BRIEF-V2.md`
+- `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
+- `docs/PORTFOLIO-VISUAL-PASS.md`
+
 ## Current status
 
 ### P1-V14A
@@ -283,17 +312,22 @@ Formation Grid
 
 ## Art workflow
 
-Art generation has a separate repo-local pipeline:
+Current production direction is **Simple Chibi Cutout V2**, not the earlier pose-heavy Master Reference pipeline.
 
-- `ART_AGENT_INSTRUCTIONS.md`
-- `art/style/STYLE_BIBLE.md`
-- `art/style/STYLE_LOCK_PROMPT.md`
+Authoritative repo docs:
+- `docs/BATTLE-ART-DIRECTION-V2.md`
+- `docs/UNIT-PRODUCTION-BRIEF-V2.md`
+- `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-Current art gate:
+Runtime production rule:
+- one required base cutout + icon per Beast;
+- optional Signature / KO art only when materially useful;
+- Attack / Hit / KO primarily use transform/tween motion;
+- Signature readability comes from VFX;
+- STAR progression should prefer behavior/VFX intensity over three separate character redraws.
 
-**Snowguard / Tanker Master Reference → owner STYLE APPROVAL**
-
-Do not create final STAR evolution art before B.3 mechanics are validated.
+Current gate:
+**V2-M4 live readability re-QA → final portfolio capture.**
 
 ## Run locally
 
