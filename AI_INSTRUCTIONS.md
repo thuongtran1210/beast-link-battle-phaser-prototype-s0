@@ -17,7 +17,10 @@ Only query/update Notion when the user explicitly asks for a Notion documentatio
 Read in this order:
 
 1. `docs/CURRENT_REPO_HANDOFF.md`
-2. this file
+2. `docs/BATTLE-ART-DIRECTION-V2.md` when the task touches Battle presentation/art
+3. `docs/UNIT-PRODUCTION-BRIEF-V2.md` for character production
+4. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md` for the active visual integration gate
+5. this file
 3. active review gate: `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
 4. completed Energy Rush identity slice: `docs/P1-V14G4-ENERGY-RUSH-TACTICAL-IDENTITY-CLOSEOUT.md`
 4. completed player-surface slice: `docs/P1-V14G2-TACTICAL-ENERGY-PLAYER-SURFACE.md`
@@ -45,6 +48,10 @@ If repo docs and code conflict:
 - do not fetch Notion unless the user explicitly asks
 
 ## Current project state
+
+- Active implementation task: **V2-M4 — Simple Chibi Cutout scale / spacing / readability live re-QA**. This is presentation-only. 6/6 player Beast cutouts and 3/3 enemy cutouts are integrated; M4 scale/declumping code passed CI. Owner live re-QA is the current blocker before final portfolio capture.
+- **Gameplay is frozen during V2-M4.** Do not use visual work to change damage, targeting, STAR, Energy, formation, Wave, or Signature semantics.
+- P1-V14G.5 Tactical Energy Review / Adoption Gate remains an unresolved gameplay decision in parallel; visual work does not imply ADOPT.
 
 - Current slice: **P1-V14G.5 — Tactical Energy Review / Adoption Gate**. ACTIVE REVIEW / owner adoption decision required / NO NEW GAMEPLAY IMPLEMENTATION / Experimental / not adopted. See `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`.
 - V14G.3 Battle system is OWNER-LIVE PASS.
