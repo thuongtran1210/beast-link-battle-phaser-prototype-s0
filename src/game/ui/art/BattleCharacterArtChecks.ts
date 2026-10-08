@@ -24,6 +24,7 @@ export function runBattleCharacterArtChecks(): void {
     expect(Boolean(BATTLE_MOTION_PROFILES[profile]), `${profile} motion profile exists`);
     expect(Boolean(definition.base), `${beastId} registers V2 base cutout`);
     expect(Boolean(definition.icon), `${beastId} registers V2 icon art`);
+    expect(definition.displayHeight >= 110, `${beastId} cutout remains readable at showcase scale`);
     expect(definition.effectAnchorY < 0, `${beastId} effect anchor sits above ground`);
     expect(definition.hpAnchorY < definition.effectAnchorY, `${beastId} HP anchor sits above effect anchor`);
 
@@ -37,7 +38,7 @@ export function runBattleCharacterArtChecks(): void {
   (['Frontliner', 'Diver', 'Ranged'] as const).forEach((archetype) => {
     const definition = ENEMY_CHARACTER_ART[archetype];
     expect(Boolean(definition.base), `${archetype} registers V2 enemy base cutout`);
-    expect(definition.displayHeight > 0, `${archetype} has positive display height`);
+    expect(definition.displayHeight >= 108, `${archetype} remains readable at showcase scale`);
     expect(definition.hpAnchorY < 0, `${archetype} HP anchor sits above ground`);
   });
 
