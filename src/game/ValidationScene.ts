@@ -73,6 +73,7 @@ import { BattleSetupView } from './ui/BattleSetupView';
 import { SessionSummaryView } from './ui/SessionSummaryView';
 import { BattleActionView } from './ui/BattleActionView';
 import { WaveResultView } from './ui/WaveResultView';
+import { ValidationKeyboardRouter } from './scene/ValidationKeyboardRouter';
 import { ShowcaseBattleHUDView } from './ui/ShowcaseBattleHUDView';
 import { GameTopHUD } from './ui/GameTopHUD';
 import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
@@ -279,46 +280,16 @@ export class ValidationScene extends Phaser.Scene {
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
     // Keyboard shortcuts
-    if (isTestHarness()) {
-      this.input.keyboard?.on('keydown-F1', () => this.setEnemyFixturePreset(0));
-      this.input.keyboard?.on('keydown-F2', () => this.setEnemyFixturePreset(1));
-      this.input.keyboard?.on('keydown-F3', () => this.setEnemyFixturePreset(2));
-      this.input.keyboard?.on('keydown-F4', () => this.setEnemyFixturePreset(3));
-    }
-    this.input.keyboard?.on('keydown-E', () => this.cycleEnemyFixture());
-    this.input.keyboard?.on('keydown-ONE', () => this.setEnemyFixturePreset(0));
-    this.input.keyboard?.on('keydown-TWO', () => this.setEnemyFixturePreset(1));
-    this.input.keyboard?.on('keydown-THREE', () => this.setEnemyFixturePreset(2));
-    this.input.keyboard?.on('keydown-A', () => this.loadFormationPreset('A'));
-    this.input.keyboard?.on('keydown-B', () => this.loadFormationPreset('B'));
-    this.input.keyboard?.on('keydown-S', () => {
-      if (this.phaseController.phase === GamePhase.BeastRush) {
-        if (this.battleQueue.entries().length === 0) {
-          this.battleQueue.addBeastMatch('beast-a');
-          this.battleQueue.addBeastMatch('beast-b');
-          this.battleQueue.addBeastMatch('beast-c');
-          this.battleQueue.addBeastMatch('beast-d');
-        }
-        this.phaseController.setPhase(GamePhase.EnergyRush);
-      }
-      if (this.phaseController.phase === GamePhase.EnergyRush) {
-        if (this.battleQueue.entries().length === 0) {
-          this.battleQueue.addBeastMatch('beast-a');
-          this.battleQueue.addBeastMatch('beast-b');
-          this.battleQueue.addBeastMatch('beast-c');
-          this.battleQueue.addBeastMatch('beast-d');
-        }
-        this.phaseController.setPhase(GamePhase.BattleSetup);
-      }
-    });
-
-    // Portfolio capture controls.
-    // O = showcase UI, P = pause/resume Battle, C = clean-frame HUD toggle.
-    this.input.keyboard?.on('keydown-O', () => this.toggleShowcaseMode());
-    this.input.keyboard?.on('keydown-P', () => this.toggleShowcasePause());
-    this.input.keyboard?.on('keydown-C', () => this.toggleShowcaseCleanFrame());
-    this.input.keyboard?.on('keydown-K', () => this.loadV15ACaptureFixture());
-    this.input.keyboard?.on('keydown-L', () => this.startV15AHeroBattle());
+    new ValidationKeyboardRouter(this, this.phaseController, this.battleQueue, {
+      setEnemyFixturePreset: (index) => this.setEnemyFixturePreset(index),
+      cycleEnemyFixture: () => this.cycleEnemyFixture(),
+      loadFormationPreset: (key) => this.loadFormationPreset(key),
+      toggleShowcaseMode: () => this.toggleShowcaseMode(),
+      toggleShowcasePause: () => this.toggleShowcasePause(),
+      toggleShowcaseCleanFrame: () => this.toggleShowcaseCleanFrame(),
+      loadV15ACaptureFixture: () => this.loadV15ACaptureFixture(),
+      startV15AHeroBattle: () => this.startV15AHeroBattle(),
+    }).register();
 
     // P1-V14C.1: fixed phase time, never Combo expiry, ends Beast Rush.
     this.beastRushTimer.onEnded(() => {
