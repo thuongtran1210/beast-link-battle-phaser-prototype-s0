@@ -21,8 +21,8 @@ import {
 import { createIconImage } from './icons/IconFactory';
 import { beastDisplayName, getIconDefinition } from './icons/UnitIconRegistry';
 import { signatureTierLabel } from '../run/StarProfile';
-import { createEnemyArchetypeIcon } from './icons/EnemyIconFactory';
 import { BattleCharacterView } from './art/BattleCharacterView';
+import { EnemyCharacterView } from './art/EnemyCharacterView';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 
 interface UnitVisual {
@@ -41,6 +41,7 @@ interface UnitVisual {
 
 interface EnemyVisual {
   container: Phaser.GameObjects.Container;
+  characterView: EnemyCharacterView;
   body: Phaser.GameObjects.Rectangle;
   icon: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
@@ -96,6 +97,8 @@ export class BattleActionView {
 
         if (windup.isPlayer) {
           this.units.get(windup.unitId)?.characterView.playAttack(260);
+        } else {
+          this.enemies.get(windup.unitId)?.characterView.playAttack();
         }
 
         const leanX = windup.isPlayer ? 4 : -4;
@@ -117,7 +120,9 @@ export class BattleActionView {
       const visual = this.enemies.get(damageEvent.enemyId);
       if (!visual) return;
 
-      // Hit flash
+      // Authored enemy cutout hit response; fallback body flash remains
+      // available when an asset is missing.
+      visual.characterView.playHit();
       this.flash(visual.body, 0xffffff, 70, () => {
         this.flash(visual.body, 0xef4444, 50);
       });
@@ -215,6 +220,7 @@ export class BattleActionView {
       const visual = this.enemies.get(enemyId);
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
+      visual.characterView.playKo();
       this.scene.tweens.killTweensOf(visual.container);
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
@@ -533,6 +539,7 @@ export class BattleActionView {
     if (!enemyId || amount <= 0) return;
     const visual = this.enemies.get(enemyId);
     if (!visual) return;
+    visual.characterView.playHit();
     this.flash(visual.body, 0xfbbf24, 120);
     FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xfbbf24, 38);
     this.floatCombatText(visual.container.x, visual.container.y, `-${formatNumber(amount)}`, '#fbbf24', `energy-${enemyId}`);
@@ -730,6 +737,9 @@ export class BattleActionView {
       );
     }
 
+    visual.label.setVisible(!visual.characterView.isAuthored || !this.showcaseMode);
+    visual.hpBarContainer.y = visual.characterView.hpAnchorY;
+
     let strokeColor = 0x450a0a;
     if (enemy.engagedTargetId) {
       strokeColor = 0xf59e0b;
@@ -896,11 +906,12 @@ export class BattleActionView {
   private createEnemy(enemy: EnemyCombatUnit): EnemyVisual {
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     const archetype = enemy.archetype ?? 'Frontliner';
-    const body = this.scene.add
-      .rectangle(0, 0, this.showcaseMode ? 62 : 52, this.showcaseMode ? 58 : 46, 0x2b2030, this.showcaseMode ? 0.34 : 0.98)
-      .setStrokeStyle(2, 0x6b3b48);
+    const characterView = new EnemyCharacterView(this.scene, archetype, this.showcaseMode);
 
-    const icon = createEnemyArchetypeIcon(this.scene, archetype, 0, -6, this.showcaseMode ? 49 : 31);
+    // Keep fallback handles for debug stroke/flash logic. EnemyCharacterView
+    // hides them automatically when the V2 cutout is available.
+    const body = characterView.fallbackBody;
+    const icon = characterView.fallbackIcon;
 
     const label = this.scene.add.text(0, 16, '', {
       fontFamily: 'Arial, sans-serif',
@@ -910,8 +921,7 @@ export class BattleActionView {
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // HP Bar above enemy (y = -27)
-    const hpBarContainer = this.scene.add.container(0, -27);
+    const hpBarContainer = this.scene.add.container(0, characterView.hpAnchorY);
     const hpBorder = this.scene.add.rectangle(0, 0, 48, 6, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
     const ghostFill = this.scene.add.rectangle(-23, 0, 46, 4, 0xfca5a5, 0.9).setOrigin(0, 0.5);
     const hpFill = this.scene.add.rectangle(-23, 0, 46, 4, 0xef4444, 1.0).setOrigin(0, 0.5);
@@ -920,12 +930,13 @@ export class BattleActionView {
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [body, icon, label, hpBarContainer],
+      [characterView.root, label, hpBarContainer],
     );
 
     this.objects.push(container);
     return {
       container,
+      characterView,
       body,
       icon,
       label,
