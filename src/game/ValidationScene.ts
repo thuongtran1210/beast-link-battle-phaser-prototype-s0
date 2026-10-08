@@ -30,7 +30,7 @@ import { StarConverter, type DeployedUnit } from './queue/StarConverter';
 import { GamePhase } from './state/GamePhase';
 import { PhaseController } from './state/PhaseController';
 import { runValidationSceneStartupChecks } from './scene/ValidationSceneStartupChecks';
-import { BoardView } from './ui/BoardView';
+import { PuzzlePhaseCoordinator } from './scene/PuzzlePhaseCoordinator';
 import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
@@ -91,10 +91,7 @@ export class ValidationScene extends Phaser.Scene {
   private layout!: LandscapeLayout;
   private topHud?: GameTopHUD;
   private phaseStatusPanel?: PhaseStatusPanel;
-  private board?: BoardModel;
-  private boardView?: BoardView;
-  private boardTitle?: Phaser.GameObjects.Text;
-  private boardSubtitle?: Phaser.GameObjects.Text;
+  private puzzleCoordinator!: PuzzlePhaseCoordinator;
   private transitionCue?: TransitionCueView;
   private flowPanel?: PrototypeFlowPanel;
   private battleSetupView?: BattleSetupView;
@@ -108,8 +105,6 @@ export class ValidationScene extends Phaser.Scene {
   private showcasePaused = false;
   private showcaseCleanFrame = false;
   private captureEnemyFixtures?: ReadonlyArray<EnemyFixture>;
-  private recentActionText = '';
-  private beastRushEvent: BeastRushEvent = { kind: 'idle' };
 
   constructor() {
     super('ValidationScene');
@@ -135,13 +130,30 @@ export class ValidationScene extends Phaser.Scene {
     // Global Top HUD
     this.topHud = new GameTopHUD(this);
 
-    // Reusable views
     this.phaseStatusPanel = new PhaseStatusPanel(
       this,
       this.layout.rightX,
       this.layout.rightY,
       this.layout.rightWidth,
     );
+    this.puzzleCoordinator = new PuzzlePhaseCoordinator({
+      scene: this,
+      layout: this.layout,
+      phaseStatusPanel: this.phaseStatusPanel,
+      topHud: this.topHud,
+      boardGenerator: this.boardGenerator,
+      matcher: this.matcher,
+      deadlockResolver: this.deadlockResolver,
+      beastRushTimer: this.beastRushTimer,
+      comboQuality: this.comboQuality,
+      energyTimer: this.energyTimer,
+      battleQueue: this.battleQueue,
+      energyQueue: this.energyQueue,
+      metrics: this.metrics,
+      phaseController: this.phaseController,
+      getEnergyCarryIn: () => this.energyCarryIn,
+      syncTopHud: () => this.syncTopHud(),
+    });
     this.transitionCue = new TransitionCueView(this, width / 2, height / 2);
     this.flowPanel = new PrototypeFlowPanel(
       this,
@@ -215,13 +227,13 @@ export class ValidationScene extends Phaser.Scene {
       this.comboQuality.update(deltaSeconds);
       const quality = this.comboQuality.snapshot;
       this.metrics.comboQuality(quality.currentStreak, quality.bestStreak, quality.breakCount);
-      this.refreshBeastHUD();
+      this.puzzleCoordinator.refreshBeastHUD();
     }
 
     // EnergyRush countdown timer update
     if (this.phaseController.phase === GamePhase.EnergyRush && this.energyTimer.snapshot.active) {
       this.energyTimer.update(deltaSeconds);
-      this.refreshEnergyHUD();
+      this.puzzleCoordinator.refreshEnergyHUD();
     }
 
     // Autonomous Battle ticking
@@ -284,7 +296,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private handleBeastRushEnded(): void {
-    this.boardView?.setInputEnabled(false);
+    this.puzzleCoordinator.disableInput();
     const bestStreak = this.comboQuality.snapshot.bestStreak;
     const reward = evaluateLinkShardReward(bestStreak);
     if (reward > 0) {
@@ -305,8 +317,8 @@ export class ValidationScene extends Phaser.Scene {
     this.isShowingTransitionCue = true;
     this.transitionCueTimer = 1.0;
     this.transitionCue?.show('ENERGY RUSH', 'Collect Energy for Battle');
-    this.recentActionText = 'Beast Rush ended. Preparing Energy Rush...';
-    this.refreshBeastHUD();
+    this.puzzleCoordinator.setRecentAction('Beast Rush ended. Preparing Energy Rush...');
+    this.puzzleCoordinator.refreshBeastHUD();
   }
 
   private finishTransitionCue(): void {
@@ -319,7 +331,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private handleEnergyRushEnded(): void {
-    this.boardView?.setInputEnabled(false);
+    this.puzzleCoordinator.disableInput();
     if (this.phaseController.setPhase(GamePhase.BattleSetup)) {
       this.isShowingBattleSetupCue = true;
       this.battleSetupCueTimer = 0.8;
@@ -328,7 +340,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private onPhaseChanged(phase: GamePhase): void {
-    this.clearPuzzlePresentation();
+    this.puzzleCoordinator.clearPuzzlePresentation();
     this.phaseStatusPanel?.setVisible(false);
     this.transitionCue?.hide();
     this.flowPanel?.destroy();
@@ -366,17 +378,17 @@ export class ValidationScene extends Phaser.Scene {
   private enterBeastRush(): void {
     this.beastRushTimer.reset();
     this.comboQuality.reset();
-    this.beastRushEvent = { kind: 'idle' };
-    this.recentActionText = '';
-    this.createPuzzleBoard(
+    this.puzzleCoordinator.resetBeastRushEvent();
+    this.puzzleCoordinator.setRecentAction('');
+    this.puzzleCoordinator.createPuzzleBoard(
       'BEAST RUSH',
       'Match Beast pairs to recruit units for this Wave.',
       runDeckPool(),
       'Beast',
-      (contentId, turns, midpoint) => this.onBeastMatch(contentId, turns, midpoint),
+      (contentId, turns, midpoint) => this.puzzleCoordinator.onBeastMatch(contentId, turns, midpoint),
     );
     this.phaseStatusPanel?.setVisible(true);
-    this.refreshBeastHUD();
+    this.puzzleCoordinator.refreshBeastHUD();
     this.syncTopHud();
   }
 
@@ -384,16 +396,16 @@ export class ValidationScene extends Phaser.Scene {
     this.energyTimer.reset();
     this.energyCarryIn = this.energyQueue.getTotalCharges();
     this.metrics.recordEnergyCarryIn(this.energyCarryIn);
-    this.recentActionText = 'Match identical Energy pairs to store Tactical Energy.';
-    this.createPuzzleBoard(
+    this.puzzleCoordinator.setRecentAction('Match identical Energy pairs to store Tactical Energy.');
+    this.puzzleCoordinator.createPuzzleBoard(
       'ENERGY RUSH',
       'Match Energy pairs to prepare tactical tools for Battle.',
       V14G_ENERGY_RUSH_POOL,
       'Energy',
-      (contentId, _turns, midpoint) => this.onEnergyMatch(contentId, midpoint),
+      (contentId, _turns, midpoint) => this.puzzleCoordinator.onEnergyMatch(contentId, midpoint),
     );
     this.phaseStatusPanel?.setVisible(true);
-    this.refreshEnergyHUD();
+    this.puzzleCoordinator.refreshEnergyHUD();
     this.syncTopHud();
   }
 
@@ -714,214 +726,6 @@ export class ValidationScene extends Phaser.Scene {
     this.syncTopHud();
   }
 
-  private createPuzzleBoard(
-    title: string,
-    subtitle: string,
-    contentIds: string[],
-    type: 'Beast' | 'Energy',
-    onMatch: (contentId: string, turns: number, midpoint?: { x: number; y: number }) => void,
-  ): void {
-    const placement = this.layout.getPuzzleBoardPlacement(RuleConfig.boardSize);
-
-    const phaseTitleColor = type === 'Energy' ? HudTokens.colors.textBlue : HudTokens.colors.textGold;
-    this.boardTitle = this.add.text(placement.startX, placement.startY - 40, title, {
-      fontFamily: HudTokens.fonts.family,
-      fontSize: '22px',
-      color: phaseTitleColor,
-      fontStyle: 'bold',
-      letterSpacing: 1,
-      shadow: { offsetX: 0, offsetY: 2, color: '#000000', blur: 4, fill: true },
-    });
-
-    this.boardSubtitle = this.add.text(
-      placement.startX,
-      placement.startY + placement.totalSize + 14,
-      subtitle,
-      {
-        fontFamily: HudTokens.fonts.family,
-        fontSize: '11px',
-        color: HudTokens.colors.textSecondary,
-      },
-    );
-
-    if (this.layout.compact) {
-      this.boardTitle.setVisible(false);
-      this.boardSubtitle.setVisible(false);
-    }
-
-    this.board = this.boardGenerator.generate(RuleConfig.boardSize, contentIds, Math.random, type);
-    this.boardView = new BoardView(
-      this,
-      this.board,
-      this.matcher,
-      placement.startX,
-      placement.startY,
-      placement.cellSize,
-      placement.gap,
-      {
-        onInvalidSelection: () => {
-          if (this.phaseController.phase === (type === 'Beast' ? GamePhase.BeastRush : GamePhase.EnergyRush)) {
-            this.metrics.invalid();
-            if (type === 'Beast') {
-              this.comboQuality.breakStreak();
-              const quality = this.comboQuality.snapshot;
-              this.metrics.comboQuality(quality.currentStreak, quality.bestStreak, quality.breakCount);
-              this.beastRushEvent = { kind: 'invalid' };
-              this.recentActionText = compactEventLabel(this.beastRushEvent);
-              this.refreshBeastHUD();
-            }
-          }
-        },
-        onMatchRemoved: (result, contentId, midpoint) => onMatch(contentId, result.turnCount, midpoint),
-      },
-    );
-    this.boardView.render();
-  }
-
-  private onBeastMatch(contentId: string, turns: number, midpoint?: { x: number; y: number }): void {
-    if (this.phaseController.phase !== GamePhase.BeastRush || !this.board || !this.boardView) return;
-    this.beastRushTimer.start();
-    const combo = this.comboQuality.registerValidMatch();
-    this.metrics.comboQuality(combo.currentStreak, combo.bestStreak, combo.breakCount);
-    this.metrics.beastMatch();
-    this.battleQueue.addBeastMatch(contentId);
-    const recovery = this.deadlockResolver.ensurePlayable(this.board);
-    this.boardView.render();
-
-
-    this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboStreak: combo.currentStreak };
-    this.recentActionText = compactEventLabel(this.beastRushEvent);
-
-    this.refreshBeastHUD();
-    this.syncTopHud();
-
-    // Consequence feedback to HUD
-    if (midpoint) {
-      const target = this.phaseStatusPanel?.getQueueItemTarget(contentId) ?? {
-        x: this.layout.rightX + 40,
-        y: this.layout.rightY + 360,
-      };
-      FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
-        this.phaseStatusPanel?.pulseQueueRow(contentId);
-      });
-      // Combo feedback is owned by the right rail to keep the puzzle board clean.
-    }
-    this.phaseStatusPanel?.pulseCombo();
-    this.phaseStatusPanel?.pulseTimer(false);
-
-    // Deadlock reshuffle notification
-    if (recovery.reshuffled) {
-      this.boardView.pulseBoard();
-      FeedbackEffects.showToast(
-        this,
-        this.layout.leftCenter.x,
-        this.layout.leftCenter.y,
-        '🔄 BOARD RESHUFFLED (Auto-Recovery)',
-        '#fbbf24',
-      );
-    }
-  }
-
-  private onEnergyMatch(contentId: string, midpoint?: { x: number; y: number }): void {
-    if (this.phaseController.phase !== GamePhase.EnergyRush || !this.board || !this.boardView) return;
-    this.energyTimer.start();
-    this.energyQueue.addCharge(contentId);
-    this.metrics.energyMatch();
-    const recovery = this.deadlockResolver.ensurePlayable(this.board);
-    this.boardView.render();
-
-    const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';
-    this.recentActionText = `${energyRushMatchLabel(contentId)}.${reshuffle}`;
-
-    this.refreshEnergyHUD();
-    this.syncTopHud();
-
-    // Consequence feedback to HUD
-    if (midpoint) {
-      const target = this.phaseStatusPanel?.getQueueItemTarget(contentId) ?? {
-        x: this.layout.rightX + 40,
-        y: this.layout.rightY + 360,
-      };
-      FeedbackEffects.flyToken(this, midpoint.x, midpoint.y, target.x, target.y, contentId, () => {
-        this.phaseStatusPanel?.pulseQueueRow(contentId);
-      });
-      // Energy gain feedback is owned by Stored Energy + recent action in the right rail.
-    }
-
-    // Deadlock reshuffle notification
-    if (recovery.reshuffled) {
-      this.boardView.pulseBoard();
-      FeedbackEffects.showToast(
-        this,
-        this.layout.leftCenter.x,
-        this.layout.leftCenter.y,
-        '🔄 BOARD RESHUFFLED (Auto-Recovery)',
-        '#38bdf8',
-      );
-    }
-  }
-
-  private refreshBeastHUD(): void {
-    if (this.phaseController.phase !== GamePhase.BeastRush) return;
-    const phaseTimer = this.beastRushTimer.snapshot;
-    const combo = this.comboQuality.snapshot;
-    const isReady = this.beastRushTimer.isReady;
-    this.phaseStatusPanel?.render({
-      phaseTitle: 'BEAST RUSH',
-      phaseSubtitle: '',
-      timerSeconds: phaseTimer.remainingSeconds,
-      timerLabel: 'Rush',
-      timerSubtext: isReady ? 'READY' : '',
-      statusBadge: {
-        text: isReady ? 'READY' : combo.active ? `×${combo.currentStreak}` : '×0',
-        active: combo.active,
-      },
-      matchCount: this.metrics.snapshot.beastMatches,
-      queueTitle: 'Recruited Beasts',
-      queueItems: this.battleQueue.entries().map((e) => ({
-        id: e.contentId,
-        name: beastDisplayName(e.contentId),
-        count: e.count,
-      })),
-      recentAction: this.recentActionText,
-      beastRushHud: true,
-      comboCurrent: combo.currentStreak,
-      comboBest: combo.bestStreak,
-      isReady,
-    });
-  }
-
-  private refreshEnergyHUD(): void {
-    if (this.phaseController.phase !== GamePhase.EnergyRush) return;
-    const isReady = this.energyTimer.isReady;
-    const remaining = this.energyTimer.snapshot.remainingSeconds;
-    const total = this.energyQueue.getTotalCharges();
-    const carryIn = this.energyCarryIn;
-    const queueTitle = carryIn > 0 ? `STORED ×${total} (CARRY IN ×${carryIn})` : `STORED ×${total}`;
-    this.phaseStatusPanel?.render({
-      energyCarryIn: carryIn,
-      phaseTitle: 'TACTICAL CHARGE',
-      phaseSubtitle: 'MATCH PAIRS  →  STORE TACTICAL ENERGY',
-      timerSeconds: remaining,
-      timerLabel: isReady ? 'READY' : 'TIME LEFT',
-      timerSubtext: isReady ? 'READ THE BOARD · START WHEN READY' : 'MATCH FAST · BANK ENERGY FOR BATTLE',
-      statusBadge: {
-        text: isReady ? 'READY' : 'ACTIVE',
-        active: !isReady,
-      },
-      matchCount: this.metrics.snapshot.energyMatches,
-      queueTitle,
-      queueItems: energyRushInventory((energyId) => this.energyQueue.getCharges(energyId), STRATEGIC_ENERGY).map((entry) => ({
-        id: entry.energyId,
-        name: entry.displayName,
-        description: entry.shortDescription,
-        count: entry.charges,
-      })),
-      recentAction: this.recentActionText,
-      isReady,
-    });
-  }
-
   private consolidateReserveUnit(selectedUnitId: string): string | undefined {
     if (!this.formation) return undefined;
     const deployedIds = new Set(this.formation.units.filter((unit) => unit.slotId !== null).map((unit) => unit.unitId));
@@ -944,17 +748,6 @@ export class ValidationScene extends Phaser.Scene {
     if (active.length < 1 || active.length > P1V14B_ACTIVE_SQUAD_LIMIT) return;
     this.metrics.startBattle(this.energyQueue.getAll(), this.formation.units);
     this.phaseController.setPhase(GamePhase.Battle);
-  }
-
-  private clearPuzzlePresentation(): void {
-    this.boardView?.setInputEnabled(false);
-    this.boardView?.destroy();
-    this.boardView = undefined;
-    this.board = undefined;
-    this.boardTitle?.destroy();
-    this.boardTitle = undefined;
-    this.boardSubtitle?.destroy();
-    this.boardSubtitle = undefined;
   }
 
   private restartRun(): void {
