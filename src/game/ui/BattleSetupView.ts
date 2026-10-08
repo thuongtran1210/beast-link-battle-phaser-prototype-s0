@@ -17,6 +17,7 @@ import { classifyBattleSetupRoster, emptyFormationSlotLabel, enemyBoardCardLabel
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { BattleStarUpgradePreviewRenderer } from './battle/BattleStarUpgradePreviewRenderer';
 import { BattleSetupRightCTARenderer } from './battle/BattleSetupRightCTARenderer';
+import { BattleDeploymentTrayRenderer } from './battle/BattleDeploymentTrayRenderer';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -52,13 +53,13 @@ export class BattleSetupView {
   private readonly playerSlotVisuals: SlotVisualTarget[] = [];
   private readonly starUpgradePreviewRenderer: BattleStarUpgradePreviewRenderer;
   private readonly rightCTARenderer: BattleSetupRightCTARenderer;
+  private readonly deploymentTrayRenderer: BattleDeploymentTrayRenderer;
   private dragGhost?: Phaser.GameObjects.Container;
   private hoverPreviewContainer?: Phaser.GameObjects.Container;
   private readonly dragAffordanceObjects: Phaser.GameObjects.GameObject[] = [];
   private pointerMoveHandler?: (pointer: Phaser.Input.Pointer) => void;
   private pointerUpHandler?: (pointer: Phaser.Input.Pointer) => void;
   private enemyTool: EnemyArchetype | 'Erase' = 'Frontliner';
-  private reservePageIndex = 0;
   private trayBounds = { x: 24, y: 495, width: 956, height: 210 };
 
   constructor(
@@ -93,6 +94,19 @@ export class BattleSetupView {
       this.storedEnergy,
       this.startBattle,
       this.shardPool,
+    );
+    this.deploymentTrayRenderer = new BattleDeploymentTrayRenderer(
+      this.scene,
+      this.formation,
+      this.controller,
+      this.objects,
+      this.trayBounds,
+      this.runRoster,
+      this.shardPool,
+      this.onConsolidate,
+      this.onArrangementChanged,
+      () => this.render(),
+      (unitId, fromSlotId, pointer) => this.startDrag(unitId, fromSlotId, pointer),
     );
   }
 
@@ -494,256 +508,7 @@ export class BattleSetupView {
   }
 
   private renderDeploymentTray(): void {
-    const { x, y, width, height } = this.trayBounds;
-
-    // Recessed tray panel
-    const trayBg = this.scene.add
-      .rectangle(x + width / 2, y + height / 2, width, height, 0x0f172a, 0.96)
-      .setStrokeStyle(1.5, 0x334155);
-    this.objects.push(trayBg);
-
-    const groups = classifyBattleSetupRoster(this.formation.units, this.runRoster?.units ?? []);
-    const unplaced = groups.reserve;
-    const page = reservePage(unplaced, this.reservePageIndex, isCompactLandscape() ? 4 : 6);
-    this.reservePageIndex = page.pageIndex;
-    const hasUnplaced = unplaced.length > 0;
-
-    // Tray heading uses separate left/right zones so pagination never collides with state.
-    const heading = this.text(x + 18, y + 12, `RESERVE ${groups.reserve.length}`, 13, HudTokens.colors.textPrimary, 'bold');
-    const subtext = this.text(
-      x + 130,
-      y + 13,
-      hasUnplaced
-        ? 'TAP TO SELECT · TAP SLOT TO DEPLOY · MERGE BELOW'
-        : '✓ SQUAD DEPLOYED — DRAG BACK TO RESERVE TO BENCH',
-      10,
-      hasUnplaced ? HudTokens.colors.textBlue : HudTokens.colors.textGreen,
-      'bold',
-    );
-    const states = this.text(
-      x + width - 18,
-      y + 12,
-      `ACTIVE ${groups.deployed.length}/${ACTIVE_SQUAD_LIMIT}   ·   KO ${groups.ko.length}`,
-      9,
-      groups.ko.length ? HudTokens.colors.textRed : HudTokens.colors.textMuted,
-      'bold',
-    ).setOrigin(1, 0);
-    this.objects.push(heading, subtext, states);
-    if (groups.ko.length) {
-      const koNames = groups.ko.slice(0, 3).map(unit => beastDisplayName(unit.beastId)).join(' · ');
-      const koStrip = this.text(x + 18, y + height - 18, `KO  ${koNames}${groups.ko.length > 3 ? ` +${groups.ko.length - 3}` : ''}`, 9, '#fb7185', 'bold');
-      this.objects.push(koStrip);
-    }
-
-    if (!hasUnplaced) {
-      // Empty Bench placeholder
-      const emptyBench = this.scene.add
-        .rectangle(x + width / 2, y + height / 2 + 16, width - 40, height - 60, 0x1e293b, 0.4)
-        .setStrokeStyle(1.5, 0x334155, 0.6);
-      const emptyText = this.text(
-        x + width / 2,
-        y + height / 2 + 16,
-        'All Beasts deployed on the battlefield.\nDrag units directly on the board to reposition or swap.\nDrop a deployed unit here to return it to the bench.',
-        11,
-        '#64748b',
-        'bold',
-      ).setOrigin(0.5);
-      this.objects.push(emptyBench, emptyText);
-      return;
-    }
-
-    // Render horizontal row of Draggable Beast Cards
-    const cardW = isCompactLandscape() ? 218 : 142;
-    const cardH = 154;
-    const startX = x + 18;
-    const startY = y + 44;
-    const gap = 16;
-
-    page.items.forEach((unit, index) => {
-      const cardX = startX + index * (cardW + gap);
-      this.renderTrayCard(unit, cardX, startY, cardW, cardH, index === 0 && this.controller.isFirstDeploymentPending);
-    });
-    if (page.pageCount > 1) {
-      const pagerY = y + 34;
-      const prev = this.text(
-        x + width - 194,
-        pagerY,
-        '‹ PREV',
-        9,
-        page.pageIndex > 0 ? HudTokens.colors.textGold : HudTokens.colors.textMuted,
-        'bold',
-      );
-      const info = this.text(
-        x + width - 112,
-        pagerY,
-        `PAGE ${page.pageIndex + 1} / ${page.pageCount}`,
-        9,
-        HudTokens.colors.textSecondary,
-        'bold',
-      ).setOrigin(.5, 0);
-      const next = this.text(
-        x + width - 30,
-        pagerY,
-        'NEXT ›',
-        9,
-        page.pageIndex < page.pageCount - 1 ? HudTokens.colors.textGold : HudTokens.colors.textMuted,
-        'bold',
-      ).setOrigin(1, 0);
-      if (page.pageIndex > 0) prev.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.reservePageIndex -= 1; this.render(); });
-      if (page.pageIndex < page.pageCount - 1) next.setInteractive({ useHandCursor: true }).on('pointerup', () => { this.reservePageIndex += 1; this.render(); });
-      this.objects.push(info, prev, next);
-    }
-  }
-
-  private renderTrayCard(
-    unit: FormationUnit,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    shouldAnimateFirstAffordance: boolean,
-  ): void {
-    const isSelected = unit.unitId === this.controller.selectedId;
-    const cx = x + w / 2;
-    const cy = y + h / 2;
-
-    const card = this.scene.add
-      .rectangle(cx, cy, w, h, isSelected ? 0x1e3a5f : 0x1e293b, 0.95)
-      .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xc8b58a : 0x48514e);
-    this.objects.push(card);
-
-    // First placement subtle animated bob
-    if (shouldAnimateFirstAffordance && this.scene.tweens) {
-      this.scene.tweens.add({
-        targets: card,
-        y: cy - 4,
-        duration: 650,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.InOut',
-      });
-    }
-
-    const rosterUnit = this.runRoster?.get(unit.unitId);
-    const hpRatio = rosterUnit && rosterUnit.maxHp > 0 ? Math.max(0, rosterUnit.currentHp / rosterUnit.maxHp) : 1;
-    const stateLabel = rosterUnit?.status === 'ko' ? 'KO' : hpRatio < 1 ? 'INJURED' : 'FRESH';
-    const stateColor = rosterUnit?.status === 'ko'
-      ? HudTokens.colors.textRed
-      : hpRatio < 1
-      ? HudTokens.colors.textGold
-      : HudTokens.colors.textGreen;
-
-    // Portrait-first card: identity reads before secondary stats.
-    const icon = createIconImage(this.scene, unit.beastId, cx, cy - 34, 54);
-    const roleIcon = createRoleIconImage(this.scene, unit.role, cx + 47, cy - 44, 18);
-    this.objects.push(icon, roleIcon);
-
-    const beastName = beastDisplayName(unit.beastId);
-    const nameLabel = this.text(cx, cy - 3, beastName, 9, HudTokens.colors.textPrimary, 'bold').setOrigin(0.5);
-    const roleLabel = this.text(
-      cx,
-      cy + 8,
-      `${unit.role.toUpperCase()} · ${'★'.repeat(unit.star)}`,
-      9,
-      roleTextColor(unit.role),
-      'bold',
-    ).setOrigin(0.5);
-    const state = this.text(
-      cx - w / 2 + 9,
-      cy - h / 2 + 8,
-      stateLabel,
-      7,
-      stateColor,
-      'bold',
-      '#151a31',
-      { x: 5, y: 2 },
-    );
-    const signature = signatureForBeast(unit.beastId);
-    const skillLabel = this.text(
-      cx,
-      cy + 27,
-      signatureTierLabel(signature, unit.star),
-      8,
-      HudTokens.colors.textGold,
-      'bold',
-    ).setOrigin(0.5);
-    const skillSummary = this.text(
-      cx,
-      cy + 39,
-      signatureTierTagline(signature, unit.star),
-      7,
-      HudTokens.colors.textMuted,
-      '',
-    ).setOrigin(0.5);
-    skillLabel.setVisible(false);
-    skillSummary.setVisible(false);
-    nameLabel.setFontSize(12);
-    roleLabel.setFontSize(11);
-    this.objects.push(nameLabel, roleLabel, state, skillLabel, skillSummary);
-
-    const barW = 104;
-    const barY = cy + 18;
-    const hpBg = this.scene.add.rectangle(cx, barY, barW, 7, HudTokens.colors.bgSurfaceDark, 1)
-      .setStrokeStyle(1, HudTokens.colors.strokeDefault, .8);
-    const hpFill = this.scene.add.rectangle(
-      cx - barW / 2 + 1,
-      barY,
-      Math.max(0, (barW - 2) * hpRatio),
-      5,
-      rosterUnit?.status === 'ko'
-        ? HudTokens.colors.red
-        : hpRatio < .35
-        ? HudTokens.colors.red
-        : hpRatio < 1
-        ? HudTokens.colors.gold
-        : HudTokens.colors.green,
-      .95,
-    ).setOrigin(0, .5);
-    const hpLabel = this.text(
-      cx,
-      cy + 25,
-      rosterUnit ? `${Math.round(rosterUnit.currentHp)} / ${Math.round(rosterUnit.maxHp)} HP` : 'READY',
-      7,
-      HudTokens.colors.textMuted,
-      'bold',
-    ).setOrigin(0.5);
-    this.objects.push(hpBg, hpFill, hpLabel);
-
-    // Interactive Drag and Click Handlers
-    const hitArea = this.scene.add
-      .rectangle(cx, cy - 19, w, h - 38, 0xffffff, 0.0001)
-      .setInteractive({ useHandCursor: true });
-    this.objects.push(hitArea);
-
-    if (rosterUnit?.status !== 'ko') hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => this.startDrag(unit.unitId, null, pointer));
-
-    hitArea.on('pointerup', () => {
-      if (this.controller.state.mode === 'idle') {
-        this.controller.selectUnit(unit.unitId);
-        this.render();
-      }
-    });
-    const deployedIds = new Set(this.formation.units.filter(item => item.slotId !== null).map(item => item.unitId));
-    const preview = this.runRoster?.consolidationPreview(unit.unitId, deployedIds, this.shardPool?.count ?? 0);
-    const canMerge = Boolean(preview?.canConsolidate && this.onConsolidate);
-    const cost = preview?.isShardAssisted ? '2 + ◆1' : '3 COPIES';
-    const label = canMerge ? `MERGE ${'★'.repeat(preview!.targetStar!)} · ${cost}`
-      : unit.star >= 3 ? 'MAX ★★★' : `COPIES ${preview?.eligibleCount ?? 0}/3`;
-    const mergeY = y + h - 23;
-    const merge = this.scene.add.rectangle(cx, mergeY, w - 12, 44,
-      canMerge ? 0x176347 : 0x151a31, .98).setStrokeStyle(1, canMerge ? 0x8eae92 : 0x48514e);
-    const mergeLabel = this.text(cx, mergeY, label, 11, canMerge ? '#ffffff' : '#94a3b8', 'bold').setOrigin(.5);
-    this.objects.push(merge, mergeLabel);
-    if (canMerge) merge.setInteractive({ useHandCursor: true }).on('pointerup', () => {
-      const upgradedId = this.onConsolidate!(unit.unitId);
-      if (upgradedId) {
-        this.controller.selectUnit(null);
-        this.controller.selectUnit(upgradedId);
-        this.onArrangementChanged();
-        FeedbackEffects.floatText(this.scene, cx, mergeY - 36, `UNLOCKED ${'★'.repeat(preview!.targetStar!)} · ${signatureTierTagline(signatureForBeast(unit.beastId), preview!.targetStar!)}`, '#34d399', '18px', 900);
-      }
-      this.render();
-    });
+    this.deploymentTrayRenderer.render();
   }
 
   private renderRightCTA(layout: BattleSetupLayoutMetrics): void {
