@@ -25,6 +25,9 @@ import { BattleCharacterView } from './art/BattleCharacterView';
 import { EnemyCharacterView } from './art/EnemyCharacterView';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 import { isCompactLandscape } from './layout/MobilePresentation';
+import { BattleArenaGridRenderer } from './battle/BattleArenaGridRenderer';
+import { BattleFloatingTextSystem } from './battle/BattleFloatingTextSystem';
+import { BattleSignatureVfxRenderer } from './battle/BattleSignatureVfxRenderer';
 
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
@@ -58,13 +61,14 @@ export class BattleActionView {
   private readonly gridObjects: Phaser.GameObjects.GameObject[] = [];
   private readonly units = new Map<string, UnitVisual>();
   private readonly enemies = new Map<string, EnemyVisual>();
-  private readonly unitHitTracking = new Map<string, { time: number; count: number }>();
   private readonly unitPresentationOffsets = new Map<string, { x: number; y: number }>();
   private readonly enemyPresentationOffsets = new Map<string, { x: number; y: number }>();
   private readonly layout: BattleFieldLayout;
+  private readonly gridRenderer: BattleArenaGridRenderer;
+  private readonly floatingTextSystem: BattleFloatingTextSystem;
+  private readonly signatureVfxRenderer: BattleSignatureVfxRenderer;
   private showcaseMode = false;
   private funMarkers: Phaser.GameObjects.GameObject[] = [];
-  private activeSignatureLabel?: Phaser.GameObjects.Text;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -80,6 +84,10 @@ export class BattleActionView {
     this.layout.depthGap = Math.min(110, Math.max(84, (fieldWidth - 180) / 7));
     this.layout.topLaneY = isCompactLandscape() ? 226 : baseY + 108;
     this.layout.laneGap = Math.min(58, Math.max(40, (scene.scale.height - 290 - this.layout.topLaneY) / 5));
+
+    this.gridRenderer = new BattleArenaGridRenderer(this.scene, this.layout, this.objects, this.gridObjects);
+    this.floatingTextSystem = new BattleFloatingTextSystem(this.scene, this.objects);
+    this.signatureVfxRenderer = new BattleSignatureVfxRenderer(this.scene, this.objects, this.units, this.enemies);
   }
 
   setShowcaseMode(enabled: boolean): void {
@@ -319,281 +327,7 @@ export class BattleActionView {
   }
 
   private playSignatureFx(event: SignatureFxPresentation): void {
-    const source = this.units.get(event.unitId);
-    if (!source || !source.container.active) return;
-
-    if (event.star === 3 && (event.signatureId === 'ArcaneBloom' || event.signatureId === 'FocusShot')) return;
-    if (event.signatureId === 'WoollyRescue' || event.signatureId === 'ToyWorkshop' || event.signatureId === 'BubbleTrap') return;
-    if (event.signatureId === 'TickingBomb') {
-      event.targetIds.forEach(id => { const enemy = this.enemies.get(id); if (enemy) FeedbackEffects.pulseRing(this.scene, enemy.container.x, enemy.container.y - 20, 0xc8b58a, 55); });
-      return;
-    }
-    source.characterView.playSignature(event.signatureId === 'ArcaneBloom' ? 1100 : 820);
-    const sourcePoint = source.characterView.getEffectPoint(source.container.x, source.container.y);
-
-    const targets = event.targetIds
-      .map((id) => this.enemies.get(id))
-      .filter((visual): visual is EnemyVisual => Boolean(visual));
-
-    const addLabel = (label: string, color: string, holdMs = 520) => {
-      if (isCompactLandscape() && this.activeSignatureLabel) {
-        this.scene.tweens.killTweensOf(this.activeSignatureLabel);
-        const index = this.objects.indexOf(this.activeSignatureLabel);
-        if (index >= 0) this.objects.splice(index, 1);
-        this.activeSignatureLabel.destroy();
-        this.activeSignatureLabel = undefined;
-      }
-      const text = this.scene.add.text(isCompactLandscape() ? this.scene.scale.width / 2 : sourcePoint.x, isCompactLandscape() ? 160 : sourcePoint.y - 46, label, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: event.star === 3 ? '20px' : '14px',
-        color,
-        fontStyle: 'bold',
-        backgroundColor: '#151a31',
-        padding: { x: 8, y: 4 },
-        stroke: '#11152b',
-        strokeThickness: 2,
-      }).setOrigin(.5).setDepth(175);
-      this.objects.push(text);
-      if (isCompactLandscape()) this.activeSignatureLabel = text;
-      this.scene.tweens.add({
-        targets: text,
-        y: text.y - 10,
-        alpha: 0,
-        delay: holdMs,
-        duration: 430,
-        ease: 'Cubic.Out',
-        onComplete: () => {
-          const index = this.objects.indexOf(text);
-          if (index >= 0) this.objects.splice(index, 1);
-          text.destroy();
-        },
-      });
-    };
-
-    const drawTrails = (color: number, width = 4) => {
-      if (!targets.length) return;
-      const graphics = this.scene.add.graphics().setDepth(165);
-      graphics.lineStyle(width, color, .9);
-      targets.forEach((target) => {
-        graphics.beginPath();
-        graphics.moveTo(sourcePoint.x + 12, sourcePoint.y);
-        graphics.lineTo(target.container.x - 12, target.container.y);
-        graphics.strokePath();
-      });
-      this.objects.push(graphics);
-      this.scene.tweens.add({
-        targets: graphics,
-        alpha: 0,
-        duration: 520,
-        ease: 'Quad.Out',
-        onComplete: () => {
-          const index = this.objects.indexOf(graphics);
-          if (index >= 0) this.objects.splice(index, 1);
-          graphics.destroy();
-        },
-      });
-    };
-
-    switch (event.signatureId) {
-      case 'GuardianBrace':
-        event.targetIds.forEach(id => {
-          const ally = this.units.get(id);
-          if (!ally) return;
-          const link = this.scene.add.graphics().setDepth(166);
-          link.lineStyle(5, 0x72bff5, .85);
-          link.lineBetween(sourcePoint.x, sourcePoint.y, ally.container.x, ally.container.y - 24);
-          FeedbackEffects.pulseRing(this.scene, ally.container.x, ally.container.y - 24, 0x72bff5, 60);
-          this.objects.push(link);
-          this.scene.tweens.add({ targets: link, alpha: 0, duration: 1100, onComplete: () => {
-            const index = this.objects.indexOf(link); if (index >= 0) this.objects.splice(index, 1);
-            link.destroy();
-          } });
-        });
-        if (event.targetIds.length) addLabel('★★★ SHARED SHIELD', '#bce4ff', 1100);
-        FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0x72bff5, 46);
-        FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0xf6d675, 35);
-        if (!event.targetIds.length) addLabel(signatureTierLabel(event.signatureId, event.star), '#bce4ff', event.star === 3 ? 1100 : 520);
-        break;
-      case 'AmbushStrike':
-        drawTrails(0xfb7185, 6);
-        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xfb7185, 28));
-        addLabel(event.star === 3 && targets.length > 1 ? '★★★ AMBUSH · CHAIN STRIKE' : signatureTierLabel(event.signatureId, event.star), '#ff91a1', event.star === 3 ? 1100 : 520);
-        break;
-      case 'FocusShot':
-        drawTrails(0x8be2bd, 5);
-        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x8be2bd, 25));
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#b9f1d8');
-        break;
-      case 'ArcaneBloom': {
-        // Caster aura: clearly communicates "Mage cast" before the target explosions.
-        const aura = this.scene.add.circle(
-          source.container.x,
-          source.container.y - 4,
-          28,
-          0x7e22ce,
-          0.28,
-        ).setStrokeStyle(3, 0xe9d5ff, 0.95).setDepth(160);
-        const core = this.scene.add.circle(
-          source.container.x,
-          source.container.y - 4,
-          8,
-          0xf0abfc,
-          0.9,
-        ).setDepth(166);
-        this.objects.push(aura, core);
-
-        this.scene.tweens.add({
-          targets: aura,
-          scaleX: 1.65,
-          scaleY: 1.65,
-          alpha: 0.06,
-          duration: 820,
-          ease: 'Sine.Out',
-          onComplete: () => {
-            const index = this.objects.indexOf(aura);
-            if (index >= 0) this.objects.splice(index, 1);
-            aura.destroy();
-          },
-        });
-        this.scene.tweens.add({
-          targets: core,
-          scaleX: 1.8,
-          scaleY: 1.8,
-          alpha: 0,
-          delay: 220,
-          duration: 620,
-          ease: 'Cubic.Out',
-          onComplete: () => {
-            const index = this.objects.indexOf(core);
-            if (index >= 0) this.objects.splice(index, 1);
-            core.destroy();
-          },
-        });
-
-        // Arcane links make multi-target Mage identity readable even in a still frame.
-        const bloomLinks = this.scene.add.graphics().setDepth(164);
-        bloomLinks.lineStyle(5, 0xc084fc, 0.78);
-        targets.forEach((target) => {
-          bloomLinks.beginPath();
-          bloomLinks.moveTo(sourcePoint.x + 12, sourcePoint.y - 4);
-          bloomLinks.lineTo(target.container.x - 10, target.container.y);
-          bloomLinks.strokePath();
-        });
-        this.objects.push(bloomLinks);
-        this.scene.tweens.add({
-          targets: bloomLinks,
-          alpha: 0,
-          delay: 300,
-          duration: 620,
-          ease: 'Quad.Out',
-          onComplete: () => {
-            const index = this.objects.indexOf(bloomLinks);
-            if (index >= 0) this.objects.splice(index, 1);
-            bloomLinks.destroy();
-          },
-        });
-
-        targets.forEach((target, index) => {
-          const disc = this.scene.add.circle(
-            target.container.x,
-            target.container.y,
-            22 + index * 3,
-            0x9333ea,
-            0.36,
-          ).setStrokeStyle(2, 0xf0abfc, 0.8).setDepth(158);
-          this.objects.push(disc);
-          this.scene.tweens.add({
-            targets: disc,
-            scaleX: 2.35,
-            scaleY: 2.35,
-            alpha: 0,
-            delay: 180,
-            duration: 760,
-            ease: 'Cubic.Out',
-            onComplete: () => {
-              const objectIndex = this.objects.indexOf(disc);
-              if (objectIndex >= 0) this.objects.splice(objectIndex, 1);
-              disc.destroy();
-            },
-          });
-          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xc084fc, 39 + index * 5);
-          FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf0abfc, 25 + index * 3);
-        });
-
-        addLabel(event.star === 3 ? '★★★ BLOOM → ECHO' : signatureTierLabel(event.signatureId, event.star), '#f3e8ff', 1300);
-
-        if (event.star === 3 && targets.length > 0) {
-          const echo = targets[targets.length - 1];
-          this.scene.time.delayedCall(280, () => {
-            if (!echo.container.active) return;
-            const echoDisc = this.scene.add.circle(
-              echo.container.x,
-              echo.container.y,
-              16,
-              0xf6d675,
-              0.35,
-            ).setStrokeStyle(2, 0xfff1a8, 0.95).setDepth(170);
-            this.objects.push(echoDisc);
-            this.scene.tweens.add({
-              targets: echoDisc,
-              scaleX: 2,
-              scaleY: 2,
-              alpha: 0,
-              duration: 620,
-              ease: 'Cubic.Out',
-              onComplete: () => {
-                const index = this.objects.indexOf(echoDisc);
-                if (index >= 0) this.objects.splice(index, 1);
-                echoDisc.destroy();
-              },
-            });
-            FeedbackEffects.pulseRing(this.scene, echo.container.x, echo.container.y, 0xf6d675, 31);
-            const echoText = this.scene.add.text(echo.container.x, echo.container.y - 42, 'ECHO', {
-              fontFamily: 'Arial, sans-serif',
-              fontSize: '11px',
-              color: '#fff1a8',
-              backgroundColor: '#3a2d12',
-              padding: { x: 6, y: 3 },
-              fontStyle: 'bold',
-              stroke: '#11152b',
-              strokeThickness: 2,
-            }).setOrigin(.5).setDepth(176);
-            this.objects.push(echoText);
-            this.scene.tweens.add({
-              targets: echoText,
-              y: echoText.y - 10,
-              alpha: 0,
-              delay: 500,
-              duration: 420,
-              ease: 'Cubic.Out',
-              onComplete: () => {
-                const index = this.objects.indexOf(echoText);
-                if (index >= 0) this.objects.splice(index, 1);
-                echoText.destroy();
-              },
-            });
-          });
-        }
-        break;
-      }
-      case 'IronRam':
-        drawTrails(0x38bdf8, 7);
-        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0x38bdf8, 34));
-        this.scene.tweens.add({
-          targets: source.container,
-          x: source.container.x + 8,
-          duration: 70,
-          yoyo: true,
-          ease: 'Quad.Out',
-        });
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#bcecff');
-        break;
-      case 'TwinVolley':
-        drawTrails(0xf472b6, 4);
-        targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf472b6, 22));
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#fbcfe8');
-        break;
-    }
+    this.signatureVfxRenderer.playSignatureFx(event);
   }
 
   playHeal(event: BattleHealPresentation): void {
@@ -693,174 +427,17 @@ export class BattleActionView {
     this.gridObjects.splice(0);
     this.units.clear();
     this.enemies.clear();
-    this.unitHitTracking.clear();
+    this.floatingTextSystem.clear();
     this.unitPresentationOffsets.clear();
     this.enemyPresentationOffsets.clear();
   }
 
-  private createChibiArena(): void {
-    const x = 18;
-    const y = isCompactLandscape() ? 142 : this.layout.baseY + 6;
-    const width = isCompactLandscape() ? this.scene.scale.width - 36 : this.scene.scale.width - Math.min(360, Math.max(300, Math.round(this.scene.scale.width * .28))) - 54;
-    const height = this.scene.scale.height - y - 190;
-    const g = this.scene.add.graphics().setDepth(-10);
-    const edge = 0x182b27;
-    // Broad flat shapes echo the cutouts; details stay along the boundary.
-    g.fillStyle(0x243a31);
-    g.fillRoundedRect(x, y, width, height, 36);
-    g.lineStyle(5, edge);
-    g.strokeRoundedRect(x, y, width, height, 36);
-    g.fillStyle(0x3e5742);
-    g.fillRoundedRect(x + 12, y + 12, width - 24, height - 24, 30);
-    g.fillStyle(0x68654e);
-    g.fillRoundedRect(x + 60, y + 50, width - 120, height - 84, 64);
-    g.lineStyle(4, 0x46533b, .8);
-    g.strokeRoundedRect(x + 60, y + 50, width - 120, height - 84, 64);
-    g.fillStyle(0x73705a, .55);
-    g.fillEllipse(x + width / 2, y + height / 2 + 10, width - 170, height - 115);
-    const bush = (cx: number, cy: number, radius: number) => {
-      g.fillStyle(edge);
-      g.fillCircle(cx - radius * .6, cy, radius + 3);
-      g.fillCircle(cx + radius * .6, cy, radius + 3);
-      g.fillCircle(cx, cy - radius * .5, radius + 3);
-      g.fillStyle(0x426a46);
-      g.fillCircle(cx - radius * .6, cy - 2, radius);
-      g.fillCircle(cx + radius * .6, cy - 2, radius);
-      g.fillCircle(cx, cy - radius * .5 - 2, radius);
-      g.fillStyle(0x5d7e50);
-      g.fillEllipse(cx - 5, cy - radius * .65, radius * 1.2, radius * .55);
-    };
-    bush(x + 39, y + 27, 19);
-    bush(x + width - 40, y + 26, 22);
-    bush(x + 31, y + height - 28, 17);
-    bush(x + width - 32, y + height - 30, 18);
-    [0.22, 0.48, 0.76].forEach((ratio, index) => {
-      const cx = x + width * ratio;
-      const cy = y + 26;
-      g.fillStyle(edge);
-      g.fillEllipse(cx, cy + 4, 33, 18);
-      g.fillStyle(index === 1 ? 0x89917b : 0x768173);
-      g.fillEllipse(cx, cy, 28, 16);
-      g.fillStyle(0xa4ad91);
-      g.fillEllipse(cx - 4, cy - 3, 12, 5);
-    });
-    // Few sparse grass tufts; no markings that imply playable slots.
-    g.lineStyle(3, 0x78915b, .65);
-    [0.14, 0.34, 0.63, 0.86].forEach(ratio => {
-      const cx = x + width * ratio;
-      const cy = y + height - 17;
-      g.lineBetween(cx, cy, cx - 6, cy - 9);
-      g.lineBetween(cx, cy, cx + 2, cy - 12);
-      g.lineBetween(cx, cy, cx + 8, cy - 7);
-    });
-    this.objects.push(g);
-  }
   private createBattleGrid(): void {
-    const layout = this.layout;
-    if (this.showcaseMode) this.createChibiArena();
+    this.gridRenderer.createBattleGrid(this.showcaseMode);
+  }
 
-    if (!this.showcaseMode) {
-      this.pushGridText(
-        layout.baseX + 12,
-        layout.baseY + 72,
-        'BATTLE FIELD · PLAYER vs ENEMY',
-        14,
-        '#475569',
-        'bold',
-      );
-      this.pushGridText(
-        layout.playerFrontX - 145,
-        layout.baseY + 105,
-        'PLAYER  BACK  →  MID  →  FRONT',
-        10,
-        '#2563eb',
-        'bold',
-      );
-      this.pushGridText(
-        layout.enemyFrontX + 12,
-        layout.baseY + 105,
-        'FRONT  ←  MID  ←  BACK  ENEMY',
-        10,
-        '#b91c1c',
-        'bold',
-      );
-    }
-
-    const divider = this.scene.add.rectangle(
-      layout.dividerX,
-      layout.dividerY,
-      3,
-      layout.dividerHeight,
-      0x94a3b8,
-      0.9,
-    );
-    this.objects.push(divider);
-    this.gridObjects.push(divider);
-
-    const rows: BattleRow[] = ['Front', 'Mid', 'Back'];
-    rows.forEach((row) => {
-      const playerTop = playerSlotPosition(layout, row, 1);
-      const enemyTop = enemySlotPosition(layout, row, 1);
-
-      if (!this.showcaseMode) {
-        this.pushGridText(
-          playerTop.x - 22,
-          layout.topLaneY - 34,
-          row.toUpperCase(),
-          9,
-          '#64748b',
-          'bold',
-        );
-        this.pushGridText(
-          enemyTop.x - 22,
-          layout.topLaneY - 34,
-          row.toUpperCase(),
-          9,
-          '#991b1b',
-          'bold',
-        );
-      }
-
-      for (let column = 1; column <= 6; column += 1) {
-        const playerPos = playerSlotPosition(layout, row, column);
-        const enemyPos = enemySlotPosition(layout, row, column);
-
-        const playerSlot = this.scene.add.rectangle(
-          playerPos.x,
-          playerPos.y,
-          layout.slotWidth,
-          layout.slotHeight,
-          this.showcaseMode ? 0x243653 : 0xeff6ff,
-          this.showcaseMode ? 0.18 : 0.42,
-        ).setStrokeStyle(this.showcaseMode ? 1 : 2, 0x93c5fd, this.showcaseMode ? 0.25 : 1);
-
-        const enemySlot = this.scene.add.rectangle(
-          enemyPos.x,
-          enemyPos.y,
-          layout.slotWidth,
-          layout.slotHeight,
-          this.showcaseMode ? 0x412735 : 0xfef2f2,
-          this.showcaseMode ? 0.16 : 0.42,
-        ).setStrokeStyle(this.showcaseMode ? 1 : 2, 0xfca5a5, this.showcaseMode ? 0.22 : 1);
-
-        this.objects.push(playerSlot, enemySlot);
-        this.gridObjects.push(playerSlot, enemySlot);
-      }
-    });
-
-    for (let column = 1; column <= 6; column += 1) {
-      const lane = playerSlotPosition(layout, 'Front', column);
-      if (!this.showcaseMode) {
-        this.pushGridText(
-          layout.baseX + 6,
-          lane.y - 7,
-          `L${column}`,
-          9,
-          '#94a3b8',
-          'bold',
-        );
-      }
-    }
+  private scheduleGridFade(): void {
+    this.gridRenderer.scheduleGridFade(this.showcaseMode);
   }
 
   private syncUnit(unit: CombatUnit): void {
@@ -1149,18 +726,6 @@ export class BattleActionView {
     };
   }
 
-  private scheduleGridFade(): void {
-    this.scene.time.delayedCall(this.showcaseMode ? 220 : 650, () => {
-      const liveGridObjects = this.gridObjects.filter((object) => object.active);
-      if (!liveGridObjects.length) return;
-      this.scene.tweens.add({
-        targets: liveGridObjects,
-        alpha: this.showcaseMode ? 0.04 : 0.08,
-        duration: this.showcaseMode ? 220 : 350,
-        ease: 'Sine.Out',
-      });
-    });
-  }
 
   private moveVisual(
     container: Phaser.GameObjects.Container,
@@ -1216,79 +781,7 @@ export class BattleActionView {
     color: string,
     unitKey: string,
   ): void {
-    const now = Date.now();
-    let hitInfo = this.unitHitTracking.get(unitKey);
-    if (!hitInfo || now - hitInfo.time > 400) {
-      hitInfo = { time: now, count: 0 };
-    } else {
-      hitInfo.count = (hitInfo.count + 1) % 3;
-      hitInfo.time = now;
-    }
-    this.unitHitTracking.set(unitKey, hitInfo);
-
-    const offsetX = (hitInfo.count - 1) * 14;
-    const offsetY = hitInfo.count * -8;
-
-    // Landscape bounds safety (1280x720)
-    const spawnX = Math.max(50, Math.min(960, x + offsetX));
-    const spawnY = Math.max(75, Math.min(640, y - 36 + offsetY));
-
-    const txt = this.scene.add
-      .text(spawnX, spawnY, text, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        color,
-        fontStyle: 'bold',
-        stroke: '#0f172a',
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5)
-      .setDepth(150);
-
-    this.objects.push(txt);
-    this.scene.tweens.add({
-      targets: txt,
-      y: spawnY - 26,
-      alpha: 0,
-      duration: 650,
-      ease: 'Cubic.Out',
-      onComplete: () => {
-        const index = this.objects.indexOf(txt);
-        if (index >= 0) this.objects.splice(index, 1);
-        txt.destroy();
-      },
-    });
-  }
-
-  private pushGridText(
-    x: number,
-    y: number,
-    value: string,
-    size: number,
-    color: string,
-    fontStyle = '',
-  ): Phaser.GameObjects.Text {
-    const text = this.pushText(x, y, value, size, color, fontStyle);
-    this.gridObjects.push(text);
-    return text;
-  }
-
-  private pushText(
-    x: number,
-    y: number,
-    value: string,
-    size: number,
-    color: string,
-    fontStyle = '',
-  ): Phaser.GameObjects.Text {
-    const text = this.scene.add.text(x, y, value, {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: `${size}px`,
-      color,
-      fontStyle,
-    });
-    this.objects.push(text);
-    return text;
+    this.floatingTextSystem.floatCombatText(x, y, text, color, unitKey);
   }
 }
 
