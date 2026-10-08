@@ -58,34 +58,43 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE V2 — Snowguard Base Cutout Live QA**
+**FINAL ART PHASE V2 — Full Battle Cutout Live QA**
 
-Status: **SNOWGUARD V2 BASE-ONLY MIGRATION COMPLETE / CI PASS / LIVE QA REQUIRED**
+Status: **6/6 BEASTS + 3/3 ENEMY ARCHETYPES INTEGRATED / CI PASS / LIVE QA REQUIRED**
 
 Primary sources:
 1. `docs/BATTLE-ART-DIRECTION-V2.md`
 2. `docs/UNIT-PRODUCTION-BRIEF-V2.md`
 3. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-Snowguard V2 implemented:
-- `base_v2.svg`;
-- `icon_v2.svg`;
-- manifest uses one base cutout;
-- no V1 attack/hit/signature/KO pose dependency;
-- `TANK` transform profile drives motion;
-- Guardian Brace remains runtime VFX;
-- final deterministic/build gate GitHub Actions run 133 PASS.
+Player side:
+- Snowguard, Shadowclaw, Windstrider, Starcaller, Ironclad, Swiftwing all register `base_v2`;
+- every Beast also registers `icon_v2`;
+- no Beast depends on V1 pose textures;
+- Attack / Hit / KO are transform-driven;
+- Signature presentation remains VFX-driven.
+
+Enemy side:
+- Frontliner V2 cutout;
+- Diver V2 cutout;
+- Ranged V2 cutout;
+- enemy preload + runtime view integrated;
+- old enemy card/token presentation is fallback-only.
+
+Validation:
+- player art guard PASS;
+- enemy art guard PASS;
+- GitHub Actions run 157 PASS.
 
 Immediate owner QA:
-1. refresh build;
+1. refresh latest build;
 2. press `L`;
-3. inspect Snowguard at idle;
-4. watch attack + hit transform;
-5. inspect Guardian Brace;
-6. capture one representative frame.
+3. confirm there are no rectangular player or enemy cards in the Battle field;
+4. inspect HP / ground anchors and unit overlap;
+5. capture one representative screenshot.
 
 After live PASS:
-**V2-M2B — Starcaller simplified base-art migration**.
+**V2-M4 — scale / spacing / readability polish and portfolio capture.**
 
 Gameplay remains frozen.
 
