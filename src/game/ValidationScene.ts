@@ -31,6 +31,7 @@ import { GamePhase } from './state/GamePhase';
 import { PhaseController } from './state/PhaseController';
 import { runValidationSceneStartupChecks } from './scene/ValidationSceneStartupChecks';
 import { PuzzlePhaseCoordinator } from './scene/PuzzlePhaseCoordinator';
+import { BattlePhaseCoordinator } from './scene/BattlePhaseCoordinator';
 import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
@@ -87,6 +88,7 @@ export class ValidationScene extends Phaser.Scene {
   private topHud?: GameTopHUD;
   private phaseStatusPanel?: PhaseStatusPanel;
   private puzzleCoordinator!: PuzzlePhaseCoordinator;
+  private battleCoordinator!: BattlePhaseCoordinator;
   private transitionCue?: TransitionCueView;
   private flowPanel?: PrototypeFlowPanel;
   private battleSetupView?: BattleSetupView;
@@ -164,6 +166,19 @@ export class ValidationScene extends Phaser.Scene {
       this.layout.rightY,
       this.layout.rightWidth,
     );
+    this.battleCoordinator = new BattlePhaseCoordinator({
+      scene: this,
+      getLayout: () => this.layout,
+      getBattleModel: () => this.battleModel,
+      getBattleActionView: () => this.battleActionView,
+      getFlowPanel: () => this.flowPanel,
+      getShowcaseBattleHud: () => this.showcaseBattleHud,
+      energyQueue: this.energyQueue,
+      metrics: this.metrics,
+      isShowcaseMode: () => this.showcaseMode,
+      isShowcasePaused: () => this.showcasePaused,
+      syncTopHud: () => this.syncTopHud(),
+    });
 
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
@@ -537,110 +552,11 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private castEnergy(energyId: string): void {
-    if (this.phaseController.phase !== GamePhase.Battle || !this.battleModel) return;
-    const before = this.battleModel.snapshot;
-    const armyHp = before.units.reduce((sum, unit) => sum + unit.currentHp, 0);
-    const result = this.battleModel.castTacticalEnergy(energyId, this.energyQueue);
-    if (result.success) {
-      const after = this.battleModel.snapshot;
-      this.metrics.successfulCast(armyHp, before.enemyHp);
-      if (this.showcaseMode) {
-        const slot = V14G_ENERGY_RUSH_POOL.indexOf(energyId);
-        const x = (this.layout.compact ? this.scale.width / 2 : this.layout.rightX / 2) + (slot - 1.5) * 118;
-        FeedbackEffects.showToast(this, x, this.scale.height - 178, '−1 CHARGE', '#f6d675', 650);
-      }
-      this.battleActionView?.render(after);
-      if (result.kind === 'Mend' || result.kind === 'Rescue') this.battleActionView?.playHeal({ unitId: result.targetUnitId, amount: result.amount });
-      else if (result.kind === 'Break' || result.kind === 'Pierce') this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
-      const identity = tacticalEnergyCastFeedback(result, after);
-      if (this.showcaseMode) {
-        const heal = result.kind === 'Mend' || result.kind === 'Rescue' || result.kind === 'Guard';
-        const slot = V14G_ENERGY_RUSH_POOL.indexOf(energyId);
-        this.battleActionView?.playTacticalCast(energyId, heal ? result.targetUnitId : result.targetEnemyId,
-          result.amount, heal, { x: (this.layout.compact ? this.scale.width / 2 : this.layout.rightX / 2) + (slot - 1.5) * 118, y: this.scale.height - 102 });
-        this.showcaseBattleHud?.showCastResult(identity ?? result.kind ?? '');
-      }
-      if (identity) {
-        const toastX = this.showcaseMode ? this.layout.rightCenter.x : this.layout.leftCenter.x;
-        const toastY = this.showcaseMode ? this.scale.height - 46 : this.layout.leftCenter.y;
-        FeedbackEffects.showToast(this, toastX, toastY, identity, '#f6d675', 760);
-      }
-      this.renderBattle();
-      this.syncTopHud();
-    } else {
-      const control = tacticalEnergyControl(this.battleModel.tacticalEnergyEligibility(energyId, this.energyQueue), this.energyQueue.getCharges(energyId), this.showcasePaused);
-      const toastX = this.showcaseMode ? this.layout.rightCenter.x : this.layout.leftCenter.x;
-      const toastY = this.showcaseMode ? this.scale.height - 46 : this.layout.leftCenter.y;
-      FeedbackEffects.showToast(this, toastX, toastY, control?.reasonLabel ?? 'UNAVAILABLE', '#f6d675', 760);
-    }
+    this.battleCoordinator.castEnergy(energyId);
   }
 
   private renderBattle(): void {
-    const battle = this.battleModel?.snapshot;
-    if (!battle) return;
-    const isRunning = battle.status === 'Running';
-    const energyEntries = this.energyQueue.getAll().filter((entry) => entry.charges > 0);
-    const frontline = this.battleModel?.frontmostAliveUnit();
-    this.battleActionView?.setShowcaseMode(this.showcaseMode);
-    this.battleActionView?.render(battle);
-
-    const frontlineDisplay = frontline
-      ? `${(frontline.beastId.split('-').at(-1) ?? frontline.beastId).toUpperCase()} · ${frontline.role} · ${formatNumber(frontline.currentHp)}/${formatNumber(frontline.maxHp)} HP`
-      : 'No living frontline unit';
-
-    if (this.showcaseMode) {
-      this.flowPanel?.destroy();
-      this.showcaseBattleHud?.setVisible(true);
-      this.showcaseBattleHud?.render(
-        battle,
-        energyEntries,
-        frontlineDisplay,
-        (energyId) => this.castEnergy(energyId),
-        this.showcasePaused,
-        (energyId) => tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(energyId, this.energyQueue), this.energyQueue.getCharges(energyId), this.showcasePaused),
-      );
-    } else {
-      this.showcaseBattleHud?.setVisible(false);
-      const energyRows =
-        isRunning && energyEntries.length > 0
-          ? energyEntries.map((entry) => ({
-              label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
-              energyId: entry.energyId,
-              displayName: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.displayName ?? entry.energyId,
-              shortDescription: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.shortDescription ?? '',
-              charges: entry.charges,
-              stateLabel: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.stateLabel ?? 'DISABLED',
-              reasonLabel: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.reasonLabel,
-              enabled: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.enabled ?? false,
-              suggested: tacticalEnergyControl(this.battleModel!.tacticalEnergyEligibility(entry.energyId, this.energyQueue), entry.charges, false)?.suggested ?? false,
-              onAction: () => this.castEnergy(entry.energyId),
-            }))
-          : undefined;
-
-      this.flowPanel?.render(
-        'AUTONOMOUS BATTLE',
-        [
-          `STATUS: ${battle.status} · Tick ${battle.elapsedTicks} · Living: ${battle.enemies.filter((enemy) => enemy.currentHp > 0).length}/${battle.enemies.length}`,
-          `ENEMY SQUAD HP: ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`,
-          `FRONTLINE: ${frontlineDisplay}`,
-          '',
-          'STORED ENERGY (TIMED CAST)',
-          'Tactical Energy: 1 charge per effective cast.',
-          `Enemy pressure: ${formatNumber(battle.enemyDamage)} total dmg / tick.`,
-          'Battle ticks automatically every 1.0 second.',
-          ...(isRunning
-            ? energyEntries.length > 0
-              ? []
-              : ['No stored Energy charges to cast.']
-            : ['Battle ended.']),
-        ],
-        null,
-        undefined,
-        undefined,
-        energyRows,
-      );
-    }
-    this.syncTopHud();
+    this.battleCoordinator.renderBattle();
   }
 
   private startV15AHeroBattle(): void {
