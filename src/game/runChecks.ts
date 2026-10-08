@@ -106,3 +106,5 @@ import { woolkeeperChecks } from './battle/WoolkeeperChecks';
 woolkeeperChecks();
 import { strategicEnergyChecks } from './energy/StrategicEnergyChecks';
 strategicEnergyChecks();
+import { runBattleGoldenMasterChecks } from './battle/BattleGoldenMasterChecks';
+runBattleGoldenMasterChecks();
