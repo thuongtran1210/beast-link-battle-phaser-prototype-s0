@@ -32,6 +32,7 @@ import { runValidationSceneStartupChecks } from './scene/ValidationSceneStartupC
 import { PuzzlePhaseCoordinator } from './scene/PuzzlePhaseCoordinator';
 import { BattlePhaseCoordinator } from './scene/BattlePhaseCoordinator';
 import { ShowcaseModeController } from './scene/ShowcaseModeController';
+import { RunLifecycleCoordinator } from './scene/RunLifecycleCoordinator';
 import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
@@ -89,6 +90,7 @@ export class ValidationScene extends Phaser.Scene {
   private puzzleCoordinator!: PuzzlePhaseCoordinator;
   private battleCoordinator!: BattlePhaseCoordinator;
   private showcaseController!: ShowcaseModeController;
+  private lifecycleCoordinator!: RunLifecycleCoordinator;
   private transitionCue?: TransitionCueView;
   private flowPanel?: PrototypeFlowPanel;
   private battleSetupView?: BattleSetupView;
@@ -153,7 +155,7 @@ export class ValidationScene extends Phaser.Scene {
       this.layout.rightWidth,
     );
     this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.restartRun());
-    this.waveResultView = new WaveResultView(this, () => this.advanceToNextWave());
+    this.waveResultView = new WaveResultView(this, () => this.lifecycleCoordinator.advanceToNextWave());
     this.showcaseBattleHud = new ShowcaseBattleHUDView(
       this,
       this.layout.rightX,
@@ -190,6 +192,29 @@ export class ValidationScene extends Phaser.Scene {
       metrics: this.metrics,
       isShowcaseMode: () => this.showcaseController.isShowcaseMode,
       isShowcasePaused: () => this.showcaseController.isShowcasePaused,
+      syncTopHud: () => this.syncTopHud(),
+    });
+    this.lifecycleCoordinator = new RunLifecycleCoordinator({
+      waveRun: this.waveRun,
+      energyQueue: this.energyQueue,
+      shardPool: this.shardPool,
+      runRoster: this.runRoster,
+      fixtureManager: this.fixtureManager,
+      metrics: this.metrics,
+      beastRushTimer: this.beastRushTimer,
+      comboQuality: this.comboQuality,
+      energyTimer: this.energyTimer,
+      battleQueue: this.battleQueue,
+      phaseController: this.phaseController,
+      getWaveResultView: () => this.waveResultView,
+      getSummaryView: () => this.summary,
+      getBattleModel: () => this.battleModel,
+      getBattleOutcome: () => this.battleOutcome,
+      getFormation: () => this.formation,
+      setFormation: (formation) => { this.formation = formation; },
+      setBattleModel: (model) => { this.battleModel = model; },
+      setBattleOutcome: (outcome) => { this.battleOutcome = outcome; },
+      setCaptureEnemyFixtures: (fixtures) => { this.captureEnemyFixtures = fixtures; },
       syncTopHud: () => this.syncTopHud(),
     });
 
@@ -381,8 +406,8 @@ export class ValidationScene extends Phaser.Scene {
     else if (phase === GamePhase.EnergyRush) this.enterEnergyRush();
     else if (phase === GamePhase.BattleSetup) this.enterBattleSetup();
     else if (phase === GamePhase.Battle) this.enterBattle();
-    else if (phase === GamePhase.WaveResult) this.enterWaveResult();
-    else this.enterResult();
+    else if (phase === GamePhase.WaveResult) this.lifecycleCoordinator.enterWaveResult();
+    else this.lifecycleCoordinator.enterResult();
   }
 
   private syncTopHud(): void {
@@ -518,51 +543,7 @@ export class ValidationScene extends Phaser.Scene {
     this.syncTopHud();
   }
 
-  private enterResult(): void {
-    const validationMetrics = this.battleModel?.getValidationMetrics();
-    const { comparison, history } = this.fixtureManager.recordMetrics(validationMetrics);
 
-    this.summary?.render(
-      this.metrics.snapshot,
-      this.battleOutcome,
-      validationMetrics,
-      comparison,
-      history.runA,
-      history.runB,
-      this.battleOutcome === 'Win'
-        ? `RUN COMPLETE · ${this.waveRun.totalWaves} / ${this.waveRun.totalWaves} Waves Cleared`
-        : `RUN DEFEAT · Reached Wave ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves}`,
-    );
-    this.summary?.setVisible(true);
-    this.syncTopHud();
-  }
-
-  private enterWaveResult(): void {
-    this.waveResultView?.render(this.waveRun, this.energyQueue, this.shardPool, this.runRoster);
-  }
-
-  private advanceToNextWave(): void {
-    if (this.phaseController.phase !== GamePhase.WaveResult || !this.waveRun.advanceWave()) return;
-    this.resetWavePreparation();
-    this.phaseController.setPhase(GamePhase.BeastRush);
-  }
-
-  private resetWavePreparation(): void {
-    this.beastRushTimer.reset();
-    this.comboQuality.reset();
-    this.energyTimer.reset();
-    this.battleQueue.clear();
-    // P1-V14D: Unused stored Energy persists across Waves. Do NOT call energyQueue.reset()!
-    // Deployment is per-Wave only. The roster retains body state, never slots.
-    this.formation?.reset();
-    this.formation = undefined;
-    this.battleModel = undefined;
-    this.battleOutcome = undefined;
-    this.fixtureManager.clearActiveKey();
-    this.captureEnemyFixtures = undefined;
-    this.metrics.reset();
-    this.fixtureManager.initBoardForWave(this.waveRun.currentWaveIndex);
-  }
 
 
 
