@@ -8,7 +8,7 @@ import { WaveRunController } from './run/WaveRunController';
 import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster } from './run/RunRoster';
 import { RunLinkShardPool, evaluateLinkShardReward } from './run/RunLinkShardPool';
 import { EnergyQueue } from './energy/EnergyQueue';
-import { STRATEGIC_ENERGY, STRATEGIC_ENERGY_POOL as V14G_ENERGY_RUSH_POOL } from './energy/TacticalEnergyCatalog';
+import { STRATEGIC_ENERGY_POOL as V14G_ENERGY_RUSH_POOL } from './energy/TacticalEnergyCatalog';
 import { EnergyRushTimer } from './energy/EnergyRushTimer';
 import { BattleFormation } from './battle/BattleFormation';
 import {
@@ -49,7 +49,6 @@ import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
 import { preloadEnemyCharacterArt } from './ui/art/EnemyCharacterLoader';
 import { runBattleCharacterArtChecks } from './ui/art/BattleCharacterArtChecks';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
-import { tacticalEnergyControl, tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
 
 import { BattleFixtureManager } from './battle/BattleFixtureManager';
 
