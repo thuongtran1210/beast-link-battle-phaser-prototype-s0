@@ -23,6 +23,8 @@ import { signatureForBeast, type BeastRole, type BeastSignatureId } from './Beas
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import { BattleEnergySystem } from './systems/BattleEnergySystem';
 import { createInitialConsequenceMetrics, cloneConsequenceMetrics, computeValidationMetrics } from './systems/BattleMetricsCalculator';
+import { SignatureCombatDispatcher } from './signatures/SignatureCombatDispatcher';
+import type { SignatureContext } from './signatures/SignatureContext';
 import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/TacticalEnergyCatalog';
 import type { FormationValidationMetrics } from './FormationValidationHarness';
 
@@ -1641,338 +1643,30 @@ export class AutonomousBattleModel {
     return this.target();
   }
 
+  private getSignatureContext(): SignatureContext {
+    return {
+      state: this.state,
+      combatRules: this.combatRules,
+      consequenceMetrics: this.consequenceMetrics,
+      signatureMetrics: this.signatureMetrics,
+      signatureEvents: this.signatureEvents,
+      distance: (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
+      applyDamage: (enemy, requestedDamage) => this.applyDamage(enemy, requestedDamage),
+      recordAction: (unit, kind, hits) => this.recordAction(unit, kind, hits),
+      activateSignature: (unit, targetId) => this.activateSignature(unit, targetId),
+    };
+  }
+
   private resolvePlayerDamage(unit: CombatUnit, target: EnemyCombatUnit): void {
-    if (target.currentHp <= 0) return;
-
-    this.consequenceMetrics.attacksResolvedByUnit[unit.unitId] =
-      (this.consequenceMetrics.attacksResolvedByUnit[unit.unitId] ?? 0) + 1;
-    if (unit.signatureId === 'BubbleTrap' || unit.signatureId === 'ToyWorkshop' || unit.signatureId === 'TickingBomb') {
-      const now = this.state.elapsedTime ?? 0;
-      if (now < (unit.supportReadyAt ?? 0)) return;
-      if (unit.signatureId === 'BubbleTrap') {
-        const victims = this.state.enemies.filter(enemy => enemy.currentHp > 0 && (enemy.funControlUntil ?? 0) <= now)
-          .sort((a, b) => this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane) - this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane) || a.enemyId.localeCompare(b.enemyId))
-          .slice(0, unit.star === 3 ? 2 : 1);
-        if (!victims.length) return;
-        victims.forEach(enemy => { enemy.funControlKind = 'Bubble'; enemy.funControlUntil = now + (unit.star === 1 ? .8 : 1.2); });
-        this.activateSignature(unit, victims[0].enemyId);
-      } else if (unit.signatureId === 'ToyWorkshop') {
-        const allies = this.state.units.filter(ally => ally.currentHp > 0 && (ally.temporaryShieldHp ?? 0) < 5)
-          .sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp || a.unitId.localeCompare(b.unitId))
-          .slice(0, unit.star === 3 ? 2 : 1);
-        if (!allies.length) return;
-        allies.forEach(ally => {
-          ally.temporaryShieldHp = unit.star === 1 ? 20 : unit.star === 2 ? 32 : 44;
-          ally.temporaryShieldExpiresAt = now + 3;
-          ally.temporaryShieldSourceSignatureId = 'ToyWorkshop';
-        });
-        unit.supportTargetIds = allies.map(ally => ally.unitId); unit.supportFxUntil = now + 1.2;
-        this.activateSignature(unit, allies[0].unitId);
-      } else {
-        if (target.bombAt !== undefined) return;
-        target.bombAt = now + 1.2; target.bombSourceId = unit.unitId;
-        target.bombDamage = unit.damage * 1.5; target.bombTargets = unit.star;
-      }
-      unit.supportReadyAt = now + 5;
-      return;
-    }
-    if (unit.signatureId === 'WoollyRescue') {
-      const now = this.state.elapsedTime ?? 0;
-      if (now >= (unit.supportReadyAt ?? 0)) {
-        const allies = this.state.units.filter(ally => ally.currentHp > 0 && ally.currentHp < ally.maxHp)
-          .sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp || a.unitId.localeCompare(b.unitId))
-          .slice(0, unit.star === 3 ? 2 : 1);
-        if (allies.length) {
-          allies.forEach(ally => {
-            ally.currentHp = Math.min(ally.maxHp, ally.currentHp + signatureStrengthForStar('WoollyRescue', unit.star));
-            if (unit.star === 3) {
-              ally.temporaryShieldHp = Math.max(ally.temporaryShieldHp ?? 0, 18);
-              ally.temporaryShieldExpiresAt = now + 2;
-              ally.temporaryShieldSourceSignatureId = 'WoollyRescue';
-            }
-          });
-          unit.supportTargetIds = allies.map(ally => ally.unitId);
-          unit.supportFxUntil = now + 1.2;
-          unit.supportReadyAt = now + (unit.star === 1 ? 4 : 3);
-          this.activateSignature(unit, allies[0].unitId);
-        }
-      }
-      return;
-    }
-    const enemyHpBefore = target.currentHp;
-
-    if (unit.role === 'Tanker') {
-      const ram = unit.signatureId === 'IronRam' && unit.ramReady && target.currentHp > 0;
-      const hits: PlayerCombatHit[] = [];
-      const damage = this.applyDamage(
-        target,
-        unit.damage * (ram ? signatureStrengthForStar('IronRam', unit.star) : 1),
-      );
-      if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
-
-      if (ram) {
-        unit.ramReady = false;
-        target.positionX = clamp(
-          target.positionX + ironRamKnockbackForStar(unit.star),
-          ENEMY_MIN_X,
-          ENEMY_MAX_X,
-        );
-        const stagger = ironRamStaggerForStar(unit.star);
-        if (stagger > 0) {
-          target.attackCooldownRemaining = Math.max(target.attackCooldownRemaining ?? 0, stagger);
-          target.recoveryRemaining = Math.max(target.recoveryRemaining ?? 0, stagger);
-        }
-
-        const cleaveTargets = ironRamCleaveTargets(unit.star);
-        if (cleaveTargets > 0) {
-          const secondary = this.state.enemies
-            .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
-            .sort(
-              (a, b) =>
-                this.distance(a.positionX, a.positionLane, target.positionX, target.positionLane) -
-                  this.distance(b.positionX, b.positionLane, target.positionX, target.positionLane) ||
-                a.enemyId.localeCompare(b.enemyId),
-            )
-            .slice(0, cleaveTargets);
-          for (const enemy of secondary) {
-            const applied = this.applyDamage(enemy, unit.damage * ironRamCleaveRatio(unit.star));
-            if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
-          }
-        }
-
-        this.activateSignature(unit, target.enemyId);
-      }
-
-      if (hits.length) this.recordAction(unit, ram ? 'Ram' : 'GuardStrike', hits);
-    } else if (unit.role === 'Assassin') {
-      if (this.consequenceMetrics.firstAssassinContactTime === undefined) {
-        this.consequenceMetrics.firstAssassinContactTime = this.state.elapsedTime ?? 0;
-      }
-      const ambush =
-        unit.signatureId === 'AmbushStrike' &&
-        unit.ambushReady &&
-        unit.ambushTargetId === target.enemyId &&
-        (unit.signatureActivationCount ?? 0) < ambushActivationLimit(unit.star);
-
-      const hits: PlayerCombatHit[] = [];
-      const damage = this.applyDamage(
-        target,
-        unit.damage * (ambush ? signatureStrengthForStar('AmbushStrike', unit.star) : 1),
-      );
-      if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
-
-      if (ambush) {
-        this.activateSignature(unit, target.enemyId);
-        unit.ambushReady = false;
-        this.signatureMetrics.ambushStrikesResolved += 1;
-
-        // 3★ Shadowclaw converts an Ambush kill into one deterministic follow-up strike.
-        if (target.currentHp <= 0 && ambushChainRatio(unit.star) > 0) {
-          const chainTarget = this.state.enemies
-            .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
-            .sort(
-              (a, b) =>
-                rowOrder[b.row] - rowOrder[a.row] ||
-                a.currentHp - b.currentHp ||
-                a.enemyId.localeCompare(b.enemyId),
-            )[0];
-          if (chainTarget) {
-            const chained = this.applyDamage(chainTarget, unit.damage * ambushChainRatio(unit.star));
-            if (chained > 0) hits.push({ enemyId: chainTarget.enemyId, damage: chained });
-          }
-        }
-      }
-
-      if (hits.length) this.recordAction(unit, 'Dive', hits);
-    } else if (unit.role === 'Ranger') {
-      if (unit.signatureId === 'TwinVolley') {
-        const hits: PlayerCombatHit[] = [];
-        const primary = this.applyDamage(target, unit.damage);
-        if (primary > 0) hits.push({ enemyId: target.enemyId, damage: primary });
-
-        unit.volleyAttackCount = (unit.volleyAttackCount ?? 0) + 1;
-        const volley = unit.volleyAttackCount >= twinVolleyAttackThreshold(unit.star);
-        if (volley) {
-          unit.volleyAttackCount = 0;
-          const secondary = this.state.enemies
-            .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
-            .sort(
-              (a, b) =>
-                this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane) -
-                  this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane) ||
-                a.enemyId.localeCompare(b.enemyId),
-            )
-            .slice(0, twinVolleySecondaryTargets(unit.star));
-          for (const enemy of secondary) {
-            const applied = this.applyDamage(
-              enemy,
-              unit.damage * signatureStrengthForStar('TwinVolley', unit.star),
-            );
-            if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
-          }
-          this.activateSignature(unit, target.enemyId);
-        }
-        if (hits.length) this.recordAction(unit, volley ? 'Volley' : 'Snipe', hits);
-      } else {
-        const focus = unit.signatureId === 'FocusShot' && unit.focusReady;
-        const hits: PlayerCombatHit[] = [];
-        const damage = this.applyDamage(
-          target,
-          unit.damage * (focus ? signatureStrengthForStar('FocusShot', unit.star) : 1),
-        );
-        if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
-
-        if (focus) {
-          if (unit.star === 3 && !unit.signatureActivationCount) {
-            target.funControlKind = 'Carrot';
-            target.funControlUntil = (this.state.elapsedTime ?? 0) + 2;
-            target.carrotX = unit.positionX + .7;
-            target.carrotLane = unit.positionLane;
-          }
-          const pierceCount = focusPierceTargets(unit.star);
-          if (pierceCount > 0) {
-            const secondary = this.state.enemies
-              .filter((enemy) => enemy.currentHp > 0 && enemy.enemyId !== target.enemyId)
-              .sort(
-                (a, b) =>
-                  this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane) -
-                    this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane) ||
-                  a.enemyId.localeCompare(b.enemyId),
-              )
-              .slice(0, pierceCount);
-            for (const enemy of secondary) {
-              const applied = this.applyDamage(enemy, unit.damage * focusPierceRatio(unit.star));
-              if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
-            }
-          }
-          this.activateSignature(unit, target.enemyId);
-          unit.focusReady = false;
-          unit.continuousHoldTime = 0;
-          this.signatureMetrics.focusShotsResolved += 1;
-        }
-
-        if (hits.length) this.recordAction(unit, 'Snipe', hits);
-      }
-    } else {
-      // Mage — STAR changes Bloom footprint and 3★ adds a visible Echo hit.
-      const hits: PlayerCombatHit[] = [];
-      const appliedPrimary = this.applyDamage(target, unit.damage);
-      if (appliedPrimary > 0) hits.push({ enemyId: target.enemyId, damage: appliedPrimary });
-
-      const bloomRadius = arcaneBloomRadiusForStar(unit.star);
-      const nearbyCount = this.state.enemies.filter(
-        (enemy) =>
-          enemy.currentHp > 0 &&
-          this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius,
-      ).length;
-      const bloom = unit.signatureId === 'ArcaneBloom' && nearbyCount >= 2;
-
-      const secondaryTargets = this.state.enemies
-        .filter(
-          (enemy) =>
-            enemy.currentHp > 0 &&
-            enemy.enemyId !== target.enemyId &&
-            (bloom
-              ? this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius
-              : !this.combatRules.signatures && Math.abs(enemy.positionLane - target.positionLane) <= 1.05),
-        )
-        .sort(
-          (a, b) =>
-            this.distance(a.positionX, a.positionLane, target.positionX, target.positionLane) -
-              this.distance(b.positionX, b.positionLane, target.positionX, target.positionLane) ||
-            a.enemyId.localeCompare(b.enemyId),
-        );
-
-      for (const enemy of bloom
-        ? secondaryTargets.slice(0, arcaneBloomSecondaryLimitForStar(unit.star))
-        : secondaryTargets) {
-        const applied = this.applyDamage(
-          enemy,
-          unit.damage * (bloom ? signatureStrengthForStar('ArcaneBloom', unit.star) : 0.5),
-        );
-        if (applied > 0) hits.push({ enemyId: enemy.enemyId, damage: applied });
-      }
-
-      if (bloom) {
-        if (unit.star === 3 && !unit.signatureActivationCount) {
-          this.state.enemies.filter(enemy => enemy.currentHp > 0 &&
-            this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius)
-            .slice(0, 3).forEach(enemy => {
-              enemy.funControlKind = 'Duck';
-              enemy.funControlUntil = (this.state.elapsedTime ?? 0) + 1.5;
-            });
-        }
-        this.activateSignature(unit, target.enemyId);
-        this.signatureMetrics.arcaneBloomTargetsHit += Math.max(0, hits.length - 1);
-
-        const echoRatio = arcaneBloomEchoRatio(unit.star);
-        if (echoRatio > 0) {
-          const echoTarget = this.state.enemies
-            .filter((enemy) => enemy.currentHp > 0)
-            .sort((a, b) => a.currentHp - b.currentHp || a.enemyId.localeCompare(b.enemyId))[0];
-          if (echoTarget) {
-            const echoDamage = this.applyDamage(echoTarget, unit.damage * echoRatio);
-            if (echoDamage > 0) hits.push({ enemyId: echoTarget.enemyId, damage: echoDamage });
-          }
-        }
-      }
-
-      if (hits.length) this.recordAction(unit, 'ArcaneBurst', hits);
-    }
-
-    if (target.currentHp <= 0) {
-      target.actionState = 'Dead';
-      unit.targetEnemyId = undefined;
-    }
-    const dealt = enemyHpBefore - target.currentHp;
-    if (unit.signatureActivationCount) this.signatureMetrics.signatureDamageByUnit[unit.unitId] = (this.signatureMetrics.signatureDamageByUnit[unit.unitId] ?? 0) + Math.max(0, dealt - unit.damage);
+    SignatureCombatDispatcher.resolvePlayerDamage(this.getSignatureContext(), unit, target);
   }
 
   private updateFocusProgress(unit: CombatUnit, target: EnemyCombatUnit, deltaSeconds: number): void {
-    if (unit.signatureId !== 'FocusShot' || unit.focusReady) return;
-    const profile = movementProfile[unit.role];
-    const dist = this.distance(unit.positionX, unit.positionLane, target.positionX, target.positionLane);
-    let nearest = Infinity;
-    for (const enemy of this.state.enemies) if (enemy.currentHp > 0) nearest = Math.min(nearest, this.distance(unit.positionX, unit.positionLane, enemy.positionX, enemy.positionLane));
-    if (unit.movementPolicyState === 'Hold' && dist <= profile.attackRange && nearest >= profile.dangerRange) {
-      unit.continuousHoldTime = (unit.continuousHoldTime ?? 0) + deltaSeconds;
-      if (unit.continuousHoldTime >= focusHoldThresholdForStar(unit.star)) {
-        unit.focusReady = true;
-        this.signatureEvents.push({ type: 'SignatureReady', unitId: unit.unitId, signatureId: 'FocusShot', time: this.state.elapsedTime ?? 0 });
-      }
-    } else if (unit.movementPolicyState === 'Kite' || unit.movementPolicyState === 'AdvanceToRange') { unit.continuousHoldTime = 0; }
+    SignatureCombatDispatcher.updateFocusProgress(this.getSignatureContext(), unit, target, deltaSeconds);
   }
 
   private activateGuardianBrace(unit: CombatUnit, targetId: string): void {
-    if (
-      !this.combatRules.signatures ||
-      unit.signatureId !== 'GuardianBrace' ||
-      (unit.signatureActivationCount ?? 0) >= guardianBraceActivationLimit(unit.star)
-    ) return;
-
-    const shield = signatureStrengthForStar('GuardianBrace', unit.star);
-    const expiresAt = (this.state.elapsedTime ?? 0) + P1V13A_SIGNATURE_FIXTURE.guardianBraceDuration;
-    unit.temporaryShieldHp = Math.max(unit.temporaryShieldHp ?? 0, shield);
-    unit.temporaryShieldExpiresAt = expiresAt;
-    unit.temporaryShieldSourceSignatureId = 'GuardianBrace';
-    this.activateSignature(unit, targetId);
-
-    // 3★ Snowguard extends part of the Brace to the most pressured ally.
-    const shareRatio = guardianBraceShareRatio(unit.star);
-    if (shareRatio > 0) {
-      const ally = this.state.units
-        .filter((candidate) => candidate.currentHp > 0 && candidate.unitId !== unit.unitId)
-        .sort(
-          (a, b) =>
-            a.currentHp / a.maxHp - b.currentHp / b.maxHp ||
-            a.unitId.localeCompare(b.unitId),
-        )[0];
-      if (ally) {
-        ally.temporaryShieldHp = Math.max(ally.temporaryShieldHp ?? 0, shield * shareRatio);
-        ally.temporaryShieldExpiresAt = expiresAt;
-        ally.temporaryShieldSourceSignatureId = 'GuardianBrace';
-      }
-    }
+    SignatureCombatDispatcher.activateGuardianBrace(this.getSignatureContext(), unit, targetId);
   }
 
   private activateSignature(unit: CombatUnit, targetId?: string): void {
