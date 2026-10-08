@@ -770,12 +770,14 @@ export class BattleActionView {
     ) => {
       const sorted = [...entries].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
       const placed: Array<{ x: number; y: number; rank: number }> = [];
-      const yOffsets = [0, -22, 22, -40, 40];
-      const xOffsets = [0, -7, 7, -12, 12];
+      // V2-M4: cutouts are larger than the old card tokens, so presentation-only
+      // declumping needs a wider vertical fan to keep silhouettes readable.
+      const yOffsets = [0, -30, 30, -54, 54];
+      const xOffsets = [0, -14, 14, -24, 24];
 
       sorted.forEach((entry) => {
         const nearby = placed.filter(
-          (other) => Math.abs(other.x - entry.x) < 44 && Math.abs(other.y - entry.y) < 36,
+          (other) => Math.abs(other.x - entry.x) < 64 && Math.abs(other.y - entry.y) < 54,
         );
         const rank = Math.min(nearby.length, yOffsets.length - 1);
         output.set(entry.id, {
@@ -794,7 +796,7 @@ export class BattleActionView {
           return { id: unit.unitId, x: position.x, y: position.y };
         }),
       this.unitPresentationOffsets,
-      -14,
+      18,
     );
 
     assign(
@@ -805,7 +807,7 @@ export class BattleActionView {
           return { id: enemy.enemyId, x: position.x, y: position.y };
         }),
       this.enemyPresentationOffsets,
-      14,
+      -18,
     );
   }
 
