@@ -26,6 +26,7 @@ import { createInitialConsequenceMetrics, cloneConsequenceMetrics, computeValida
 import { SignatureCombatDispatcher } from './signatures/SignatureCombatDispatcher';
 import type { SignatureContext } from './signatures/SignatureContext';
 import { BattleTargetingSystem } from './systems/BattleTargetingSystem';
+import { BattleMovementSystem } from './systems/BattleMovementSystem';
 import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/TacticalEnergyCatalog';
 import type { FormationValidationMetrics } from './FormationValidationHarness';
 
@@ -538,16 +539,7 @@ export class AutonomousBattleModel {
     speed: number,
     stopRange: number,
   ): void {
-    const moved = this.moveToward(
-      unit.positionX,
-      unit.positionLane,
-      target.positionX,
-      target.positionLane,
-      speed,
-      stopRange,
-    );
-    unit.positionX = clamp(moved.x, PLAYER_MIN_X, PLAYER_MAX_X);
-    unit.positionLane = clamp(moved.lane, 1, 6);
+    BattleMovementSystem.moveTowardPlayerUnit(unit, target, speed, stopRange);
   }
 
   private moveTowardEnemy(
@@ -556,47 +548,11 @@ export class AutonomousBattleModel {
     speed: number,
     stopRange: number,
   ): void {
-    const moved = this.moveToward(
-      enemy.positionX,
-      enemy.positionLane,
-      target.positionX,
-      target.positionLane,
-      speed,
-      stopRange,
-    );
-    enemy.positionX = clamp(moved.x, ENEMY_MIN_X, ENEMY_MAX_X);
-    enemy.positionLane = clamp(moved.lane, 1, 6);
-  }
-
-  private moveToward(
-    fromX: number,
-    fromLane: number,
-    toX: number,
-    toLane: number,
-    speed: number,
-    stopRange: number,
-  ): { x: number; lane: number } {
-    const dx = toX - fromX;
-    const dyScaled = (toLane - fromLane) * LANE_DISTANCE_SCALE;
-    const distance = Math.hypot(dx, dyScaled);
-    const travel = Math.min(speed, Math.max(0, distance - stopRange));
-
-    if (distance <= COMBAT_DISTANCE_EPSILON || travel <= COMBAT_DISTANCE_EPSILON) {
-      return { x: fromX, lane: fromLane };
-    }
-
-    return {
-      x: fromX + (dx / distance) * travel,
-      lane:
-        fromLane +
-        ((dyScaled / distance) * travel) / LANE_DISTANCE_SCALE,
-    };
+    BattleMovementSystem.moveTowardEnemy(enemy, target, speed, stopRange);
   }
 
   private retreatPlayerUnit(unit: CombatUnit, speed: number): boolean {
-    const before = unit.positionX;
-    unit.positionX = clamp(unit.positionX - speed, PLAYER_MIN_X, PLAYER_MAX_X);
-    return unit.positionX < before - 0.000001;
+    return BattleMovementSystem.retreatPlayerUnit(unit, speed);
   }
 
   private distance(
@@ -605,7 +561,7 @@ export class AutonomousBattleModel {
     bx: number,
     bLane: number,
   ): number {
-    return Math.hypot(bx - ax, (bLane - aLane) * LANE_DISTANCE_SCALE);
+    return BattleMovementSystem.distance(ax, aLane, bx, bLane);
   }
 
   private applyDamage(enemy: EnemyCombatUnit, requestedDamage: number): number {
