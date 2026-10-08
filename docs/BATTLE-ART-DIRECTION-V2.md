@@ -4,6 +4,12 @@ Status: **NEW SOURCE OF TRUTH / GAMEPLAY FROZEN / PRODUCTION RESET**
 
 Date: 2026-10-07
 
+## Owner clarification — 2026-10-08
+
+Owner supplied a flat cartoon animal lineup and requested that level of simplicity. Use thick black contours, simple pill eyes, compact bodies, broad flat color regions and one clear role prop. Avoid the richer fur, accessories and illustrative shading of the first raster Snowguard candidates. The supplied lineup is a style reference, not permission to copy its character designs.
+
+Reference: `art/beasts/snowguard/owner-style-reference-2026-10-08.png`. Snowguard V04 is the new candidate in `?art=preview`; owner image-level approval and live QA remain open. This direction clarification does not approve an entire generated roster.
+
 ## Why V2 exists
 
 Live battle QA showed that the previous authored-character direction was too expensive and visually overbuilt for the scale of this prototype.

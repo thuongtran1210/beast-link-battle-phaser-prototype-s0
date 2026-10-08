@@ -4,6 +4,22 @@ Status: **Repository-local coding handoff**
 
 ## Current status — 2026-10-08
 
+Setup UI: larger formation cells and clearer Reserve identity/STAR cards. Each Reserve card now exposes MERGE when `RunRoster.consolidationPreview` allows it, with 3-copy or 2-copy + 1-shard cost visible. The existing consolidation callback applies consumption, attrition HP, primary-ID preservation and metrics; no merge-rule changes. Disabled cards show copy requirements/max STAR. Deterministic merge suite remains the source for eligibility validation; live touch/layout QA is open.
+
+Battle mobile refinement: side context is reduced to enemy count/HP/status. Skill descriptions and eligibility reason appear while pressing a circular skill; holding at least 350ms inspects without casting, quick release casts if eligible. Successful casts show −1 CHARGE near their slot; existing target heal/damage FX remain. Battlefield presentation expands horizontally on wider screens and reserves space above the dock. Gameplay rules unchanged. Automated checks pass; physical-mobile visual and touch QA remains open.
+
+Battle Cast presentation: four fixed circular Tactical Energy buttons now sit bottom-center of the battlefield, with charge badges and READY / SUGGESTED / DISABLED states. Side rail retains battle context and catalog effect hints. Cast eligibility and callbacks are unchanged. Checks/build validation recorded; device-live visual QA remains open.
+
+Latest presentation pass: compact mobile landscape shell, global HUD and Rush board/rail implemented; gameplay unchanged. Force QA using `?mobile=1`. Deterministic mobile board bounds/touch-target checks pass alongside gameplay suite; device-live QA open. See `docs/MOBILE-LANDSCAPE-UI-2026-10-08.md`. Setup/Battle-specific touch layout is not claimed complete.
+
+### Latest owner art integration
+
+Latest icon pass: all 27 library entries and 6 Beast / 3 enemy active slots now reference the owner's colored `icon_v02.png` portraits. Body sprites unchanged. Axe badge and alternate polar-bear portrait stored separately. See `docs/OWNER-PORTRAIT-UPDATE-2026-10-08.md`; live QA remains open.
+
+Latest completion: **6/6 Beast + 3/3 enemy archetype art integrated**, with Starcaller now using purple badger mage and enemies using penguin knight / crow assassin / deer archer. A 27-character, 54-PNG asset library and JSON manifest have been exported from the owner's complete sheet. Remaining library characters have no new gameplay. See `docs/OWNER-ROSTER-COMPLETION-2026-10-08.md`. Owner live QA remains open; previous paragraph records the earlier five-character pass.
+
+Owner requested direct use of a supplied five-character lineup and portrait sheet. Five Beast body/icon pairs now use `base_owner_v01.png` / `icon_owner_v01.png` by default (including the existing `?art=preview` URL): Snowguard = duck/shield, Ironclad = bear/hammer, Windstrider = rabbit/bow, Swiftwing = fox/bow, Shadowclaw = raccoon/sword. Starcaller and enemies retain V2 art. HP anchors/reference scales adjusted for normalized PNG canvases; gameplay unchanged. Source sheets/export script and analysis are recorded in `docs/OWNER-ART-INTEGRATION-2026-10-08.md`. Status: OWNER-SUPPLIED / INTEGRATED / LIVE QA OPEN. Earlier Snowguard candidates remain archived in-place; the query no longer opts into them.
+
 - V14A: **OWNER STRUCTURAL PASS** / Experimental / not adopted.
 - V14B.1/B.2: **CORE IMPLEMENTED**; owner-live evidence open.
 - V14B.3: **IMPLEMENTED**; code review PASS; live hypothesis validation open.
@@ -244,3 +260,6 @@ Remote code evidence includes:
 
 This means B.3 is no longer merely “implementation pending”.
 However, command-run evidence and owner live B.3 validation must still be tracked separately before B.3 can be called PASS or adopted.
+# Energy Rush presentation update (2026-10-08)
+
+See `docs/ENERGY-RUSH-UI-2026-10-08.md`. Dedicated Energy HUD, visible tactical tile names, distinct glyphs, effect descriptions, and stored/carry/current-Rush totals are implemented. Automated checks and build pass; live mobile visual review remains outstanding.

@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { enemyCharacterIconTextureKey } from '../art/EnemyCharacterLoader';
 
 export type EnemyVisualArchetype = 'Frontliner' | 'Diver' | 'Ranged';
 
@@ -11,6 +12,10 @@ export function createEnemyArchetypeIcon(
   y: number,
   displaySize = 32,
 ): Phaser.GameObjects.Image {
+  const authoredKey = enemyCharacterIconTextureKey(archetype);
+  if (scene.textures.exists(authoredKey)) {
+    return scene.add.image(x, y, authoredKey).setDisplaySize(displaySize, displaySize);
+  }
   const key = `proto-enemy-${archetype.toLowerCase()}`;
   if (!scene.textures.exists(key)) {
     const g = scene.make.graphics();

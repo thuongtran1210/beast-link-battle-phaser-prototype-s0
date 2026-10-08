@@ -500,7 +500,11 @@ export class ValidationScene extends Phaser.Scene {
     const energyCount = this.energyQueue.getTotalCharges();
     const wave = this.waveRun.currentWave;
     const setup = this.phaseController.phase === GamePhase.BattleSetup;
-    this.topHud?.update(this.phaseController.phase, beastCount, energyCount, setup ? { primaryTitle: `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${wave.name}`, secondaryTitle: `Threat · ${wave.threatLabel}`, linkShards: this.shardPool.count, hideBrand: true } : { linkShards: this.shardPool.count });
+    this.topHud?.update(this.phaseController.phase, beastCount, energyCount, {
+      ...(setup ? { primaryTitle: `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${wave.name}`, secondaryTitle: `Threat · ${wave.threatLabel}`, hideBrand: true } : {}),
+      waveLabel: `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves}`,
+      linkShards: this.shardPool.count,
+    });
     this.topHud?.setVisible(!(this.showcaseMode && this.showcaseCleanFrame));
   }
 
@@ -827,10 +831,22 @@ export class ValidationScene extends Phaser.Scene {
     if (result.success) {
       const after = this.battleModel.snapshot;
       this.metrics.successfulCast(armyHp, before.enemyHp);
+      if (this.showcaseMode) {
+        const slot = V14G_ENERGY_RUSH_POOL.indexOf(energyId);
+        const x = this.layout.rightX / 2 + (slot - 1.5) * 118;
+        FeedbackEffects.showToast(this, x, this.scale.height - 178, '−1 CHARGE', '#f6d675', 650);
+      }
       this.battleActionView?.render(after);
       if (result.kind === 'Mend' || result.kind === 'Rescue') this.battleActionView?.playHeal({ unitId: result.targetUnitId, amount: result.amount });
       else this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
       const identity = tacticalEnergyCastFeedback(result, after);
+      if (this.showcaseMode) {
+        const heal = result.kind === 'Mend' || result.kind === 'Rescue';
+        const slot = V14G_ENERGY_RUSH_POOL.indexOf(energyId);
+        this.battleActionView?.playTacticalCast(energyId, heal ? result.targetUnitId : result.targetEnemyId,
+          result.amount, heal, { x: this.layout.rightX / 2 + (slot - 1.5) * 118, y: this.scale.height - 102 });
+        this.showcaseBattleHud?.showCastResult(`${identity ?? result.kind}\n${heal ? 'HEALED ALLY' : 'DAMAGED ENEMY'} · ${result.amount} HP`);
+      }
       if (identity) {
         const toastX = this.showcaseMode ? this.layout.rightCenter.x : this.layout.leftCenter.x;
         const toastY = this.showcaseMode ? this.scale.height - 46 : this.layout.leftCenter.y;
@@ -1052,6 +1068,11 @@ export class ValidationScene extends Phaser.Scene {
       },
     );
 
+    if (this.layout.compact) {
+      this.boardTitle.setVisible(false);
+      this.boardSubtitle.setVisible(false);
+    }
+
     this.board = this.boardGenerator.generate(RuleConfig.boardSize, contentIds, Math.random, type);
     this.boardView = new BoardView(
       this,
@@ -1208,6 +1229,7 @@ export class ValidationScene extends Phaser.Scene {
     const carryIn = this.energyCarryIn;
     const queueTitle = carryIn > 0 ? `STORED ×${total} (CARRY IN ×${carryIn})` : `STORED ×${total}`;
     this.phaseStatusPanel?.render({
+      energyCarryIn: carryIn,
       phaseTitle: 'TACTICAL CHARGE',
       phaseSubtitle: 'MATCH PAIRS  →  STORE TACTICAL ENERGY',
       timerSeconds: remaining,

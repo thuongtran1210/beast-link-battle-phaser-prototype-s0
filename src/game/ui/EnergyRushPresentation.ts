@@ -35,3 +35,9 @@ export function energyRushMatchLabel(energyId: string): string {
   const presentation = energyRushTilePresentation(energyId);
   return presentation ? `+1 ${presentation.displayName}` : '+1 Charge';
 }
+
+/** Bank totals distinguish carry-in from charges collected during this Rush. */
+export function energyRushBankSummary(counts: ReadonlyArray<number>, carryIn: number): {total: number; carry: number; gained: number} {
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  return {total, carry: carryIn, gained: Math.max(0, total - carryIn)};
+}

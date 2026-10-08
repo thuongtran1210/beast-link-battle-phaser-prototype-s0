@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { GamePhase } from '../state/GamePhase';
 import { HudTokens } from './layout/HudTokens';
+import { isCompactLandscape } from './layout/MobilePresentation';
 
 export interface GameTopHudContext {
+  waveLabel?: string;
   primaryTitle?: string;
   secondaryTitle?: string;
   linkShards?: number;
@@ -23,6 +25,18 @@ export class GameTopHUD {
 
   constructor(private readonly scene: Phaser.Scene) {
     const w = scene.scale.width;
+
+    if (isCompactLandscape()) {
+      const bg = scene.add.rectangle(w / 2, 22, w, 44, HudTokens.colors.bgSurfaceDark, .98);
+      const style = { fontFamily: HudTokens.fonts.family, fontSize: '20px', color: HudTokens.colors.textPrimary, fontStyle: 'bold' };
+      this.primary = scene.add.text(18, 11, 'BEAST LINK BATTLE', style);
+      this.secondary = scene.add.text(320, 11, 'BEAST RUSH', style);
+      this.beasts = scene.add.text(w - 300, 12, 'BEAST 0', {...style, fontSize: '18px'});
+      this.energy = scene.add.text(w - 185, 12, 'ENERGY 0', {...style, fontSize: '18px'});
+      this.link = scene.add.text(w - 18, 12, '◆0', {...style, fontSize: '18px'}).setOrigin(1, 0);
+      this.objects.push(bg, this.primary, this.secondary, this.beasts, this.energy, this.link);
+      return;
+    }
 
     const bg = scene.add
       .rectangle(w / 2, 31, w, 62, HudTokens.colors.bgSurfaceDark, .98)
@@ -97,8 +111,9 @@ export class GameTopHUD {
     energy: number,
     context?: GameTopHudContext,
   ): void {
-    this.primary.setText(context?.primaryTitle ?? 'BEAST LINK BATTLE');
-    this.secondary.setText(context?.secondaryTitle ?? phase.replace(/([A-Z])/g, ' $1').trim().toUpperCase());
+    const compact = isCompactLandscape();
+    this.primary.setText(compact ? context?.waveLabel ?? 'BEAST LINK BATTLE' : context?.primaryTitle ?? 'BEAST LINK BATTLE');
+    this.secondary.setText(compact ? phase.replace(/([A-Z])/g, ' $1').trim().toUpperCase() : context?.secondaryTitle ?? phase.replace(/([A-Z])/g, ' $1').trim().toUpperCase());
     this.beasts.setText(`BEAST ${beasts}`);
     this.energy.setText(`ENERGY ${energy}`);
     this.link.setText(`◆${context?.linkShards ?? 0}`);

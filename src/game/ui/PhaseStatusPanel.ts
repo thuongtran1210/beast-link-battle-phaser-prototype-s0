@@ -3,6 +3,9 @@ import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 import { comboRatio, comboVisualState, queueDisplayEntries, recruitedTotal } from './BeastRushHudPresentation';
 import { getIconDefinition } from './icons/UnitIconRegistry';
+import { isCompactLandscape } from './layout/MobilePresentation';
+import { RoundedPanel } from './RoundedPanel';
+import { energyRushBankSummary } from './EnergyRushPresentation';
 
 export interface StatusQueueItem {
   id: string;
@@ -27,6 +30,7 @@ export interface PhaseStatusData {
   comboCurrent?: number;
   comboBest?: number;
   isReady?: boolean;
+  energyCarryIn?: number;
 }
 
 export class PhaseStatusPanel {
@@ -47,6 +51,16 @@ export class PhaseStatusPanel {
 
   render(data: PhaseStatusData): void {
     this.destroy();
+    if (data.energyCarryIn !== undefined) {
+      this.renderEnergyRushHud(data);
+      this.setVisible(this.visible);
+      return;
+    }
+    if (isCompactLandscape()) {
+      this.renderCompactHud(data);
+      this.setVisible(this.visible);
+      return;
+    }
     if (data.beastRushHud) {
       this.renderBeastRushHud(data);
       this.setVisible(this.visible);
@@ -474,6 +488,118 @@ export class PhaseStatusPanel {
       },
     );
     add(eventBg, event);
+  }
+
+  private renderEnergyRushHud(data: PhaseStatusData): void {
+    const w = this.panelWidth;
+    const {total, carry, gained} = energyRushBankSummary(data.queueItems.map(item => item.count), data.energyCarryIn ?? 0);
+    const urgent = !data.isReady && data.timerSeconds < 3;
+    const accent = urgent ? HudTokens.colors.red : HudTokens.colors.blue;
+    const addText = (x: number, y: number, value: string, size: number, color: string = HudTokens.colors.textPrimary) => {
+      const object = this.scene.add.text(x, y, value, {
+        fontFamily: HudTokens.fonts.family, fontSize: `${size}px`, color, fontStyle: 'bold',
+      });
+      this.objects.push(object);
+      return object;
+    };
+    const surface = (y: number, height: number, stroke: number = HudTokens.colors.strokeDefault) => {
+      const panel = new RoundedPanel(this.scene, this.x + w / 2, y + height / 2, w, height,
+        HudTokens.colors.bgPhaseSoft, .98, 14).setStrokeStyle(1.5, stroke, .85);
+      this.objects.push(panel);
+      return panel;
+    };
+    let y = this.y;
+    surface(y, 132, accent);
+    addText(this.x + 18, y + 12, data.isReady ? 'MATCH TO START' : 'COLLECT ENERGY', 20, HudTokens.colors.textBlue);
+    this.timerValue = addText(this.x + 18, y + 38, `${Math.max(0, data.timerSeconds).toFixed(1)}s`, 46,
+      urgent ? HudTokens.colors.textRed : HudTokens.colors.textPrimary);
+    const meterW = w - 36;
+    const meterBg = this.scene.add.rectangle(this.x + 18, y + 98, meterW, 8, HudTokens.colors.bgSurfaceDark).setOrigin(0, .5);
+    this.comboMeter = this.scene.add.rectangle(this.x + 18, y + 98,
+      data.isReady ? 0 : meterW * Math.max(0, Math.min(1, data.timerSeconds / 12)), 8, accent).setOrigin(0, .5);
+    this.objects.push(meterBg, this.comboMeter);
+    addText(this.x + 18, y + 111, data.isReady ? 'First pair starts the timer' : 'Each pair stores +1 charge', 16, HudTokens.colors.textSecondary);
+    y += 144;
+    surface(y, 68);
+    addText(this.x + 16, y + 9, 'STORED', 16, HudTokens.colors.textMuted);
+    this.stat2Val = addText(this.x + 16, y + 30, `×${total}`, 28, HudTokens.colors.textGold);
+    addText(this.x + w * .46, y + 9, `CARRY ${carry}`, 18, HudTokens.colors.textSecondary);
+    addText(this.x + w * .46, y + 36, `THIS RUSH +${gained}`, 18, HudTokens.colors.textGreen);
+    y += 82;
+    addText(this.x + 10, y, 'TACTICAL INVENTORY', 20, HudTokens.colors.textSecondary);
+    y += 34;
+    this.queueCenter = {x: this.x + w / 2, y: y + 34};
+    data.queueItems.slice(0, 4).forEach((item, index) => {
+      const rowY = y + index * 70;
+      const def = getIconDefinition(item.id);
+      const bg = this.scene.add.rectangle(this.x + w / 2, rowY + 32, w - 8, 64,
+        item.count > 0 ? def.bgFill : HudTokens.colors.bgSurfaceDark, .95)
+        .setStrokeStyle(1, def.primaryColor, item.count > 0 ? .7 : .25);
+      const icon = createIconImage(this.scene, item.id, this.x + 32, rowY + 32, 46);
+      const count = addText(this.x + w - 16, rowY + 16, `×${item.count}`, 29,
+        item.count > 0 ? HudTokens.colors.textGold : HudTokens.colors.textMuted).setOrigin(1, 0);
+      this.objects.push(bg, icon);
+      this.scene.children.bringToTop(count);
+      addText(this.x + 65, rowY + 8, item.name, 23);
+      addText(this.x + 65, rowY + 37, item.description ?? '', 16, HudTokens.colors.textSecondary);
+      this.queueRowMap.set(item.id, {bg, count, x: this.x + 32, y: rowY + 32});
+    });
+    y += 288;
+    addText(this.x + 12, y, data.isReady || !data.recentAction ? 'Saved for Battle · carries over Waves' : data.recentAction, 16,
+      data.isReady ? HudTokens.colors.textMuted : HudTokens.colors.textBlue).setWordWrapWidth(w - 24);
+  }
+
+  private renderCompactHud(data: PhaseStatusData): void {
+    const w = this.panelWidth;
+    const beast = Boolean(data.beastRushHud);
+    const accent = beast ? HudTokens.colors.gold : HudTokens.colors.blue;
+    const text = (x: number, y: number, value: string, size = 22, color: string = HudTokens.colors.textPrimary) => {
+      const object = this.scene.add.text(x, y, value, {
+        fontFamily: HudTokens.fonts.family, fontSize: `${size}px`, color, fontStyle: 'bold',
+      });
+      this.objects.push(object);
+      return object;
+    };
+    let y = this.y;
+    this.objects.push(drawCard(this.scene, this.x, y, w, 142, HudTokens.colors.bgPhaseSoft, 1, accent));
+    text(this.x + 16, y + 12, data.isReady ? 'MATCH TO START' : 'TIME LEFT', 20, HudTokens.colors.textSecondary);
+    this.timerValue = text(this.x + 16, y + 39, `${Math.max(0, data.timerSeconds).toFixed(1)}s`, 46,
+      !data.isReady && data.timerSeconds < 3 ? HudTokens.colors.textRed : HudTokens.colors.textPrimary);
+    const meterW = w - 32;
+    const bg = this.scene.add.rectangle(this.x + 16, y + 99, meterW, 8, HudTokens.colors.bgSurfaceDark).setOrigin(0, .5);
+    this.comboMeter = this.scene.add.rectangle(this.x + 16, y + 99,
+      data.isReady ? 0 : meterW * Math.min(1, Math.max(0, data.timerSeconds / 12)), 8, accent).setOrigin(0, .5);
+    this.objects.push(bg, this.comboMeter);
+    text(this.x + 16, y + 112, data.isReady ? 'Choose a pair' : beast ? `COMBO ×${data.comboCurrent ?? 0}   BEST ×${data.comboBest ?? 0}` : data.statusBadge.text, 18);
+    y += 152;
+    this.stat2Val = text(this.x + 16, y, `MATCHES ${data.matchCount}`, 20);
+    text(this.x + 16, y + 28, `${beast ? 'RECRUITED' : 'CHARGES'} ${recruitedTotal(data.queueItems)}`, 22, HudTokens.colors.textGold);
+    y += 62;
+    const entries = beast ? queueDisplayEntries(data.queueItems).slice(0, 6) : data.queueItems.slice(0, 6);
+    const rows = beast ? Math.max(1, Math.ceil(entries.length / 2)) : Math.max(1, entries.length);
+    const rowH = beast ? 90 : 54;
+    this.objects.push(drawCard(this.scene, this.x, y, w, 34 + rows * rowH, HudTokens.colors.bgPhase, 1, HudTokens.colors.strokeDefault));
+    text(this.x + 14, y + 8, beast ? 'YOUR BEASTS' : 'STORED ENERGY', 18, HudTokens.colors.textSecondary);
+    this.queueCenter = {x: this.x + w / 2, y: y + 65};
+    if (!entries.length) text(this.x + 16, y + 43, 'No Beasts yet', 20, HudTokens.colors.textMuted);
+    entries.forEach((item, i) => {
+      const col = beast ? i % 2 : 0;
+      const row = beast ? Math.floor(i / 2) : i;
+      const width = beast ? (w - 30) / 2 : w - 24;
+      const x = this.x + 12 + col * (width + 6);
+      const cy = y + 34 + row * rowH + rowH / 2;
+      const bg = this.scene.add.rectangle(x + width / 2, cy, width, rowH - 6, HudTokens.colors.bgSurfaceElevated, .8);
+      const icon = createIconImage(this.scene, item.id, x + 28, cy, beast ? 50 : 40);
+      const count = text(beast ? x + 61 : x + width - 48, cy - 16, `×${item.count}`, 27, HudTokens.colors.textGold);
+      const name = text(beast ? x + 8 : x + 56, beast ? cy + 24 : cy - 16, item.name, beast ? 12 : 17);
+      if (beast) name.setVisible(false);
+      name.setWordWrapWidth(beast ? width - 16 : width - 112);
+      this.objects.push(bg, icon);
+      // Bring labels above their row surface.
+      this.scene.children.bringToTop(count);
+      this.scene.children.bringToTop(name);
+      this.queueRowMap.set(item.id, {bg, count, x: x + 28, y: cy});
+    });
   }
 
   pulseCombo(): void {

@@ -1,4 +1,6 @@
 import type Phaser from 'phaser';
+import { battleCharacterV2TextureKey } from '../art/BattleCharacterLoader';
+import { drawTacticalEnergyIcon } from './TacticalEnergyIcon';
 import {
   BEAST_ICON_DEFINITIONS,
   ENERGY_ICON_DEFINITIONS,
@@ -64,7 +66,11 @@ export function createIconImage(
   displaySize = 48,
 ): Phaser.GameObjects.Image {
   ensureIconTextures(scene);
-  const key = getIconTextureKey(id);
+  const definition = getIconDefinition(id);
+  const authoredKey = battleCharacterV2TextureKey(definition.id, 'icon');
+  const key = !definition.isEnergy && scene.textures.exists(authoredKey)
+    ? authoredKey
+    : getIconTextureKey(id);
   const img = scene.add.image(x, y, key);
   img.setDisplaySize(displaySize, displaySize);
   return img;
@@ -123,7 +129,9 @@ export function drawIconBadge(
     g.strokeCircle(cx, cy, radius - 4 * scale);
 
     // Center elemental symbol
-    drawSymbol(g, def.symbol, cx, cy, size * 0.55, def.primaryColor, def.accentColor, scale);
+    if (!drawTacticalEnergyIcon(g, def.id, cx, cy, size, def.primaryColor)) {
+      drawSymbol(g, def.symbol, cx, cy, size * 0.55, def.primaryColor, def.accentColor, scale);
+    }
   } else {
     // ==========================================
     // BEAST BADGE: Framed Portrait / Crest Style

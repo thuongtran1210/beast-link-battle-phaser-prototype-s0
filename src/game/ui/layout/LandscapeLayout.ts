@@ -2,10 +2,13 @@
  * Landscape layout definitions and coordinate helpers for 16:9 viewports.
  * Primary reference: 1280×720.
  */
+import { isCompactLandscape } from './MobilePresentation';
+
 export class LandscapeLayout {
   readonly width: number;
   readonly height: number;
-  readonly hudHeight = 70;
+  readonly hudHeight: number;
+  readonly compact: boolean;
   readonly gutter = 18;
 
   // Left/Main Play Area (occupies ~70-74% horizontal)
@@ -20,7 +23,9 @@ export class LandscapeLayout {
   readonly rightWidth: number;
   readonly rightHeight: number;
 
-  constructor(sceneWidth = 1280, sceneHeight = 720) {
+  constructor(sceneWidth = 1280, sceneHeight = 720, compact = isCompactLandscape()) {
+    this.compact = compact;
+    this.hudHeight = compact ? 46 : 70;
     this.width = sceneWidth;
     this.height = sceneHeight;
 
@@ -62,14 +67,14 @@ export class LandscapeLayout {
     startX: number;
     startY: number;
   } {
-    const gap = 8;
+    const gap = this.compact ? 6 : 8;
     // Calculate max cell size that fits both horizontally in leftWidth and vertically in leftHeight
-    const maxAvailableH = this.leftHeight - 60; // Room for subtitle/title
+    const maxAvailableH = this.leftHeight - (this.compact ? 12 : 60);
     const maxAvailableW = this.leftWidth - 40;
     const maxDimension = Math.min(maxAvailableH, maxAvailableW);
 
     const cellSize = Math.floor((maxDimension - (boardSize - 1) * gap) / boardSize);
-    const clampedCellSize = Math.max(56, Math.min(84, cellSize));
+    const clampedCellSize = Math.max(1, Math.min(this.compact ? 104 : 84, cellSize));
     const totalSize = boardSize * clampedCellSize + (boardSize - 1) * gap;
 
     const startX = Math.round(this.leftX + (this.leftWidth - totalSize) / 2);

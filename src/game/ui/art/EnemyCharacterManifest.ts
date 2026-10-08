@@ -3,6 +3,7 @@ export type EnemyArtArchetype = 'Frontliner' | 'Diver' | 'Ranged';
 export interface EnemyCharacterArtDefinition {
   archetype: EnemyArtArchetype;
   base: string;
+  icon?: string;
   displayHeight: number;
   groundOffsetY: number;
   hpAnchorY: number;
@@ -11,24 +12,27 @@ export interface EnemyCharacterArtDefinition {
 export const ENEMY_CHARACTER_ART: Readonly<Record<EnemyArtArchetype, EnemyCharacterArtDefinition>> = {
   Frontliner: {
     archetype: 'Frontliner',
-    base: '/assets/enemies/frontliner/base_v2.svg',
-    displayHeight: 116,
+    base: '/assets/characters/penguin-knight/base_v01.png',
+    icon: '/assets/characters/penguin-knight/icon_v02.png',
+    displayHeight: 136,
     groundOffsetY: 38,
-    hpAnchorY: -68,
+    hpAnchorY: -98,
   },
   Diver: {
     archetype: 'Diver',
-    base: '/assets/enemies/diver/base_v2.svg',
-    displayHeight: 108,
+    base: '/assets/characters/crow-assassin/base_v01.png',
+    icon: '/assets/characters/crow-assassin/icon_v02.png',
+    displayHeight: 128,
     groundOffsetY: 37,
-    hpAnchorY: -64,
+    hpAnchorY: -90,
   },
   Ranged: {
     archetype: 'Ranged',
-    base: '/assets/enemies/ranged/base_v2.svg',
-    displayHeight: 108,
+    base: '/assets/characters/deer-archer/base_v01.png',
+    icon: '/assets/characters/deer-archer/icon_v02.png',
+    displayHeight: 136,
     groundOffsetY: 37,
-    hpAnchorY: -64,
+    hpAnchorY: -99,
   },
 };
 

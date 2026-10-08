@@ -1,5 +1,5 @@
 import { V14G_ENERGY_RUSH_POOL } from '../energy/TacticalEnergyCatalog';
-import { energyRushInventory, energyRushMatchLabel, energyRushTilePresentation } from './EnergyRushPresentation';
+import { energyRushBankSummary, energyRushInventory, energyRushMatchLabel, energyRushTilePresentation } from './EnergyRushPresentation';
 
 function ok(value: unknown, message: string): asserts value {
   if (!value) throw new Error(`P1V14G4: ${message}`);
@@ -32,4 +32,10 @@ export function runP1V14G4Checks(): void {
   ids.forEach((id, index) => ok(energyRushMatchLabel(id).includes(names[index]), `${id} match label uses tactical name`));
   ok(V14G_ENERGY_RUSH_POOL.join(',') === ids.join(','), 'active Energy Rush pool is exactly A-D');
   ok(!V14G_ENERGY_RUSH_POOL.includes('energy-e') && !V14G_ENERGY_RUSH_POOL.includes('energy-f'), 'active pool excludes E/F');
+  const carry = energyRushBankSummary([3,3,4,3], 12);
+  ok(carry.total === 13 && carry.carry === 12 && carry.gained === 1, 'Wave carry-in is not counted as this Rush collection');
+  const freshBank = energyRushBankSummary([0,0,0,0], 0);
+  ok(freshBank.total === 0 && freshBank.gained === 0, 'empty inventory stays zero');
+  const uncappedBank = energyRushBankSummary([20,18,4,3], 31);
+  ok(uncappedBank.total === 45 && uncappedBank.gained === 14, 'presentation does not impose a storage cap');
 }

@@ -228,9 +228,9 @@ export class BattleSetupView {
     const dividerX = 640;
     const topLaneY = 142;
     const laneGap = 56;
-    const slotW = 68;
-    const slotH = 50;
-    const depthGap = 92;
+    const slotW = 104;
+    const slotH = 52;
+    const depthGap = 122;
 
     // Center divider
     const divider = this.scene.add.rectangle(dividerX, arenaY + arenaH / 2 + 10, 2, arenaH - 50, 0x334155, 0.8);
@@ -494,7 +494,7 @@ export class BattleSetupView {
       x + 130,
       y + 13,
       hasUnplaced
-        ? 'DRAG A BEAST INTO YOUR FORMATION'
+        ? 'TAP TO SELECT · TAP SLOT TO DEPLOY · MERGE BELOW'
         : '✓ SQUAD DEPLOYED — DRAG BACK TO RESERVE TO BENCH',
       10,
       hasUnplaced ? HudTokens.colors.textBlue : HudTokens.colors.textGreen,
@@ -534,9 +534,9 @@ export class BattleSetupView {
 
     // Render horizontal row of Draggable Beast Cards
     const cardW = 142;
-    const cardH = 138;
+    const cardH = 154;
     const startX = x + 18;
-    const startY = y + 52;
+    const startY = y + 44;
     const gap = 16;
 
     page.items.forEach((unit, index) => {
@@ -622,7 +622,7 @@ export class BattleSetupView {
     const nameLabel = this.text(cx, cy - 3, beastName, 9, HudTokens.colors.textPrimary, 'bold').setOrigin(0.5);
     const roleLabel = this.text(
       cx,
-      cy + 12,
+      cy + 8,
       `${unit.role.toUpperCase()} · ${'★'.repeat(unit.star)}`,
       9,
       roleTextColor(unit.role),
@@ -655,10 +655,14 @@ export class BattleSetupView {
       HudTokens.colors.textMuted,
       '',
     ).setOrigin(0.5);
+    skillLabel.setVisible(false);
+    skillSummary.setVisible(false);
+    nameLabel.setFontSize(12);
+    roleLabel.setFontSize(11);
     this.objects.push(nameLabel, roleLabel, state, skillLabel, skillSummary);
 
     const barW = 104;
-    const barY = cy + 53;
+    const barY = cy + 18;
     const hpBg = this.scene.add.rectangle(cx, barY, barW, 7, HudTokens.colors.bgSurfaceDark, 1)
       .setStrokeStyle(1, HudTokens.colors.strokeDefault, .8);
     const hpFill = this.scene.add.rectangle(
@@ -677,7 +681,7 @@ export class BattleSetupView {
     ).setOrigin(0, .5);
     const hpLabel = this.text(
       cx,
-      cy + 60,
+      cy + 25,
       rosterUnit ? `${Math.round(rosterUnit.currentHp)} / ${Math.round(rosterUnit.maxHp)} HP` : 'READY',
       7,
       HudTokens.colors.textMuted,
@@ -687,7 +691,7 @@ export class BattleSetupView {
 
     // Interactive Drag and Click Handlers
     const hitArea = this.scene.add
-      .rectangle(cx, cy, w, h, 0xffffff, 0.0001)
+      .rectangle(cx, cy - 19, w, h - 38, 0xffffff, 0.0001)
       .setInteractive({ useHandCursor: true });
     this.objects.push(hitArea);
 
@@ -698,6 +702,27 @@ export class BattleSetupView {
         this.controller.selectUnit(unit.unitId);
         this.render();
       }
+    });
+    const deployedIds = new Set(this.formation.units.filter(item => item.slotId !== null).map(item => item.unitId));
+    const preview = this.runRoster?.consolidationPreview(unit.unitId, deployedIds, this.shardPool?.count ?? 0);
+    const canMerge = Boolean(preview?.canConsolidate && this.onConsolidate);
+    const cost = preview?.isShardAssisted ? '2 + ◆1' : '3 COPIES';
+    const label = canMerge ? `MERGE ${'★'.repeat(preview!.targetStar!)} · ${cost}`
+      : unit.star >= 3 ? 'MAX ★★★' : `COPIES ${preview?.eligibleCount ?? 0}/3`;
+    const mergeY = y + h - 23;
+    const merge = this.scene.add.rectangle(cx, mergeY, w - 12, 44,
+      canMerge ? 0x176347 : 0x151a31, .98).setStrokeStyle(1, canMerge ? 0x34d399 : 0x334155);
+    const mergeLabel = this.text(cx, mergeY, label, 11, canMerge ? '#ffffff' : '#94a3b8', 'bold').setOrigin(.5);
+    this.objects.push(merge, mergeLabel);
+    if (canMerge) merge.setInteractive({ useHandCursor: true }).on('pointerup', () => {
+      const upgradedId = this.onConsolidate!(unit.unitId);
+      if (upgradedId) {
+        this.controller.selectUnit(null);
+        this.controller.selectUnit(upgradedId);
+        this.onArrangementChanged();
+        FeedbackEffects.floatText(this.scene, cx, mergeY - 36, `MERGED → ${'★'.repeat(preview!.targetStar!)}`, '#34d399', '18px', 900);
+      }
+      this.render();
     });
   }
 

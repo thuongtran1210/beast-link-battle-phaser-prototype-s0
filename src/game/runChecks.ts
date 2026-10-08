@@ -97,4 +97,6 @@ runP1V14C2Checks();
 runReservePaginationChecks();
 runBeastRushHudPresentationChecks();
 runP1V14G4Checks();
-console.log('S1/S2/S3/S4/S5, Battle exhaustion, P1-V14A..P1-V14G.2, P1-V15A, Battle Art checks passed.');
+runMobileLayoutChecks();
+console.log('S1/S2/S3/S4/S5, Battle exhaustion, P1-V14A..P1-V14G.2, P1-V15A, Battle Art, Mobile Layout checks passed.');
+import { runMobileLayoutChecks } from './ui/layout/MobileLayoutChecks';

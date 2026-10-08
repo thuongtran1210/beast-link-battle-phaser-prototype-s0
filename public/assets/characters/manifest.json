@@ -1,0 +1,218 @@
+[
+  {
+    "slug": "duck-guardian",
+    "row": 1,
+    "column": 1,
+    "base": "/assets/characters/duck-guardian/base_v01.png",
+    "icon": "/assets/characters/duck-guardian/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "bear-hammer",
+    "row": 1,
+    "column": 2,
+    "base": "/assets/characters/bear-hammer/base_v01.png",
+    "icon": "/assets/characters/bear-hammer/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "rabbit-archer",
+    "row": 1,
+    "column": 3,
+    "base": "/assets/characters/rabbit-archer/base_v01.png",
+    "icon": "/assets/characters/rabbit-archer/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "fox-archer",
+    "row": 1,
+    "column": 4,
+    "base": "/assets/characters/fox-archer/base_v01.png",
+    "icon": "/assets/characters/fox-archer/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "raccoon-swordsman",
+    "row": 1,
+    "column": 5,
+    "base": "/assets/characters/raccoon-swordsman/base_v01.png",
+    "icon": "/assets/characters/raccoon-swordsman/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "badger-mage",
+    "row": 1,
+    "column": 6,
+    "base": "/assets/characters/badger-mage/base_v01.png",
+    "icon": "/assets/characters/badger-mage/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "dog-paladin",
+    "row": 1,
+    "column": 7,
+    "base": "/assets/characters/dog-paladin/base_v01.png",
+    "icon": "/assets/characters/dog-paladin/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "frog-mage",
+    "row": 1,
+    "column": 8,
+    "base": "/assets/characters/frog-mage/base_v01.png",
+    "icon": "/assets/characters/frog-mage/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "pig-viking",
+    "row": 1,
+    "column": 9,
+    "base": "/assets/characters/pig-viking/base_v01.png",
+    "icon": "/assets/characters/pig-viking/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "penguin-knight",
+    "row": 2,
+    "column": 1,
+    "base": "/assets/characters/penguin-knight/base_v01.png",
+    "icon": "/assets/characters/penguin-knight/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "wolf-swordsman",
+    "row": 2,
+    "column": 2,
+    "base": "/assets/characters/wolf-swordsman/base_v01.png",
+    "icon": "/assets/characters/wolf-swordsman/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "mouse-mage",
+    "row": 2,
+    "column": 3,
+    "base": "/assets/characters/mouse-mage/base_v01.png",
+    "icon": "/assets/characters/mouse-mage/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "turtle-spearman",
+    "row": 2,
+    "column": 4,
+    "base": "/assets/characters/turtle-spearman/base_v01.png",
+    "icon": "/assets/characters/turtle-spearman/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "sheep-cleric",
+    "row": 2,
+    "column": 5,
+    "base": "/assets/characters/sheep-cleric/base_v01.png",
+    "icon": "/assets/characters/sheep-cleric/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "owl-scholar",
+    "row": 2,
+    "column": 6,
+    "base": "/assets/characters/owl-scholar/base_v01.png",
+    "icon": "/assets/characters/owl-scholar/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "shark-spearman",
+    "row": 2,
+    "column": 7,
+    "base": "/assets/characters/shark-spearman/base_v01.png",
+    "icon": "/assets/characters/shark-spearman/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "polar-bear-axeman",
+    "row": 2,
+    "column": 8,
+    "base": "/assets/characters/polar-bear-axeman/base_v01.png",
+    "icon": "/assets/characters/polar-bear-axeman/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "crow-assassin",
+    "row": 2,
+    "column": 9,
+    "base": "/assets/characters/crow-assassin/base_v01.png",
+    "icon": "/assets/characters/crow-assassin/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "deer-archer",
+    "row": 3,
+    "column": 1,
+    "base": "/assets/characters/deer-archer/base_v01.png",
+    "icon": "/assets/characters/deer-archer/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "hedgehog-bomber",
+    "row": 3,
+    "column": 2,
+    "base": "/assets/characters/hedgehog-bomber/base_v01.png",
+    "icon": "/assets/characters/hedgehog-bomber/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "panda-warrior",
+    "row": 3,
+    "column": 3,
+    "base": "/assets/characters/panda-warrior/base_v01.png",
+    "icon": "/assets/characters/panda-warrior/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "chicken-cleric",
+    "row": 3,
+    "column": 4,
+    "base": "/assets/characters/chicken-cleric/base_v01.png",
+    "icon": "/assets/characters/chicken-cleric/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "cat-ninja",
+    "row": 3,
+    "column": 5,
+    "base": "/assets/characters/cat-ninja/base_v01.png",
+    "icon": "/assets/characters/cat-ninja/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "penguin-mage",
+    "row": 3,
+    "column": 6,
+    "base": "/assets/characters/penguin-mage/base_v01.png",
+    "icon": "/assets/characters/penguin-mage/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "elephant-hammer",
+    "row": 3,
+    "column": 7,
+    "base": "/assets/characters/elephant-hammer/base_v01.png",
+    "icon": "/assets/characters/elephant-hammer/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "crocodile-pirate",
+    "row": 3,
+    "column": 8,
+    "base": "/assets/characters/crocodile-pirate/base_v01.png",
+    "icon": "/assets/characters/crocodile-pirate/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  },
+  {
+    "slug": "duck-engineer",
+    "row": 3,
+    "column": 9,
+    "base": "/assets/characters/duck-engineer/base_v01.png",
+    "icon": "/assets/characters/duck-engineer/icon_v02.png",
+    "status": "EXPORTED_LIVE_QA_OPEN"
+  }
+]

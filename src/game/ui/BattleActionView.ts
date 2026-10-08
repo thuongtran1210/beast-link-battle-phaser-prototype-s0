@@ -69,6 +69,14 @@ export class BattleActionView {
     baseY = 105,
   ) {
     this.layout = createBattleFieldLayout(baseX, baseY);
+    // Presentation coordinates only: reserve the lower skill dock and use wider screens.
+    const fieldWidth = scene.scale.width - Math.min(360, Math.max(300, Math.round(scene.scale.width * .28))) - 54;
+    this.layout.dividerX = baseX + fieldWidth / 2;
+    this.layout.playerFrontX = this.layout.dividerX - 80;
+    this.layout.enemyFrontX = this.layout.dividerX + 80;
+    this.layout.depthGap = Math.min(110, Math.max(84, (fieldWidth - 180) / 7));
+    this.layout.topLaneY = baseY + 108;
+    this.layout.laneGap = Math.min(58, Math.max(40, (scene.scale.height - 290 - this.layout.topLaneY) / 5));
   }
 
   setShowcaseMode(enabled: boolean): void {
@@ -535,6 +543,37 @@ export class BattleActionView {
     });
   }
 
+  playTacticalCast(energyId: string, targetId: string | undefined, amount: number, heal: boolean, origin: { x: number; y: number }): void {
+    if (!targetId) return;
+    const visual = heal ? this.units.get(targetId) : this.enemies.get(targetId);
+    if (!visual) return;
+    const names: Record<string, string> = { 'energy-a': 'MEND', 'energy-b': 'RESCUE', 'energy-c': 'BREAK', 'energy-d': 'PIERCE' };
+    const color = heal ? 0x4ade80 : energyId === 'energy-c' ? 0x34d399 : 0xfbbf24;
+    const target = { x: visual.container.x, y: visual.container.y - 35 };
+    const trail = this.scene.add.graphics().setDepth(250);
+    trail.lineStyle(4, color, .7);
+    trail.lineBetween(origin.x, origin.y, target.x, target.y);
+    const projectile = this.scene.add.circle(origin.x, origin.y, 9, color).setDepth(251);
+    const label = this.scene.add.text(target.x, target.y - 72,
+      `${names[energyId]}\n${heal ? 'HEAL' : 'DAMAGE'} ${heal ? '+' : '−'}${formatNumber(amount)} HP`, {
+        fontFamily: 'Arial', fontSize: '20px', fontStyle: 'bold', align: 'center',
+        color: heal ? '#86efac' : '#fde68a', backgroundColor: '#101c30', padding: { x: 12, y: 8 },
+      }).setOrigin(.5).setDepth(252);
+    this.objects.push(trail, projectile, label);
+    const dispose = (object: Phaser.GameObjects.GameObject) => {
+      const index = this.objects.indexOf(object);
+      if (index >= 0) this.objects.splice(index, 1);
+      object.destroy();
+    };
+    this.scene.tweens.add({ targets: projectile, x: target.x, y: target.y, duration: 260,
+      onComplete: () => {
+        FeedbackEffects.pulseRing(this.scene, target.x, target.y, color, 65);
+        dispose(projectile);
+      },
+    });
+    this.scene.tweens.add({ targets: trail, alpha: 0, delay: 260, duration: 400, onComplete: () => dispose(trail) });
+    this.scene.tweens.add({ targets: label, y: label.y - 18, alpha: 0, delay: 1300, duration: 400, onComplete: () => dispose(label) });
+  }
   playEnergyDamage(enemyId: string | undefined, amount: number): void {
     if (!enemyId || amount <= 0) return;
     const visual = this.enemies.get(enemyId);
@@ -772,7 +811,7 @@ export class BattleActionView {
       const placed: Array<{ x: number; y: number; rank: number }> = [];
       // V2-M4: cutouts are larger than the old card tokens, so presentation-only
       // declumping needs a wider vertical fan to keep silhouettes readable.
-      const yOffsets = [0, -30, 30, -54, 54];
+      const yOffsets = [0, -36, 36, -62, 62];
       const xOffsets = [0, -14, 14, -24, 24];
 
       sorted.forEach((entry) => {

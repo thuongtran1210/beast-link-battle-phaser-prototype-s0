@@ -5,6 +5,8 @@ import { HudTokens } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
 import { energyRushTilePresentation } from './EnergyRushPresentation';
+import { RoundedPanel } from './RoundedPanel';
+import { isCompactLandscape } from './layout/MobilePresentation';
 
 export interface BoardViewEvents {
   onMatchRemoved: (result: MatchResult, contentId: string, midpoint?: { x: number; y: number }) => void;
@@ -13,7 +15,7 @@ export interface BoardViewEvents {
 
 interface TileVisual {
   container: Phaser.GameObjects.Container;
-  cell: Phaser.GameObjects.Rectangle;
+  cell: RoundedPanel;
   position: BoardPosition;
 }
 
@@ -50,8 +52,8 @@ export class BoardView {
     const totalSize = this.board.size * this.cellSize + (this.board.size - 1) * this.gap;
 
     // Outer subtle board border/mat
-    const boardMat = this.scene.add
-      .rectangle(
+    const boardMat = new RoundedPanel(
+        this.scene,
         this.originX + totalSize / 2,
         this.originY + totalSize / 2,
         totalSize + 16,
@@ -70,8 +72,7 @@ export class BoardView {
 
       if (!contentId) {
         // Empty slot
-        const emptyCell = this.scene.add
-          .rectangle(x, y, this.cellSize, this.cellSize, HudTokens.colors.bgSurfaceDark, 0.66)
+        const emptyCell = new RoundedPanel(this.scene, x, y, this.cellSize, this.cellSize, HudTokens.colors.bgSurfaceDark, 0.66)
           .setStrokeStyle(1, HudTokens.colors.strokeDefault, 0.42);
         this.container.add(emptyCell);
         return;
@@ -94,19 +95,18 @@ export class BoardView {
         ? 0xfbbf24
         : tileColor;
 
-      const strokeWidth = selected ? 3.5 : 2;
+      const compact = isCompactLandscape();
+      const strokeWidth = selected ? 3.5 : compact ? 1 : 2;
 
       // Group tile visuals inside container centered at (x, y) for smooth scaling/hover
       const tileContainer = this.scene.add.container(x, y);
 
-      // Soft halo under each tile gives Beast/Energy Rush the same neon language.
-      const glow = this.scene.add
-        .rectangle(0, 0, this.cellSize + 5, this.cellSize + 5, tileColor, selected ? 0.18 : 0.07)
-        .setStrokeStyle(selected ? 4 : 2, tileColor, selected ? 0.42 : 0.16);
+      // A quiet raised edge lets the portrait carry identity; selection adds color.
+      const glow = new RoundedPanel(this.scene, 0, 3, this.cellSize + 2, this.cellSize + 2, 0x050b18, 0.7)
+        .setStrokeStyle(selected ? 3 : 1, tileColor, selected ? 0.5 : 0.12);
 
-      const cell = this.scene.add
-        .rectangle(0, 0, this.cellSize, this.cellSize, fill, 0.97)
-        .setStrokeStyle(strokeWidth, stroke);
+      const cell = new RoundedPanel(this.scene, 0, 0, this.cellSize, this.cellSize, fill, 0.97)
+        .setStrokeStyle(strokeWidth, stroke, selected ? 1 : 0.55);
 
       // Thin top accent keeps identity readable without the old debug-strip weight.
       const stripH = Math.max(3, Math.round(this.cellSize * 0.055));
@@ -114,8 +114,8 @@ export class BoardView {
         .rectangle(0, -this.cellSize / 2 + stripH / 2 + 2, this.cellSize - 12, stripH, tileColor, selected ? 1 : 0.82);
 
       // Center Icon Badge
-      const iconSize = Math.round(this.cellSize * 0.62);
-      const iconImage = createIconImage(this.scene, contentId.contentId, 0, -2, iconSize);
+      const iconSize = Math.round(this.cellSize * (compact && !isEnergy ? 0.82 : 0.62));
+      const iconImage = createIconImage(this.scene, contentId.contentId, 0, compact && isEnergy ? -8 : compact ? 0 : -2, iconSize);
       if (!this.inputEnabled) {
         iconImage.setAlpha(0.45);
       }
@@ -135,6 +135,14 @@ export class BoardView {
         .setOrigin(0.5);
 
       tileContainer.add([glow, cell, strip, iconImage, subLabel, ...(idTag ? [idTag] : [])]);
+      if (compact) {
+        strip.setVisible(false);
+        subLabel.setVisible(isEnergy);
+        if (isEnergy) {
+          subLabel.setFontSize(Math.round(this.cellSize * .17));
+          subLabel.setY(this.cellSize * .34);
+        }
+      }
       this.container.add(tileContainer);
 
       const key = `${position.row},${position.col}`;
