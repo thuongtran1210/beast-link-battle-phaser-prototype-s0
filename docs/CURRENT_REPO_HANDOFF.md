@@ -2,7 +2,7 @@
 
 Status: **Repository-local coding handoff**
 
-## Current status — 2026-10-04
+## Current status — 2026-10-08
 
 - V14A: **OWNER STRUCTURAL PASS** / Experimental / not adopted.
 - V14B.1/B.2: **CORE IMPLEMENTED**; owner-live evidence open.
@@ -55,6 +55,17 @@ For gameplay/code tasks, use only repository-local sources unless the user expli
 14. current code/tests
 
 If repository docs conflict with current code, inspect the code and report the conflict. Do not call Notion automatically.
+
+### Active presentation gate — V2-M4
+
+- **Simple Chibi Cutout V2** is the current art/presentation source of truth.
+- 6 / 6 player Beasts and 3 / 3 enemy archetypes are integrated as authored cutouts.
+- Attack / Hit / KO are transform-driven; Signature power remains VFX-driven.
+- latest M4 scale / spacing / HP-anchor polish is implemented.
+- M4 deterministic/readability gate passed at GitHub Actions run 163; repository is green through run 165.
+- **Current blocker:** owner live re-QA of the latest 1280×720 Battle composition.
+- **Next:** final portfolio capture only after live readability PASS.
+- Gameplay remains frozen; Tactical Energy adoption is a separate open design decision.
 
 ## Current milestone
 
