@@ -13,6 +13,9 @@ import type { BattleQueue } from '../queue/BattleQueue';
 import type { PhaseController } from '../state/PhaseController';
 import type { WaveResultView } from '../ui/WaveResultView';
 import type { SessionSummaryView } from '../ui/SessionSummaryView';
+import type { BattleActionView } from '../ui/BattleActionView';
+import type { TransitionCueView } from '../ui/TransitionCueView';
+import type { ShowcaseModeController } from './ShowcaseModeController';
 import { GamePhase } from '../state/GamePhase';
 
 export interface RunLifecycleContext {
@@ -27,15 +30,26 @@ export interface RunLifecycleContext {
   energyTimer: EnergyRushTimer;
   battleQueue: BattleQueue;
   phaseController: PhaseController;
+  showcaseController: ShowcaseModeController;
   getWaveResultView: () => WaveResultView | undefined;
   getSummaryView: () => SessionSummaryView | undefined;
   getBattleModel: () => AutonomousBattleModel | undefined;
   getBattleOutcome: () => 'Win' | 'Lose' | undefined;
   getFormation: () => BattleFormation | undefined;
+  getBattleActionView: () => BattleActionView | undefined;
+  getTransitionCue: () => TransitionCueView | undefined;
   setFormation: (formation: BattleFormation | undefined) => void;
   setBattleModel: (model: AutonomousBattleModel | undefined) => void;
   setBattleOutcome: (outcome: 'Win' | 'Lose' | undefined) => void;
+  setBattleActionView: (view: BattleActionView | undefined) => void;
   setCaptureEnemyFixtures: (fixtures: ReadonlyArray<EnemyFixture> | undefined) => void;
+  setBattleTickAccumulator: (ticks: number) => void;
+  setIsShowingTransitionCue: (showing: boolean) => void;
+  setTransitionCueTimer: (time: number) => void;
+  setIsShowingBattleSetupCue: (showing: boolean) => void;
+  setBattleSetupCueTimer: (time: number) => void;
+  setEnergyCarryIn: (carryIn: number) => void;
+  cycleEnemyFixture: () => void;
   syncTopHud: () => void;
 }
 
@@ -94,5 +108,36 @@ export class RunLifecycleCoordinator {
     this.ctx.setCaptureEnemyFixtures(undefined);
     this.ctx.metrics.reset();
     this.ctx.fixtureManager.initBoardForWave(this.ctx.waveRun.currentWaveIndex);
+  }
+
+  restartRun(): void {
+    if (this.ctx.phaseController.phase !== GamePhase.Result) return;
+
+    this.ctx.getSummaryView()?.setVisible(false);
+    this.ctx.setBattleTickAccumulator(0);
+    this.ctx.showcaseController.resetShowcaseState();
+    this.ctx.setIsShowingTransitionCue(false);
+    this.ctx.setTransitionCueTimer(0);
+    this.ctx.setIsShowingBattleSetupCue(false);
+    this.ctx.setBattleSetupCueTimer(0);
+    this.ctx.getTransitionCue()?.hide();
+    this.ctx.beastRushTimer.reset();
+    this.ctx.comboQuality.reset();
+    this.ctx.shardPool.reset();
+    this.ctx.energyTimer.reset();
+    this.ctx.battleQueue.clear();
+    this.ctx.energyQueue.reset();
+    this.ctx.setEnergyCarryIn(0);
+    this.ctx.setFormation(undefined);
+    this.ctx.getBattleActionView()?.destroy();
+    this.ctx.setBattleActionView(undefined);
+    this.ctx.setBattleModel(undefined);
+    this.ctx.setBattleOutcome(undefined);
+    this.ctx.metrics.reset();
+    this.ctx.waveRun.resetRun();
+    this.ctx.runRoster.reset();
+    this.ctx.fixtureManager.clearActiveKey();
+    this.ctx.cycleEnemyFixture();
+    this.ctx.phaseController.setPhase(GamePhase.BeastRush);
   }
 }

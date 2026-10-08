@@ -154,7 +154,7 @@ export class ValidationScene extends Phaser.Scene {
       this.layout.rightY,
       this.layout.rightWidth,
     );
-    this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.restartRun());
+    this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.lifecycleCoordinator.restartRun());
     this.waveResultView = new WaveResultView(this, () => this.lifecycleCoordinator.advanceToNextWave());
     this.showcaseBattleHud = new ShowcaseBattleHUDView(
       this,
@@ -206,15 +206,26 @@ export class ValidationScene extends Phaser.Scene {
       energyTimer: this.energyTimer,
       battleQueue: this.battleQueue,
       phaseController: this.phaseController,
+      showcaseController: this.showcaseController,
       getWaveResultView: () => this.waveResultView,
       getSummaryView: () => this.summary,
       getBattleModel: () => this.battleModel,
       getBattleOutcome: () => this.battleOutcome,
       getFormation: () => this.formation,
+      getBattleActionView: () => this.battleActionView,
+      getTransitionCue: () => this.transitionCue,
       setFormation: (formation) => { this.formation = formation; },
       setBattleModel: (model) => { this.battleModel = model; },
       setBattleOutcome: (outcome) => { this.battleOutcome = outcome; },
+      setBattleActionView: (view) => { this.battleActionView = view; },
       setCaptureEnemyFixtures: (fixtures) => { this.captureEnemyFixtures = fixtures; },
+      setBattleTickAccumulator: (ticks) => { this.battleTickAccumulator = ticks; },
+      setIsShowingTransitionCue: (showing) => { this.isShowingTransitionCue = showing; },
+      setTransitionCueTimer: (time) => { this.transitionCueTimer = time; },
+      setIsShowingBattleSetupCue: (showing) => { this.isShowingBattleSetupCue = showing; },
+      setBattleSetupCueTimer: (time) => { this.battleSetupCueTimer = time; },
+      setEnergyCarryIn: (carryIn) => { this.energyCarryIn = carryIn; },
+      cycleEnemyFixture: () => this.cycleEnemyFixture(),
       syncTopHud: () => this.syncTopHud(),
     });
 
@@ -543,10 +554,6 @@ export class ValidationScene extends Phaser.Scene {
     this.syncTopHud();
   }
 
-
-
-
-
   private consolidateReserveUnit(selectedUnitId: string): string | undefined {
     if (!this.formation) return undefined;
     const deployedIds = new Set(this.formation.units.filter((unit) => unit.slotId !== null).map((unit) => unit.unitId));
@@ -571,36 +578,6 @@ export class ValidationScene extends Phaser.Scene {
     this.phaseController.setPhase(GamePhase.Battle);
   }
 
-  private restartRun(): void {
-    if (this.phaseController.phase !== GamePhase.Result) return;
-
-    this.summary?.setVisible(false);
-    this.battleTickAccumulator = 0;
-    this.showcaseController.resetShowcaseState();
-    this.isShowingTransitionCue = false;
-    this.transitionCueTimer = 0;
-    this.isShowingBattleSetupCue = false;
-    this.battleSetupCueTimer = 0;
-    this.transitionCue?.hide();
-    this.beastRushTimer.reset();
-    this.comboQuality.reset();
-    this.shardPool.reset();
-    this.energyTimer.reset();
-    this.battleQueue.clear();
-    this.energyQueue.reset();
-    this.energyCarryIn = 0;
-    this.formation = undefined;
-    this.battleActionView?.destroy();
-    this.battleActionView = undefined;
-    this.battleModel = undefined;
-    this.battleOutcome = undefined;
-    this.metrics.reset();
-    this.waveRun.resetRun();
-    this.runRoster.reset();
-    this.fixtureManager.clearActiveKey();
-    this.cycleEnemyFixture();
-    this.phaseController.setPhase(GamePhase.BeastRush);
-  }
 }
 
 function formatNumber(value: number): string {
