@@ -58,43 +58,32 @@ If repository docs conflict with current code, inspect the code and report the c
 
 ## Current milestone
 
-**FINAL ART PHASE V2 — Full Battle Cutout Live QA**
+**FINAL ART PHASE V2 — Scale / Spacing / Readability Live Re-QA**
 
-Status: **6/6 BEASTS + 3/3 ENEMY ARCHETYPES INTEGRATED / CI PASS / LIVE QA REQUIRED**
+Status: **FULL CUTOUT ROSTER COMPLETE / READABILITY POLISH IMPLEMENTED / CI PASS**
 
-Primary sources:
-1. `docs/BATTLE-ART-DIRECTION-V2.md`
-2. `docs/UNIT-PRODUCTION-BRIEF-V2.md`
-3. `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
+Latest visual review found:
+- characters were too small relative to the battlefield;
+- clustered units overlapped too tightly;
+- HP anchors needed retuning after cutout migration.
 
-Player side:
-- Snowguard, Shadowclaw, Windstrider, Starcaller, Ironclad, Swiftwing all register `base_v2`;
-- every Beast also registers `icon_v2`;
-- no Beast depends on V1 pose textures;
-- Attack / Hit / KO are transform-driven;
-- Signature presentation remains VFX-driven.
-
-Enemy side:
-- Frontliner V2 cutout;
-- Diver V2 cutout;
-- Ranged V2 cutout;
-- enemy preload + runtime view integrated;
-- old enemy card/token presentation is fallback-only.
-
-Validation:
-- player art guard PASS;
-- enemy art guard PASS;
-- GitHub Actions run 157 PASS.
+Implemented:
+- player display heights: 112–124 px;
+- enemy display heights: 108–116 px;
+- HP/effect anchors retuned;
+- wider vertical declumping;
+- both teams pulled slightly toward battle center for stronger composition;
+- deterministic minimum-scale guard added;
+- GitHub Actions run 163 PASS.
 
 Immediate owner QA:
 1. refresh latest build;
 2. press `L`;
-3. confirm there are no rectangular player or enemy cards in the Battle field;
-4. inspect HP / ground anchors and unit overlap;
-5. capture one representative screenshot.
+3. capture one Battle frame;
+4. verify larger readable silhouettes and reduced overlap.
 
-After live PASS:
-**V2-M4 — scale / spacing / readability polish and portfolio capture.**
+After PASS:
+**final portfolio capture + showcase documentation**.
 
 Gameplay remains frozen.
 
