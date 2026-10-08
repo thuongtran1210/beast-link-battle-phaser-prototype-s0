@@ -1374,9 +1374,7 @@ export class AutonomousBattleModel {
   }
 
   private retreatEnemy(enemy: EnemyCombatUnit, speed: number): boolean {
-    const before = enemy.positionX;
-    enemy.positionX = clamp(enemy.positionX + speed, ENEMY_MIN_X, ENEMY_MAX_X);
-    return enemy.positionX > before + 0.000001;
+    return BattleMovementSystem.retreatEnemy(enemy, speed);
   }
 
   private acquireEnemyTarget(enemy: EnemyCombatUnit): CombatUnit | undefined {
