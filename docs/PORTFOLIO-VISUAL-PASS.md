@@ -27,7 +27,7 @@ visual polish
 ≠ gameplay adoption
 ```
 
-Procedural unit portraits and enemy silhouettes are **runtime placeholder art for portfolio readability**, not final production character art.
+The Battle runtime now uses **V2 simple chibi cutouts** for the full player and enemy roster. Legacy procedural/card visuals remain fallback-only.
 
 ## Implemented in this pass
 
@@ -101,30 +101,51 @@ Portfolio guidance:
 - Use a **separate Signature hero frame** for unit identity.
 - Use a **separate Tactical Energy frame** for READY / SUGGESTED / DISABLED. Do not force both systems to be perfectly readable in the same paused screenshot.
 
-## Final art direction lock
+## Final art direction lock — V2
 
-Runtime evidence has now demonstrated the gameplay systems. The next portfolio-quality gap is character presentation.
+Runtime evidence has now demonstrated the gameplay systems and the Battle character layer has migrated to **Simple Chibi Cutout V2**.
 
-Final rule:
+Final production rule:
 ```text
 Battle Setup = cards / tactical information
-Battle       = mini full-body casual chibi characters
+Battle       = simple full-body cutouts
+Action       = transform motion
+Signature    = VFX-driven readability
 ```
 
-Use `docs/BATTLE-UNIT-ART-FINAL-SPEC.md` as the source of truth for:
-- six Beast silhouettes;
-- color/prop identity;
-- STAR visual progression;
-- minimum animation set;
-- enemy archetype art;
-- Setup-vs-Battle asset usage;
-- final portfolio capture targets.
+Authoritative sources:
+- `docs/BATTLE-ART-DIRECTION-V2.md`
+- `docs/UNIT-PRODUCTION-BRIEF-V2.md`
+- `docs/BATTLE-SPRITE-INTEGRATION-PLAN.md`
 
-The current procedural portraits and rectangular Battle bodies are temporary fallback art and should not be treated as final portfolio character assets.
+Current runtime state:
+- 6 / 6 Beast base cutouts integrated;
+- 3 / 3 enemy archetype cutouts integrated;
+- player rectangular Battle cards removed in authored mode;
+- enemy card tokens removed in authored mode;
+- Attack / Hit / KO use transform profiles;
+- Signature presentation keeps existing gameplay events + VFX;
+- display scale / HP anchors / showcase declumping retuned for readability;
+- M4 code/readability guard passed CI at run 163;
+- repository remains green through run 165.
 
-## Still open
+## Current capture gate
 
-- Live browser visual QA after this code pass.
-- Fix any overflow / overlap discovered at 1280×720.
-- Decide whether procedural portraits are sufficient for final portfolio capture or whether 4 authored Beast master portraits should replace them.
-- Capture final runtime screenshots/video only after live QA.
+**V2-M4 live re-QA is still open.**
+
+Before freezing portfolio screenshots/video:
+- verify latest scale at 1280×720;
+- verify no unreadable player/enemy overlap clusters;
+- verify HP bars remain visually attached;
+- verify backline silhouettes remain readable;
+- capture one clean Battle frame after the M4 spacing pass.
+
+After owner live PASS:
+1. freeze final Battle presentation;
+2. capture Signature hero frame;
+3. capture Tactical Energy frame;
+4. capture Setup / Reserve / threat frame;
+5. capture Wave consequence frame;
+6. update recruiter-facing Notion case study with runtime evidence.
+
+No gameplay rule should change during this closeout.
