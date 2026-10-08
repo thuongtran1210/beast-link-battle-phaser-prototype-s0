@@ -23,14 +23,6 @@ import { BattleFormation } from './battle/BattleFormation';
 import { runP1S2Checks } from './battle/P1S2Checks';
 import {
   AutonomousBattleModel,
-  P1V9_AUTONOMOUS_MOVEMENT_RULES,
-  P1V11A_TIMELINE_RULES,
-  P1V11B_ENGAGEMENT_RULES,
-  P1V11B1_ROLE_IDENTITY_RULES,
-  P1V11C_ARCHETYPE_RULES,
-  P1V11C_FIXTURE_A_FRONTLINE,
-  P1V11C_FIXTURE_B_DIVERS,
-  P1V11C_FIXTURE_C_PROTECTED_RANGED,
   P1V13A_SIGNATURE_RULES,
   type EnemyFixture,
   SIMULATION_STEP,
@@ -91,63 +83,10 @@ import { tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
 import { tacticalEnergyDefinition } from './energy/TacticalEnergyCatalog';
 import { energyRushInventory, energyRushMatchLabel } from './ui/EnergyRushPresentation';
 
-import {
-  V11D_PRESETS,
-  applyFormationPreset,
-  compareFormationRuns,
-  type FormationValidationMetrics,
-  type FormationRunDelta,
-} from './battle/FormationValidationHarness';
+import { BattleFixtureManager } from './battle/BattleFixtureManager';
 
-const ENEMY_FIXTURE_PRESETS: ReadonlyArray<{
-  id: string;
-  name: string;
-  tag: string;
-  threatType: string;
-  presetKey: 'frontline-pressure' | 'backline-dive' | 'protected-ranged';
-  fixtures: ReadonlyArray<EnemyFixture>;
-}> = [
-  {
-    id: 'frontline-pressure',
-    name: 'Frontline Pressure',
-    tag: '3x Front',
-    threatType: 'FRONTLINE PRESSURE',
-    presetKey: 'frontline-pressure',
-    fixtures: P1V11C_FIXTURE_A_FRONTLINE,
-  },
-  {
-    id: 'backline-dive',
-    name: 'Backline Dive',
-    tag: '1 Front, 2 Diver',
-    threatType: 'BACKLINE DIVE',
-    presetKey: 'backline-dive',
-    fixtures: P1V11C_FIXTURE_B_DIVERS,
-  },
-  {
-    id: 'protected-ranged',
-    name: 'Protected Ranged',
-    tag: '2 Front, 2 Ranged',
-    threatType: 'PROTECTED RANGED',
-    presetKey: 'protected-ranged',
-    fixtures: P1V11C_FIXTURE_C_PROTECTED_RANGED,
-  },
-  {
-    id: 'mixed-threat', name: 'Mixed Threat', tag: '1 Front, 1 Diver, 1 Ranged', threatType: 'MIXED PRESSURE', presetKey: 'frontline-pressure', fixtures: fixturesForLevel(P1V13A1_LEVELS[3]),
-  },
-];
-
-/**
- * Landscape-First Beast Link Battle Validation Scene.
- * Reference resolution: 1280×720 (16:9).
- */
 export class ValidationScene extends Phaser.Scene {
-  private enemyFixturePresetIndex = 0;
-  private enemyBoard?: EnemyBoardState;
-  private activePresetKey?: 'A' | 'B';
-  private readonly fixtureRunHistory = new Map<
-    string,
-    { runA?: FormationValidationMetrics; runB?: FormationValidationMetrics }
-  >();
+  private readonly fixtureManager = new BattleFixtureManager();
   private readonly phaseController = new PhaseController();
   private readonly boardGenerator = new BoardGenerator();
   private readonly matcher = new OnetMatcher();
@@ -534,23 +473,21 @@ export class ValidationScene extends Phaser.Scene {
   private renderBattleSetup(): void {
     if (!this.formation) return;
     this.battleSetupView?.destroy();
-    const activePreset = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
-    const level = P1V13A1_LEVELS[this.enemyFixturePresetIndex];
-    if (isTestHarness()) this.enemyBoard ??= new EnemyBoardState(level);
+    this.fixtureManager.ensureBoard();
     this.battleSetupView = new BattleSetupView(
       this,
       this.formation,
-      this.captureEnemyFixtures ?? this.enemyBoard?.fixtures ?? this.waveRun.currentWave.enemyFixtures,
+      this.captureEnemyFixtures ?? this.fixtureManager.board?.fixtures ?? this.waveRun.currentWave.enemyFixtures,
       () => this.energyQueue.getAll(),
       () => this.startBattle(),
       () => {
-        this.activePresetKey = undefined;
+        this.fixtureManager.clearActiveKey();
         this.metrics.arrangementChanged();
       },
-      `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${this.waveRun.currentWave.name}${isTestHarness() && this.enemyBoard?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
+      `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${this.waveRun.currentWave.name}${isTestHarness() && this.fixtureManager.board?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
       isTestHarness() && !this.showcaseMode ? () => this.cycleEnemyFixture() : undefined,
       `Threat: ${this.waveRun.currentWave.threatLabel}`,
-      isTestHarness() && !this.showcaseMode ? this.activePresetKey : undefined,
+      isTestHarness() && !this.showcaseMode ? this.fixtureManager.activeKey : undefined,
       isTestHarness() && !this.showcaseMode ? () => this.loadFormationPreset('A') : undefined,
       isTestHarness() && !this.showcaseMode ? () => this.loadFormationPreset('B') : undefined,
       isTestHarness() && !this.showcaseMode ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
@@ -564,41 +501,35 @@ export class ValidationScene extends Phaser.Scene {
 
   private loadFormationPreset(key: 'A' | 'B'): void {
     if (this.phaseController.phase !== GamePhase.BattleSetup || !this.formation) return;
-    const activeFixture = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
-    const presets = V11D_PRESETS[activeFixture.presetKey];
-    if (!presets) return;
-    const preset = key === 'A' ? presets.presetA : presets.presetB;
-    applyFormationPreset(this.formation, preset);
-    this.activePresetKey = key;
-    this.metrics.arrangementChanged();
-    this.renderBattleSetup();
+    if (this.fixtureManager.loadFormationPreset(this.formation, key)) {
+      this.metrics.arrangementChanged();
+      this.renderBattleSetup();
+    }
   }
 
   private setEnemyFixturePreset(index: number): void {
-    this.enemyFixturePresetIndex =
-      ((index % ENEMY_FIXTURE_PRESETS.length) + ENEMY_FIXTURE_PRESETS.length) %
-      ENEMY_FIXTURE_PRESETS.length;
-    if (isTestHarness()) this.enemyBoard = new EnemyBoardState(P1V13A1_LEVELS[this.enemyFixturePresetIndex]);
+    this.fixtureManager.setPresetIndex(index);
     if (this.phaseController.phase === GamePhase.BattleSetup && this.formation) {
       this.renderBattleSetup();
     }
   }
 
   private cycleEnemyFixture(): void {
-    this.setEnemyFixturePreset(this.enemyFixturePresetIndex + 1);
+    this.setEnemyFixturePreset(this.fixtureManager.presetIndex + 1);
   }
 
   private editEnemyBoard(tool: import('./battle/AutonomousBattleModel').EnemyArchetype | 'Erase', row: 'Front' | 'Mid' | 'Back', column: number): void {
-    if (!isTestHarness() || !this.enemyBoard) return;
-    const changed = tool === 'Erase' ? this.enemyBoard.erase(row, column) : this.enemyBoard.place(tool, row, column);
-    if (changed) this.renderBattleSetup();
+    if (!isTestHarness() || !this.fixtureManager.board) return;
+    if (this.fixtureManager.editEnemyBoard(tool, row, column)) {
+      this.renderBattleSetup();
+    }
   }
 
   private enterBattle(): void {
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(
       this.formation,
-      this.captureEnemyFixtures ?? (isTestHarness() && this.enemyBoard ? this.enemyBoard.fixtures : this.waveRun.currentWave.enemyFixtures),
+      this.captureEnemyFixtures ?? (isTestHarness() && this.fixtureManager.board ? this.fixtureManager.board.fixtures : this.waveRun.currentWave.enemyFixtures),
       P1V13A_SIGNATURE_RULES,
       Object.fromEntries(this.runRoster.units.map((unit) => [unit.instanceId, unit.currentHp])),
     );
@@ -612,25 +543,7 @@ export class ValidationScene extends Phaser.Scene {
 
   private enterResult(): void {
     const validationMetrics = this.battleModel?.getValidationMetrics();
-    const activeFixture = ENEMY_FIXTURE_PRESETS[this.enemyFixturePresetIndex];
-    let history = this.fixtureRunHistory.get(activeFixture.id);
-    if (!history) {
-      history = {};
-      this.fixtureRunHistory.set(activeFixture.id, history);
-    }
-
-    if (validationMetrics) {
-      if (this.activePresetKey === 'B') {
-        history.runB = validationMetrics;
-      } else {
-        history.runA = validationMetrics;
-      }
-    }
-
-    let comparison: FormationRunDelta | undefined;
-    if (history.runA && history.runB) {
-      comparison = compareFormationRuns(history.runA, history.runB);
-    }
+    const { comparison, history } = this.fixtureManager.recordMetrics(validationMetrics);
 
     this.summary?.render(
       this.metrics.snapshot,
@@ -668,10 +581,10 @@ export class ValidationScene extends Phaser.Scene {
     this.formation = undefined;
     this.battleModel = undefined;
     this.battleOutcome = undefined;
-    this.activePresetKey = undefined;
+    this.fixtureManager.clearActiveKey();
     this.captureEnemyFixtures = undefined;
     this.metrics.reset();
-    this.enemyBoard = isTestHarness() ? new EnemyBoardState(P1V13A1_LEVELS[this.waveRun.currentWaveIndex]) : undefined;
+    this.fixtureManager.initBoardForWave(this.waveRun.currentWaveIndex);
   }
 
   private castEnergy(energyId: string): void {
@@ -803,7 +716,7 @@ export class ValidationScene extends Phaser.Scene {
     this.formation = undefined;
     this.battleModel = undefined;
     this.battleOutcome = undefined;
-    this.activePresetKey = undefined;
+    this.fixtureManager.clearActiveKey();
 
     this.runRoster.recruit([
       { contentId: 'beast-d', star: 3 }, // Starcaller — Arcane Bloom III
@@ -1165,7 +1078,7 @@ export class ValidationScene extends Phaser.Scene {
     this.metrics.reset();
     this.waveRun.resetRun();
     this.runRoster.reset();
-    this.activePresetKey = undefined;
+    this.fixtureManager.clearActiveKey();
     this.cycleEnemyFixture();
     this.phaseController.setPhase(GamePhase.BeastRush);
   }
