@@ -175,7 +175,7 @@ export class ValidationScene extends Phaser.Scene {
       setBattleModel: (model) => { this.battleModel = model; },
       setBattleOutcome: (outcome) => { this.battleOutcome = outcome; },
       renderBattleSetup: () => this.renderBattleSetup(),
-      renderBattle: () => this.renderBattle(),
+      renderBattle: () => this.battleCoordinator.renderBattle(),
       startBattle: () => this.startBattle(),
       syncTopHud: () => this.syncTopHud(),
     });
@@ -276,10 +276,10 @@ export class ValidationScene extends Phaser.Scene {
         this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
         ticked = true;
       }
-      if (ticked) this.renderBattle();
+      if (ticked) this.battleCoordinator.renderBattle();
       const status = this.battleModel.snapshot.status;
       if (status !== 'Running') {
-        this.renderBattle();
+        this.battleCoordinator.renderBattle();
         this.runRoster.reconcile(this.battleModel.snapshot.units);
         this.metrics.result(status, this.energyQueue.getAll());
         this.battleOutcome = status;
@@ -514,7 +514,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
     this.battleActionView.setShowcaseMode(this.showcaseController.isShowcaseMode);
     this.battleActionView.render(this.battleModel.snapshot);
-    this.renderBattle();
+    this.battleCoordinator.renderBattle();
     this.syncTopHud();
   }
 
@@ -564,33 +564,7 @@ export class ValidationScene extends Phaser.Scene {
     this.fixtureManager.initBoardForWave(this.waveRun.currentWaveIndex);
   }
 
-  private castEnergy(energyId: string): void {
-    this.battleCoordinator.castEnergy(energyId);
-  }
 
-  private renderBattle(): void {
-    this.battleCoordinator.renderBattle();
-  }
-
-  private startV15AHeroBattle(): void {
-    this.showcaseController.startV15AHeroBattle();
-  }
-
-  private loadV15ACaptureFixture(): void {
-    this.showcaseController.loadV15ACaptureFixture();
-  }
-
-  private toggleShowcaseMode(): void {
-    this.showcaseController.toggleShowcaseMode();
-  }
-
-  private toggleShowcasePause(): void {
-    this.showcaseController.toggleShowcasePause();
-  }
-
-  private toggleShowcaseCleanFrame(): void {
-    this.showcaseController.toggleShowcaseCleanFrame();
-  }
 
   private consolidateReserveUnit(selectedUnitId: string): string | undefined {
     if (!this.formation) return undefined;
