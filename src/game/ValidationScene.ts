@@ -2,62 +2,33 @@ import { runDeckPool } from './run/RunDeck';
 import Phaser from 'phaser';
 import { BeastRushPhaseTimer } from './combo/BeastRushPhaseTimer';
 import { ComboQualityTracker } from './combo/ComboQualityTracker';
-import { runS2Checks } from './combo/S2Checks';
 import { RuleConfig } from './config/RuleConfig';
 import { isTestHarness } from './config/RuntimeMode';
 import { WaveRunController } from './run/WaveRunController';
 import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster } from './run/RunRoster';
 import { RunLinkShardPool, evaluateLinkShardReward } from './run/RunLinkShardPool';
-import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
 import { STRATEGIC_ENERGY, STRATEGIC_ENERGY_POOL as V14G_ENERGY_RUSH_POOL } from './energy/TacticalEnergyCatalog';
-import { runP1S1Checks } from './energy/P1S1Checks';
 import { EnergyRushTimer } from './energy/EnergyRushTimer';
-import { runP1V1Checks } from './energy/P1V1Checks';
-import { runP1V2Checks } from './combo/P1V2Checks';
-import { runP1V3Checks } from './combo/P1V3Checks';
-import { runP1V14C1Checks } from './combo/P1V14C1Checks';
-import { runP1V14C1aChecks } from './combo/P1V14C1aChecks';
-import { runP1V14C2Checks } from './run/P1V14C2Checks';
 import { BattleFormation } from './battle/BattleFormation';
-import { runP1S2Checks } from './battle/P1S2Checks';
 import {
   AutonomousBattleModel,
   P1V13A_SIGNATURE_RULES,
   type EnemyFixture,
   SIMULATION_STEP,
 } from './battle/AutonomousBattleModel';
-import { EnemyBoardState, fixturesForLevel, P1V13A1_LEVELS } from './battle/ValidationLevels';
-import { runP1V13AChecks } from './battle/P1V13AChecks';
-import { runP1V13A1Checks } from './battle/P1V13A1Checks';
-import { runP1V13A2Checks } from './ui/P1V13A2Checks';
-import { runP1V15AChecks } from './battle/P1V15AChecks';
-import { runP1S3Checks } from './battle/P1S3Checks';
-import { runP1S4Checks } from './battle/P1S4Checks';
+import { P1V13A1_LEVELS } from './battle/ValidationLevels';
 import { deriveBattleTickPresentation } from './battle/BattlePresentation';
-import { runP1V4Checks } from './battle/P1V4Checks';
-import { runP1V5Checks } from './battle/P1V5Checks';
-import { P1V7_ENEMY_FIXTURES, runP1V7Checks } from './battle/P1V7Checks';
-import { runP1V8Checks } from './battle/P1V8Checks';
-import { runP1V9Checks } from './battle/P1V9Checks';
-import { runP1V11AChecks } from './battle/P1V11AChecks';
-import { runP1V11BChecks } from './battle/P1V11BChecks';
-import { runP1V11B1Checks } from './battle/P1V11B1Checks';
-import { runP1V11CChecks } from './battle/P1V11CChecks';
-import { runP1V11DChecks } from './battle/P1V11DChecks';
-import { runP1V12AChecks } from './ui/P1V12AChecks';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
 import { BoardModel } from './puzzle/BoardModel';
 import { DeadlockResolver } from './puzzle/DeadlockResolver';
 import { OnetMatcher } from './puzzle/OnetMatcher';
-import { runOnetMatcherChecks } from './puzzle/OnetMatcherChecks';
 import { BattleQueue } from './queue/BattleQueue';
 import { StarConverter, type DeployedUnit } from './queue/StarConverter';
-import { runS3Checks } from './queue/S3Checks';
 import { GamePhase } from './state/GamePhase';
 import { PhaseController } from './state/PhaseController';
-import { runP1S0Checks } from './state/P1S0Checks';
+import { runValidationSceneStartupChecks } from './scene/ValidationSceneStartupChecks';
 import { BoardView } from './ui/BoardView';
 import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
@@ -150,37 +121,7 @@ export class ValidationScene extends Phaser.Scene {
 
   create(): void {
     try {
-      runOnetMatcherChecks();
-      runS2Checks();
-      runS3Checks();
-      runP1S0Checks();
-      runP1S1Checks();
-      runP1S2Checks();
-      runP1S3Checks();
-      runP1S4Checks();
-      runP1V4Checks();
-      runP1V5Checks();
-      runP1V7Checks();
-      runP1V8Checks();
-      runP1V9Checks();
-      runP1V11AChecks();
-      runP1V11BChecks();
-      runP1V11B1Checks();
-      runP1V11CChecks();
-      runP1V11DChecks();
-      runP1V12AChecks();
-      runP1V13AChecks();
-      runP1V13A1Checks();
-      runP1V13A1BChecks();
-      runP1V13A2Checks();
-      runP1V15AChecks();
-      runBattleCharacterArtChecks();
-      runP1V1Checks();
-      runP1V2Checks();
-      runP1V3Checks();
-      runP1V14C1Checks();
-      runP1V14C1aChecks();
-      runP1V14C2Checks();
+      runValidationSceneStartupChecks();
     } catch (error) {
       this.renderStartupFailure(error);
       return;
@@ -947,12 +888,6 @@ export class ValidationScene extends Phaser.Scene {
         '#38bdf8',
       );
     }
-  }
-
-  private storedEnergyLines(): string {
-    const entries = this.energyQueue.getAll();
-    if (!entries.length) return 'No stored Energy charges.\nTotal: 0';
-    return `${entries.map((entry) => `${tacticalEnergyDefinition(entry.energyId)?.displayName ?? entry.energyId}: ${entry.charges}`).join('\n')}\nTotal: ${this.energyQueue.getTotalCharges()}`;
   }
 
   private refreshBeastHUD(): void {
