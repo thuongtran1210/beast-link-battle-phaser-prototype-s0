@@ -22,6 +22,7 @@ import {
 import { signatureForBeast, type BeastRole, type BeastSignatureId } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import { BattleEnergySystem } from './systems/BattleEnergySystem';
+import { createInitialConsequenceMetrics, cloneConsequenceMetrics, computeValidationMetrics } from './systems/BattleMetricsCalculator';
 import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/TacticalEnergyCatalog';
 import type { FormationValidationMetrics } from './FormationValidationHarness';
 
@@ -43,21 +44,7 @@ export class AutonomousBattleModel {
   private engagementEvents: EngagementBattleEvent[] = [];
   private signatureEvents: SignatureBattleEvent[] = [];
   private signatureMetrics: SignatureMetrics = { signatureActivationsByUnit: {}, signatureDamageByUnit: {}, shieldDamageAbsorbedByUnit: {}, focusShotsResolved: 0, arcaneBloomTargetsHit: 0, ambushStrikesResolved: 0, guardianBraceAbsorbed: 0 };
-  private consequenceMetrics: FormationConsequenceMetrics = {
-    interceptCount: 0,
-    diverInterceptionCount: 0,
-    frontlineInterceptionCount: 0,
-    firstPlayerContactTime: undefined,
-    firstBacklineHitTime: undefined,
-    firstCarryHitTime: undefined,
-    firstAssassinContactTime: undefined,
-    attacksResolvedByUnit: {},
-    damageTakenByUnit: {},
-    timeEngaged: {},
-    rangerForcedKiteCount: 0,
-    mageForcedRepositionCount: 0,
-    unitDeathTimes: {},
-  };
+  private consequenceMetrics: FormationConsequenceMetrics = createInitialConsequenceMetrics();
   private energySystem!: BattleEnergySystem;
 
   constructor(
@@ -137,94 +124,16 @@ export class AutonomousBattleModel {
       engagementEvents: this.engagementEvents.map((e) => ({ ...e })),
       signatureEvents: this.signatureEvents.map((e) => ({ ...e })),
       signatureMetrics: { ...this.signatureMetrics, signatureActivationsByUnit: { ...this.signatureMetrics.signatureActivationsByUnit }, signatureDamageByUnit: { ...this.signatureMetrics.signatureDamageByUnit }, shieldDamageAbsorbedByUnit: { ...this.signatureMetrics.shieldDamageAbsorbedByUnit } },
-      consequenceMetrics: {
-        interceptCount: this.consequenceMetrics.interceptCount,
-        diverInterceptionCount: this.consequenceMetrics.diverInterceptionCount,
-        frontlineInterceptionCount: this.consequenceMetrics.frontlineInterceptionCount,
-        firstPlayerContactTime: this.consequenceMetrics.firstPlayerContactTime,
-        firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
-        firstCarryHitTime: this.consequenceMetrics.firstCarryHitTime,
-        firstAssassinContactTime: this.consequenceMetrics.firstAssassinContactTime,
-        attacksResolvedByUnit: { ...this.consequenceMetrics.attacksResolvedByUnit },
-        damageTakenByUnit: { ...this.consequenceMetrics.damageTakenByUnit },
-        timeEngaged: { ...this.consequenceMetrics.timeEngaged },
-        rangerForcedKiteCount: this.consequenceMetrics.rangerForcedKiteCount,
-        mageForcedRepositionCount: this.consequenceMetrics.mageForcedRepositionCount,
-        unitDeathTimes: { ...this.consequenceMetrics.unitDeathTimes },
-      },
+      consequenceMetrics: cloneConsequenceMetrics(this.consequenceMetrics),
     };
   }
 
   getConsequenceMetrics(): FormationConsequenceMetrics {
-    return {
-      interceptCount: this.consequenceMetrics.interceptCount,
-      diverInterceptionCount: this.consequenceMetrics.diverInterceptionCount,
-      frontlineInterceptionCount: this.consequenceMetrics.frontlineInterceptionCount,
-      firstPlayerContactTime: this.consequenceMetrics.firstPlayerContactTime,
-      firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
-      firstCarryHitTime: this.consequenceMetrics.firstCarryHitTime,
-      firstAssassinContactTime: this.consequenceMetrics.firstAssassinContactTime,
-      attacksResolvedByUnit: { ...this.consequenceMetrics.attacksResolvedByUnit },
-      damageTakenByUnit: { ...this.consequenceMetrics.damageTakenByUnit },
-      timeEngaged: { ...this.consequenceMetrics.timeEngaged },
-      rangerForcedKiteCount: this.consequenceMetrics.rangerForcedKiteCount,
-      mageForcedRepositionCount: this.consequenceMetrics.mageForcedRepositionCount,
-      unitDeathTimes: { ...this.consequenceMetrics.unitDeathTimes },
-    };
+    return cloneConsequenceMetrics(this.consequenceMetrics);
   }
 
   public getValidationMetrics(): FormationValidationMetrics {
-    const elapsed = this.state.elapsedTime ?? (this.state.elapsedTicks * 0.1);
-    const units = this.state.units;
-
-    const tankUnits = units.filter((u) => u.role === 'Tanker');
-    const rangerUnits = units.filter((u) => u.role === 'Ranger');
-    const mageUnits = units.filter((u) => u.role === 'Mage');
-    const assassinUnits = units.filter((u) => u.role === 'Assassin');
-
-    const sumDamage = (group: CombatUnit[]) =>
-      group.reduce((sum, u) => sum + (this.consequenceMetrics.damageTakenByUnit[u.unitId] ?? 0), 0);
-
-    const sumAttacks = (group: CombatUnit[]) =>
-      group.reduce((sum, u) => sum + (this.consequenceMetrics.attacksResolvedByUnit[u.unitId] ?? 0), 0);
-
-    const calcSurvival = (group: CombatUnit[]) => {
-      if (!group.length) return elapsed;
-      return Math.min(
-        ...group.map((u) => this.consequenceMetrics.unitDeathTimes[u.unitId] ?? elapsed),
-      );
-    };
-
-    const rangerDamage = sumDamage(rangerUnits);
-    const mageDamage = sumDamage(mageUnits);
-
-    return {
-      firstPlayerContactTime: this.consequenceMetrics.firstPlayerContactTime,
-      firstBacklineHitTime: this.consequenceMetrics.firstBacklineHitTime,
-      firstCarryHitTime: this.consequenceMetrics.firstCarryHitTime ?? this.consequenceMetrics.firstBacklineHitTime,
-      firstAssassinContactTime: this.consequenceMetrics.firstAssassinContactTime,
-
-      tankDamageTaken: sumDamage(tankUnits),
-      rangerDamageTaken: rangerDamage,
-      mageDamageTaken: mageDamage,
-      carryDamageTaken: rangerDamage + mageDamage,
-
-      rangerAttacksResolved: sumAttacks(rangerUnits),
-      mageCastsResolved: sumAttacks(mageUnits),
-      assassinAttacksResolved: sumAttacks(assassinUnits),
-
-      rangerForcedKiteCount: this.consequenceMetrics.rangerForcedKiteCount,
-      mageForcedRepositionCount: this.consequenceMetrics.mageForcedRepositionCount,
-
-      diverInterceptionCount: this.consequenceMetrics.diverInterceptionCount,
-      frontlineInterceptionCount: this.consequenceMetrics.frontlineInterceptionCount,
-
-      rangerSurvivalTime: Number(calcSurvival(rangerUnits).toFixed(2)),
-      mageSurvivalTime: Number(calcSurvival(mageUnits).toFixed(2)),
-
-      battleDuration: Number(elapsed.toFixed(2)),
-      battleResult: this.state.status,
-    };
+    return computeValidationMetrics(this.state, this.consequenceMetrics);
   }
 
   step(deltaSeconds = SIMULATION_STEP): AutonomousBattleSnapshot {
