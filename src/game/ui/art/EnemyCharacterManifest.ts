@@ -12,23 +12,23 @@ export const ENEMY_CHARACTER_ART: Readonly<Record<EnemyArtArchetype, EnemyCharac
   Frontliner: {
     archetype: 'Frontliner',
     base: '/assets/enemies/frontliner/base_v2.svg',
-    displayHeight: 102,
-    groundOffsetY: 34,
-    hpAnchorY: -58,
+    displayHeight: 116,
+    groundOffsetY: 38,
+    hpAnchorY: -68,
   },
   Diver: {
     archetype: 'Diver',
     base: '/assets/enemies/diver/base_v2.svg',
-    displayHeight: 94,
-    groundOffsetY: 34,
-    hpAnchorY: -55,
+    displayHeight: 108,
+    groundOffsetY: 37,
+    hpAnchorY: -64,
   },
   Ranged: {
     archetype: 'Ranged',
     base: '/assets/enemies/ranged/base_v2.svg',
-    displayHeight: 94,
-    groundOffsetY: 34,
-    hpAnchorY: -55,
+    displayHeight: 108,
+    groundOffsetY: 37,
+    hpAnchorY: -64,
   },
 };
 
