@@ -93,7 +93,7 @@ export class BoardView {
         ? 0x334155
         : selected
         ? 0xfbbf24
-        : tileColor;
+        : HudTokens.colors.strokeDefault;
 
       const compact = isCompactLandscape();
       const strokeWidth = selected ? 3.5 : compact ? 1 : 2;

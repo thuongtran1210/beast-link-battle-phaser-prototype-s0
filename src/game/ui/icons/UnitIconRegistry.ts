@@ -1,4 +1,4 @@
-export type BeastId = 'beast-a' | 'beast-b' | 'beast-c' | 'beast-d' | 'beast-e' | 'beast-f';
+export type BeastId = 'beast-a' | 'beast-b' | 'beast-c' | 'beast-d' | 'beast-e' | 'beast-f' | 'beast-h' | 'beast-i' | 'beast-j' | 'beast-g';
 export type EnergyId = 'energy-a' | 'energy-b' | 'energy-c' | 'energy-d' | 'energy-e' | 'energy-f';
 export type UnitRole = 'Tanker' | 'Assassin' | 'Ranger' | 'Mage';
 
@@ -95,6 +95,13 @@ export const BEAST_ICON_DEFINITIONS: Record<string, IconDefinition> = {
     bgFill: 0x2e1428,
     borderColor: 0xf472b6,
   },
+  'beast-g': {
+    id: 'beast-g', letter: 'D', name: 'Sheep Cleric', role: 'Mage', isEnergy: false,
+    symbol: 'orb', primaryColor: 0xb5c9a3, secondaryColor: 0x798967,
+    accentColor: 0xf4edcf, bgFill: 0x29352b, borderColor: 0x87977e,
+  },  'beast-h': { id: 'beast-h', letter: 'D', name: 'HOPHEX', role: 'Mage', isEnergy: false, symbol: 'orb', primaryColor: 0xb5c9a3, secondaryColor: 0x798967, accentColor: 0xf4edcf, bgFill: 0x29352b, borderColor: 0x87977e },
+  'beast-i': { id: 'beast-i', letter: 'D', name: 'GADGETDUCK', role: 'Mage', isEnergy: false, symbol: 'orb', primaryColor: 0xb5c9a3, secondaryColor: 0x798967, accentColor: 0xf4edcf, bgFill: 0x29352b, borderColor: 0x87977e },
+  'beast-j': { id: 'beast-j', letter: 'D', name: 'BOOMHOG', role: 'Mage', isEnergy: false, symbol: 'orb', primaryColor: 0xb5c9a3, secondaryColor: 0x798967, accentColor: 0xf4edcf, bgFill: 0x29352b, borderColor: 0x87977e },
 };
 
 export const ENERGY_ICON_DEFINITIONS: Record<string, IconDefinition> = {
@@ -217,6 +224,10 @@ export const BEAST_NAMES: Record<string, string> = {
   'beast-d': 'STARCALLER',
   'beast-e': 'IRONCLAD',
   'beast-f': 'SWIFTWING',
+  'beast-h': 'HOPHEX',
+  'beast-i': 'GADGETDUCK',
+  'beast-j': 'BOOMHOG',
+  'beast-g': 'WOOLKEEPER',
 };
 
 export function beastDisplayName(beastId: string): string {

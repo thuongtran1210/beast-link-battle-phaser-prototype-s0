@@ -105,6 +105,15 @@ export const BATTLE_CHARACTER_ART: Readonly<Record<BeastId, BattleCharacterArtDe
     motionProfile: 'RANGER_FAST',
     poses: {},
   },
+  'beast-g': {
+    beastId: 'beast-g', slug: 'woolkeeper', displayHeight: 128,
+    groundOffsetY: 37, effectAnchorY: -33, hpAnchorY: -90,
+    base: '/assets/characters/sheep-cleric/base_v01.png',
+    icon: '/assets/characters/sheep-cleric/icon_v02.png',
+    motionProfile: 'MAGE', poses: {},
+  },  'beast-h': { beastId: 'beast-h', slug: 'frog-mage', displayHeight: 128, groundOffsetY: 37, effectAnchorY: -33, hpAnchorY: -90, base: '/assets/characters/frog-mage/base_v01.png', icon: '/assets/characters/frog-mage/icon_v02.png', motionProfile: 'MAGE', poses: {} },
+  'beast-i': { beastId: 'beast-i', slug: 'duck-engineer', displayHeight: 128, groundOffsetY: 37, effectAnchorY: -33, hpAnchorY: -90, base: '/assets/characters/duck-engineer/base_v01.png', icon: '/assets/characters/duck-engineer/icon_v02.png', motionProfile: 'MAGE', poses: {} },
+  'beast-j': { beastId: 'beast-j', slug: 'hedgehog-bomber', displayHeight: 128, groundOffsetY: 37, effectAnchorY: -33, hpAnchorY: -90, base: '/assets/characters/hedgehog-bomber/base_v01.png', icon: '/assets/characters/hedgehog-bomber/icon_v02.png', motionProfile: 'MAGE', poses: {} },
 };
 
 export function battleCharacterDefinition(beastId: string): BattleCharacterArtDefinition | undefined {

@@ -51,6 +51,10 @@ export const P1V11A_ACTION_TIMING_FIXTURE: Readonly<Record<BeastRole | 'Enemy', 
 export const SIMULATION_STEP = 0.1;
 
 export interface CombatUnit {
+  guardUntil?: number;
+  supportReadyAt?: number;
+  supportTargetIds?: string[];
+  supportFxUntil?: number;
   unitId: string;
   beastId: string;
   role: BeastRole;
@@ -108,6 +112,14 @@ export interface EnemyFixture {
 }
 
 export interface EnemyCombatUnit extends EnemyFixture {
+  funControlUntil?: number;
+  funControlKind?: 'Duck' | 'Carrot' | 'Bubble' | 'Disrupt';
+  bombAt?: number;
+  bombSourceId?: string;
+  bombDamage?: number;
+  bombTargets?: number;
+  carrotX?: number;
+  carrotLane?: number;
   currentHp: number;
   positionX: number;
   positionLane: number;
@@ -407,7 +419,7 @@ const COMBAT_DISTANCE_EPSILON = 0.001;
 export type FrontlineHealCastReason = 'ok' | 'battle-not-running' | 'no-charge' | 'no-target' | 'target-full-hp';
 export interface FrontlineHealCastResult { success: boolean; reason: FrontlineHealCastReason; energyId: string; targetUnitId?: string; healedAmount: number; }
 export type TacticalEnergyAvailability = 'disabled' | 'ready' | 'suggested';
-export type TacticalEnergyCastReason = FrontlineHealCastReason | 'no-frontliner' | 'no-ranged' | 'unsupported-energy';
+export type TacticalEnergyCastReason = FrontlineHealCastReason | 'no-frontliner' | 'no-ranged' | 'unsupported-energy' | 'shield-active';
 export interface TacticalEnergyEligibility { energyId: string; kind?: TacticalEnergyKind; availability: TacticalEnergyAvailability; reason: TacticalEnergyCastReason; targetUnitId?: string; targetEnemyId?: string; suggestedReason?: string; }
 export interface TacticalEnergyCastResult { success: boolean; energyId: string; kind?: TacticalEnergyKind; reason: TacticalEnergyCastReason; targetUnitId?: string; targetEnemyId?: string; amount: number; }
 
@@ -727,6 +739,22 @@ export class AutonomousBattleModel {
       return { energyId, kind: definition.kind, availability: suggested ? 'suggested' : 'ready', reason: 'ok', targetUnitId: target.unitId, suggestedReason: suggested ? 'FRONT INJURED' : undefined };
     }
 
+    if (definition.kind === 'Guard') {
+      const target = this.frontmostAliveUnit();
+      if (!target) return {energyId, kind: 'Guard', availability: 'disabled', reason: 'no-target'};
+      if ((target.temporaryShieldHp ?? 0) >= 60 && (target.temporaryShieldExpiresAt ?? 0) > (this.state.elapsedTime ?? 0))
+        return {energyId, kind: 'Guard', availability: 'disabled', reason: 'shield-active', targetUnitId: target.unitId};
+      const pressure = this.state.enemies.some(enemy => enemy.currentHp > 0 && enemy.targetUnitId === target.unitId);
+      return {energyId, kind: 'Guard', availability: pressure ? 'suggested' : 'ready', reason: 'ok', targetUnitId: target.unitId, suggestedReason: pressure ? 'FRONT UNDER ATTACK' : undefined};
+    }
+    if (definition.kind === 'Disrupt') {
+      const enemies = this.state.enemies.filter(enemy => enemy.currentHp > 0 && (enemy.funControlUntil ?? 0) <= (this.state.elapsedTime ?? 0))
+        .sort((a,b) => Number((b.attackWindupRemaining ?? 0) > 0) - Number((a.attackWindupRemaining ?? 0) > 0) || a.positionX - b.positionX || a.enemyId.localeCompare(b.enemyId));
+      const target = enemies[0];
+      if (!target) return {energyId, kind: 'Disrupt', availability: 'disabled', reason: 'no-target'};
+      const windup = (target.attackWindupRemaining ?? 0) > 0;
+      return {energyId, kind: 'Disrupt', availability: windup ? 'suggested' : 'ready', reason: 'ok', targetEnemyId: target.enemyId, suggestedReason: windup ? 'ENEMY WINDUP' : undefined};
+    }
     if (definition.kind === 'Rescue') {
       const target = this.rescueTarget();
       if (!target) return { energyId, kind: definition.kind, availability: 'disabled', reason: 'no-target' };
@@ -758,6 +786,22 @@ export class AutonomousBattleModel {
     if (eligibility.kind === 'Mend') {
       const result = this.castFrontlineHealResult(energyId, energyQueue);
       return { success: result.success, energyId, kind: 'Mend', reason: result.reason, targetUnitId: result.targetUnitId, amount: result.healedAmount };
+    }
+    if (eligibility.kind === 'Guard') {
+      const target = this.state.units.find(unit => unit.unitId === eligibility.targetUnitId && unit.currentHp > 0);
+      if (!target || !energyQueue.consumeCharge(energyId)) return {success: false, energyId, kind: 'Guard', reason: 'no-target', amount: 0};
+      target.guardUntil = (this.state.elapsedTime ?? 0) + 3;
+      const added = Math.max(0, 60 - (target.temporaryShieldHp ?? 0));
+      target.temporaryShieldHp = Math.max(target.temporaryShieldHp ?? 0, 60);
+      target.temporaryShieldExpiresAt = Math.max(target.temporaryShieldExpiresAt ?? 0, (this.state.elapsedTime ?? 0) + 3);
+      return {success: true, energyId, kind: 'Guard', reason: 'ok', targetUnitId: target.unitId, amount: added};
+    }
+    if (eligibility.kind === 'Disrupt') {
+      const target = this.state.enemies.find(enemy => enemy.enemyId === eligibility.targetEnemyId && enemy.currentHp > 0);
+      if (!target || !energyQueue.consumeCharge(energyId)) return {success: false, energyId, kind: 'Disrupt', reason: 'no-target', amount: 0};
+      target.attackWindupRemaining = 0; target.actionState = 'Idle';
+      target.funControlKind = 'Disrupt'; target.funControlUntil = (this.state.elapsedTime ?? 0) + 1;
+      return {success: true, energyId, kind: 'Disrupt', reason: 'ok', targetEnemyId: target.enemyId, amount: 1};
     }
     if (eligibility.kind === 'Rescue') {
       const target = this.rescueTarget();
@@ -957,6 +1001,7 @@ export class AutonomousBattleModel {
       .sort((a, b) => a.positionX - b.positionX || a.positionLane - b.positionLane);
 
     for (const enemy of livingEnemies) {
+
       const target = this.target();
       if (!target) return;
 
@@ -1563,6 +1608,17 @@ export class AutonomousBattleModel {
   }
 
   private resolveTimelineEnemies(deltaSeconds: number): void {
+    const now = this.state.elapsedTime ?? 0;
+    for (const bomb of this.state.enemies.filter(enemy => enemy.bombAt !== undefined && enemy.bombAt <= now)) {
+      const source = this.state.units.find(unit => unit.unitId === bomb.bombSourceId);
+      const victims = this.state.enemies.filter(enemy => enemy.currentHp > 0 &&
+        this.distance(enemy.positionX, enemy.positionLane, bomb.positionX, bomb.positionLane) <= 1.5)
+        .sort((a, b) => this.distance(a.positionX, a.positionLane, bomb.positionX, bomb.positionLane) - this.distance(b.positionX, b.positionLane, bomb.positionX, bomb.positionLane) || a.enemyId.localeCompare(b.enemyId))
+        .slice(0, bomb.bombTargets ?? 1);
+      const hits = victims.map(enemy => ({ enemyId: enemy.enemyId, damage: this.applyDamage(enemy, bomb.bombDamage ?? 0) }));
+      if (source && hits.length) { this.activateSignature(source, bomb.enemyId); this.recordAction(source, 'ArcaneBurst', hits); }
+      bomb.bombAt = undefined;
+    }
     const livingEnemies = this.state.enemies
       .filter((enemy) => enemy.currentHp > 0)
       .sort((a, b) => a.positionX - b.positionX || a.positionLane - b.positionLane);
@@ -1570,6 +1626,23 @@ export class AutonomousBattleModel {
     const currentTime = this.state.elapsedTime ?? (this.state.elapsedTicks * deltaSeconds);
 
     for (const enemy of livingEnemies) {
+      if ((enemy.funControlUntil ?? 0) > currentTime) {
+        enemy.attackWindupRemaining = 0;
+        enemy.actionState = 'Idle';
+        if (enemy.funControlKind === 'Carrot') {
+          const dx = (enemy.carrotX ?? enemy.positionX) - enemy.positionX;
+          const dy = (enemy.carrotLane ?? enemy.positionLane) - enemy.positionLane;
+          const length = Math.hypot(dx, dy);
+          const step = Math.min(length, ENEMY_MOVE_SPEED * deltaSeconds);
+          if (length > .01) {
+            enemy.positionX += dx / length * step;
+            enemy.positionLane += dy / length * step;
+          }
+        }
+        continue;
+      }
+      enemy.funControlKind = undefined;
+
       if (!this.state.units.some((u) => u.currentHp > 0)) {
         enemy.actionState = 'Idle';
         continue;
@@ -2143,6 +2216,59 @@ export class AutonomousBattleModel {
 
     this.consequenceMetrics.attacksResolvedByUnit[unit.unitId] =
       (this.consequenceMetrics.attacksResolvedByUnit[unit.unitId] ?? 0) + 1;
+    if (unit.signatureId === 'BubbleTrap' || unit.signatureId === 'ToyWorkshop' || unit.signatureId === 'TickingBomb') {
+      const now = this.state.elapsedTime ?? 0;
+      if (now < (unit.supportReadyAt ?? 0)) return;
+      if (unit.signatureId === 'BubbleTrap') {
+        const victims = this.state.enemies.filter(enemy => enemy.currentHp > 0 && (enemy.funControlUntil ?? 0) <= now)
+          .sort((a, b) => this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane) - this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane) || a.enemyId.localeCompare(b.enemyId))
+          .slice(0, unit.star === 3 ? 2 : 1);
+        if (!victims.length) return;
+        victims.forEach(enemy => { enemy.funControlKind = 'Bubble'; enemy.funControlUntil = now + (unit.star === 1 ? .8 : 1.2); });
+        this.activateSignature(unit, victims[0].enemyId);
+      } else if (unit.signatureId === 'ToyWorkshop') {
+        const allies = this.state.units.filter(ally => ally.currentHp > 0 && (ally.temporaryShieldHp ?? 0) < 5)
+          .sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp || a.unitId.localeCompare(b.unitId))
+          .slice(0, unit.star === 3 ? 2 : 1);
+        if (!allies.length) return;
+        allies.forEach(ally => {
+          ally.temporaryShieldHp = unit.star === 1 ? 20 : unit.star === 2 ? 32 : 44;
+          ally.temporaryShieldExpiresAt = now + 3;
+          ally.temporaryShieldSourceSignatureId = 'ToyWorkshop';
+        });
+        unit.supportTargetIds = allies.map(ally => ally.unitId); unit.supportFxUntil = now + 1.2;
+        this.activateSignature(unit, allies[0].unitId);
+      } else {
+        if (target.bombAt !== undefined) return;
+        target.bombAt = now + 1.2; target.bombSourceId = unit.unitId;
+        target.bombDamage = unit.damage * 1.5; target.bombTargets = unit.star;
+      }
+      unit.supportReadyAt = now + 5;
+      return;
+    }
+    if (unit.signatureId === 'WoollyRescue') {
+      const now = this.state.elapsedTime ?? 0;
+      if (now >= (unit.supportReadyAt ?? 0)) {
+        const allies = this.state.units.filter(ally => ally.currentHp > 0 && ally.currentHp < ally.maxHp)
+          .sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp || a.unitId.localeCompare(b.unitId))
+          .slice(0, unit.star === 3 ? 2 : 1);
+        if (allies.length) {
+          allies.forEach(ally => {
+            ally.currentHp = Math.min(ally.maxHp, ally.currentHp + signatureStrengthForStar('WoollyRescue', unit.star));
+            if (unit.star === 3) {
+              ally.temporaryShieldHp = Math.max(ally.temporaryShieldHp ?? 0, 18);
+              ally.temporaryShieldExpiresAt = now + 2;
+              ally.temporaryShieldSourceSignatureId = 'WoollyRescue';
+            }
+          });
+          unit.supportTargetIds = allies.map(ally => ally.unitId);
+          unit.supportFxUntil = now + 1.2;
+          unit.supportReadyAt = now + (unit.star === 1 ? 4 : 3);
+          this.activateSignature(unit, allies[0].unitId);
+        }
+      }
+      return;
+    }
     const enemyHpBefore = target.currentHp;
 
     if (unit.role === 'Tanker') {
@@ -2267,6 +2393,12 @@ export class AutonomousBattleModel {
         if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
 
         if (focus) {
+          if (unit.star === 3 && !unit.signatureActivationCount) {
+            target.funControlKind = 'Carrot';
+            target.funControlUntil = (this.state.elapsedTime ?? 0) + 2;
+            target.carrotX = unit.positionX + .7;
+            target.carrotLane = unit.positionLane;
+          }
           const pierceCount = focusPierceTargets(unit.star);
           if (pierceCount > 0) {
             const secondary = this.state.enemies
@@ -2332,6 +2464,14 @@ export class AutonomousBattleModel {
       }
 
       if (bloom) {
+        if (unit.star === 3 && !unit.signatureActivationCount) {
+          this.state.enemies.filter(enemy => enemy.currentHp > 0 &&
+            this.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius)
+            .slice(0, 3).forEach(enemy => {
+              enemy.funControlKind = 'Duck';
+              enemy.funControlUntil = (this.state.elapsedTime ?? 0) + 1.5;
+            });
+        }
         this.activateSignature(unit, target.enemyId);
         this.signatureMetrics.arcaneBloomTargetsHit += Math.max(0, hits.length - 1);
 

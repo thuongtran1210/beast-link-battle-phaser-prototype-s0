@@ -15,7 +15,7 @@ export function runP1V14G4Checks(): void {
     ok(tile.showInternalLetter === false, `${ids[index]} hides its internal letter`);
     ok(tile.displayName !== 'ENERGY', `${ids[index]} does not use generic ENERGY`);
   });
-  ok(energyRushTilePresentation('energy-e') === undefined, 'unknown Energy does not invent tactical identity');
+  ok(energyRushTilePresentation('energy-unknown') === undefined, 'unknown Energy does not invent tactical identity');
 
   const fresh = energyRushInventory(() => 0);
   ok(fresh.length === 4, 'fresh tactical inventory has four entries');

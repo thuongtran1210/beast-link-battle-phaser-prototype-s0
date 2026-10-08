@@ -1,5 +1,5 @@
 export type BeastRole = 'Tanker' | 'Assassin' | 'Ranger' | 'Mage';
-export type BeastSignatureId = 'GuardianBrace' | 'AmbushStrike' | 'FocusShot' | 'ArcaneBloom' | 'IronRam' | 'TwinVolley';
+export type BeastSignatureId = 'GuardianBrace' | 'AmbushStrike' | 'FocusShot' | 'ArcaneBloom' | 'IronRam' | 'TwinVolley' | 'BubbleTrap' | 'ToyWorkshop' | 'TickingBomb' | 'WoollyRescue';
 
 /** V15A identity baseline. Signatures belong to individual Beasts, never only to roles. */
 export const P1V13A_BEAST_SIGNATURES: Readonly<Record<string, BeastSignatureId>> = {
@@ -9,6 +9,10 @@ export const P1V13A_BEAST_SIGNATURES: Readonly<Record<string, BeastSignatureId>>
   'beast-d': 'ArcaneBloom',
   'beast-e': 'IronRam',
   'beast-f': 'TwinVolley',
+  'beast-h': 'BubbleTrap',
+  'beast-i': 'ToyWorkshop',
+  'beast-j': 'TickingBomb',
+  'beast-g': 'WoollyRescue',
 };
 
 export function signatureForBeast(beastId: string): BeastSignatureId {
@@ -24,7 +28,7 @@ export function signatureNameForBeast(beastId: string): string {
 /** Experimental / prototype-only P1-S2 placeholder-content mapping. */
 const roles: Readonly<Record<string, BeastRole>> = {
   'beast-a': 'Tanker', 'beast-b': 'Assassin', 'beast-c': 'Ranger',
-  'beast-d': 'Mage', 'beast-e': 'Tanker', 'beast-f': 'Ranger',
+  'beast-d': 'Mage', 'beast-e': 'Tanker', 'beast-f': 'Ranger', 'beast-h': 'Mage', 'beast-i': 'Mage', 'beast-j': 'Mage', 'beast-g': 'Mage',
 };
 
 export function roleForBeast(beastId: string): BeastRole {

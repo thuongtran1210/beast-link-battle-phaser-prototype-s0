@@ -198,7 +198,11 @@ export function deriveBattleTickPresentation(
         unitId: event.unitId,
         signatureId: event.signatureId,
         star: unit?.star ?? 1,
-        targetIds: action?.hits.map((hit) => hit.enemyId) ?? (event.targetId ? [event.targetId] : []),
+                targetIds: event.signatureId === 'GuardianBrace'
+          ? after.units.filter(ally => ally.unitId !== event.unitId && ally.temporaryShieldSourceSignatureId === 'GuardianBrace'
+              && (ally.temporaryShieldHp ?? 0) > (before.units.find(old => old.unitId === ally.unitId)?.temporaryShieldHp ?? 0))
+            .map(ally => ally.unitId)
+          : action?.hits.map((hit) => hit.enemyId) ?? (event.targetId ? [event.targetId] : []),
         amount: event.amount,
       };
     });

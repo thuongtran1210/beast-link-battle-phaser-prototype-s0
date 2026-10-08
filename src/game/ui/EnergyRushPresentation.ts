@@ -22,8 +22,8 @@ export function energyRushTilePresentation(energyId: string): EnergyRushTilePres
 }
 
 /** Stable, complete tactical inventory; chargeLookup is the authoritative run-scoped source. */
-export function energyRushInventory(chargeLookup: (energyId: string) => number): EnergyRushInventoryEntry[] {
-  return V14G_TACTICAL_ENERGY.map((definition) => ({
+export function energyRushInventory(chargeLookup: (energyId: string) => number, definitions = V14G_TACTICAL_ENERGY): EnergyRushInventoryEntry[] {
+  return definitions.map((definition) => ({
     energyId: definition.energyId,
     displayName: definition.displayName,
     shortDescription: definition.shortDescription,

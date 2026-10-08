@@ -4,8 +4,9 @@ import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 import type { TacticalEnergyControlPresentation } from './TacticalEnergyPresentation';
-import { V14G_TACTICAL_ENERGY } from '../energy/TacticalEnergyCatalog';
+import { STRATEGIC_ENERGY } from '../energy/TacticalEnergyCatalog';
 import { getIconDefinition } from './icons/UnitIconRegistry';
+import { isCompactLandscape } from './layout/MobilePresentation';
 
 export class ShowcaseBattleHUDView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -37,42 +38,47 @@ export class ShowcaseBattleHUDView {
   ): void {
     this.destroyObjects();
 
-    const w = this.panelWidth;
-    let currY = this.y;
+    const mobile = isCompactLandscape();
+    const w = mobile ? Math.min(700, this.scene.scale.width - 48) : this.panelWidth;
+    const panelX = mobile ? (this.scene.scale.width - w) / 2 : this.x;
+    let currY = mobile ? 54 : this.y;
     const isRunning = battle.status === 'Running';
     const statusText = paused ? 'PAUSED' : isRunning ? 'LIVE' : battle.status.toUpperCase();
 
     const enemiesAlive = battle.enemies.filter(enemy => enemy.currentHp > 0).length;
     const enemyRatio = battle.enemyMaxHp > 0 ? Math.max(0, battle.enemyHp / battle.enemyMaxHp) : 0;
-    const card = drawCard(this.scene, this.x, currY, w, 116, HudTokens.colors.bgSurface, .95);
-    const heading = this.scene.add.text(this.x + 16, currY + 12, `ENEMIES ${enemiesAlive}/${battle.enemies.length}`, {
+    const card = drawCard(this.scene, panelX, currY, w, mobile ? 76 : 116, HudTokens.colors.bgSurface, .95);
+    const heading = this.scene.add.text(panelX + 16, currY + 12, `ENEMIES ${enemiesAlive}/${battle.enemies.length}`, {
       fontFamily: HudTokens.fonts.family, fontSize: '18px', fontStyle: 'bold', color: HudTokens.colors.textPrimary,
     });
-    const status = this.scene.add.text(this.x + w - 16, currY + 15, statusText, {
+    const status = this.scene.add.text(panelX + w - 16, currY + 15, statusText, {
       fontFamily: HudTokens.fonts.family, fontSize: '14px', fontStyle: 'bold', color: HudTokens.colors.textGreen,
     }).setOrigin(1, 0);
     const barW = w - 32;
-    const bar = this.scene.add.rectangle(this.x + 16, currY + 53, barW, 12, HudTokens.colors.bgSurfaceDark).setOrigin(0, .5);
-    const fill = this.scene.add.rectangle(this.x + 16, currY + 53, barW * enemyRatio, 12, HudTokens.colors.red).setOrigin(0, .5);
-    const hp = this.scene.add.text(this.x + 16, currY + 70, `HP ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`, {
+    const bar = this.scene.add.rectangle(panelX + 16, currY + 44, barW, 12, HudTokens.colors.bgSurfaceDark).setOrigin(0, .5);
+    const fill = this.scene.add.rectangle(panelX + 16, currY + 44, barW * enemyRatio, 12, HudTokens.colors.red).setOrigin(0, .5);
+    const hp = this.scene.add.text(panelX + 16, currY + 53, `HP ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`, {
       fontFamily: HudTokens.fonts.family, fontSize: '18px', color: HudTokens.colors.textSecondary,
     });
     this.objects.push(card, heading, status, bar, fill, hp);
-    const hint = this.scene.add.text(this.x + 16, currY + 132, 'Tap to cast · hold for details', {
+    const hint = this.scene.add.text(panelX + 16, currY + 132, 'Tap to cast · hold for details', {
       fontFamily: HudTokens.fonts.family, fontSize: '15px', color: HudTokens.colors.textMuted,
       wordWrap: { width: w - 32 },
     });
+    hint.setVisible(!mobile);
+    hp.setVisible(!mobile);
     this.objects.push(hint);
-    if (this.lastCast && this.lastCast.until > this.scene.time.now) {
-      const recap = this.scene.add.text(this.x + 16, currY + 174, this.lastCast.text, {
+    if (!this.heldEnergy && this.lastCast && this.lastCast.until > this.scene.time.now) {
+      const recap = this.scene.add.text(mobile ? this.scene.scale.width / 2 : panelX + 16, mobile ? this.scene.scale.height - 196 : currY + 174, this.lastCast.text, {
         fontFamily: HudTokens.fonts.family, fontSize: '20px', fontStyle: 'bold',
         color: '#ffffff', backgroundColor: '#20354b', padding: { x: 12, y: 12 },
         wordWrap: { width: w - 56 },
       });
+      if (mobile) recap.setOrigin(.5, 1);
       this.objects.push(recap);
     }
     // Stable four-slot cast dock centered below the battlefield.
-    const centerX = (18 + this.x - 18) / 2;
+    const centerX = mobile ? this.scene.scale.width / 2 : this.x / 2;
     const cy = this.scene.scale.height - 102;
     const spacing = 118;
     const radius = 50;
@@ -83,7 +89,7 @@ export class ShowcaseBattleHUDView {
     dock.strokeRoundedRect(centerX - 250, cy - 62, 500, 150, 28);
     this.objects.push(dock);
 
-    V14G_TACTICAL_ENERGY.forEach((definition, index) => {
+    STRATEGIC_ENERGY.forEach((definition, index) => {
       const entry = energyEntries.find(item => item.energyId === definition.energyId);
       const charges = entry?.charges ?? 0;
       const castState = castStateFor(definition.energyId);

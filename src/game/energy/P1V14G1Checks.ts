@@ -61,6 +61,6 @@ export function runP1V14G1Checks(): void {
   const terminalQueue = new EnergyQueue(); terminalQueue.addCharge('energy-c'); const terminal = battle([{ contentId: 'beast-a', slot: 'front-1' }], [enemy('last', 'Frontliner', 12)]);
   expect(terminal.castTacticalEnergy('energy-c', terminalQueue).success && terminal.snapshot.status === 'Win' && terminal.snapshot.enemyHp === 0, '24 direct Energy kill synchronizes terminal Win');
   expect(!terminal.castTacticalEnergy('energy-c', terminalQueue).success && terminalQueue.getCharges('energy-c') === 0, '25 terminal cast consumes zero');
-  expect(mend.tacticalEnergyEligibility('energy-e', generic).reason === 'unsupported-energy' && !mend.castTacticalEnergy('energy-f', generic).success, '26 E/F are unsupported tactical casts');
+  expect(mend.tacticalEnergyEligibility('energy-unknown', generic).reason === 'unsupported-energy' && !mend.castTacticalEnergy('energy-unknown', generic).success, '26 unknown IDs are unsupported tactical casts');
   expect(mendQueue.getCharges('energy-a') === 1, '27 suggestion never auto-casts');
 }

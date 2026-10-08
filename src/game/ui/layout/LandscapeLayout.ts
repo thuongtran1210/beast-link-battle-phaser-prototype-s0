@@ -33,7 +33,7 @@ export class LandscapeLayout {
     this.leftY = this.hudHeight + 10;
 
     // Right panel target width between 320 and 360 px
-    this.rightWidth = Math.min(360, Math.max(300, Math.round(sceneWidth * 0.28)));
+    this.rightWidth = compact ? Math.min(320, Math.max(300, Math.round(sceneWidth * .23))) : Math.min(360, Math.max(300, Math.round(sceneWidth * .28)));
     this.leftWidth = sceneWidth - this.rightWidth - this.gutter * 3;
 
     this.rightX = this.leftX + this.leftWidth + this.gutter;

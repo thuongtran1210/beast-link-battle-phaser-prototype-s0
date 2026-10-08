@@ -11,6 +11,10 @@ export const V14B3_SIGNATURE_STAR_PROFILE: Readonly<Record<BeastSignatureId, Rea
   FocusShot: { 1: 1.5, 2: 1.7, 3: 1.95 },
   ArcaneBloom: { 1: 0.5, 2: 0.65, 3: 0.8 },
   IronRam: { 1: 1.3, 2: 1.55, 3: 1.8 },
+  BubbleTrap: { 1: 1, 2: 2, 3: 3 },
+  ToyWorkshop: { 1: 1, 2: 2, 3: 3 },
+  TickingBomb: { 1: 1, 2: 2, 3: 3 },
+  WoollyRescue: { 1: 14, 2: 22, 3: 28 },
   TwinVolley: { 1: 0.4, 2: 0.6, 3: 0.8 },
 };
 
@@ -87,6 +91,10 @@ export function signatureTierLabel(signature: BeastSignatureId, star: StarLevel)
 
 export function signatureTierSummary(signature: BeastSignatureId, star: StarLevel): string {
   switch (signature) {
+    case 'BubbleTrap': return star === 1 ? 'Bubble traps one enemy' : star === 2 ? 'Longer bubble trap' : 'Bubble party traps two enemies';
+    case 'ToyWorkshop': return star === 1 ? 'Toy shields injured ally' : star === 2 ? 'Bigger toy shield' : 'Toy workshop shields two allies';
+    case 'TickingBomb': return star === 1 ? 'Timed bomb on one enemy' : star === 2 ? 'Bomb hits a nearby enemy' : 'Giant bomb hits three enemies';
+    case 'WoollyRescue': return star === 1 ? 'Heal the most injured ally' : star === 2 ? 'Faster, stronger healing' : 'Heal two allies + wool shields';
     case 'GuardianBrace':
       return star === 1
         ? 'Shield the first intercept'
@@ -130,10 +138,14 @@ export function signatureTierSummary(signature: BeastSignatureId, star: StarLeve
 /** Compact player-facing copy for Battle Setup cards; keep to one short line at 1280×720. */
 export function signatureTierTagline(signature: BeastSignatureId, star: StarLevel): string {
   switch (signature) {
+    case 'BubbleTrap': return star === 1 ? 'Bubble traps one enemy' : star === 2 ? 'Longer bubble trap' : 'Bubble party traps two enemies';
+    case 'ToyWorkshop': return star === 1 ? 'Toy shields injured ally' : star === 2 ? 'Bigger toy shield' : 'Toy workshop shields two allies';
+    case 'TickingBomb': return star === 1 ? 'Timed bomb on one enemy' : star === 2 ? 'Bomb hits a nearby enemy' : 'Giant bomb hits three enemies';
+    case 'WoollyRescue': return star === 1 ? 'Heal the most injured ally' : star === 2 ? 'Faster, stronger healing' : 'Heal two allies + wool shields';
     case 'GuardianBrace': return star === 1 ? '1st intercept shield' : star === 2 ? '2 intercept shields' : 'share shield with ally';
     case 'AmbushStrike': return star === 1 ? 'deep-target burst' : star === 2 ? 're-arm once' : 'kill chains a strike';
-    case 'FocusShot': return star === 1 ? 'hold → charge Focus' : star === 2 ? 'faster Focus charge' : 'Focus pierces +1';
-    case 'ArcaneBloom': return star === 1 ? 'cluster splash' : star === 2 ? 'wider Bloom' : 'Bloom + Echo';
+    case 'FocusShot': return star === 1 ? 'hold → charge Focus' : star === 2 ? 'faster Focus charge' : 'pierce + one-shot carrot decoy';
+    case 'ArcaneBloom': return star === 1 ? 'cluster splash' : star === 2 ? 'wider Bloom' : 'Echo + one-shot duck flock';
     case 'IronRam': return star === 1 ? 'knockback Frontliner' : star === 2 ? 'Ram + stagger' : 'Ram + cleave';
     case 'TwinVolley': return star === 1 ? 'Volley every 3rd' : star === 2 ? 'Volley every 2nd' : 'Volley every shot';
   }

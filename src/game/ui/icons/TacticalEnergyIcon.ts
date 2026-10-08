@@ -18,7 +18,11 @@ export function drawTacticalEnergyIcon(
     g.fillRoundedRect(cx - 3 * s, cy - 10 * s, 6 * s, 20 * s, s);
     g.fillRoundedRect(cx - 10 * s, cy - 3 * s, 20 * s, 6 * s, s);
   };
-  if (id === 'energy-a') {
+  if (id === 'energy-e') {
+    polygon([[-15,-15],[15,-15],[13,6],[0,19],[-13,6]], primary);
+  } else if (id === 'energy-f') {
+    g.lineStyle(7*s, primary); g.lineBetween(cx-13*s,cy-13*s,cx+13*s,cy+13*s); g.lineBetween(cx+13*s,cy-13*s,cx-13*s,cy+13*s);
+  } else if (id === 'energy-a') {
     polygon([[-15,-15],[15,-15],[13,6],[0,19],[-13,6]], primary);
     plus(0xffffff);
   } else if (id === 'energy-b') {

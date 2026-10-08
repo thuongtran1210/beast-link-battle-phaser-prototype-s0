@@ -50,6 +50,24 @@ function run(beastId: string, star: StarLevel, slotId: string, steps = 90): Auto
 }
 
 export function runP1V15AChecks(): void {
+  for (const beast of ['beast-c', 'beast-d']) {
+    for (const star of [2, 3] as const) {
+      const battle = new AutonomousBattleModel(formation(beast, star, 'back-3'), enemies(4), P1V13A_SIGNATURE_RULES);
+      let observed = false;
+      let cleared = false;
+      for (let i = 0; i < 500; i++) {
+        battle.step(SIMULATION_STEP);
+        const snapshot = battle.snapshot;
+        const controlled = snapshot.enemies.filter(enemy => (enemy.funControlUntil ?? 0) > (snapshot.elapsedTime ?? 0));
+        if (controlled.length) {
+          observed = true;
+          expect(controlled.every(enemy => enemy.actionState === 'Idle'), 'controlled enemy cannot wind up an attack');
+          expect(controlled.length <= (beast === 'beast-c' ? 1 : 3), 'fun control target count is bounded');
+        } else if (observed) cleared = true;
+      }
+      expect(star === 3 ? observed && cleared : !observed, `${beast} fun control is 3-star only and expires`);
+    }
+  }
   const beasts = ['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f'];
   const signatures = beasts.map(signatureForBeast);
   expect(new Set(signatures).size === 6, 'all six Beasts own a unique signature identity');

@@ -24,6 +24,7 @@ import { signatureTierLabel } from '../run/StarProfile';
 import { BattleCharacterView } from './art/BattleCharacterView';
 import { EnemyCharacterView } from './art/EnemyCharacterView';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
+import { isCompactLandscape } from './layout/MobilePresentation';
 
 interface UnitVisual {
   container: Phaser.GameObjects.Container;
@@ -62,6 +63,8 @@ export class BattleActionView {
   private readonly enemyPresentationOffsets = new Map<string, { x: number; y: number }>();
   private readonly layout: BattleFieldLayout;
   private showcaseMode = false;
+  private funMarkers: Phaser.GameObjects.GameObject[] = [];
+  private activeSignatureLabel?: Phaser.GameObjects.Text;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -70,12 +73,12 @@ export class BattleActionView {
   ) {
     this.layout = createBattleFieldLayout(baseX, baseY);
     // Presentation coordinates only: reserve the lower skill dock and use wider screens.
-    const fieldWidth = scene.scale.width - Math.min(360, Math.max(300, Math.round(scene.scale.width * .28))) - 54;
+    const fieldWidth = isCompactLandscape() ? scene.scale.width - 36 : scene.scale.width - Math.min(360, Math.max(300, Math.round(scene.scale.width * .28))) - 54;
     this.layout.dividerX = baseX + fieldWidth / 2;
     this.layout.playerFrontX = this.layout.dividerX - 80;
     this.layout.enemyFrontX = this.layout.dividerX + 80;
     this.layout.depthGap = Math.min(110, Math.max(84, (fieldWidth - 180) / 7));
-    this.layout.topLaneY = baseY + 108;
+    this.layout.topLaneY = isCompactLandscape() ? 226 : baseY + 108;
     this.layout.laneGap = Math.min(58, Math.max(40, (scene.scale.height - 290 - this.layout.topLaneY) / 5));
   }
 
@@ -92,8 +95,79 @@ export class BattleActionView {
     this.updatePresentationOffsets(snapshot);
     snapshot.units.forEach((unit) => this.syncUnit(unit));
     snapshot.enemies.forEach((enemy) => this.syncEnemy(enemy));
+    this.renderFunControls(snapshot);
   }
 
+  private renderFunControls(snapshot: AutonomousBattleSnapshot): void {
+    this.funMarkers.splice(0).forEach(object => {
+      const index = this.objects.indexOf(object); if (index >= 0) this.objects.splice(index, 1);
+      object.destroy();
+    });
+    snapshot.units.filter(unit => unit.currentHp > 0 && (unit.guardUntil ?? 0) > (snapshot.elapsedTime ?? 0) && (unit.temporaryShieldHp ?? 0) > 0).forEach(unit => {
+      const visual = this.units.get(unit.unitId); if (!visual) return;
+      const shield = this.scene.add.graphics().setDepth(179);
+      const x = visual.container.x; const y = visual.container.y - 22;
+      shield.lineStyle(4, 0xa7bdc6); shield.strokeRoundedRect(x - 42, y - 50, 84, 102, 24);
+      this.funMarkers.push(shield); this.objects.push(shield);
+    });
+    snapshot.units.filter(unit => (unit.signatureId === 'WoollyRescue' || unit.signatureId === 'ToyWorkshop') && (unit.supportFxUntil ?? 0) > (snapshot.elapsedTime ?? 0))
+      .forEach(unit => (unit.supportTargetIds ?? []).forEach(id => {
+        const ally = this.units.get(id); if (!ally) return;
+        const x = ally.container.x; const y = ally.container.y - 50;
+        const g = this.scene.add.graphics().setDepth(180);
+        g.fillStyle(unit.signatureId === 'ToyWorkshop' ? 0xc8b58a : 0xeeb6ac);
+        g.fillCircle(x - 9, y - 4, 12); g.fillCircle(x + 9, y - 4, 12);
+        g.fillTriangle(x - 20, y, x + 20, y, x, y + 23);
+        if (unit.star === 3) {
+          g.lineStyle(4, 0xf2e9d5, .9); g.strokeRoundedRect(x - 34, y - 22, 68, 63, 23);
+        }
+        const label = this.scene.add.text(x, y - 36, unit.signatureId === 'ToyWorkshop' ? 'TOY SHIELD' : unit.star === 3 ? 'WOOL HUG · HEAL + SHIELD' : 'WOOLKEEPER · HEAL', {
+          fontFamily: 'Arial', fontSize: '14px', color: '#fff7e6', backgroundColor: '#24352a', padding: { x: 7, y: 4 },
+        }).setOrigin(.5).setDepth(181);
+        this.funMarkers.push(g, label); this.objects.push(g, label);
+      }));
+    snapshot.enemies.forEach(enemy => {
+      const visual = this.enemies.get(enemy.enemyId);
+      if (!visual) return;
+      const active = enemy.currentHp > 0 && (enemy.funControlUntil ?? 0) > (snapshot.elapsedTime ?? 0);
+      visual.characterView.root.setVisible(!(active && enemy.funControlKind === 'Duck'));
+      if (enemy.bombAt !== undefined && enemy.bombAt > (snapshot.elapsedTime ?? 0)) {
+        const x = visual.container.x + 38; const y = visual.container.y - 30;
+        const bomb = this.scene.add.circle(x, y, 19, 0x202725).setStrokeStyle(3, 0xc8b58a).setDepth(180);
+        const count = this.scene.add.text(x, y, `${Math.max(0, enemy.bombAt - (snapshot.elapsedTime ?? 0)).toFixed(1)}`, {
+          fontFamily: 'Arial', fontSize: '15px', color: '#f6db9f', fontStyle: 'bold',
+        }).setOrigin(.5).setDepth(181);
+        this.funMarkers.push(bomb, count); this.objects.push(bomb, count);
+      }
+      if (!active) return;
+      const g = this.scene.add.graphics().setDepth(180);
+      const duck = enemy.funControlKind === 'Duck';
+      const point = duck || enemy.funControlKind === 'Bubble' || enemy.funControlKind === 'Disrupt' ? { x: visual.container.x, y: visual.container.y - 22 }
+        : battleModelPosition(this.layout, enemy.carrotX ?? enemy.positionX, enemy.carrotLane ?? enemy.positionLane);
+      const x = point.x; const y = point.y;
+      g.lineStyle(4, 0x10151b);
+      if (enemy.funControlKind === 'Disrupt') {
+        g.lineStyle(5, 0xc8b58a); g.lineBetween(x - 16, y - 16, x + 16, y + 16); g.lineBetween(x + 16, y - 16, x - 16, y + 16);
+      } else if (enemy.funControlKind === 'Bubble') {
+        g.lineStyle(4, 0xa7c9bd); g.strokeCircle(x, y, 42);
+      } else if (duck) {
+        g.fillStyle(0xffffff); g.fillEllipse(x, y + 8, 54, 42); g.strokeEllipse(x, y + 8, 54, 42);
+        g.fillCircle(x + 12, y - 13, 22); g.strokeCircle(x + 12, y - 13, 22);
+        g.fillStyle(0xffbf24); g.fillEllipse(x + 35, y - 8, 26, 13); g.strokeEllipse(x + 35, y - 8, 26, 13);
+        g.fillStyle(0x10151b); g.fillCircle(x + 17, y - 17, 3);
+      } else {
+        g.fillStyle(0xf68b32); g.fillTriangle(x - 23, y - 38, x + 23, y - 38, x, y + 32);
+        g.strokeTriangle(x - 23, y - 38, x + 23, y - 38, x, y + 32);
+        g.lineStyle(7, 0x67b94a); g.lineBetween(x, y - 37, x - 15, y - 58); g.lineBetween(x, y - 37, x + 14, y - 57);
+        g.fillStyle(0x10151b); g.fillRoundedRect(x - 19, y - 25, 38, 13, 3);
+        g.lineStyle(3, 0xffffff); g.lineBetween(x - 6, y + 1, x + 6, y + 1);
+      }
+      const text = this.scene.add.text(x, y - 76, enemy.funControlKind === 'Disrupt' ? 'INTERRUPTED · 1s' : enemy.funControlKind === 'Bubble' ? 'BUBBLE · ACTION BLOCKED' : duck ? 'QUACK! · SKILL BLOCKED' : 'LOOK HERE! · DECOY', {
+        fontFamily: 'Arial', fontSize: '14px', color: '#ffffff', backgroundColor: '#101c30', padding: { x: 7, y: 4 },
+      }).setOrigin(.5).setDepth(181);
+      this.funMarkers.push(g, text); this.objects.push(g, text);
+    });
+  }
   playTick(event: BattleTickPresentation): void {
     // 1. Attack windup anticipation
     if (event.attackWindups && event.attackWindups.length > 0) {
@@ -248,6 +322,12 @@ export class BattleActionView {
     const source = this.units.get(event.unitId);
     if (!source || !source.container.active) return;
 
+    if (event.star === 3 && (event.signatureId === 'ArcaneBloom' || event.signatureId === 'FocusShot')) return;
+    if (event.signatureId === 'WoollyRescue' || event.signatureId === 'ToyWorkshop' || event.signatureId === 'BubbleTrap') return;
+    if (event.signatureId === 'TickingBomb') {
+      event.targetIds.forEach(id => { const enemy = this.enemies.get(id); if (enemy) FeedbackEffects.pulseRing(this.scene, enemy.container.x, enemy.container.y - 20, 0xc8b58a, 55); });
+      return;
+    }
     source.characterView.playSignature(event.signatureId === 'ArcaneBloom' ? 1100 : 820);
     const sourcePoint = source.characterView.getEffectPoint(source.container.x, source.container.y);
 
@@ -256,9 +336,16 @@ export class BattleActionView {
       .filter((visual): visual is EnemyVisual => Boolean(visual));
 
     const addLabel = (label: string, color: string, holdMs = 520) => {
-      const text = this.scene.add.text(sourcePoint.x, sourcePoint.y - 46, label, {
+      if (isCompactLandscape() && this.activeSignatureLabel) {
+        this.scene.tweens.killTweensOf(this.activeSignatureLabel);
+        const index = this.objects.indexOf(this.activeSignatureLabel);
+        if (index >= 0) this.objects.splice(index, 1);
+        this.activeSignatureLabel.destroy();
+        this.activeSignatureLabel = undefined;
+      }
+      const text = this.scene.add.text(isCompactLandscape() ? this.scene.scale.width / 2 : sourcePoint.x, isCompactLandscape() ? 160 : sourcePoint.y - 46, label, {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '12px',
+        fontSize: event.star === 3 ? '20px' : '14px',
         color,
         fontStyle: 'bold',
         backgroundColor: '#151a31',
@@ -267,6 +354,7 @@ export class BattleActionView {
         strokeThickness: 2,
       }).setOrigin(.5).setDepth(175);
       this.objects.push(text);
+      if (isCompactLandscape()) this.activeSignatureLabel = text;
       this.scene.tweens.add({
         targets: text,
         y: text.y - 10,
@@ -308,14 +396,28 @@ export class BattleActionView {
 
     switch (event.signatureId) {
       case 'GuardianBrace':
+        event.targetIds.forEach(id => {
+          const ally = this.units.get(id);
+          if (!ally) return;
+          const link = this.scene.add.graphics().setDepth(166);
+          link.lineStyle(5, 0x72bff5, .85);
+          link.lineBetween(sourcePoint.x, sourcePoint.y, ally.container.x, ally.container.y - 24);
+          FeedbackEffects.pulseRing(this.scene, ally.container.x, ally.container.y - 24, 0x72bff5, 60);
+          this.objects.push(link);
+          this.scene.tweens.add({ targets: link, alpha: 0, duration: 1100, onComplete: () => {
+            const index = this.objects.indexOf(link); if (index >= 0) this.objects.splice(index, 1);
+            link.destroy();
+          } });
+        });
+        if (event.targetIds.length) addLabel('★★★ SHARED SHIELD', '#bce4ff', 1100);
         FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0x72bff5, 46);
         FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y, 0xf6d675, 35);
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#bce4ff');
+        if (!event.targetIds.length) addLabel(signatureTierLabel(event.signatureId, event.star), '#bce4ff', event.star === 3 ? 1100 : 520);
         break;
       case 'AmbushStrike':
         drawTrails(0xfb7185, 6);
         targets.forEach((target) => FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xfb7185, 28));
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#ff91a1');
+        addLabel(event.star === 3 && targets.length > 1 ? '★★★ AMBUSH · CHAIN STRIKE' : signatureTierLabel(event.signatureId, event.star), '#ff91a1', event.star === 3 ? 1100 : 520);
         break;
       case 'FocusShot':
         drawTrails(0x8be2bd, 5);
@@ -418,7 +520,7 @@ export class BattleActionView {
           FeedbackEffects.pulseRing(this.scene, target.container.x, target.container.y, 0xf0abfc, 25 + index * 3);
         });
 
-        addLabel(signatureTierLabel(event.signatureId, event.star), '#f3e8ff', 900);
+        addLabel(event.star === 3 ? '★★★ BLOOM → ECHO' : signatureTierLabel(event.signatureId, event.star), '#f3e8ff', 1300);
 
         if (event.star === 3 && targets.length > 0) {
           const echo = targets[targets.length - 1];
@@ -547,7 +649,7 @@ export class BattleActionView {
     if (!targetId) return;
     const visual = heal ? this.units.get(targetId) : this.enemies.get(targetId);
     if (!visual) return;
-    const names: Record<string, string> = { 'energy-a': 'MEND', 'energy-b': 'RESCUE', 'energy-c': 'BREAK', 'energy-d': 'PIERCE' };
+    const names: Record<string, string> = { 'energy-a': 'MEND', 'energy-b': 'RESCUE', 'energy-c': 'BREAK', 'energy-d': 'PIERCE', 'energy-e': 'GUARD', 'energy-f': 'DISRUPT' };
     const color = heal ? 0x4ade80 : energyId === 'energy-c' ? 0x34d399 : 0xfbbf24;
     const target = { x: visual.container.x, y: visual.container.y - 35 };
     const trail = this.scene.add.graphics().setDepth(250);
@@ -555,7 +657,7 @@ export class BattleActionView {
     trail.lineBetween(origin.x, origin.y, target.x, target.y);
     const projectile = this.scene.add.circle(origin.x, origin.y, 9, color).setDepth(251);
     const label = this.scene.add.text(target.x, target.y - 72,
-      `${names[energyId]}\n${heal ? 'HEAL' : 'DAMAGE'} ${heal ? '+' : '−'}${formatNumber(amount)} HP`, {
+      energyId === 'energy-e' ? 'GUARD\nSHIELD · 3s' : energyId === 'energy-f' ? 'DISRUPT\nINTERRUPTED · 1s' : `${names[energyId]}\n${heal ? 'HEAL' : 'DAMAGE'} ${heal ? '+' : '−'}${formatNumber(amount)} HP`, {
         fontFamily: 'Arial', fontSize: '20px', fontStyle: 'bold', align: 'center',
         color: heal ? '#86efac' : '#fde68a', backgroundColor: '#101c30', padding: { x: 12, y: 8 },
       }).setOrigin(.5).setDepth(252);
@@ -596,8 +698,66 @@ export class BattleActionView {
     this.enemyPresentationOffsets.clear();
   }
 
+  private createChibiArena(): void {
+    const x = 18;
+    const y = isCompactLandscape() ? 142 : this.layout.baseY + 6;
+    const width = isCompactLandscape() ? this.scene.scale.width - 36 : this.scene.scale.width - Math.min(360, Math.max(300, Math.round(this.scene.scale.width * .28))) - 54;
+    const height = this.scene.scale.height - y - 190;
+    const g = this.scene.add.graphics().setDepth(-10);
+    const edge = 0x182b27;
+    // Broad flat shapes echo the cutouts; details stay along the boundary.
+    g.fillStyle(0x243a31);
+    g.fillRoundedRect(x, y, width, height, 36);
+    g.lineStyle(5, edge);
+    g.strokeRoundedRect(x, y, width, height, 36);
+    g.fillStyle(0x3e5742);
+    g.fillRoundedRect(x + 12, y + 12, width - 24, height - 24, 30);
+    g.fillStyle(0x68654e);
+    g.fillRoundedRect(x + 60, y + 50, width - 120, height - 84, 64);
+    g.lineStyle(4, 0x46533b, .8);
+    g.strokeRoundedRect(x + 60, y + 50, width - 120, height - 84, 64);
+    g.fillStyle(0x73705a, .55);
+    g.fillEllipse(x + width / 2, y + height / 2 + 10, width - 170, height - 115);
+    const bush = (cx: number, cy: number, radius: number) => {
+      g.fillStyle(edge);
+      g.fillCircle(cx - radius * .6, cy, radius + 3);
+      g.fillCircle(cx + radius * .6, cy, radius + 3);
+      g.fillCircle(cx, cy - radius * .5, radius + 3);
+      g.fillStyle(0x426a46);
+      g.fillCircle(cx - radius * .6, cy - 2, radius);
+      g.fillCircle(cx + radius * .6, cy - 2, radius);
+      g.fillCircle(cx, cy - radius * .5 - 2, radius);
+      g.fillStyle(0x5d7e50);
+      g.fillEllipse(cx - 5, cy - radius * .65, radius * 1.2, radius * .55);
+    };
+    bush(x + 39, y + 27, 19);
+    bush(x + width - 40, y + 26, 22);
+    bush(x + 31, y + height - 28, 17);
+    bush(x + width - 32, y + height - 30, 18);
+    [0.22, 0.48, 0.76].forEach((ratio, index) => {
+      const cx = x + width * ratio;
+      const cy = y + 26;
+      g.fillStyle(edge);
+      g.fillEllipse(cx, cy + 4, 33, 18);
+      g.fillStyle(index === 1 ? 0x89917b : 0x768173);
+      g.fillEllipse(cx, cy, 28, 16);
+      g.fillStyle(0xa4ad91);
+      g.fillEllipse(cx - 4, cy - 3, 12, 5);
+    });
+    // Few sparse grass tufts; no markings that imply playable slots.
+    g.lineStyle(3, 0x78915b, .65);
+    [0.14, 0.34, 0.63, 0.86].forEach(ratio => {
+      const cx = x + width * ratio;
+      const cy = y + height - 17;
+      g.lineBetween(cx, cy, cx - 6, cy - 9);
+      g.lineBetween(cx, cy, cx + 2, cy - 12);
+      g.lineBetween(cx, cy, cx + 8, cy - 7);
+    });
+    this.objects.push(g);
+  }
   private createBattleGrid(): void {
     const layout = this.layout;
+    if (this.showcaseMode) this.createChibiArena();
 
     if (!this.showcaseMode) {
       this.pushGridText(

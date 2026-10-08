@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { isCompactLandscape } from './layout/MobilePresentation';
 import { type BattleFormation, type FormationSlot, type FormationUnit } from '../battle/BattleFormation';
 import type { EnemyArchetype, EnemyFixture } from '../battle/AutonomousBattleModel';
 import { HudTokens, drawCard } from './layout/HudTokens';
@@ -109,6 +110,7 @@ export class BattleSetupView {
     this.renderHeader();
     this.renderBattleField();
     this.renderDeploymentTray();
+    if (!isCompactLandscape()) this.renderStarUpgradePreview();
     this.renderRightCTA(layoutMetrics);
     this.setupGlobalPointerListeners();
   }
@@ -228,9 +230,9 @@ export class BattleSetupView {
     const dividerX = 640;
     const topLaneY = 142;
     const laneGap = 56;
-    const slotW = 104;
+    const slotW = isCompactLandscape() ? 140 : 104;
     const slotH = 52;
-    const depthGap = 122;
+    const depthGap = isCompactLandscape() ? 154 : 122;
 
     // Center divider
     const divider = this.scene.add.rectangle(dividerX, arenaY + arenaH / 2 + 10, 2, arenaH - 50, 0x334155, 0.8);
@@ -300,8 +302,8 @@ export class BattleSetupView {
 
       enemyRows.forEach(({ row, x }) => {
         const slot = this.scene.add
-          .rectangle(x, laneY, slotW, slotH, 0x1e293b, 0.6)
-          .setStrokeStyle(1.5, 0xef4444, 0.35);
+          .rectangle(x, laneY, slotW, slotH, 0x252b2a, 0.6)
+          .setStrokeStyle(1.5, 0x856d68, 0.45);
         this.objects.push(slot);
 
         if (this.onEnemyBoardEdit) {
@@ -317,7 +319,7 @@ export class BattleSetupView {
       const rowX = enemy.row === 'Front' ? enemyFrontX : enemy.row === 'Mid' ? enemyMidX : enemyBackX;
       const posY = topLaneY + (enemy.column - 1) * laneGap;
       const archetype = enemy.archetype ?? 'Frontliner';
-      const strokeColor = archetype === 'Diver' ? 0xa855f7 : archetype === 'Ranged' ? 0x06b6d4 : 0xf87171;
+      const strokeColor = archetype === 'Diver' ? 0x776d7b : archetype === 'Ranged' ? 0x627b79 : 0x856d68;
 
       const body = this.scene.add
         .rectangle(rowX, posY, slotW - 4, slotH - 6, 0x2b2030, 0.98)
@@ -378,7 +380,7 @@ export class BattleSetupView {
       // Occupied Player Slot
       const body = this.scene.add
         .rectangle(x, y, width - 6, height - 6, 0x1e293b, 0.96)
-        .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xfbbf24 : roleStrokeColor(occupantUnit.role));
+        .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xc8b58a : 0x48514e);
       this.objects.push(body);
 
       const icon = createIconImage(this.scene, occupantUnit.beastId, x - 15, y - 5, 36);
@@ -440,7 +442,7 @@ export class BattleSetupView {
     const blockedByFullSquad = reserveTargetAffordance(squad.activeCount, false, this.controller.state.mode === 'draggingFromTray') === 'blocked';
     const emptySlot = this.scene.add
       .rectangle(x, y, width, height, 0x1e293b, blockedByFullSquad ? 0.3 : 0.5)
-      .setStrokeStyle(1.5, blockedByFullSquad ? 0x475569 : 0x3b82f6, blockedByFullSquad ? 0.35 : 0.4);
+      .setStrokeStyle(1.5, blockedByFullSquad ? 0x48514e : 0x667a73, blockedByFullSquad ? 0.35 : 0.4);
     const slotLabel = emptyFormationSlotLabel(isDragging, blockedByFullSquad);
     const footprint = slotLabel
       ? this.text(x, y, slotLabel, blockedByFullSquad ? 7 : 8, blockedByFullSquad ? '#64748b' : '#7dd3fc', 'bold').setOrigin(0.5).setAlpha(0.8)
@@ -484,7 +486,7 @@ export class BattleSetupView {
 
     const groups = classifyBattleSetupRoster(this.formation.units, this.runRoster?.units ?? []);
     const unplaced = groups.reserve;
-    const page = reservePage(unplaced, this.reservePageIndex);
+    const page = reservePage(unplaced, this.reservePageIndex, isCompactLandscape() ? 4 : 6);
     this.reservePageIndex = page.pageIndex;
     const hasUnplaced = unplaced.length > 0;
 
@@ -533,7 +535,7 @@ export class BattleSetupView {
     }
 
     // Render horizontal row of Draggable Beast Cards
-    const cardW = 142;
+    const cardW = isCompactLandscape() ? 218 : 142;
     const cardH = 154;
     const startX = x + 18;
     const startY = y + 44;
@@ -589,7 +591,7 @@ export class BattleSetupView {
 
     const card = this.scene.add
       .rectangle(cx, cy, w, h, isSelected ? 0x1e3a5f : 0x1e293b, 0.95)
-      .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xfbbf24 : roleStrokeColor(unit.role));
+      .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xc8b58a : 0x48514e);
     this.objects.push(card);
 
     // First placement subtle animated bob
@@ -614,7 +616,7 @@ export class BattleSetupView {
       : HudTokens.colors.textGreen;
 
     // Portrait-first card: identity reads before secondary stats.
-    const icon = createIconImage(this.scene, unit.beastId, cx, cy - 34, 48);
+    const icon = createIconImage(this.scene, unit.beastId, cx, cy - 34, 54);
     const roleIcon = createRoleIconImage(this.scene, unit.role, cx + 47, cy - 44, 18);
     this.objects.push(icon, roleIcon);
 
@@ -711,7 +713,7 @@ export class BattleSetupView {
       : unit.star >= 3 ? 'MAX ★★★' : `COPIES ${preview?.eligibleCount ?? 0}/3`;
     const mergeY = y + h - 23;
     const merge = this.scene.add.rectangle(cx, mergeY, w - 12, 44,
-      canMerge ? 0x176347 : 0x151a31, .98).setStrokeStyle(1, canMerge ? 0x34d399 : 0x334155);
+      canMerge ? 0x176347 : 0x151a31, .98).setStrokeStyle(1, canMerge ? 0x8eae92 : 0x48514e);
     const mergeLabel = this.text(cx, mergeY, label, 11, canMerge ? '#ffffff' : '#94a3b8', 'bold').setOrigin(.5);
     this.objects.push(merge, mergeLabel);
     if (canMerge) merge.setInteractive({ useHandCursor: true }).on('pointerup', () => {
@@ -720,7 +722,7 @@ export class BattleSetupView {
         this.controller.selectUnit(null);
         this.controller.selectUnit(upgradedId);
         this.onArrangementChanged();
-        FeedbackEffects.floatText(this.scene, cx, mergeY - 36, `MERGED → ${'★'.repeat(preview!.targetStar!)}`, '#34d399', '18px', 900);
+        FeedbackEffects.floatText(this.scene, cx, mergeY - 36, `UNLOCKED ${'★'.repeat(preview!.targetStar!)} · ${signatureTierTagline(signatureForBeast(unit.beastId), preview!.targetStar!)}`, '#34d399', '18px', 900);
       }
       this.render();
     });
@@ -1035,6 +1037,24 @@ export class BattleSetupView {
     return text;
   }
 
+  private renderStarUpgradePreview(): void {
+    const deployed = new Set(this.formation.units.filter(unit => unit.slotId !== null).map(unit => unit.unitId));
+    const reserves = this.formation.units.filter(unit => unit.slotId === null);
+    const selected = this.controller.selectedId ? this.formation.getUnit(this.controller.selectedId) : undefined;
+    const unit = selected ?? reserves.find(item => this.runRoster?.consolidationPreview(item.unitId, deployed, this.shardPool?.count ?? 0)?.canConsolidate) ?? reserves[0];
+    if (!unit) return;
+    const signature = signatureForBeast(unit.beastId);
+    this.objects.push(drawCard(this.scene, 36, 166, 220, 276, HudTokens.colors.bgSurface, .96));
+    this.text(50, 180, beastDisplayName(unit.beastId), 17, '#ffffff', 'bold');
+    this.text(50, 205, 'STAR EVOLUTION', 12, '#fbbf24', 'bold');
+    ([1, 2, 3] as const).forEach((star, index) => {
+      const y = 238 + index * 58;
+      this.text(50, y, `${'★'.repeat(star)}${star === unit.star ? '  CURRENT' : ''}`, 14,
+        star === 3 ? '#fbbf24' : '#93c5fd', 'bold');
+      this.text(50, y + 21, signatureTierTagline(signature, star), 13,
+        star === unit.star ? '#ffffff' : '#94a3b8').setWordWrapWidth(190);
+    });
+  }
   private renderConsolidationInspector(x: number, y: number, width: number): void {
     const selectedId = this.controller.selectedId;
     const selected = selectedId ? this.formation.getUnit(selectedId) : undefined;
@@ -1143,8 +1163,8 @@ function roleStrokeColor(role: FormationUnit['role']): number {
 }
 
 function roleTextColor(role: FormationUnit['role']): string {
-  if (role === 'Tanker') return '#facc15';
-  if (role === 'Assassin') return '#f97316';
-  if (role === 'Ranger') return '#22c55e';
-  return '#a855f7';
+  if (role === 'Tanker') return '#d3bf8c';
+  if (role === 'Assassin') return '#c89b84';
+  if (role === 'Ranger') return '#a8bda0';
+  return '#b7a7c4';
 }

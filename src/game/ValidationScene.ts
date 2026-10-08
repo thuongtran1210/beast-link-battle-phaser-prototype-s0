@@ -1,3 +1,4 @@
+import { runDeckPool } from './run/RunDeck';
 import Phaser from 'phaser';
 import { BeastRushPhaseTimer } from './combo/BeastRushPhaseTimer';
 import { ComboQualityTracker } from './combo/ComboQualityTracker';
@@ -9,7 +10,7 @@ import { P1V14B_ACTIVE_SQUAD_LIMIT, RunRoster } from './run/RunRoster';
 import { RunLinkShardPool, evaluateLinkShardReward } from './run/RunLinkShardPool';
 import { runP1V13A1BChecks } from './config/P1V13A1BChecks';
 import { EnergyQueue } from './energy/EnergyQueue';
-import { V14G_ENERGY_RUSH_POOL } from './energy/TacticalEnergyCatalog';
+import { STRATEGIC_ENERGY, STRATEGIC_ENERGY_POOL as V14G_ENERGY_RUSH_POOL } from './energy/TacticalEnergyCatalog';
 import { runP1S1Checks } from './energy/P1S1Checks';
 import { EnergyRushTimer } from './energy/EnergyRushTimer';
 import { runP1V1Checks } from './energy/P1V1Checks';
@@ -516,7 +517,7 @@ export class ValidationScene extends Phaser.Scene {
     this.createPuzzleBoard(
       'BEAST RUSH',
       'Match Beast pairs to recruit units for this Wave.',
-      ['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f'],
+      runDeckPool(),
       'Beast',
       (contentId, turns, midpoint) => this.onBeastMatch(contentId, turns, midpoint),
     );
@@ -833,19 +834,19 @@ export class ValidationScene extends Phaser.Scene {
       this.metrics.successfulCast(armyHp, before.enemyHp);
       if (this.showcaseMode) {
         const slot = V14G_ENERGY_RUSH_POOL.indexOf(energyId);
-        const x = this.layout.rightX / 2 + (slot - 1.5) * 118;
+        const x = (this.layout.compact ? this.scale.width / 2 : this.layout.rightX / 2) + (slot - 1.5) * 118;
         FeedbackEffects.showToast(this, x, this.scale.height - 178, '−1 CHARGE', '#f6d675', 650);
       }
       this.battleActionView?.render(after);
       if (result.kind === 'Mend' || result.kind === 'Rescue') this.battleActionView?.playHeal({ unitId: result.targetUnitId, amount: result.amount });
-      else this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
+      else if (result.kind === 'Break' || result.kind === 'Pierce') this.battleActionView?.playEnergyDamage(result.targetEnemyId, result.amount);
       const identity = tacticalEnergyCastFeedback(result, after);
       if (this.showcaseMode) {
-        const heal = result.kind === 'Mend' || result.kind === 'Rescue';
+        const heal = result.kind === 'Mend' || result.kind === 'Rescue' || result.kind === 'Guard';
         const slot = V14G_ENERGY_RUSH_POOL.indexOf(energyId);
         this.battleActionView?.playTacticalCast(energyId, heal ? result.targetUnitId : result.targetEnemyId,
-          result.amount, heal, { x: this.layout.rightX / 2 + (slot - 1.5) * 118, y: this.scale.height - 102 });
-        this.showcaseBattleHud?.showCastResult(`${identity ?? result.kind}\n${heal ? 'HEALED ALLY' : 'DAMAGED ENEMY'} · ${result.amount} HP`);
+          result.amount, heal, { x: (this.layout.compact ? this.scale.width / 2 : this.layout.rightX / 2) + (slot - 1.5) * 118, y: this.scale.height - 102 });
+        this.showcaseBattleHud?.showCastResult(identity ?? result.kind ?? '');
       }
       if (identity) {
         const toastX = this.showcaseMode ? this.layout.rightCenter.x : this.layout.leftCenter.x;
@@ -1241,7 +1242,7 @@ export class ValidationScene extends Phaser.Scene {
       },
       matchCount: this.metrics.snapshot.energyMatches,
       queueTitle,
-      queueItems: energyRushInventory((energyId) => this.energyQueue.getCharges(energyId)).map((entry) => ({
+      queueItems: energyRushInventory((energyId) => this.energyQueue.getCharges(energyId), STRATEGIC_ENERGY).map((entry) => ({
         id: entry.energyId,
         name: entry.displayName,
         description: entry.shortDescription,

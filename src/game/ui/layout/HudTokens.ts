@@ -6,25 +6,25 @@ export const HudTokens = {
     // Backgrounds & Surfaces
     bgApp: 0x070d1d,
     bgGame: 0x0b1228,
-    bgSurface: 0x121d3b,
-    bgSurfaceElevated: 0x1a2850,
-    bgSurfaceLight: 0x293b69,
-    bgSurfaceDark: 0x091126,
+    bgSurface: 0x202725,
+    bgSurfaceElevated: 0x29322e,
+    bgSurfaceLight: 0x39433d,
+    bgSurfaceDark: 0x161d1b,
 
     // Celestial / neon phase surfaces
-    bgPhase: 0x0d1833,
-    bgPhaseSoft: 0x15244a,
-    bgPhaseGlow: 0x20164a,
+    bgPhase: 0x202725,
+    bgPhaseSoft: 0x29322e,
+    bgPhaseGlow: 0x30312d,
 
     // Strokes & Borders
-    strokeDefault: 0x334c7d,
-    strokeHighlight: 0x6086c2,
-    strokeGold: 0xf7c84b,
-    strokeBlue: 0x3fc8ff,
-    strokeViolet: 0xa66bff,
-    strokePink: 0xff5aa8,
-    strokeGreen: 0x45e3a5,
-    strokeRed: 0xf26b82,
+    strokeDefault: 0x48514e,
+    strokeHighlight: 0x66716a,
+    strokeGold: 0xc8b58a,
+    strokeBlue: 0x7e9caa,
+    strokeViolet: 0x9c8aaa,
+    strokePink: 0xb78999,
+    strokeGreen: 0x8eae92,
+    strokeRed: 0xc28f85,
 
     // Brand & Semantic
     gold: 0xffd95c,
@@ -43,12 +43,12 @@ export const HudTokens = {
     // Text (HEX strings for Phaser text)
     textPrimary: '#f7f7ff',
     textSecondary: '#d7e3ff',
-    textMuted: '#91a3c9',
+    textMuted: '#a0aea6',
     textDark: '#171d36',
-    textGold: '#ffdb62',
-    textBlue: '#73dbff',
+    textGold: '#dfc997',
+    textBlue: '#a7bdc6',
     textRed: '#ff91a1',
-    textGreen: '#7ff0c5',
+    textGreen: '#b2cbb0',
   },
 
   fonts: {

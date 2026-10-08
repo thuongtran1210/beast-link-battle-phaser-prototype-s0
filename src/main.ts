@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { showDeckPicker } from './game/ui/DeckPicker';
+import { lockRunDeck } from './game/run/RunDeck';
+import { isTestHarness } from './game/config/RuntimeMode';
 import { ValidationScene } from './game/ValidationScene';
 import './styles/prototype.css';
 import { isCompactLandscape } from './game/ui/layout/MobilePresentation';
@@ -25,4 +28,15 @@ const config: Phaser.Types.Core.GameConfig = {
   },
 };
 
-new Phaser.Game(config);
+if (isTestHarness()) new Phaser.Game(config);
+else {
+  const openPicker = () => showDeckPicker(deck => {
+    lockRunDeck(deck);
+    const game = new Phaser.Game(config);
+    const change = document.createElement('button');
+    change.className = 'deck-new-run'; change.textContent = 'New Run / Deck';
+    change.onclick = () => { change.remove(); game.destroy(true); window.setTimeout(openPicker, 0); };
+    document.getElementById('game-shell')!.append(change);
+  });
+  openPicker();
+}

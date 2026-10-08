@@ -102,3 +102,20 @@ canvas {
     padding: 10px 10px 20px;
   }
 }
+#game-shell { position: relative; }
+.deck-picker { position: absolute; inset: 0; z-index: 20; background: #19221e; padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.deck-picker header p { margin: 6px 0 0; color: #b4c0b6; font-size: 14px; }
+.deck-cards { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; overflow: auto; }
+.deck-card { background: #29322e; border: 2px solid #47534b; border-radius: 16px; color: #eef0e7; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+.deck-card[aria-pressed="true"] { background: #3b493d; border-color: #c8b58a; }
+.deck-card img { width: min(100%,110px); aspect-ratio: 1; object-fit: contain; }
+.deck-card strong { font-size: 13px; }
+.deck-card span { color: #c8b58a; font-size: 13px; }
+.deck-card small { color: #becabf; font-size: 12px; }
+.deck-picker footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.deck-start { min-height: 48px; padding: 12px 24px; background: #c8b58a; border: 0; border-radius: 12px; font-weight: bold; cursor: pointer; }
+.deck-start:disabled { opacity: .4; cursor: default; }
+.deck-new-run { position: absolute; right: 12px; bottom: 8px; z-index: 10; min-height: 44px; padding: 8px 12px; border: 1px solid #66716a; border-radius: 10px; background: #202725; color: #d8dfd6; cursor: pointer; }
+@media(max-height: 500px) { .deck-picker { padding: 12px; gap: 8px; } .deck-picker h1 { font-size: 22px; } .deck-card { gap: 5px; padding: 8px 4px; } .deck-card img { max-height: 85px; } }
+.deck-cards { grid-template-columns: repeat(4, minmax(0,1fr)); }
+@media(min-width: 1100px) { .deck-cards { grid-template-columns: repeat(7, minmax(0,1fr)); } }

@@ -1,4 +1,4 @@
-export type TacticalEnergyKind = 'Mend' | 'Rescue' | 'Break' | 'Pierce';
+export type TacticalEnergyKind = 'Mend' | 'Rescue' | 'Break' | 'Pierce' | 'Guard' | 'Disrupt';
 
 export interface TacticalEnergyDefinition {
   energyId: string;
@@ -17,6 +17,13 @@ export const V14G_TACTICAL_ENERGY: ReadonlyArray<TacticalEnergyDefinition> = [
 
 export const V14G_ENERGY_RUSH_POOL = V14G_TACTICAL_ENERGY.map((entry) => entry.energyId);
 
+export const STRATEGIC_ENERGY: ReadonlyArray<TacticalEnergyDefinition> = [
+  V14G_TACTICAL_ENERGY[0],
+  { energyId: 'energy-e', kind: 'Guard', displayName: 'GUARD', shortDescription: 'Shield frontline · 3s' },
+  V14G_TACTICAL_ENERGY[2],
+  { energyId: 'energy-f', kind: 'Disrupt', displayName: 'DISRUPT', shortDescription: 'Interrupt enemy · 1s' },
+];
+export const STRATEGIC_ENERGY_POOL = STRATEGIC_ENERGY.map(entry => entry.energyId);
 export function tacticalEnergyDefinition(energyId: string): TacticalEnergyDefinition | undefined {
-  return V14G_TACTICAL_ENERGY.find((entry) => entry.energyId === energyId);
+  return [...V14G_TACTICAL_ENERGY, ...STRATEGIC_ENERGY].find((entry) => entry.energyId === energyId);
 }
