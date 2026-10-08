@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **V2-M2A SNOWGUARD BASE MIGRATED / CI PASS / LIVE QA NEXT / GAMEPLAY FROZEN**
+Status: **V2 FULL BATTLE CUTOUT INTEGRATION COMPLETE / CI PASS / LIVE QA NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -713,36 +713,38 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**V2-M2A Live Visual QA — Snowguard Base Cutout**
+**V2-M3 — Full Battle Cutout Live QA**
 
 Implemented:
-- one simple `base_v2.svg`;
-- one simple `icon_v2.svg`;
-- Snowguard manifest has zero V1 pose dependencies;
-- no authored attack / hit / Signature / KO texture is required;
-- `TANK` motion profile drives Idle / Attack / Hit / KO;
-- Guardian Brace remains transform + VFX;
-- deterministic V2 contract PASS;
-- GitHub Actions run 133 PASS.
+- 6 / 6 player Beasts use V2 base cutouts;
+- all player Beast manifests have zero V1 pose dependencies;
+- Attack / Hit / KO use transform-driven motion profiles;
+- Signature power remains runtime VFX;
+- enemy Frontliner / Diver / Ranged now have V2 base cutouts;
+- enemy art is preloaded and rendered through EnemyCharacterView;
+- enemy Attack / Hit / KO have transform feedback;
+- authored enemy cutouts hide old rectangular fallback tokens;
+- deterministic player + enemy art contract checks PASS;
+- GitHub Actions run 157 PASS.
 
 Live QA:
 1. refresh latest build;
 2. press `L`;
-3. inspect Snowguard idle movement;
-4. observe one basic attack;
-5. observe one hit/recoil;
-6. observe Guardian Brace;
-7. if possible observe KO.
+3. verify every visible player unit is a character cutout;
+4. verify Frontliner / Diver / Ranged are character cutouts;
+5. confirm no rectangular role card remains in the Battle field;
+6. inspect HP bars, feet anchors and overlap;
+7. observe at least one attack, hit and KO on each side;
+8. capture one representative Battle frame.
 
 Acceptance:
-- simple cutout reads clearly at battle scale;
-- shield remains identifiable;
-- no rectangular card body appears;
-- transform animation feels intentional, not like image jitter;
-- ground anchor stays stable;
-- HP bar clears the head;
-- Guardian Brace effect remains centered.
+- no player card mockup;
+- no enemy card mockup;
+- silhouettes remain readable at battle scale;
+- player/enemy sides are visually distinct;
+- transform motion feels stable;
+- gameplay semantics unchanged.
 
 After PASS:
-**V2-M2B — Starcaller simplified base-art migration**.
+**V2-M4 — readability / scale / spacing polish + final portfolio capture.**
 
