@@ -18,7 +18,6 @@ import {
   SIMULATION_STEP,
 } from './battle/AutonomousBattleModel';
 import { P1V13A1_LEVELS } from './battle/ValidationLevels';
-import { setupV15ACapturePreset } from './battle/V15ACaptureFixture';
 import { deriveBattleTickPresentation } from './battle/BattlePresentation';
 import { SessionMetrics } from './metrics/SessionMetrics';
 import { BoardGenerator } from './puzzle/BoardGenerator';
@@ -32,6 +31,7 @@ import { PhaseController } from './state/PhaseController';
 import { runValidationSceneStartupChecks } from './scene/ValidationSceneStartupChecks';
 import { PuzzlePhaseCoordinator } from './scene/PuzzlePhaseCoordinator';
 import { BattlePhaseCoordinator } from './scene/BattlePhaseCoordinator';
+import { ShowcaseModeController } from './scene/ShowcaseModeController';
 import { TransitionCueView } from './ui/TransitionCueView';
 import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
@@ -88,18 +88,13 @@ export class ValidationScene extends Phaser.Scene {
   private phaseStatusPanel?: PhaseStatusPanel;
   private puzzleCoordinator!: PuzzlePhaseCoordinator;
   private battleCoordinator!: BattlePhaseCoordinator;
+  private showcaseController!: ShowcaseModeController;
   private transitionCue?: TransitionCueView;
   private flowPanel?: PrototypeFlowPanel;
   private battleSetupView?: BattleSetupView;
   private battleActionView?: BattleActionView;
   private summary?: SessionSummaryView;
   private showcaseBattleHud?: ShowcaseBattleHUDView;
-
-  // Portfolio-first default: player-facing UI is the normal runtime surface.
-  // Press O to temporarily return to validation/debug presentation.
-  private showcaseMode = true;
-  private showcasePaused = false;
-  private showcaseCleanFrame = false;
   private captureEnemyFixtures?: ReadonlyArray<EnemyFixture>;
 
   constructor() {
@@ -165,6 +160,25 @@ export class ValidationScene extends Phaser.Scene {
       this.layout.rightY,
       this.layout.rightWidth,
     );
+    this.showcaseController = new ShowcaseModeController({
+      scene: this,
+      getLayout: () => this.layout,
+      battleQueue: this.battleQueue,
+      runRoster: this.runRoster,
+      energyQueue: this.energyQueue,
+      shardPool: this.shardPool,
+      fixtureManager: this.fixtureManager,
+      phaseController: this.phaseController,
+      getBattleActionView: () => this.battleActionView,
+      setFormation: (formation) => { this.formation = formation; },
+      setCaptureEnemyFixtures: (fixtures) => { this.captureEnemyFixtures = fixtures; },
+      setBattleModel: (model) => { this.battleModel = model; },
+      setBattleOutcome: (outcome) => { this.battleOutcome = outcome; },
+      renderBattleSetup: () => this.renderBattleSetup(),
+      renderBattle: () => this.renderBattle(),
+      startBattle: () => this.startBattle(),
+      syncTopHud: () => this.syncTopHud(),
+    });
     this.battleCoordinator = new BattlePhaseCoordinator({
       scene: this,
       getLayout: () => this.layout,
@@ -174,8 +188,8 @@ export class ValidationScene extends Phaser.Scene {
       getShowcaseBattleHud: () => this.showcaseBattleHud,
       energyQueue: this.energyQueue,
       metrics: this.metrics,
-      isShowcaseMode: () => this.showcaseMode,
-      isShowcasePaused: () => this.showcasePaused,
+      isShowcaseMode: () => this.showcaseController.isShowcaseMode,
+      isShowcasePaused: () => this.showcaseController.isShowcasePaused,
       syncTopHud: () => this.syncTopHud(),
     });
 
@@ -186,11 +200,11 @@ export class ValidationScene extends Phaser.Scene {
       setEnemyFixturePreset: (index) => this.setEnemyFixturePreset(index),
       cycleEnemyFixture: () => this.cycleEnemyFixture(),
       loadFormationPreset: (key) => this.loadFormationPreset(key),
-      toggleShowcaseMode: () => this.toggleShowcaseMode(),
-      toggleShowcasePause: () => this.toggleShowcasePause(),
-      toggleShowcaseCleanFrame: () => this.toggleShowcaseCleanFrame(),
-      loadV15ACaptureFixture: () => this.loadV15ACaptureFixture(),
-      startV15AHeroBattle: () => this.startV15AHeroBattle(),
+      toggleShowcaseMode: () => this.showcaseController.toggleShowcaseMode(),
+      toggleShowcasePause: () => this.showcaseController.toggleShowcasePause(),
+      toggleShowcaseCleanFrame: () => this.showcaseController.toggleShowcaseCleanFrame(),
+      loadV15ACaptureFixture: () => this.showcaseController.loadV15ACaptureFixture(),
+      startV15AHeroBattle: () => this.showcaseController.startV15AHeroBattle(),
     }).register();
 
     // P1-V14C.1: fixed phase time, never Combo expiry, ends Beast Rush.
@@ -249,7 +263,7 @@ export class ValidationScene extends Phaser.Scene {
     if (
       this.phaseController.phase === GamePhase.Battle &&
       this.battleModel?.snapshot.status === 'Running' &&
-      (!this.showcaseMode || !this.showcasePaused)
+      (!this.showcaseController.isShowcaseMode || !this.showcaseController.isShowcasePaused)
     ) {
       this.battleTickAccumulator += delta;
       let ticked = false;
@@ -359,7 +373,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleActionView = undefined;
     this.summary?.setVisible(false);
     this.waveResultView?.destroy();
-    this.showcasePaused = false;
+    this.showcaseController.resetShowcaseState();
 
     this.syncTopHud();
 
@@ -381,7 +395,7 @@ export class ValidationScene extends Phaser.Scene {
       waveLabel: `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves}`,
       linkShards: this.shardPool.count,
     });
-    this.topHud?.setVisible(!(this.showcaseMode && this.showcaseCleanFrame));
+    this.topHud?.setVisible(!(this.showcaseController.isShowcaseMode && this.showcaseController.isShowcaseCleanFrame));
   }
 
   private enterBeastRush(): void {
@@ -448,12 +462,12 @@ export class ValidationScene extends Phaser.Scene {
         this.metrics.arrangementChanged();
       },
       `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${this.waveRun.currentWave.name}${isTestHarness() && this.fixtureManager.board?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
-      isTestHarness() && !this.showcaseMode ? () => this.cycleEnemyFixture() : undefined,
+      isTestHarness() && !this.showcaseController.isShowcaseMode ? () => this.cycleEnemyFixture() : undefined,
       `Threat: ${this.waveRun.currentWave.threatLabel}`,
-      isTestHarness() && !this.showcaseMode ? this.fixtureManager.activeKey : undefined,
-      isTestHarness() && !this.showcaseMode ? () => this.loadFormationPreset('A') : undefined,
-      isTestHarness() && !this.showcaseMode ? () => this.loadFormationPreset('B') : undefined,
-      isTestHarness() && !this.showcaseMode ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
+      isTestHarness() && !this.showcaseController.isShowcaseMode ? this.fixtureManager.activeKey : undefined,
+      isTestHarness() && !this.showcaseController.isShowcaseMode ? () => this.loadFormationPreset('A') : undefined,
+      isTestHarness() && !this.showcaseController.isShowcaseMode ? () => this.loadFormationPreset('B') : undefined,
+      isTestHarness() && !this.showcaseController.isShowcaseMode ? (tool, row, column) => this.editEnemyBoard(tool, row, column) : undefined,
       this.runRoster,
       (selectedUnitId) => this.consolidateReserveUnit(selectedUnitId),
       this.shardPool,
@@ -498,7 +512,7 @@ export class ValidationScene extends Phaser.Scene {
     );
     this.battleTickAccumulator = 0;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
-    this.battleActionView.setShowcaseMode(this.showcaseMode);
+    this.battleActionView.setShowcaseMode(this.showcaseController.isShowcaseMode);
     this.battleActionView.render(this.battleModel.snapshot);
     this.renderBattle();
     this.syncTopHud();
@@ -559,81 +573,23 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private startV15AHeroBattle(): void {
-    this.loadV15ACaptureFixture();
-    if (this.phaseController.phase === GamePhase.BattleSetup) {
-      this.startBattle();
-    }
+    this.showcaseController.startV15AHeroBattle();
   }
 
   private loadV15ACaptureFixture(): void {
-    // Capture-only reset. K works from any phase so the operator cannot
-    // accidentally capture a normal run while assuming the fixture is active.
-    this.showcaseMode = true;
-    this.showcasePaused = false;
-    this.showcaseCleanFrame = false;
-    this.tweens.resumeAll();
-
-    this.battleModel = undefined;
-    this.battleOutcome = undefined;
-
-    const fixture = setupV15ACapturePreset(
-      this.battleQueue,
-      this.runRoster,
-      this.energyQueue,
-      this.shardPool,
-      this.fixtureManager,
-    );
-    this.formation = fixture.formation;
-    this.captureEnemyFixtures = fixture.captureEnemyFixtures;
-
-    // Explicit tooling jump: re-renders a clean Battle Setup even when K is
-    // pressed during Battle/Result. Normal gameplay never calls this API.
-    this.phaseController.setPhaseForTools(GamePhase.BattleSetup);
-
-    FeedbackEffects.showToast(
-      this,
-      this.layout.rightCenter.x,
-      this.scale.height - 46,
-      'V15A FIXTURE READY · 4 ENEMIES · 1180 HP',
-      '#8be2bd',
-      900,
-    );
+    this.showcaseController.loadV15ACaptureFixture();
   }
 
   private toggleShowcaseMode(): void {
-    this.showcaseMode = !this.showcaseMode;
-    this.showcasePaused = false;
-    this.tweens.resumeAll();
-    this.showcaseCleanFrame = false;
-    this.battleActionView?.setShowcaseMode(this.showcaseMode);
-    if (this.phaseController.phase === GamePhase.BattleSetup) {
-      this.renderBattleSetup();
-    } else if (this.phaseController.phase === GamePhase.Battle) {
-      this.renderBattle();
-    }
-    this.syncTopHud();
+    this.showcaseController.toggleShowcaseMode();
   }
 
   private toggleShowcasePause(): void {
-    if (!this.showcaseMode || this.phaseController.phase !== GamePhase.Battle) return;
-    this.showcasePaused = !this.showcasePaused;
-    this.renderBattle();
-
-    // Capture pause freezes presentation tweens as well as model ticking, so
-    // Signature labels / rings can be held on-screen for a portfolio frame.
-    if (this.showcasePaused) {
-      this.tweens.pauseAll();
-    } else {
-      this.tweens.resumeAll();
-    }
-
-    this.syncTopHud();
+    this.showcaseController.toggleShowcasePause();
   }
 
   private toggleShowcaseCleanFrame(): void {
-    if (!this.showcaseMode) return;
-    this.showcaseCleanFrame = !this.showcaseCleanFrame;
-    this.syncTopHud();
+    this.showcaseController.toggleShowcaseCleanFrame();
   }
 
   private consolidateReserveUnit(selectedUnitId: string): string | undefined {
@@ -665,8 +621,7 @@ export class ValidationScene extends Phaser.Scene {
 
     this.summary?.setVisible(false);
     this.battleTickAccumulator = 0;
-    this.showcasePaused = false;
-    this.showcaseCleanFrame = false;
+    this.showcaseController.resetShowcaseState();
     this.isShowingTransitionCue = false;
     this.transitionCueTimer = 0;
     this.isShowingBattleSetupCue = false;
