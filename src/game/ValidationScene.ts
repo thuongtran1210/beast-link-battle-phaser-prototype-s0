@@ -72,6 +72,7 @@ import { PrototypeFlowPanel } from './ui/PrototypeFlowPanel';
 import { BattleSetupView } from './ui/BattleSetupView';
 import { SessionSummaryView } from './ui/SessionSummaryView';
 import { BattleActionView } from './ui/BattleActionView';
+import { WaveResultView } from './ui/WaveResultView';
 import { ShowcaseBattleHUDView } from './ui/ShowcaseBattleHUDView';
 import { GameTopHUD } from './ui/GameTopHUD';
 import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
@@ -166,7 +167,7 @@ export class ValidationScene extends Phaser.Scene {
   private readonly waveRun = new WaveRunController();
   private readonly runRoster = new RunRoster();
   private readonly shardPool = new RunLinkShardPool();
-  private readonly waveResultObjects: Phaser.GameObjects.GameObject[] = [];
+  private waveResultView?: WaveResultView;
   private readonly metrics = new SessionMetrics();
 
   // Transition state
@@ -267,6 +268,7 @@ export class ValidationScene extends Phaser.Scene {
       this.layout.rightWidth,
     );
     this.summary = new SessionSummaryView(this, width / 2, height / 2, () => this.restartRun());
+    this.waveResultView = new WaveResultView(this, () => this.advanceToNextWave());
     this.showcaseBattleHud = new ShowcaseBattleHUDView(
       this,
       this.layout.rightX,
@@ -483,7 +485,7 @@ export class ValidationScene extends Phaser.Scene {
     this.battleActionView?.destroy();
     this.battleActionView = undefined;
     this.summary?.setVisible(false);
-    this.waveResultObjects.splice(0).forEach((object) => object.destroy());
+    this.waveResultView?.destroy();
     this.showcasePaused = false;
 
     this.syncTopHud();
@@ -675,130 +677,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterWaveResult(): void {
-    const width = this.scale.width;
-    const height = this.scale.height;
-    const current = this.waveRun.currentWave;
-    const nextDisplay = this.waveRun.currentWaveIndex + 1 < this.waveRun.totalWaves
-      ? this.waveRun.currentWaveIndex + 2
-      : undefined;
-    const nextIndex = nextDisplay ? this.waveRun.currentWaveIndex + 1 : undefined;
-    const nextName = nextIndex !== undefined ? P1V13A1_LEVELS[nextIndex]?.name ?? '' : '';
-    const carriedCharges = this.energyQueue.getTotalCharges();
-
-    const roster = this.runRoster.units;
-    const fresh = roster.filter((unit) => unit.status === 'ready' && unit.currentHp >= unit.maxHp);
-    const injured = roster.filter((unit) => unit.status === 'ready' && unit.currentHp > 0 && unit.currentHp < unit.maxHp);
-    const ko = roster.filter((unit) => unit.status === 'ko' || unit.currentHp <= 0);
-
-    const panelW = 760;
-    const panelH = 390;
-    const panelX = width / 2;
-    const panelY = height / 2 + 12;
-    const panel = this.add
-      .rectangle(panelX, panelY, panelW, panelH, HudTokens.colors.bgSurfaceDark, 0.98)
-      .setStrokeStyle(2, HudTokens.colors.green);
-
-    const title = this.add.text(
-      panelX,
-      panelY - 160,
-      `WAVE ${current.index + 1} / ${this.waveRun.totalWaves} CLEARED`,
-      { fontFamily: HudTokens.fonts.family, fontSize: '26px', color: HudTokens.colors.textPrimary, fontStyle: 'bold' },
-    ).setOrigin(.5);
-
-    const threat = this.add.text(
-      panelX,
-      panelY - 128,
-      `SURVIVED · ${current.threatLabel}`,
-      { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: HudTokens.colors.textGreen, fontStyle: 'bold' },
-    ).setOrigin(.5);
-
-    const energyCarried = this.add.text(
-      panelX,
-      panelY - 100,
-      `⚡ ENERGY CARRIED ×${carriedCharges}     ◆ LINK ×${this.shardPool.count}`,
-      { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: HudTokens.colors.textGold, fontStyle: 'bold' },
-    ).setOrigin(.5);
-
-    const groups = [
-      { title: 'FRESH', units: fresh, color: HudTokens.colors.green, text: HudTokens.colors.textGreen },
-      { title: 'INJURED', units: injured, color: HudTokens.colors.gold, text: HudTokens.colors.textGold },
-      { title: 'KO', units: ko, color: HudTokens.colors.red, text: HudTokens.colors.textRed },
-    ];
-
-    const cardW = 216;
-    const cardH = 150;
-    const gap = 18;
-    const totalW = cardW * 3 + gap * 2;
-    const left = panelX - totalW / 2;
-
-    groups.forEach((group, groupIndex) => {
-      const x = left + groupIndex * (cardW + gap);
-      const y = panelY - 66;
-      const card = this.add
-        .rectangle(x + cardW / 2, y + cardH / 2, cardW, cardH, HudTokens.colors.bgSurface, 0.96)
-        .setStrokeStyle(1.5, group.color, 0.8);
-      const heading = this.add.text(
-        x + 14,
-        y + 12,
-        `${group.title}  ${group.units.length}`,
-        { fontFamily: HudTokens.fonts.family, fontSize: '12px', color: group.text, fontStyle: 'bold' },
-      );
-
-      const visible = group.units.slice(0, 3);
-      visible.forEach((unit, index) => {
-        const rowY = y + 44 + index * 31;
-        const icon = createIconImage(this, unit.beastId, x + 29, rowY + 9, 26);
-        const stars = '★'.repeat(unit.star);
-        const label = this.add.text(
-          x + 49,
-          rowY,
-          `${beastDisplayName(unit.beastId)}  ${stars}\n${unit.status === 'ko' ? 'KO' : `${Math.round(unit.currentHp)} / ${Math.round(unit.maxHp)} HP`}`,
-          {
-            fontFamily: HudTokens.fonts.family,
-            fontSize: '9px',
-            color: group.title === 'KO' ? HudTokens.colors.textMuted : HudTokens.colors.textSecondary,
-            fontStyle: 'bold',
-            lineSpacing: -2,
-          },
-        );
-        this.waveResultObjects.push(icon, label);
-      });
-
-      if (group.units.length > visible.length) {
-        const more = this.add.text(
-          x + cardW - 14,
-          y + cardH - 18,
-          `+${group.units.length - visible.length} more`,
-          { fontFamily: HudTokens.fonts.family, fontSize: '9px', color: HudTokens.colors.textMuted, fontStyle: 'bold' },
-        ).setOrigin(1, 0);
-        this.waveResultObjects.push(more);
-      }
-
-      this.waveResultObjects.push(card, heading);
-    });
-
-    const nextText = this.add.text(
-      panelX,
-      panelY + 112,
-      nextDisplay ? `NEXT THREAT · WAVE ${nextDisplay} — ${nextName}` : 'RUN COMPLETE',
-      { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: HudTokens.colors.textSecondary, fontStyle: 'bold' },
-    ).setOrigin(.5);
-
-    const button = this.add
-      .rectangle(panelX, panelY + 155, 230, 46, HudTokens.colors.goldDark, 1)
-      .setStrokeStyle(1.5, HudTokens.colors.gold)
-      .setInteractive({ useHandCursor: true });
-    const label = this.add.text(
-      panelX,
-      panelY + 155,
-      nextDisplay ? 'PREPARE NEXT WAVE' : 'CONTINUE',
-      { fontFamily: HudTokens.fonts.family, fontSize: '13px', color: '#ffffff', fontStyle: 'bold' },
-    ).setOrigin(.5).setInteractive({ useHandCursor: true });
-
-    const proceed = () => this.advanceToNextWave();
-    button.on('pointerup', proceed);
-    label.on('pointerup', proceed);
-    this.waveResultObjects.push(panel, title, threat, energyCarried, nextText, button, label);
+    this.waveResultView?.render(this.waveRun, this.energyQueue, this.shardPool, this.runRoster);
   }
 
   private advanceToNextWave(): void {
