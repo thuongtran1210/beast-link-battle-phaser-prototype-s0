@@ -15,6 +15,7 @@ import { reservePage } from './ReservePagination';
 import { ACTIVE_SQUAD_LIMIT, activeSquadPresentation, reserveTargetAffordance } from './ActiveSquadPresentation';
 import { classifyBattleSetupRoster, emptyFormationSlotLabel, enemyBoardCardLabel, formationBoardSummary, setupEnergyInventory } from './BattleSetupPresentation';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
+import { BattleStarUpgradePreviewRenderer } from './battle/BattleStarUpgradePreviewRenderer';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -48,6 +49,7 @@ export class BattleSetupView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private readonly controller: BattleSetupInteractionController;
   private readonly playerSlotVisuals: SlotVisualTarget[] = [];
+  private readonly starUpgradePreviewRenderer: BattleStarUpgradePreviewRenderer;
   private dragGhost?: Phaser.GameObjects.Container;
   private hoverPreviewContainer?: Phaser.GameObjects.Container;
   private readonly dragAffordanceObjects: Phaser.GameObjects.GameObject[] = [];
@@ -76,6 +78,13 @@ export class BattleSetupView {
     private readonly shardPool?: import('../run/RunLinkShardPool').RunLinkShardPool,
   ) {
     this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, ACTIVE_SQUAD_LIMIT);
+    this.starUpgradePreviewRenderer = new BattleStarUpgradePreviewRenderer(
+      this.scene,
+      this.formation,
+      this.objects,
+      this.runRoster,
+      this.shardPool,
+    );
   }
 
   static computeLayout(viewportHeight = 720): BattleSetupLayoutMetrics {
@@ -1038,84 +1047,7 @@ export class BattleSetupView {
   }
 
   private renderStarUpgradePreview(): void {
-    const deployed = new Set(this.formation.units.filter(unit => unit.slotId !== null).map(unit => unit.unitId));
-    const reserves = this.formation.units.filter(unit => unit.slotId === null);
-    const selected = this.controller.selectedId ? this.formation.getUnit(this.controller.selectedId) : undefined;
-    const unit = selected ?? reserves.find(item => this.runRoster?.consolidationPreview(item.unitId, deployed, this.shardPool?.count ?? 0)?.canConsolidate) ?? reserves[0];
-    if (!unit) return;
-    const signature = signatureForBeast(unit.beastId);
-    this.objects.push(drawCard(this.scene, 36, 166, 220, 276, HudTokens.colors.bgSurface, .96));
-    this.text(50, 180, beastDisplayName(unit.beastId), 17, '#ffffff', 'bold');
-    this.text(50, 205, 'STAR EVOLUTION', 12, '#fbbf24', 'bold');
-    ([1, 2, 3] as const).forEach((star, index) => {
-      const y = 238 + index * 58;
-      this.text(50, y, `${'★'.repeat(star)}${star === unit.star ? '  CURRENT' : ''}`, 14,
-        star === 3 ? '#fbbf24' : '#93c5fd', 'bold');
-      this.text(50, y + 21, signatureTierTagline(signature, star), 13,
-        star === unit.star ? '#ffffff' : '#94a3b8').setWordWrapWidth(190);
-    });
-  }
-  private renderConsolidationInspector(x: number, y: number, width: number): void {
-    const selectedId = this.controller.selectedId;
-    const selected = selectedId ? this.formation.getUnit(selectedId) : undefined;
-    const rosterUnit = selected ? this.runRoster?.get(selected.unitId) : undefined;
-    if (!selected || !rosterUnit || selected.slotId !== null) {
-      this.text(x, y, 'SELECT A RESERVE BEAST\nTO VIEW STAR CONSOLIDATION', 8, '#64748b', 'bold');
-      return;
-    }
-
-    const deployedIds = new Set(this.formation.units.filter((unit) => unit.slotId !== null).map((unit) => unit.unitId));
-    const availableShards = this.shardPool?.count ?? 0;
-    const preview = this.runRoster?.consolidationPreview(selected.unitId, deployedIds, availableShards);
-    const targetStars = preview?.targetStar ? '★'.repeat(preview.targetStar) : 'MAX STAR';
-    const copies = preview ? `${preview.eligibleCount} / 3` : '0 / 3';
-    const shardTag = preview?.isShardAssisted ? '  ·  ◆ LINK ×1' : '';
-    this.text(x, y, `${beastDisplayName(selected.beastId)}  ${'★'.repeat(selected.star)}\nHP ${rosterUnit.currentHp} / ${rosterUnit.maxHp}  ·  SAME COPY ${copies}${shardTag}`, 8, '#cbd5e1', 'bold');
-
-    if (!preview || preview.targetStar === null) {
-      this.text(x, y + 34, 'MAX STAR', 8, '#fbbf24', 'bold');
-      return;
-    }
-
-    const canDo = preview.canConsolidate;
-    let buttonLabel = `NEED ${Math.max(0, 3 - preview.eligibleCount)} MORE ★`;
-    let tradeoffText = 'Requires 3 ready Reserve copies';
-
-    if (canDo) {
-      buttonLabel = `CONSOLIDATE → ${targetStars}`;
-      tradeoffText = preview.isShardAssisted ? '2 COPIES + ◆1' : '3 COPIES';
-    } else if (preview.eligibleCount === 2) {
-      buttonLabel = 'NEED 1 MORE ★ OR ◆1';
-      tradeoffText = '2 copies ready · 0 Link Shard';
-    } else {
-      buttonLabel = `NEED ${3 - preview.eligibleCount} MORE ★`;
-      tradeoffText = 'Minimum 2 copies required';
-    }
-
-    const button = this.text(
-      x,
-      y + 34,
-      buttonLabel,
-      8,
-      canDo ? '#fef08a' : '#64748b',
-      'bold',
-      canDo ? '#78350f' : '#1e293b',
-      { x: 6, y: 3 },
-    );
-    const tradeoff = this.text(x, y + 52, tradeoffText, 7, '#94a3b8', 'bold');
-    this.objects.push(button, tradeoff);
-    if (canDo && this.onConsolidate) {
-      button.setInteractive({ useHandCursor: true }).on('pointerup', () => {
-        const upgradedId = this.onConsolidate!(selected.unitId);
-        if (upgradedId) {
-          this.controller.selectUnit(null);
-          this.controller.selectUnit(upgradedId);
-          FeedbackEffects.floatText(this.scene, x + width / 2, y + 35, `CONSOLIDATED → ${targetStars}`, '#fbbf24', '10px', 700);
-          this.onArrangementChanged();
-        }
-        this.render();
-      });
-    }
+    this.starUpgradePreviewRenderer.render(this.controller.selectedId);
   }
 
   private squadPresentation() {
@@ -1153,13 +1085,6 @@ export class BattleSetupView {
       }
     });
   }
-}
-
-function roleStrokeColor(role: FormationUnit['role']): number {
-  if (role === 'Tanker') return 0xfacc15;
-  if (role === 'Assassin') return 0xf97316;
-  if (role === 'Ranger') return 0x22c55e;
-  return 0xa855f7;
 }
 
 function roleTextColor(role: FormationUnit['role']): string {
