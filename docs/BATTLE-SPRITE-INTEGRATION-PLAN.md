@@ -1,6 +1,6 @@
 # Battle Sprite Integration Plan — Authored Character Art
 
-Status: **V2 FULL BATTLE CUTOUT INTEGRATION COMPLETE / CI PASS / LIVE QA NEXT / GAMEPLAY FROZEN**
+Status: **V2-M4 READABILITY POLISH IMPLEMENTED / CI PASS / LIVE RE-QA NEXT / GAMEPLAY FROZEN**
 
 Date: 2026-10-07
 
@@ -713,38 +713,33 @@ Battle sprite integration is complete when:
 
 # 18. Immediate next task
 
-**V2-M3 — Full Battle Cutout Live QA**
+**V2-M4 Live Re-QA — Scale / Spacing / Readability**
 
 Implemented:
-- 6 / 6 player Beasts use V2 base cutouts;
-- all player Beast manifests have zero V1 pose dependencies;
-- Attack / Hit / KO use transform-driven motion profiles;
-- Signature power remains runtime VFX;
-- enemy Frontliner / Diver / Ranged now have V2 base cutouts;
-- enemy art is preloaded and rendered through EnemyCharacterView;
-- enemy Attack / Hit / KO have transform feedback;
-- authored enemy cutouts hide old rectangular fallback tokens;
-- deterministic player + enemy art contract checks PASS;
-- GitHub Actions run 157 PASS.
+- player cutouts enlarged to 112–124 px reference height;
+- enemy cutouts enlarged to 108–116 px;
+- HP/effect anchors retuned to match the larger sprites;
+- showcase declumping widened vertically;
+- player/enemy presentation offsets pull both sides slightly toward center;
+- minimum readability scale is guarded by deterministic checks;
+- GitHub Actions run 163 PASS.
 
 Live QA:
 1. refresh latest build;
 2. press `L`;
-3. verify every visible player unit is a character cutout;
-4. verify Frontliner / Diver / Ranged are character cutouts;
-5. confirm no rectangular role card remains in the Battle field;
-6. inspect HP bars, feet anchors and overlap;
-7. observe at least one attack, hit and KO on each side;
-8. capture one representative Battle frame.
+3. verify characters read larger without becoming crowded;
+4. verify Snowguard/Diver/Frontliner clusters are separated;
+5. confirm HP bars remain attached visually to each unit;
+6. confirm backline units remain readable;
+7. capture one clean representative frame.
 
 Acceptance:
-- no player card mockup;
-- no enemy card mockup;
-- silhouettes remain readable at battle scale;
-- player/enemy sides are visually distinct;
-- transform motion feels stable;
-- gameplay semantics unchanged.
+- no card mockups;
+- no unreadable overlap clusters;
+- battle field uses more of the available visual space;
+- role silhouettes remain distinguishable;
+- no gameplay semantics changed.
 
 After PASS:
-**V2-M4 — readability / scale / spacing polish + final portfolio capture.**
+**Portfolio Capture / final showcase polish.**
 
