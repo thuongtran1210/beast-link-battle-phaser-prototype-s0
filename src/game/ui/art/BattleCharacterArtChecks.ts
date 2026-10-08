@@ -1,5 +1,6 @@
 import { BATTLE_CHARACTER_ART } from './BattleCharacterManifest';
 import { BATTLE_MOTION_PROFILES } from './BattleMotionProfiles';
+import { ENEMY_CHARACTER_ART } from './EnemyCharacterManifest';
 
 const expect = (value: boolean, message: string) => {
   if (!value) throw new Error(`Battle art check failed: ${message}`);
@@ -32,4 +33,12 @@ export function runBattleCharacterArtChecks(): void {
     expect(!definition.signature, `${beastId} uses transform + VFX for Signature by default`);
     expect(!definition.ko, `${beastId} uses transform-driven KO by default`);
   });
+
+  (['Frontliner', 'Diver', 'Ranged'] as const).forEach((archetype) => {
+    const definition = ENEMY_CHARACTER_ART[archetype];
+    expect(Boolean(definition.base), `${archetype} registers V2 enemy base cutout`);
+    expect(definition.displayHeight > 0, `${archetype} has positive display height`);
+    expect(definition.hpAnchorY < 0, `${archetype} HP anchor sits above ground`);
+  });
+
 }
