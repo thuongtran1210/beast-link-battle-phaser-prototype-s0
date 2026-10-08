@@ -25,6 +25,7 @@ import { BattleEnergySystem } from './systems/BattleEnergySystem';
 import { createInitialConsequenceMetrics, cloneConsequenceMetrics, computeValidationMetrics } from './systems/BattleMetricsCalculator';
 import { SignatureCombatDispatcher } from './signatures/SignatureCombatDispatcher';
 import type { SignatureContext } from './signatures/SignatureContext';
+import { BattleTargetingSystem } from './systems/BattleTargetingSystem';
 import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/TacticalEnergyCatalog';
 import type { FormationValidationMetrics } from './FormationValidationHarness';
 
@@ -190,35 +191,11 @@ export class AutonomousBattleModel {
   }
 
   target(): CombatUnit | undefined {
-    const living = this.state.units.filter((unit) => unit.currentHp > 0);
-    if (this.combatRules.movement || this.combatRules.timeline) {
-      return living.sort(
-        (a, b) =>
-          b.positionX - a.positionX ||
-          a.positionLane - b.positionLane ||
-          rowOrder[a.row] - rowOrder[b.row],
-      )[0];
-    }
-
-    return living.sort(
-      (a, b) => rowOrder[a.row] - rowOrder[b.row] || a.column - b.column,
-    )[0];
+    return BattleTargetingSystem.target(this.state.units, this.combatRules);
   }
 
   enemyTarget(): EnemyCombatUnit | undefined {
-    const living = this.state.enemies.filter((enemy) => enemy.currentHp > 0);
-    if (this.combatRules.movement || this.combatRules.timeline) {
-      return living.sort(
-        (a, b) =>
-          a.positionX - b.positionX ||
-          a.positionLane - b.positionLane ||
-          rowOrder[a.row] - rowOrder[b.row],
-      )[0];
-    }
-
-    return living.sort(
-      (a, b) => rowOrder[a.row] - rowOrder[b.row] || a.column - b.column,
-    )[0];
+    return BattleTargetingSystem.enemyTarget(this.state.enemies, this.combatRules);
   }
 
   frontmostAliveUnit(): CombatUnit | undefined {
@@ -548,26 +525,11 @@ export class AutonomousBattleModel {
     lane: number,
     rowPriority: ReadonlyArray<BattleRow>,
   ): EnemyCombatUnit | undefined {
-    const rank = new Map(rowPriority.map((row, index) => [row, index]));
-    return this.state.enemies
-      .filter((enemy) => enemy.currentHp > 0)
-      .sort(
-        (a, b) =>
-          (rank.get(a.row) ?? 99) - (rank.get(b.row) ?? 99) ||
-          Math.abs(a.positionLane - lane) - Math.abs(b.positionLane - lane) ||
-          a.column - b.column,
-      )[0];
+    return BattleTargetingSystem.nearestEnemyByRowPriority(this.state.enemies, lane, rowPriority as BattleRow[]);
   }
 
   private deepEnemyInOrNearLane(lane: number): EnemyCombatUnit | undefined {
-    const living = this.state.enemies.filter((enemy) => enemy.currentHp > 0);
-
-    return living.sort(
-      (a, b) =>
-        Math.abs(a.positionLane - lane) - Math.abs(b.positionLane - lane) ||
-        b.positionX - a.positionX ||
-        a.column - b.column,
-    )[0];
+    return BattleTargetingSystem.deepEnemyInOrNearLane(this.state.enemies, lane);
   }
 
   private moveTowardPlayerUnit(
@@ -1307,104 +1269,24 @@ export class AutonomousBattleModel {
     enemy: EnemyCombatUnit,
     intendedTarget: CombatUnit,
   ): CombatUnit | undefined {
-    const candidateTanks = this.state.units.filter(
-      (unit) => unit.currentHp > 0 && unit.role === 'Tanker',
+    return BattleTargetingSystem.findDiverTankInterceptor(
+      enemy,
+      intendedTarget,
+      this.state.units,
+      (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
     );
-    if (!candidateTanks.length) return undefined;
-
-    const fixture = P1V11B_ENGAGEMENT_FIXTURE;
-    const eligible: Array<{ tank: CombatUnit; distance: number }> = [];
-
-    for (const tank of candidateTanks) {
-      const laneDiffToTarget = Math.abs(tank.positionLane - intendedTarget.positionLane);
-      const laneDiffToDiver = Math.abs(tank.positionLane - enemy.positionLane);
-      if (laneDiffToTarget > 1.05 && laneDiffToDiver > 1.05) continue;
-
-      const distToTarget = this.distance(
-        tank.positionX,
-        tank.positionLane,
-        intendedTarget.positionX,
-        intendedTarget.positionLane,
-      );
-      if (distToTarget > 2.2) continue;
-
-      const distToTank = this.distance(
-        enemy.positionX,
-        enemy.positionLane,
-        tank.positionX,
-        tank.positionLane,
-      );
-      if (distToTank > fixture.tankGuardRadius) continue;
-
-      const enemyAheadOfTank = enemy.positionX >= tank.positionX - COMBAT_DISTANCE_EPSILON;
-      const targetBehindOrAtTank =
-        intendedTarget.positionX <= tank.positionX + 0.35 || intendedTarget.unitId === tank.unitId;
-      if (!enemyAheadOfTank || !targetBehindOrAtTank) continue;
-
-      eligible.push({ tank, distance: distToTank });
-    }
-
-    if (!eligible.length) return undefined;
-
-    eligible.sort((a, b) => {
-      if (Math.abs(a.distance - b.distance) > COMBAT_DISTANCE_EPSILON) {
-        return a.distance - b.distance;
-      }
-      return a.tank.unitId.localeCompare(b.tank.unitId);
-    });
-
-    return eligible[0].tank;
   }
 
   private findTankInterceptor(
     enemy: EnemyCombatUnit,
     intendedTarget: CombatUnit,
   ): CombatUnit | undefined {
-    const candidateTanks = this.state.units.filter(
-      (unit) => unit.currentHp > 0 && unit.role === 'Tanker',
+    return BattleTargetingSystem.findTankInterceptor(
+      enemy,
+      intendedTarget,
+      this.state.units,
+      (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
     );
-    if (!candidateTanks.length) return undefined;
-
-    const fixture = P1V11B_ENGAGEMENT_FIXTURE;
-    const eligible: Array<{ tank: CombatUnit; distance: number }> = [];
-
-    for (const tank of candidateTanks) {
-      const distToTank = this.distance(
-        enemy.positionX,
-        enemy.positionLane,
-        tank.positionX,
-        tank.positionLane,
-      );
-
-      if (distToTank > fixture.tankGuardRadius) continue;
-
-      const enemyAheadOfTank = enemy.positionX >= tank.positionX - COMBAT_DISTANCE_EPSILON;
-      const targetBehindOrAtTank =
-        intendedTarget.positionX <= tank.positionX + 0.35 || intendedTarget.unitId === tank.unitId;
-      if (!enemyAheadOfTank || !targetBehindOrAtTank) continue;
-
-      const minLane = Math.min(enemy.positionLane, intendedTarget.positionLane) - 0.5;
-      const maxLane = Math.max(enemy.positionLane, intendedTarget.positionLane) + 0.5;
-      const inLaneCorridor = tank.positionLane >= minLane && tank.positionLane <= maxLane;
-      const laneDiffToEnemy = Math.abs(tank.positionLane - enemy.positionLane);
-      if (!inLaneCorridor || laneDiffToEnemy > 1.05) continue;
-
-      eligible.push({ tank, distance: distToTank });
-    }
-
-    if (!eligible.length) return undefined;
-
-    eligible.sort((a, b) => {
-      if (Math.abs(a.distance - b.distance) > COMBAT_DISTANCE_EPSILON) {
-        return a.distance - b.distance;
-      }
-      if (Math.abs(b.tank.positionX - a.tank.positionX) > COMBAT_DISTANCE_EPSILON) {
-        return b.tank.positionX - a.tank.positionX;
-      }
-      return a.tank.unitId.localeCompare(b.tank.unitId);
-    });
-
-    return eligible[0].tank;
   }
 
   private recordEngagementEvent(
@@ -1417,104 +1299,36 @@ export class AutonomousBattleModel {
   }
 
   private findBestEnemyInRange(unit: CombatUnit, maxRange: number): EnemyCombatUnit | undefined {
-    const living = this.state.enemies.filter((enemy) => {
-      if (enemy.currentHp <= 0) return false;
-      const dist = this.distance(unit.positionX, unit.positionLane, enemy.positionX, enemy.positionLane);
-      return dist <= maxRange + COMBAT_DISTANCE_EPSILON;
-    });
-    if (!living.length) return undefined;
-
-    return living.sort((a, b) => {
-      const laneDiffA = Math.abs(a.positionLane - unit.positionLane);
-      const laneDiffB = Math.abs(b.positionLane - unit.positionLane);
-      if (Math.abs(laneDiffA - laneDiffB) > 0.5) {
-        return laneDiffA - laneDiffB;
-      }
-      const distA = this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane);
-      const distB = this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane);
-      if (Math.abs(distA - distB) > COMBAT_DISTANCE_EPSILON) {
-        return distA - distB;
-      }
-      return a.enemyId.localeCompare(b.enemyId);
-    })[0];
+    return BattleTargetingSystem.findBestEnemyInRange(
+      unit,
+      this.state.enemies,
+      maxRange,
+      (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
+    );
   }
 
   private findBestRangedAdvanceTarget(unit: CombatUnit): EnemyCombatUnit | undefined {
-    const living = this.state.enemies.filter((e) => e.currentHp > 0);
-    if (!living.length) return undefined;
-
-    return living.sort((a, b) => {
-      const laneDiffA = Math.abs(a.positionLane - unit.positionLane);
-      const laneDiffB = Math.abs(b.positionLane - unit.positionLane);
-      if (Math.abs(laneDiffA - laneDiffB) >= 1.5) {
-        return laneDiffA - laneDiffB;
-      }
-      const distA = this.distance(unit.positionX, unit.positionLane, a.positionX, a.positionLane);
-      const distB = this.distance(unit.positionX, unit.positionLane, b.positionX, b.positionLane);
-      if (Math.abs(distA - distB) > COMBAT_DISTANCE_EPSILON) {
-        return distA - distB;
-      }
-      return a.enemyId.localeCompare(b.enemyId);
-    })[0];
+    return BattleTargetingSystem.findBestRangedAdvanceTarget(
+      unit,
+      this.state.enemies,
+      (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
+    );
   }
 
   private acquirePlayerTarget(unit: CombatUnit): EnemyCombatUnit | undefined {
-    if (unit.role === 'Tanker') {
-      return this.nearestEnemyByRowPriority(unit.positionLane, ['Front', 'Mid', 'Back']);
-    } else if (unit.role === 'Assassin') {
-      return this.nearestEnemyByRowPriority(unit.positionLane, ['Back', 'Mid', 'Front']);
-    } else {
-      return this.deepEnemyInOrNearLane(unit.positionLane);
-    }
+    return BattleTargetingSystem.acquirePlayerTarget(unit, this.state.enemies);
   }
 
   private acquireDiverTarget(enemy: EnemyCombatUnit): CombatUnit | undefined {
-    const living = this.state.units.filter((u) => u.currentHp > 0);
-    if (!living.length) return undefined;
-
-    const carries = living.filter((u) => u.role === 'Mage' || u.role === 'Ranger');
-    if (carries.length) {
-      return carries.sort((a, b) => {
-        const laneDiffA = Math.abs(a.positionLane - enemy.positionLane);
-        const laneDiffB = Math.abs(b.positionLane - enemy.positionLane);
-        if (Math.abs(laneDiffA - laneDiffB) > 0.5) return laneDiffA - laneDiffB;
-        if (Math.abs(a.positionX - b.positionX) > COMBAT_DISTANCE_EPSILON) {
-          return a.positionX - b.positionX;
-        }
-        return a.unitId.localeCompare(b.unitId);
-      })[0];
-    }
-
-    return living.sort((a, b) => {
-      if (Math.abs(a.positionX - b.positionX) > 0.4) {
-        return a.positionX - b.positionX;
-      }
-      const laneDiffA = Math.abs(a.positionLane - enemy.positionLane);
-      const laneDiffB = Math.abs(b.positionLane - enemy.positionLane);
-      if (Math.abs(laneDiffA - laneDiffB) > 0.5) return laneDiffA - laneDiffB;
-      return a.unitId.localeCompare(b.unitId);
-    })[0];
+    return BattleTargetingSystem.acquireDiverTarget(enemy, this.state.units);
   }
 
   private acquireRangedEnemyTarget(enemy: EnemyCombatUnit): CombatUnit | undefined {
-    const living = this.state.units.filter((u) => u.currentHp > 0);
-    if (!living.length) return undefined;
-
-    const inRange = living.filter(
-      (u) =>
-        this.distance(enemy.positionX, enemy.positionLane, u.positionX, u.positionLane) <=
-        3.8 + COMBAT_DISTANCE_EPSILON,
+    return BattleTargetingSystem.acquireRangedEnemyTarget(
+      enemy,
+      this.state.units,
+      (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
     );
-    const pool = inRange.length ? inRange : living;
-
-    return pool.sort((a, b) => {
-      const laneDiffA = Math.abs(a.positionLane - enemy.positionLane);
-      const laneDiffB = Math.abs(b.positionLane - enemy.positionLane);
-      if (Math.abs(laneDiffA - laneDiffB) > 0.5) return laneDiffA - laneDiffB;
-      const dx = b.positionX - a.positionX;
-      if (Math.abs(dx) > COMBAT_DISTANCE_EPSILON) return dx;
-      return a.unitId.localeCompare(b.unitId);
-    })[0];
   }
 
   private resolveRangedEnemyMovementAndAction(
@@ -1610,37 +1424,12 @@ export class AutonomousBattleModel {
   }
 
   private acquireEnemyTarget(enemy: EnemyCombatUnit): CombatUnit | undefined {
-    const living = this.state.units.filter((unit) => unit.currentHp > 0);
-    if (!living.length) return undefined;
-
-    if (this.combatRules.engagement) {
-      return living.sort((a, b) => {
-        const laneDiffA = Math.abs(a.positionLane - enemy.positionLane);
-        const laneDiffB = Math.abs(b.positionLane - enemy.positionLane);
-        if (Math.abs(laneDiffA - laneDiffB) >= 1.5) {
-          return laneDiffA - laneDiffB;
-        }
-
-        const dx = b.positionX - a.positionX;
-        if (Math.abs(dx) > 0.4) {
-          return dx;
-        }
-
-        if (Math.abs(laneDiffA - laneDiffB) > COMBAT_DISTANCE_EPSILON) {
-          return laneDiffA - laneDiffB;
-        }
-
-        const distA = this.distance(enemy.positionX, enemy.positionLane, a.positionX, a.positionLane);
-        const distB = this.distance(enemy.positionX, enemy.positionLane, b.positionX, b.positionLane);
-        if (Math.abs(distA - distB) > COMBAT_DISTANCE_EPSILON) {
-          return distA - distB;
-        }
-
-        return a.unitId.localeCompare(b.unitId);
-      })[0];
-    }
-
-    return this.target();
+    return BattleTargetingSystem.acquireEnemyTarget(
+      enemy,
+      this.state.units,
+      this.combatRules,
+      (x1, y1, x2, y2) => this.distance(x1, y1, x2, y2),
+    );
   }
 
   private getSignatureContext(): SignatureContext {
