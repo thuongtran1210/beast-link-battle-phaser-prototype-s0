@@ -43,17 +43,12 @@ import { GameTopHUD } from './ui/GameTopHUD';
 import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
 import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
-import { createIconImage, ensureIconTextures } from './ui/icons/IconFactory';
+import { ensureIconTextures } from './ui/icons/IconFactory';
 import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
 import { preloadEnemyCharacterArt } from './ui/art/EnemyCharacterLoader';
 import { runBattleCharacterArtChecks } from './ui/art/BattleCharacterArtChecks';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
-import { beastDisplayName } from './ui/icons/UnitIconRegistry';
-import { compactEventLabel, type BeastRushEvent } from './ui/BeastRushHudPresentation';
-import { tacticalEnergyControl } from './ui/TacticalEnergyPresentation';
-import { tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
-import { tacticalEnergyDefinition } from './energy/TacticalEnergyCatalog';
-import { energyRushInventory, energyRushMatchLabel } from './ui/EnergyRushPresentation';
+import { tacticalEnergyControl, tacticalEnergyCastFeedback } from './ui/TacticalEnergyPresentation';
 
 import { BattleFixtureManager } from './battle/BattleFixtureManager';
 
