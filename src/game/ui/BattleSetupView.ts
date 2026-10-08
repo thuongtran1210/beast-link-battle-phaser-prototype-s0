@@ -16,6 +16,7 @@ import { ACTIVE_SQUAD_LIMIT, activeSquadPresentation, reserveTargetAffordance } 
 import { classifyBattleSetupRoster, emptyFormationSlotLabel, enemyBoardCardLabel, formationBoardSummary, setupEnergyInventory } from './BattleSetupPresentation';
 import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { BattleStarUpgradePreviewRenderer } from './battle/BattleStarUpgradePreviewRenderer';
+import { BattleSetupRightCTARenderer } from './battle/BattleSetupRightCTARenderer';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -50,6 +51,7 @@ export class BattleSetupView {
   private readonly controller: BattleSetupInteractionController;
   private readonly playerSlotVisuals: SlotVisualTarget[] = [];
   private readonly starUpgradePreviewRenderer: BattleStarUpgradePreviewRenderer;
+  private readonly rightCTARenderer: BattleSetupRightCTARenderer;
   private dragGhost?: Phaser.GameObjects.Container;
   private hoverPreviewContainer?: Phaser.GameObjects.Container;
   private readonly dragAffordanceObjects: Phaser.GameObjects.GameObject[] = [];
@@ -83,6 +85,13 @@ export class BattleSetupView {
       this.formation,
       this.objects,
       this.runRoster,
+      this.shardPool,
+    );
+    this.rightCTARenderer = new BattleSetupRightCTARenderer(
+      this.scene,
+      this.objects,
+      this.storedEnergy,
+      this.startBattle,
       this.shardPool,
     );
   }
@@ -738,86 +747,8 @@ export class BattleSetupView {
   }
 
   private renderRightCTA(layout: BattleSetupLayoutMetrics): void {
-    const x = layout.panelX;
-    const y = layout.storedEnergyY;
-    const w = 258;
-    const h = 210;
-
-    // Outer card
-    const cardBg = drawCard(this.scene, x, y, w, h, HudTokens.colors.bgSurface, 0.95);
-    this.objects.push(cardBg);
-
-    // Stored Energy section
-    const rawEnergy = this.storedEnergy(); const energyEntries = setupEnergyInventory(Array.isArray(rawEnergy) ? rawEnergy : []); const totalEnergy = energyEntries.reduce((sum, entry) => sum + entry.charges, 0);
-    const energyTitle = this.text(x + 14, y + 14, `⚡ STORED ENERGY ×${totalEnergy}`, 11, HudTokens.colors.textGold, 'bold'); this.objects.push(energyTitle);
-    energyEntries.slice(0, 4).forEach((entry, index) => { const px = x + 24 + Math.floor(index / 2) * 118; const py = y + 39 + (index % 2) * 32; const icon = createIconImage(this.scene, entry.energyId, px, py, 16); const label = this.text(px + 14, py - 8, `${entry.displayName} ×${entry.charges}`, 9, '#fef3c7', 'bold'); const hint = this.text(px + 14, py + 4, entry.shortDescription, 7, '#94a3b8'); this.objects.push(icon, label, hint); });
-
-    // Global Link Shard count
-    const shards = this.shardPool?.count ?? 0;
-    const shardBadge = this.text(x + w - 88, y + 14, `◆ LINK ×${shards}`, 10, '#38bdf8', 'bold', '#0c4a6e', { x: 5, y: 2 });
-    this.objects.push(shardBadge);
-
-    this.text(x + 14, y + 94, 'Cast during Battle', 9, HudTokens.colors.textMuted);
-
-    // START BATTLE CTA button
     const squad = this.squadPresentation();
-    const activeCount = squad.activeCount;
-    const allPlaced = activeCount >= 1 && activeCount <= ACTIVE_SQUAD_LIMIT;
-    const btnW = w - 28;
-    const btnH = 54;
-    const btnX = x + w / 2;
-    const btnY = y + h - 42;
-
-    const btnBg = this.scene.add
-      .rectangle(btnX, btnY, btnW, btnH, allPlaced ? HudTokens.colors.goldDark : 0x1e293b, 1)
-      .setStrokeStyle(1.5, allPlaced ? HudTokens.colors.gold : 0x334155);
-
-    const btnLabel = this.text(
-      btnX,
-      allPlaced ? btnY - 7 : btnY - 8,
-      allPlaced ? 'START BATTLE ⚔' : 'START BATTLE',
-      14,
-      allPlaced ? '#ffffff' : '#64748b',
-      'bold',
-    ).setOrigin(0.5);
-
-    const btnSub = this.text(
-      btnX,
-      allPlaced ? btnY + 11 : btnY + 10,
-      allPlaced ? squad.ctaSummary : 'Deploy at least 1 Beast',
-      9,
-      allPlaced ? '#fef08a' : '#f59e0b',
-      'bold',
-    ).setOrigin(0.5);
-
-    this.objects.push(btnBg, btnLabel, btnSub);
-
-    if (allPlaced) {
-      if (this.scene.tweens) {
-        this.scene.tweens.add({
-          targets: btnBg,
-          scaleX: 1.025,
-          scaleY: 1.035,
-          duration: 650,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.InOut',
-        });
-      }
-      btnBg.setInteractive({ useHandCursor: true });
-      btnLabel.setInteractive({ useHandCursor: true });
-      btnSub.setInteractive({ useHandCursor: true });
-
-      let started = false;
-      const onStart = () => {
-        if (started) return;
-        started = true;
-        this.startBattle();
-      };
-      btnBg.on('pointerup', onStart);
-      btnLabel.on('pointerup', onStart);
-      btnSub.on('pointerup', onStart);
-    }
+    this.rightCTARenderer.render(layout, squad);
   }
 
   private startDrag(unitId: string, fromSlotId: string | null, pointer: Phaser.Input.Pointer): void {
