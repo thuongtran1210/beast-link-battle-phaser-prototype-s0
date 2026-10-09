@@ -13,6 +13,8 @@ import {
   resolveBattleCharacterTexture,
 } from './BattleCharacterLoader';
 import { battleMotionProfile } from './BattleMotionProfiles';
+import { SnowguardAnimationPlayer } from './SnowguardAnimationPlayer';
+import { IroncladAnimationPlayer } from './IroncladAnimationPlayer';
 
 /**
  * Presentation-only Beast visual.
@@ -29,6 +31,7 @@ export class BattleCharacterView {
   readonly fallbackIcon: Phaser.GameObjects.Image;
 
   private authoredImage?: Phaser.GameObjects.Image;
+  private frameAnimation?: SnowguardAnimationPlayer;
   private idleTween?: Phaser.Tweens.Tween;
   private poseReset?: Phaser.Time.TimerEvent;
   private currentPose: BattlePose = 'idle';
@@ -80,6 +83,16 @@ export class BattleCharacterView {
       this.showAuthored(false);
     }
 
+    if(beastId==='beast-a'&&definition&&SnowguardAnimationPlayer.available(scene)) {
+      this.frameAnimation=new SnowguardAnimationPlayer(scene,definition.displayHeight*.85,definition.groundOffsetY);
+      this.root.add(this.frameAnimation.sprite);
+      this.authoredImage?.setVisible(false);
+    }
+    if(beastId==='beast-e'&&definition&&IroncladAnimationPlayer.available(scene)) {
+      this.frameAnimation=new IroncladAnimationPlayer(scene,definition.displayHeight*.85,definition.groundOffsetY);
+      this.root.add(this.frameAnimation.sprite);
+      this.authoredImage?.setVisible(false);
+    }
     this.startIdleMotion();
   }
 
@@ -100,16 +113,23 @@ export class BattleCharacterView {
   }
 
   setFacing(direction: BattleFacing): void {
+    if(this.facing===direction) return;
+    // Transform clips capture their sign: cancel stale loops before reversing.
+    this.scene.tweens.killTweensOf(this.root);
     this.facing = direction;
     const magnitude = Math.max(0.001, Math.abs(this.root.scaleX));
     this.root.setScale(direction === 'right' ? magnitude : -magnitude, this.root.scaleY);
+    if(this.alive) this.startIdleMotion();
   }
+
+  setMoving(moving:boolean):void {this.frameAnimation?.setMoving(moving);}
 
   /**
    * Compatibility-only explicit pose swap.
    * V2 Attack / Hit animation should use transform motion instead.
    */
   setPose(pose: BattlePose): void {
+    if(this.frameAnimation){if(pose==='move'||pose==='idle')this.frameAnimation.setMoving(pose==='move');return;}
     if (!this.alive && pose !== 'ko') return;
     this.currentPose = pose;
 
@@ -124,6 +144,7 @@ export class BattleCharacterView {
 
   playAttack(duration?: number): void {
     if (!this.alive) return;
+    if(this.frameAnimation){this.frameAnimation.play('attack',Math.max(400,duration??550));return;}
     const profile = this.profile();
     this.resetToBaseTexture();
     this.stopMotion(true);
@@ -144,6 +165,7 @@ export class BattleCharacterView {
 
   playSignature(duration?: number): void {
     if (!this.alive) return;
+    if(this.frameAnimation){this.frameAnimation.play('skill',Math.max(600,duration??820));return;}
     const profile = this.profile();
     const signatureTexture = resolveBattleCharacterOptionalTexture(
       this.scene,
@@ -172,6 +194,7 @@ export class BattleCharacterView {
 
   playHit(duration?: number): void {
     if (!this.alive) return;
+    if(this.frameAnimation){this.frameAnimation.play('hit',Math.max(320,duration??400));return;}
     const profile = this.profile();
     this.resetToBaseTexture();
     this.stopMotion(true);
@@ -197,6 +220,7 @@ export class BattleCharacterView {
   }
 
   setAlive(alive: boolean): void {
+    if(this.frameAnimation){this.alive=alive;this.resetTransform();if(alive)this.frameAnimation.revive();else this.frameAnimation.play('ko',850);return;}
     this.alive = alive;
     this.poseReset?.remove(false);
     this.poseReset = undefined;
@@ -231,6 +255,7 @@ export class BattleCharacterView {
   }
 
   dispose(): void {
+    this.frameAnimation?.dispose();
     this.poseReset?.remove(false);
     this.poseReset = undefined;
     this.stopMotion(false);
@@ -246,6 +271,7 @@ export class BattleCharacterView {
   }
 
   private startIdleMotion(): void {
+    if(this.frameAnimation)return;
     if (!this.alive || !this.root.active) return;
     this.idleTween?.stop();
     this.idleTween = undefined;
@@ -310,7 +336,7 @@ export class BattleCharacterView {
 
   private showAuthored(show: boolean): void {
     const canShow = show && Boolean(this.authoredImage);
-    this.authoredImage?.setVisible(canShow);
+    this.authoredImage?.setVisible(canShow&&!this.frameAnimation);
     this.fallbackBody.setVisible(!canShow);
     this.fallbackIcon.setVisible(!canShow);
 

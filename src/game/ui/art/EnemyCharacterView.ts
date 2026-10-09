@@ -8,6 +8,7 @@ export class EnemyCharacterView {
   readonly fallbackBody: Phaser.GameObjects.Rectangle;
   readonly fallbackIcon: Phaser.GameObjects.Image;
 
+  private facing: 'left' | 'right' = 'left';
   private image?: Phaser.GameObjects.Image;
 
   constructor(
@@ -60,12 +61,18 @@ export class EnemyCharacterView {
     return this.isAuthored ? enemyCharacterDefinition(this.archetype).hpAnchorY : -27;
   }
 
+  setFacing(direction:'left'|'right'):void {
+    this.facing=direction;
+    this.image?.setFlipX(direction==='left');
+    this.fallbackIcon.setFlipX(direction==='left');
+  }
+
   playAttack(): void {
     if (!this.root.active) return;
     this.scene.tweens.killTweensOf(this.root);
     this.scene.tweens.add({
       targets: this.root,
-      x: -8,
+      x: this.facing==='left' ? -8:8,
       scaleX: 1.06,
       scaleY: 0.96,
       duration: 90,
@@ -83,7 +90,7 @@ export class EnemyCharacterView {
     });
     this.scene.tweens.add({
       targets: this.root,
-      x: 6,
+      x: this.facing==='left' ? 6:-6,
       angle: 4,
       duration: 70,
       yoyo: true,

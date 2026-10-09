@@ -13,12 +13,19 @@ export class BattleArenaGridRenderer {
   ) {}
 
   createChibiArena(): void {
+    if (this.scene.textures.exists('owner-camp-battle')) {
+      const image = this.scene.add.image(this.scene.scale.width / 2, this.scene.scale.height / 2, 'owner-camp-battle').setDepth(-10);
+      // Cover the screen without stretching the owner's illustration. Canvas clips overflow.
+      image.setScale(Math.max(this.scene.scale.width / image.width, this.scene.scale.height / image.height));
+      this.managedObjects.push(image);
+      return;
+    }
     const x = 18;
-    const y = isCompactLandscape() ? 142 : this.layout.baseY + 6;
+    const y = isCompactLandscape() ? 132 : this.layout.baseY + 6;
     const width = isCompactLandscape()
       ? this.scene.scale.width - 36
       : this.scene.scale.width - Math.min(360, Math.max(300, Math.round(this.scene.scale.width * 0.28))) - 54;
-    const height = this.scene.scale.height - y - 190;
+    const height = this.scene.scale.height - y - (isCompactLandscape() ? 222 : 190);
     const g = this.scene.add.graphics().setDepth(-10);
     const edge = 0x182b27;
 

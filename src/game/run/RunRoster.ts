@@ -26,6 +26,12 @@ export interface ConsolidationResult {
   isShardAssisted: boolean;
 }
 export class RunRoster {
+  private capacity = 4;
+  get squadLimit(): number { return this.capacity; }
+  buyFifthSlot(pool: RunLinkShardPool): boolean {
+    if (this.capacity !== 4 || !pool.spend(2)) return false;
+    this.capacity = 5; return true;
+  }
   private serial = 0;
   private readonly byId = new Map<string, RunUnitInstance>();
   get units(): RunUnitInstance[] { return [...this.byId.values()].map((u) => ({ ...u })); }
@@ -33,7 +39,7 @@ export class RunRoster {
   deployable(): RunUnitInstance[] { return this.units.filter((u) => u.status === 'ready'); }
   get(instanceId: string): RunUnitInstance | undefined { const unit = this.byId.get(instanceId); return unit && { ...unit }; }
   reconcile(battleUnits: ReadonlyArray<CombatUnit>): void { for (const battle of battleUnits) { const unit = this.byId.get(battle.unitId); if (!unit) continue; unit.currentHp = Math.max(0, Math.min(unit.maxHp, battle.currentHp)); unit.status = unit.currentHp <= 0 ? 'ko' : 'ready'; } }
-  reset(): void { this.byId.clear(); this.serial = 0; }
+  reset(): void { this.capacity = 4; this.byId.clear(); this.serial = 0; }
   formationUnits(): Array<DeployedUnit & { instanceId: string }> { return this.units.map((u) => ({ contentId: u.beastId, star: u.star, instanceId: u.instanceId })); }
   canDeploy(unitId: string): boolean { return this.byId.get(unitId)?.status === 'ready'; }
   activeCount(formation: ReadonlyArray<FormationUnit>): number { return formation.filter((u) => u.slotId !== null).length; }

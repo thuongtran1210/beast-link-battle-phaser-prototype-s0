@@ -35,7 +35,7 @@ export class BattleSetupInteractionController {
   private selectedUnitId: string | null = null;
   private hasEverDeployed = false;
 
-  constructor(private readonly formation: BattleFormation, private readonly canUse: (unitId: string) => boolean = () => true, private readonly activeCap = Infinity) {
+  constructor(private readonly formation: BattleFormation, private readonly canUse: (unitId: string) => boolean = () => true, private readonly activeCap: number | (() => number) = Infinity) {
     if (this.formation.units.some((u) => u.slotId !== null)) {
       this.hasEverDeployed = true;
     }
@@ -138,7 +138,7 @@ export class BattleSetupInteractionController {
       // Empty destination slot
       if (targetSlot.unitId === null) {
         if (currentMode === 'draggingFromTray') {
-          if (this.getDeployedUnits().length >= this.activeCap) return { type: 'rejected', reason: 'Active Squad full' };
+          if (this.getDeployedUnits().length >= (typeof this.activeCap === 'function' ? this.activeCap() : this.activeCap)) return { type: 'rejected', reason: 'Active Squad full' };
           const success = this.formation.place(unitId, targetSlotId);
           if (success) {
             this.hasEverDeployed = true;
@@ -229,7 +229,7 @@ export class BattleSetupInteractionController {
 
       // Empty slot
       if (slot.unitId === null) {
-        if (selectedUnit.slotId === null && this.getDeployedUnits().length >= this.activeCap) return { type: 'rejected', reason: 'Active Squad full' };
+        if (selectedUnit.slotId === null && this.getDeployedUnits().length >= (typeof this.activeCap === 'function' ? this.activeCap() : this.activeCap)) return { type: 'rejected', reason: 'Active Squad full' };
         const wasPlaced = selectedUnit.slotId !== null;
         const fromSlot = selectedUnit.slotId;
         const success = this.formation.place(unitId, slotId);

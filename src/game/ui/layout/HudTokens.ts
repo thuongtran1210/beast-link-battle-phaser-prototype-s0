@@ -4,8 +4,8 @@
 export const HudTokens = {
   colors: {
     // Backgrounds & Surfaces
-    bgApp: 0x070d1d,
-    bgGame: 0x0b1228,
+    bgApp: 0x14221b,
+    bgGame: 0x18271f,
     bgSurface: 0x202725,
     bgSurfaceElevated: 0x29322e,
     bgSurfaceLight: 0x39433d,
@@ -30,19 +30,19 @@ export const HudTokens = {
     gold: 0xffd95c,
     goldDark: 0xc4943f,
     goldMuted: 0x70542e,
-    blue: 0x35c6ff,
+    blue: 0x8bb6bb,
     blueDark: 0x407cb8,
     blueLight: 0xbce4ff,
     red: 0xee7185,
     redDark: 0x98495a,
     redLight: 0xffbbc5,
-    green: 0x42e0a4,
+    green: 0x8dbb93,
     greenDark: 0x3a956f,
     greenLight: 0xb9f1d8,
 
     // Text (HEX strings for Phaser text)
-    textPrimary: '#f7f7ff',
-    textSecondary: '#d7e3ff',
+    textPrimary: '#f4efdf',
+    textSecondary: '#d4decb',
     textMuted: '#a0aea6',
     textDark: '#171d36',
     textGold: '#dfc997',

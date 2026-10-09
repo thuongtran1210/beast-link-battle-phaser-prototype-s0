@@ -2,6 +2,18 @@
 
 This manifest tracks art approval state.
 
+## Owner Village scene and props — 2026-10-09
+
+Original files preserved unchanged in public/assets/ui/camp/village-owner-v1: map.png (1536x1024 RGB), forge/garden/dock.png (1254x1254 RGBA). Camp renders the map in one fixed-coordinate world/camera, garden on the left clearing, forge as the owned anvil replacement on the right. Dock source retained for alternate placement; current scene uses its already baked-in pier, avoiding double piers. World crop windows use threshold-alpha bounds without bitmap edits. Garden and existing pier are shared scene facilities, not purchased/unlocked save items; residents still require actual recruitment. Procedural watering/fishing and existing forge interaction are prototypes, not authored profession sheets. OWNER-SUPPLIED / INTEGRATED for map/garden/forge, dock STORED; no live composition or GAME READY claim.
+
+## Owner frame animation sheets — 2026-10-09
+
+Snowguard and Ironclad each have six original owner-supplied RGBA sheets under `public/assets/characters/duck-guardian/animation_v01` and `public/assets/characters/bear-hammer/animation_v01`. Each sheet is 1774×887 with eight frames in 4×2 order. Runtime texture windows and foot origins are recorded in SnowguardFrames.json / IroncladFrames.json; original PNGs are unmodified. Clips: Idle, Walk, Attack, Skill, Hit, KO. Status OWNER-SUPPLIED / INTEGRATED; live animation quality and combat readability review open, not formally STYLE APPROVED or GAME READY.
+
+## Owner Energy icons — 2026-10-08
+
+Owner supplied transparent sheet: `public/assets/ui/energy/owner-icons-v1.png`, 1254×1254. Runtime frame definitions: `src/game/ui/icons/OwnerEnergyArt.ts`. Four padded square frames: Mend blue medical patch, Guard coral paw shield, Break mint mallet/cracked armor, Disrupt purple stop glove. Source preserved unchanged; sprite windows avoid neighboring items. Status: OWNER-SUPPLIED / INTEGRATED, mobile readability review open; no new formal STYLE APPROVED or GAME READY claim.
+
 ## Style anchors
 
 | Asset | Role / Type | Status | Version | Notes |

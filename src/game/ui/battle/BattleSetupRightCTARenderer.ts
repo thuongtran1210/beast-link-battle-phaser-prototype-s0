@@ -5,6 +5,7 @@ import { setupEnergyInventory } from '../BattleSetupPresentation';
 import type { EnergyQueueEntry } from '../../energy/EnergyQueue';
 import type { RunLinkShardPool } from '../../run/RunLinkShardPool';
 import { ACTIVE_SQUAD_LIMIT } from '../ActiveSquadPresentation';
+import { isCompactLandscape } from '../layout/MobilePresentation';
 
 type SetupEnergyEntry = ReturnType<typeof setupEnergyInventory>[number];
 
@@ -20,12 +21,15 @@ export class BattleSetupRightCTARenderer {
     private readonly storedEnergy: () => ReadonlyArray<EnergyQueueEntry> | string,
     private readonly startBattle: () => void,
     private readonly shardPool?: RunLinkShardPool,
+    private readonly getLimit: () => number = () => ACTIVE_SQUAD_LIMIT,
+    private readonly buySlot?: () => void,
   ) {}
 
   render(
     layout: BattleSetupRightCTALayout,
     squad: { activeCount: number; ctaSummary: string },
   ): void {
+    if (isCompactLandscape()) { this.renderMobile(layout.panelX, squad); return; }
     const x = layout.panelX;
     const y = layout.storedEnergyY;
     const w = 258;
@@ -79,11 +83,18 @@ export class BattleSetupRightCTARenderer {
     );
     this.managedObjects.push(shardBadge);
 
-    this.addText(x + 14, y + 94, 'Cast during Battle', 9, HudTokens.colors.textMuted);
+    const expanded = this.getLimit() >= 5;
+    const canBuy = !expanded && Boolean(this.buySlot) && (this.shardPool?.count ?? 0) >= 2;
+    const upgrade = this.scene.add.rectangle(x + w / 2, y + 116, w - 28, 38, canBuy ? 0x435341 : 0x29322e)
+      .setStrokeStyle(1, 0x66716a);
+    const upgradeText = this.addText(x + w / 2, y + 116,
+      expanded ? 'SQUAD 5 · UNLOCKED' : 'SQUAD 4 → 5 · ◆2', 13, canBuy ? '#e8d3a5' : '#a0aea6', 'bold').setOrigin(.5);
+    this.managedObjects.push(upgrade, upgradeText);
+    if (canBuy) upgrade.setInteractive({ useHandCursor: true }).on('pointerup', () => this.buySlot?.());
 
     // START BATTLE CTA button
     const activeCount = squad.activeCount;
-    const allPlaced = activeCount >= 1 && activeCount <= ACTIVE_SQUAD_LIMIT;
+    const allPlaced = activeCount >= 1 && activeCount <= this.getLimit();
     const btnW = w - 28;
     const btnH = 54;
     const btnX = x + w / 2;
@@ -139,6 +150,27 @@ export class BattleSetupRightCTARenderer {
       btnLabel.on('pointerup', onStart);
       btnSub.on('pointerup', onStart);
     }
+  }
+
+  private renderMobile(x: number, squad: { activeCount: number; ctaSummary: string }): void {
+    const y = 500, w = 258;
+    const expanded = this.getLimit() >= 5;
+    const buy = !expanded && Boolean(this.buySlot) && (this.shardPool?.count ?? 0) >= 2;
+    const ready = squad.activeCount >= 1 && squad.activeCount <= this.getLimit();
+    const button=(top:number,fill:number,title:string,hint:string,enabled:boolean,action?:()=>void)=>{
+      const g=this.scene.add.graphics();
+      g.fillStyle(0x62472f,.97);g.fillRoundedRect(x,top,w,100,16);
+      g.fillStyle(fill);g.fillRoundedRect(x+4,top+4,w-8,92,12);
+      this.managedObjects.push(g);
+      this.addText(x+w/2,top+34,title,22,enabled?'#342b1e':'#c2cbb7','bold').setOrigin(.5);
+      this.addText(x+w/2,top+68,hint,16,enabled?'#59472d':'#98a78d').setOrigin(.5);
+      const hit=this.scene.add.rectangle(x+w/2,top+50,w,100,0xffffff,0);
+      this.managedObjects.push(hit);
+      if(enabled&&action) hit.setInteractive({useHandCursor:true}).on('pointerup',action);
+    };
+    button(y,buy?0xb8c79b:0x314536,expanded?'Đội hình 5 thú':'Mở vị trí thứ 5',expanded?'Đã mở trong lượt này':`◆ ${this.shardPool?.count??0}/2 · Mảnh Liên Kết`,buy,()=>this.buySlot?.());
+    let started=false;
+    button(y+105,ready?0xedc478:0x314536,'Xuất trận',ready?`${squad.activeCount}/${this.getLimit()} thú đã sẵn sàng`:'Đặt ít nhất 1 thú',ready,()=>{if(!started){started=true;this.startBattle();}});
   }
 
   private addText(

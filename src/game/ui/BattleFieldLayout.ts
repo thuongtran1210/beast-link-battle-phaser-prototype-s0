@@ -43,6 +43,19 @@ export function rowIndex(row: BattleRow): number {
   return row === 'Front' ? 0 : row === 'Mid' ? 1 : 2;
 }
 
+/** Shared presentation for player Setup and Battle; model spawn depths stay intact. */
+export function createPlayerBattleLayout(width: number, height: number, compact: boolean, baseX = 18, baseY = 105): BattleFieldLayout {
+  const layout=createBattleFieldLayout(baseX,baseY);
+  const fieldWidth=compact ? width-36 : width-Math.min(360,Math.max(300,Math.round(width*.28)))-54;
+  layout.dividerX=baseX+fieldWidth/2;
+  layout.depthGap=Math.min(110,Math.max(84,(fieldWidth-180)/7));
+  layout.playerFrontX=layout.dividerX-layout.depthGap;
+  layout.enemyFrontX=layout.dividerX+layout.depthGap;
+  layout.topLaneY=compact ? 230 : baseY+108;
+  layout.laneGap=compact ? 48 : Math.min(58,Math.max(40,(height-290-layout.topLaneY)/5));
+  return layout;
+}
+
 /**
  * Player faces right:
  * Front is closest to center, then Mid, then Back further left.

@@ -31,6 +31,9 @@ export class BattleSignatureVfxRenderer {
   playSignatureFx(event: SignatureFxPresentation): void {
     const source = this.units.get(event.unitId);
     if (!source || !source.container.active) return;
+    // Ranged identity is carried by traveling projectiles and persistent control props.
+    // Avoid stacking beams, auras and text over the same shot.
+    if (['FocusShot', 'TwinVolley', 'ArcaneBloom', 'TickingBomb'].includes(event.signatureId)) return;
 
     if (event.star === 3 && (event.signatureId === 'ArcaneBloom' || event.signatureId === 'FocusShot')) return;
     if (event.signatureId === 'WoollyRescue' || event.signatureId === 'ToyWorkshop' || event.signatureId === 'BubbleTrap') return;
@@ -58,14 +61,14 @@ export class BattleSignatureVfxRenderer {
       }
       const text = this.scene.add.text(
         isCompactLandscape() ? this.scene.scale.width / 2 : sourcePoint.x,
-        isCompactLandscape() ? 160 : sourcePoint.y - 46,
+        isCompactLandscape() ? 117 : sourcePoint.y - 46,
         label,
         {
           fontFamily: 'Arial, sans-serif',
           fontSize: event.star === 3 ? '20px' : '14px',
           color,
           fontStyle: 'bold',
-          backgroundColor: '#151a31',
+          backgroundColor: '#24352b',
           padding: { x: 8, y: 4 },
           stroke: '#11152b',
           strokeThickness: 2,
@@ -92,7 +95,7 @@ export class BattleSignatureVfxRenderer {
     const drawTrails = (color: number, width = 4) => {
       if (!targets.length) return;
       const graphics = this.scene.add.graphics().setDepth(165);
-      graphics.lineStyle(width, color, 0.9);
+      graphics.lineStyle(isCompactLandscape() ? 2 : width, color, isCompactLandscape() ? .45 : .9);
       targets.forEach((target) => {
         graphics.beginPath();
         graphics.moveTo(sourcePoint.x + 12, sourcePoint.y);

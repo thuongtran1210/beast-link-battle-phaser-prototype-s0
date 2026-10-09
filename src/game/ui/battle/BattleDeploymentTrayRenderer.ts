@@ -9,6 +9,7 @@ import { createIconImage, createRoleIconImage } from '../icons/IconFactory';
 import { signatureForBeast } from '../../battle/BeastRoles';
 import { signatureTierLabel, signatureTierTagline } from '../../run/StarProfile';
 import { FeedbackEffects } from '../feedback/FeedbackEffects';
+import { reserveStacks } from '../ReserveStacks';
 import type { BattleFormation, FormationUnit } from '../../battle/BattleFormation';
 import type { RunRoster } from '../../run/RunRoster';
 import type { RunLinkShardPool } from '../../run/RunLinkShardPool';
@@ -39,17 +40,19 @@ export class BattleDeploymentTrayRenderer {
   ) {}
 
   render(): void {
+    if(isCompactLandscape()) { this.renderMobile(); return; }
     const { x, y, width, height } = this.trayBounds;
 
     // Recessed tray panel
     const trayBg = this.scene.add
-      .rectangle(x + width / 2, y + height / 2, width, height, 0x0f172a, 0.96)
-      .setStrokeStyle(1.5, 0x334155);
+      .rectangle(x + width / 2, y + height / 2, width, height, HudTokens.colors.bgSurfaceDark, 0.96)
+      .setStrokeStyle(1, HudTokens.colors.strokeDefault);
     this.managedObjects.push(trayBg);
 
     const groups = classifyBattleSetupRoster(this.formation.units, this.runRoster?.units ?? []);
     const unplaced = groups.reserve;
-    const page = reservePage(unplaced, this.reservePageIndex, isCompactLandscape() ? 4 : 6);
+    const stacks = reserveStacks(unplaced, this.runRoster?.units ?? []);
+    const page = reservePage(isCompactLandscape() ? stacks.map(stack => stack.unit) : unplaced, this.reservePageIndex, isCompactLandscape() ? 4 : 6);
     this.reservePageIndex = page.pageIndex;
     const hasUnplaced = unplaced.length > 0;
 
@@ -59,16 +62,16 @@ export class BattleDeploymentTrayRenderer {
       x + 130,
       y + 13,
       hasUnplaced
-        ? 'TAP TO SELECT · TAP SLOT TO DEPLOY · MERGE BELOW'
+        ? 'Chạm thẻ → chạm vị trí'
         : '✓ SQUAD DEPLOYED — DRAG BACK TO RESERVE TO BENCH',
-      10,
+      12,
       hasUnplaced ? HudTokens.colors.textBlue : HudTokens.colors.textGreen,
       'bold',
     );
     const states = this.addText(
       x + width - 18,
       y + 12,
-      `ACTIVE ${groups.deployed.length}/${ACTIVE_SQUAD_LIMIT}   ·   KO ${groups.ko.length}`,
+      `ACTIVE ${groups.deployed.length}/${this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT}   ·   KO ${groups.ko.length}`,
       9,
       groups.ko.length ? HudTokens.colors.textRed : HudTokens.colors.textMuted,
       'bold',
@@ -106,8 +109,8 @@ export class BattleDeploymentTrayRenderer {
     }
 
     // Render horizontal row of Draggable Beast Cards
-    const cardW = isCompactLandscape() ? 218 : 142;
-    const cardH = 154;
+    const cardW = isCompactLandscape() ? Math.floor((width - 84) / 4) : 142;
+    const cardH = height >= 245 ? 200 : 154;
     const startX = x + 18;
     const startY = y + 44;
     const gap = 16;
@@ -115,6 +118,8 @@ export class BattleDeploymentTrayRenderer {
     page.items.forEach((unit, index) => {
       const cardX = startX + index * (cardW + gap);
       this.renderTrayCard(unit, cardX, startY, cardW, cardH, index === 0 && this.controller.isFirstDeploymentPending);
+      const count=stacks.find(stack=>stack.unit.unitId===unit.unitId)?.count ?? 1;
+      if(isCompactLandscape() && count>1) this.addText(cardX+cardW-12,startY+8,`×${count}`,20,HudTokens.colors.textGold,'bold').setOrigin(1,0);
     });
 
     if (page.pageCount > 1) {
@@ -160,6 +165,75 @@ export class BattleDeploymentTrayRenderer {
     }
   }
 
+  private renderMobile(): void {
+    const {x,y,width,height}=this.trayBounds;
+    const surface=this.scene.add.graphics();
+    surface.fillStyle(0x62472f,.96); surface.fillRoundedRect(x,y,width,height,18);
+    surface.fillStyle(0x26382d,.98); surface.fillRoundedRect(x+4,y+4,width-8,height-8,14);
+    this.managedObjects.push(surface);
+    const groups=classifyBattleSetupRoster(this.formation.units,this.runRoster?.units??[]);
+    const stacks=reserveStacks(groups.reserve,this.runRoster?.units??[]);
+    const page=reservePage(stacks.map(stack=>stack.unit),this.reservePageIndex,4);
+    this.reservePageIndex=page.pageIndex;
+    this.addText(x+18,y+12,`Dự bị · ${groups.reserve.length}`,17,'#fff1ce','bold');
+    this.addText(x+width-18,y+13,`${page.pageIndex+1}/${Math.max(1,page.pageCount)}  ·  Đã đặt ${groups.deployed.length}/${this.runRoster?.squadLimit??ACTIVE_SQUAD_LIMIT}${groups.ko.length?` · KO ${groups.ko.length}`:''}`,14,'#c7cfbc').setOrigin(1,0);
+
+    const arrow=(cx:number,label:string,enabled:boolean,direction:number)=>{
+      const g=this.scene.add.graphics();
+      g.fillStyle(enabled?0x4d5f43:0x2d3d31);g.fillRoundedRect(cx-48,y+38,96,118,14);
+      this.managedObjects.push(g);
+      this.addText(cx,y+94,label,38,enabled?'#f5dc9d':'#66745f','bold').setOrigin(.5);
+      const hit=this.scene.add.rectangle(cx,y+97,96,118,0xffffff,0);
+      this.managedObjects.push(hit);
+      if(enabled) hit.setInteractive({useHandCursor:true}).on('pointerup',()=>{this.reservePageIndex+=direction;this.onReRender?.();});
+    };
+    arrow(x+58,'‹',page.pageIndex>0,-1);
+    arrow(x+width-58,'›',page.pageIndex+1<page.pageCount,1);
+
+    const cardW=Math.floor((width-248)/4), cardH=118, startX=x+116, cardY=y+38;
+    const deployedIds=new Set(this.formation.units.filter(unit=>unit.slotId!==null).map(unit=>unit.unitId));
+    page.items.forEach((unit,index)=>{
+      const cardX=startX+index*(cardW+8),cx=cardX+cardW/2;
+      const selected=this.controller.selectedId===unit.unitId;
+      const card=this.scene.add.graphics();
+      card.fillStyle(selected?0x586749:0x354739);card.fillRoundedRect(cardX,cardY,cardW,cardH,12);
+      if(selected){card.lineStyle(2,0xe7cb8d);card.strokeRoundedRect(cardX,cardY,cardW,cardH,12);}
+      this.managedObjects.push(card,createIconImage(this.scene,unit.beastId,cx,cardY+38,60));
+      this.addText(cx,cardY+76,beastDisplayName(unit.beastId),14,'#fff1ce','bold').setOrigin(.5);
+      const preview=this.runRoster?.consolidationPreview(unit.unitId,deployedIds,this.shardPool?.count??0);
+      this.addText(cx,cardY+101,`${'★'.repeat(unit.star)}${preview?.canConsolidate?'  ·  Gộp được':''}`,14,preview?.canConsolidate?'#efd093':'#c1ccb1','bold').setOrigin(.5);
+      const count=stacks.find(stack=>stack.unit.unitId===unit.unitId)?.count??1;
+      if(count>1) this.addText(cardX+cardW-8,cardY+7,`×${count}`,16,'#efd093','bold').setOrigin(1,0);
+      const roster=this.runRoster?.get(unit.unitId);
+      if(roster&&roster.currentHp<roster.maxHp) this.addText(cardX+8,cardY+7,'♥',16,'#f4a38e','bold');
+      const hit=this.scene.add.rectangle(cx,cardY+cardH/2,cardW,cardH,0xffffff,0).setInteractive({useHandCursor:true});
+      this.managedObjects.push(hit);
+      hit.on('pointerdown',(pointer:Phaser.Input.Pointer)=>this.onStartDrag?.(unit.unitId,null,pointer));
+      hit.on('pointerup',()=>{if(this.controller.state.mode==='idle'){this.controller.selectUnit(unit.unitId);this.onReRender?.();}});
+    });
+
+    const selected=this.formation.units.find(unit=>unit.unitId===this.controller.selectedId);
+    const roster=selected?this.runRoster?.get(selected.unitId):undefined;
+    const preview=selected?this.runRoster?.consolidationPreview(selected.unitId,deployedIds,this.shardPool?.count??0):undefined;
+    const canMerge=Boolean(preview?.canConsolidate&&this.onConsolidate);
+    const text=selected ? `${beastDisplayName(selected.beastId)} · ${selected.role.toUpperCase()} · ${roster?`${Math.round(roster.currentHp)}/${Math.round(roster.maxHp)} HP`:'Chạm vị trí để đặt'}` : groups.reserve.length?'Chạm thú → chạm vị trí trên sân':'Kéo thú xuống đây để đưa về dự bị';
+    this.addText(x+18,y+178,text,15,'#d4d7c1').setWordWrapWidth(width-(canMerge?286:36));
+    if(canMerge&&selected) {
+      const bx=x+width-132,by=y+180;
+      const button=this.scene.add.graphics();button.fillStyle(0xe4bf76);button.fillRoundedRect(bx-118,by-24,236,48,12);
+      this.managedObjects.push(button);
+      const cost=preview!.isShardAssisted?'2 thú + ◆1':'3 thú';
+      this.addText(bx,by,`Gộp ${'★'.repeat(preview!.targetStar!)} · ${cost}`,17,'#392e20','bold').setOrigin(.5);
+      const hit=this.scene.add.rectangle(bx,by,236,48,0xffffff,0).setInteractive({useHandCursor:true});this.managedObjects.push(hit);
+      hit.on('pointerup',()=>{
+        const upgradedId=this.onConsolidate?.(selected.unitId);
+        if(upgradedId){this.controller.selectUnit(null);this.controller.selectUnit(upgradedId);this.onArrangementChanged?.();FeedbackEffects.floatText(this.scene,bx,y-16,`Đã gộp ${'★'.repeat(preview!.targetStar!)}`,'#f4dc9d','20px',850);}
+        this.onReRender?.();
+      });
+    }
+    if(!page.items.length) this.addText(x+width/2,y+92,'Đội hình đã sẵn sàng',22,'#e4d4af','bold').setOrigin(.5);
+  }
+
   private renderTrayCard(
     unit: FormationUnit,
     x: number,
@@ -170,17 +244,18 @@ export class BattleDeploymentTrayRenderer {
   ): void {
     const isSelected = unit.unitId === this.controller.selectedId;
     const cx = x + w / 2;
-    const cy = y + h / 2;
+    const touch = isCompactLandscape();
+    const cy = y + (touch ? 55 : h / 2);
 
     const card = this.scene.add
-      .rectangle(cx, cy, w, h, isSelected ? 0x1e3a5f : 0x1e293b, 0.95)
+      .rectangle(cx, y + h / 2, w, h, isSelected ? 0x435339 : HudTokens.colors.bgSurfaceElevated, 0.95)
       .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xc8b58a : 0x48514e);
     this.managedObjects.push(card);
 
     if (shouldAnimateFirstAffordance && this.scene.tweens) {
       this.scene.tweens.add({
         targets: card,
-        y: cy - 4,
+        y: y + h / 2 - 4,
         duration: 650,
         yoyo: true,
         repeat: -1,
@@ -213,7 +288,7 @@ export class BattleDeploymentTrayRenderer {
     ).setOrigin(0.5);
     const state = this.addText(
       cx - w / 2 + 9,
-      cy - h / 2 + 8,
+      y + 8,
       stateLabel,
       7,
       stateColor,
@@ -274,10 +349,19 @@ export class BattleDeploymentTrayRenderer {
       'bold',
     ).setOrigin(0.5);
     this.managedObjects.push(hpBg, hpFill, hpLabel);
+    if (touch) {
+      icon.setPosition(x + 38, y + 53);
+      roleIcon.setVisible(false);
+      nameLabel.setPosition(x + 76, y + 12).setOrigin(0).setFontSize(15).setWordWrapWidth(w - 82);
+      roleLabel.setPosition(x + 76, y + 51).setOrigin(0).setFontSize(14);
+      hpLabel.setPosition(x + 76, y + 74).setOrigin(0).setFontSize(13);
+      hpBg.setVisible(false); hpFill.setVisible(false);
+      state.setVisible(false);
+    }
 
     // Interactive Drag and Click Handlers
     const hitArea = this.scene.add
-      .rectangle(cx, cy - 19, w, h - 38, 0xffffff, 0.0001)
+      .rectangle(cx, touch ? y + 48 : cy - 19, w, touch ? 96 : h - 38, 0xffffff, 0.0001)
       .setInteractive({ useHandCursor: true });
     this.managedObjects.push(hitArea);
 
@@ -309,21 +393,22 @@ export class BattleDeploymentTrayRenderer {
       : unit.star >= 3
       ? 'MAX ★★★'
       : `COPIES ${preview?.eligibleCount ?? 0}/3`;
-    const mergeY = y + h - 23;
+    const mergeHeight=touch ? h-96 : 44;
+    const mergeY = y + h - mergeHeight/2;
     const merge = this.scene.add
-      .rectangle(cx, mergeY, w - 12, 44, canMerge ? 0x176347 : 0x151a31, 0.98)
+      .rectangle(cx, mergeY, w - 12, mergeHeight, canMerge&&(!touch||isSelected) ? 0x435339 : HudTokens.colors.bgSurfaceDark, 0.98)
       .setStrokeStyle(1, canMerge ? 0x8eae92 : 0x48514e);
     const mergeLabel = this.addText(
       cx,
       mergeY,
-      label,
-      11,
+      touch&&canMerge&&!isSelected ? 'Chọn thú để gộp ★' : label,
+      touch ? 14 : 11,
       canMerge ? '#ffffff' : '#94a3b8',
       'bold',
     ).setOrigin(0.5);
     this.managedObjects.push(merge, mergeLabel);
 
-    if (canMerge) {
+    if (canMerge && (!touch || isSelected)) {
       merge.setInteractive({ useHandCursor: true }).on('pointerup', () => {
         const upgradedId = this.onConsolidate!(unit.unitId);
         if (upgradedId) {

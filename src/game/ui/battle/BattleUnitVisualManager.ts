@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { packBattleBodies, type PresentationBody } from './BattlePresentationPacking';
 import type {
   AutonomousBattleSnapshot,
   CombatUnit,
@@ -62,55 +63,27 @@ export class BattleUnitVisualManager {
     private readonly enemyPresentationOffsets: Map<string, { x: number; y: number }>,
   ) {}
 
+  private facingSnapshot?: AutonomousBattleSnapshot;
+
   updatePresentationOffsets(snapshot: AutonomousBattleSnapshot, showcaseMode: boolean): void {
     this.unitPresentationOffsets.clear();
     this.enemyPresentationOffsets.clear();
-    if (!showcaseMode) return;
+    this.facingSnapshot = snapshot;
+    if (!showcaseMode || snapshot.elapsedTicks === 0) return;
 
-    const assign = (
-      entries: Array<{ id: string; x: number; y: number }>,
-      output: Map<string, { x: number; y: number }>,
-      sideOffsetX: number,
-    ) => {
-      const sorted = [...entries].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
-      const placed: Array<{ x: number; y: number; rank: number }> = [];
-      const yOffsets = [0, -36, 36, -62, 62];
-      const xOffsets = [0, -14, 14, -24, 24];
-
-      sorted.forEach((entry) => {
-        const nearby = placed.filter(
-          (other) => Math.abs(other.x - entry.x) < 64 && Math.abs(other.y - entry.y) < 54,
-        );
-        const rank = Math.min(nearby.length, yOffsets.length - 1);
-        output.set(entry.id, {
-          x: sideOffsetX + xOffsets[rank],
-          y: yOffsets[rank],
-        });
-        placed.push({ x: entry.x, y: entry.y, rank });
-      });
-    };
-
-    assign(
-      snapshot.units
-        .filter((unit) => unit.currentHp > 0)
-        .map((unit) => {
-          const position = battleModelPosition(this.layout, unit.positionX, unit.positionLane);
-          return { id: unit.unitId, x: position.x, y: position.y };
-        }),
-      this.unitPresentationOffsets,
-      18,
-    );
-
-    assign(
-      snapshot.enemies
-        .filter((enemy) => enemy.currentHp > 0)
-        .map((enemy) => {
-          const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
-          return { id: enemy.enemyId, x: position.x, y: position.y };
-        }),
-      this.enemyPresentationOffsets,
-      -18,
-    );
+    const entries: PresentationBody[] = [
+      ...snapshot.units.filter(u=>u.currentHp>0).map(u=>({id:`player:${u.unitId}`,side:'player' as const,...battleModelPosition(this.layout,u.positionX,u.positionLane)})),
+      ...snapshot.enemies.filter(u=>u.currentHp>0).map(u=>({id:`enemy:${u.enemyId}`,side:'enemy' as const,...battleModelPosition(this.layout,u.positionX,u.positionLane)})),
+    ];
+    const packed=packBattleBodies(entries, {
+      left:this.layout.baseX+60, right:this.layout.dividerX*2-this.layout.baseX-60,
+      top:this.layout.topLaneY-20, bottom:this.layout.topLaneY+5*this.layout.laneGap,
+    });
+    for(const entry of entries) {
+      const position=packed.get(entry.id)!;
+      const output=entry.side==='player' ? this.unitPresentationOffsets : this.enemyPresentationOffsets;
+      output.set(entry.id.slice(entry.id.indexOf(':')+1),{x:position.x-entry.x,y:position.y-entry.y});
+    }
   }
 
   syncUnit(unit: CombatUnit, showcaseMode: boolean): void {
@@ -133,9 +106,13 @@ export class BattleUnitVisualManager {
         `${'★'.repeat(unit.star)} ${formatNumber(unit.currentHp)}${stateBadge}`,
       );
     }
-    visual.characterView.setFacing('right');
+    const target=this.facingSnapshot?.enemies.find(e=>e.enemyId===unit.targetEnemyId && e.currentHp>0);
+    const sourcePosition=battleModelPosition(this.layout,unit.positionX,unit.positionLane);
+    const sourceX=sourcePosition.x+(this.unitPresentationOffsets.get(unit.unitId)?.x??0);
+    const targetX=target ? battleModelPosition(this.layout,target.positionX,target.positionLane).x+(this.enemyPresentationOffsets.get(target.enemyId)?.x??0) : undefined;
+    if(unit.currentHp>0) visual.characterView.setFacing(targetX===undefined || targetX>=sourceX ? 'right':'left');
     visual.label.setVisible(!visual.characterView.isAuthored || !showcaseMode);
-    visual.hpBarContainer.y = visual.characterView.hpAnchorY;
+    visual.hpBarContainer.setPosition(visual.container.x, visual.container.y + visual.characterView.hpAnchorY);
     visual.signatureRing.y = visual.characterView.effectAnchorY;
 
     const readyColor =
@@ -153,6 +130,7 @@ export class BattleUnitVisualManager {
     const offset = this.unitPresentationOffsets.get(unit.unitId) ?? { x: 0, y: 0 };
     if (unit.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
+      visual.characterView.setMoving(Math.abs(visual.container.x-position.x-offset.x)>1||Math.abs(visual.container.y-position.y-offset.y)>1);
       this.moveVisual(visual.container, position.x + offset.x, position.y + offset.y);
     }
   }
@@ -163,6 +141,11 @@ export class BattleUnitVisualManager {
       visual = this.createEnemy(enemy, showcaseMode);
       this.enemies.set(enemy.enemyId, visual);
     }
+
+    const target=this.facingSnapshot?.units.find(u=>u.unitId===(enemy.engagedTargetId??enemy.targetUnitId) && u.currentHp>0);
+    const sourceX=battleModelPosition(this.layout,enemy.positionX,enemy.positionLane).x+(this.enemyPresentationOffsets.get(enemy.enemyId)?.x??0);
+    const targetX=target ? battleModelPosition(this.layout,target.positionX,target.positionLane).x+(this.unitPresentationOffsets.get(target.unitId)?.x??0) : undefined;
+    if(enemy.currentHp>0) visual.characterView.setFacing(targetX===undefined || targetX<sourceX ? 'left':'right');
 
     const ratio = enemy.maxHp > 0 ? clamp01(enemy.currentHp / enemy.maxHp) : 0;
     this.updateHpBar(visual, ratio, enemy.currentHp <= 0);
@@ -187,7 +170,7 @@ export class BattleUnitVisualManager {
     }
 
     visual.label.setVisible(!visual.characterView.isAuthored || !showcaseMode);
-    visual.hpBarContainer.y = visual.characterView.hpAnchorY;
+    visual.hpBarContainer.setPosition(visual.container.x, visual.container.y + visual.characterView.hpAnchorY);
 
     let strokeColor = 0x450a0a;
     if (enemy.engagedTargetId) {
@@ -278,10 +261,12 @@ export class BattleUnitVisualManager {
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [characterView.root, signatureRing, label, hpBarContainer],
+      [characterView.root, signatureRing, label],
     );
 
-    this.objects.push(container);
+    hpBarContainer.setPosition(position.x, position.y+characterView.hpAnchorY).setDepth(210);
+    container.setDepth(100+position.y/10);
+    this.objects.push(container, hpBarContainer);
     return {
       container,
       characterView,
@@ -322,10 +307,12 @@ export class BattleUnitVisualManager {
     const container = this.scene.add.container(
       position.x,
       position.y,
-      [characterView.root, label, hpBarContainer],
+      [characterView.root, label],
     );
 
-    this.objects.push(container);
+    hpBarContainer.setPosition(position.x, position.y+characterView.hpAnchorY).setDepth(210);
+    container.setDepth(100+position.y/10);
+    this.objects.push(container, hpBarContainer);
     return {
       container,
       characterView,
@@ -341,6 +328,12 @@ export class BattleUnitVisualManager {
   }
 
   moveVisual(container: Phaser.GameObjects.Container, x: number, y: number): void {
+    const visual=[...this.units.values(),...this.enemies.values()].find(v=>v.container===container);
+    const align=()=>{
+      container.setDepth(100+container.y/10);
+      if(visual) visual.hpBarContainer.setPosition(container.x,container.y+visual.characterView.hpAnchorY);
+    };
+    align();
     if (Math.abs(container.x - x) < 0.5 && Math.abs(container.y - y) < 0.5) return;
     this.scene.tweens.killTweensOf(container);
     this.scene.tweens.add({
@@ -349,6 +342,8 @@ export class BattleUnitVisualManager {
       y,
       duration: 100,
       ease: 'Linear',
+      onUpdate: align,
+      onComplete: align,
     });
   }
 }

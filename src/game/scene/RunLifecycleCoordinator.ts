@@ -17,6 +17,8 @@ import type { BattleActionView } from '../ui/BattleActionView';
 import type { TransitionCueView } from '../ui/TransitionCueView';
 import type { ShowcaseModeController } from './ShowcaseModeController';
 import { GamePhase } from '../state/GamePhase';
+import { markRunLevelComplete } from '../run/RunLevels';
+import { rewardCampWin } from '../run/CampState';
 
 export interface RunLifecycleContext {
   waveRun: WaveRunController;
@@ -54,6 +56,7 @@ export interface RunLifecycleContext {
 }
 
 export class RunLifecycleCoordinator {
+  private campRewardGranted = false;
   constructor(private readonly ctx: RunLifecycleContext) {}
 
   enterResult(): void {
@@ -61,6 +64,8 @@ export class RunLifecycleCoordinator {
     const validationMetrics = battleModel?.getValidationMetrics();
     const { comparison, history } = this.ctx.fixtureManager.recordMetrics(validationMetrics);
     const battleOutcome = this.ctx.getBattleOutcome();
+    if (battleOutcome === 'Win' && this.ctx.waveRun.isFinalWave && this.ctx.waveRun.levelId) markRunLevelComplete(this.ctx.waveRun.levelId);
+    if (battleOutcome === 'Win' && this.ctx.waveRun.isFinalWave && this.ctx.waveRun.levelId && !this.campRewardGranted) {rewardCampWin();this.campRewardGranted=true;}
 
     this.ctx.getSummaryView()?.render(
       this.ctx.metrics.snapshot,
@@ -112,6 +117,7 @@ export class RunLifecycleCoordinator {
 
   restartRun(): void {
     if (this.ctx.phaseController.phase !== GamePhase.Result) return;
+    this.campRewardGranted=false;
 
     this.ctx.getSummaryView()?.setVisible(false);
     this.ctx.setBattleTickAccumulator(0);

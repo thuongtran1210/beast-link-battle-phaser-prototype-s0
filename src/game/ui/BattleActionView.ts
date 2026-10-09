@@ -11,7 +11,7 @@ import type {
 } from '../battle/BattlePresentation';
 import {
   battleModelPosition,
-  createBattleFieldLayout,
+  createPlayerBattleLayout,
   type BattleFieldLayout,
 } from './BattleFieldLayout';
 import { FeedbackEffects } from './feedback/FeedbackEffects';
@@ -25,6 +25,7 @@ import {
   type EnemyVisual,
 } from './battle/BattleUnitVisualManager';
 import { BattleFunControlsRenderer } from './battle/BattleFunControlsRenderer';
+import { CleanProjectileRenderer } from './battle/CleanProjectileRenderer';
 
 export class BattleActionView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -40,21 +41,16 @@ export class BattleActionView {
   private readonly unitVisualManager: BattleUnitVisualManager;
   private readonly funControlsRenderer: BattleFunControlsRenderer;
   private showcaseMode = false;
+  private readonly projectiles: CleanProjectileRenderer;
 
   constructor(
     private readonly scene: Phaser.Scene,
     baseX = 18,
     baseY = 105,
   ) {
-    this.layout = createBattleFieldLayout(baseX, baseY);
+    this.layout = createPlayerBattleLayout(scene.scale.width,scene.scale.height,isCompactLandscape(),baseX,baseY);
+    this.projectiles = new CleanProjectileRenderer(scene, this.objects);
     // Presentation coordinates only: reserve the lower skill dock and use wider screens.
-    const fieldWidth = isCompactLandscape() ? scene.scale.width - 36 : scene.scale.width - Math.min(360, Math.max(300, Math.round(scene.scale.width * .28))) - 54;
-    this.layout.dividerX = baseX + fieldWidth / 2;
-    this.layout.playerFrontX = this.layout.dividerX - 80;
-    this.layout.enemyFrontX = this.layout.dividerX + 80;
-    this.layout.depthGap = Math.min(110, Math.max(84, (fieldWidth - 180) / 7));
-    this.layout.topLaneY = isCompactLandscape() ? 226 : baseY + 108;
-    this.layout.laneGap = Math.min(58, Math.max(40, (scene.scale.height - 290 - this.layout.topLaneY) / 5));
 
     this.gridRenderer = new BattleArenaGridRenderer(this.scene, this.layout, this.objects, this.gridObjects);
     this.floatingTextSystem = new BattleFloatingTextSystem(this.scene, this.objects);
@@ -93,6 +89,27 @@ export class BattleActionView {
     this.funControlsRenderer.renderFunControls(snapshot);
   }
   playTick(event: BattleTickPresentation): void {
+    const projectileTargets = new Set(event.attackers.filter(attacker => attacker.role === 'Ranger' || attacker.role === 'Mage').flatMap(attacker => attacker.targetEnemyIds));
+    event.attackers.filter(attacker => attacker.role === 'Ranger' || attacker.role === 'Mage').forEach(attacker => {
+      const source = this.units.get(attacker.unitId);
+      if (!source) return;
+      const signature = event.signatureFx.find(fx => fx.unitId === attacker.unitId);
+      if (signature && ['WoollyRescue', 'ToyWorkshop', 'BubbleTrap', 'TickingBomb'].includes(signature.signatureId)) return;
+      source.characterView.playAttack(300);
+      const origin = source.characterView.getEffectPoint(source.container.x, source.container.y);
+      [...new Set(attacker.targetEnemyIds)].slice(0, 3).forEach(id => {
+        const target = this.enemies.get(id); if (!target) return;
+        this.projectiles.play(origin, {x:target.container.x, y:target.container.y - 38}, attacker.role === 'Ranger' ? 'arrow' : 'magic', Boolean(signature));
+      });
+    });
+    event.signatureFx.forEach(fx => {
+      const kind = fx.signatureId === 'WoollyRescue' ? 'heart' : fx.signatureId === 'ToyWorkshop' ? 'toy' : fx.signatureId === 'BubbleTrap' ? 'bubble' : fx.signatureId === 'TickingBomb' ? 'bomb' : undefined;
+      const source = this.units.get(fx.unitId); if (!kind || !source) return;
+      fx.targetIds.slice(0, 3).forEach(id => {
+        const target = kind === 'heart' || kind === 'toy' ? this.units.get(id) : this.enemies.get(id);
+        if (target) this.projectiles.play(source.characterView.getEffectPoint(source.container.x, source.container.y), {x:target.container.x,y:target.container.y-35}, kind, fx.star === 3);
+      });
+    });
     // 1. Attack windup anticipation
     if (event.attackWindups && event.attackWindups.length > 0) {
       event.attackWindups.forEach((windup) => {
@@ -134,7 +151,7 @@ export class BattleActionView {
       });
 
       // Impact ring burst
-      FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
+      if (!projectileTargets.has(damageEvent.enemyId)) FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
 
       // Visual recoil on target (never alters model coordinates)
       this.recoilVisual(visual.container, 4);
@@ -299,17 +316,17 @@ export class BattleActionView {
     if (!targetId) return;
     const visual = heal ? this.units.get(targetId) : this.enemies.get(targetId);
     if (!visual) return;
-    const names: Record<string, string> = { 'energy-a': 'MEND', 'energy-b': 'RESCUE', 'energy-c': 'BREAK', 'energy-d': 'PIERCE', 'energy-e': 'GUARD', 'energy-f': 'DISRUPT' };
     const color = heal ? 0x4ade80 : energyId === 'energy-c' ? 0x34d399 : 0xfbbf24;
     const target = { x: visual.container.x, y: visual.container.y - 35 };
     const trail = this.scene.add.graphics().setDepth(250);
     trail.lineStyle(4, color, .7);
     trail.lineBetween(origin.x, origin.y, target.x, target.y);
     const projectile = this.scene.add.circle(origin.x, origin.y, 9, color).setDepth(251);
-    const label = this.scene.add.text(target.x, target.y - 72,
-      energyId === 'energy-e' ? 'GUARD\nSHIELD · 3s' : energyId === 'energy-f' ? 'DISRUPT\nINTERRUPTED · 1s' : `${names[energyId]}\n${heal ? 'HEAL' : 'DAMAGE'} ${heal ? '+' : '−'}${formatNumber(amount)} HP`, {
+    const mobile = isCompactLandscape();
+    const label = this.scene.add.text(target.x, mobile ? Math.max(188, target.y - 55) : target.y - 72,
+      energyId === 'energy-e' ? 'SHIELD · 3s' : energyId === 'energy-f' ? 'INTERRUPT · 1s' : `${heal ? '+' : '−'}${formatNumber(amount)} HP`, {
         fontFamily: 'Arial', fontSize: '20px', fontStyle: 'bold', align: 'center',
-        color: heal ? '#86efac' : '#fde68a', backgroundColor: '#101c30', padding: { x: 12, y: 8 },
+        color: heal ? '#b2cbb0' : '#dfc997', backgroundColor: '#24352b', padding: { x: 8, y: 4 },
       }).setOrigin(.5).setDepth(252);
     this.objects.push(trail, projectile, label);
     const dispose = (object: Phaser.GameObjects.GameObject) => {
@@ -319,12 +336,12 @@ export class BattleActionView {
     };
     this.scene.tweens.add({ targets: projectile, x: target.x, y: target.y, duration: 260,
       onComplete: () => {
-        FeedbackEffects.pulseRing(this.scene, target.x, target.y, color, 65);
+        FeedbackEffects.pulseRing(this.scene, target.x, target.y, color, mobile ? 32 : 65);
         dispose(projectile);
       },
     });
     this.scene.tweens.add({ targets: trail, alpha: 0, delay: 260, duration: 400, onComplete: () => dispose(trail) });
-    this.scene.tweens.add({ targets: label, y: label.y - 18, alpha: 0, delay: 1300, duration: 400, onComplete: () => dispose(label) });
+    this.scene.tweens.add({ targets: label, y: label.y - 12, alpha: 0, delay: 700, duration: 300, onComplete: () => dispose(label) });
   }
   playEnergyDamage(enemyId: string | undefined, amount: number): void {
     if (!enemyId || amount <= 0) return;

@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { battleCharacterV2TextureKey } from '../art/BattleCharacterLoader';
 import { drawTacticalEnergyIcon } from './TacticalEnergyIcon';
+import { OWNER_ENERGY_ATLAS, OWNER_ENERGY_FRAMES, ensureOwnerEnergyFrames } from './OwnerEnergyArt';
 import {
   BEAST_ICON_DEFINITIONS,
   ENERGY_ICON_DEFINITIONS,
@@ -14,6 +15,7 @@ const TEXTURE_BASE_SIZE = 64;
  * Ensures all Beast and Energy icon textures are generated into Phaser's TextureManager.
  */
 export function ensureIconTextures(scene: Phaser.Scene): void {
+  ensureOwnerEnergyFrames(scene);
   const allDefs = [
     ...Object.values(BEAST_ICON_DEFINITIONS),
     ...Object.values(ENERGY_ICON_DEFINITIONS),
@@ -68,6 +70,9 @@ export function createIconImage(
   ensureIconTextures(scene);
   const definition = getIconDefinition(id);
   const authoredKey = battleCharacterV2TextureKey(definition.id, 'icon');
+  if (definition.isEnergy && OWNER_ENERGY_FRAMES[definition.id] && scene.textures.exists(OWNER_ENERGY_ATLAS)) {
+    return scene.add.image(x, y, OWNER_ENERGY_ATLAS, definition.id).setDisplaySize(displaySize, displaySize);
+  }
   const key = !definition.isEnergy && scene.textures.exists(authoredKey)
     ? authoredKey
     : getIconTextureKey(id);

@@ -5,7 +5,6 @@ import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 import type { TacticalEnergyControlPresentation } from './TacticalEnergyPresentation';
 import { STRATEGIC_ENERGY } from '../energy/TacticalEnergyCatalog';
-import { getIconDefinition } from './icons/UnitIconRegistry';
 import { isCompactLandscape } from './layout/MobilePresentation';
 
 export class ShowcaseBattleHUDView {
@@ -14,6 +13,7 @@ export class ShowcaseBattleHUDView {
   private heldEnergy?: string;
   private heldAt = 0;
   private details: Phaser.GameObjects.Text[] = [];
+  private readonly intendedVisibility = new Map<Phaser.GameObjects.GameObject, boolean>();
   private lastCast?: { text: string; until: number };
 
   showCastResult(text: string): void {
@@ -39,7 +39,7 @@ export class ShowcaseBattleHUDView {
     this.destroyObjects();
 
     const mobile = isCompactLandscape();
-    const w = mobile ? Math.min(700, this.scene.scale.width - 48) : this.panelWidth;
+    const w = mobile ? Math.min(560, this.scene.scale.width - 48) : this.panelWidth;
     const panelX = mobile ? (this.scene.scale.width - w) / 2 : this.x;
     let currY = mobile ? 54 : this.y;
     const isRunning = battle.status === 'Running';
@@ -47,7 +47,7 @@ export class ShowcaseBattleHUDView {
 
     const enemiesAlive = battle.enemies.filter(enemy => enemy.currentHp > 0).length;
     const enemyRatio = battle.enemyMaxHp > 0 ? Math.max(0, battle.enemyHp / battle.enemyMaxHp) : 0;
-    const card = drawCard(this.scene, panelX, currY, w, mobile ? 76 : 116, HudTokens.colors.bgSurface, .95);
+    const card = drawCard(this.scene, panelX, currY, w, mobile ? 48 : 116, HudTokens.colors.bgSurface, .95);
     const heading = this.scene.add.text(panelX + 16, currY + 12, `ENEMIES ${enemiesAlive}/${battle.enemies.length}`, {
       fontFamily: HudTokens.fonts.family, fontSize: '18px', fontStyle: 'bold', color: HudTokens.colors.textPrimary,
     });
@@ -55,8 +55,8 @@ export class ShowcaseBattleHUDView {
       fontFamily: HudTokens.fonts.family, fontSize: '14px', fontStyle: 'bold', color: HudTokens.colors.textGreen,
     }).setOrigin(1, 0);
     const barW = w - 32;
-    const bar = this.scene.add.rectangle(panelX + 16, currY + 44, barW, 12, HudTokens.colors.bgSurfaceDark).setOrigin(0, .5);
-    const fill = this.scene.add.rectangle(panelX + 16, currY + 44, barW * enemyRatio, 12, HudTokens.colors.red).setOrigin(0, .5);
+    const bar = this.scene.add.rectangle(panelX + 16, currY + (mobile ? 36 : 44), barW, mobile ? 5 : 12, HudTokens.colors.bgSurfaceDark).setOrigin(0, .5);
+    const fill = this.scene.add.rectangle(panelX + 16, currY + (mobile ? 36 : 44), barW * enemyRatio, mobile ? 5 : 12, HudTokens.colors.red).setOrigin(0, .5);
     const hp = this.scene.add.text(panelX + 16, currY + 53, `HP ${formatNumber(battle.enemyHp)} / ${battle.enemyMaxHp}`, {
       fontFamily: HudTokens.fonts.family, fontSize: '18px', color: HudTokens.colors.textSecondary,
     });
@@ -69,9 +69,9 @@ export class ShowcaseBattleHUDView {
     hp.setVisible(!mobile);
     this.objects.push(hint);
     if (!this.heldEnergy && this.lastCast && this.lastCast.until > this.scene.time.now) {
-      const recap = this.scene.add.text(mobile ? this.scene.scale.width / 2 : panelX + 16, mobile ? this.scene.scale.height - 196 : currY + 174, this.lastCast.text, {
+      const recap = this.scene.add.text(mobile ? this.scene.scale.width / 2 : panelX + 16, mobile ? this.scene.scale.height - 180 : currY + 174, this.lastCast.text, {
         fontFamily: HudTokens.fonts.family, fontSize: '20px', fontStyle: 'bold',
-        color: '#ffffff', backgroundColor: '#20354b', padding: { x: 12, y: 12 },
+        color: HudTokens.colors.textPrimary, backgroundColor: '#24352b', padding: { x: 14, y: 8 },
         wordWrap: { width: w - 56 },
       });
       if (mobile) recap.setOrigin(.5, 1);
@@ -95,12 +95,11 @@ export class ShowcaseBattleHUDView {
       const castState = castStateFor(definition.energyId);
       const enabled = Boolean(castState?.enabled && charges > 0);
       const suggested = enabled && Boolean(castState?.suggested);
-      const def = getIconDefinition(definition.energyId);
       const cx = centerX + (index - 1.5) * spacing;
-      const border = suggested ? HudTokens.colors.gold : enabled ? def.primaryColor : HudTokens.colors.strokeDefault;
-      const halo = this.scene.add.circle(cx, cy, radius + 5, border, suggested ? .18 : .06);
-      const button = this.scene.add.circle(cx, cy, radius, def.bgFill, enabled ? .98 : .5)
-        .setStrokeStyle(suggested ? 4 : 2, border, enabled ? 1 : .5);
+      const border = suggested ? HudTokens.colors.strokeGold : HudTokens.colors.strokeDefault;
+      const halo = this.scene.add.circle(cx, cy, radius + 5, border, suggested ? .1 : 0);
+      const button = this.scene.add.circle(cx, cy, radius, HudTokens.colors.bgSurfaceElevated, enabled ? .98 : .5)
+        .setStrokeStyle(suggested ? 3 : 1, border, enabled ? 1 : .5);
       const icon = createIconImage(this.scene, definition.energyId, cx, cy, 72).setAlpha(enabled ? 1 : .4);
       const badge = this.scene.add.circle(cx + 32, cy - 31, 17, HudTokens.colors.bgSurfaceDark)
         .setStrokeStyle(2, border);
@@ -120,8 +119,8 @@ export class ShowcaseBattleHUDView {
       const detail = this.scene.add.text(centerX, cy - 98,
         `${definition.displayName} · ${definition.shortDescription}${castState?.reasonLabel ? ' · ' + castState.reasonLabel : ''}`, {
           fontFamily: HudTokens.fonts.family, fontSize: '18px', color: '#ffffff',
-          backgroundColor: '#16243c', padding: { x: 16, y: 10 }, wordWrap: { width: 460 },
-        }).setOrigin(.5).setVisible(this.heldEnergy === definition.energyId);
+          backgroundColor: '#24352b', padding: { x: 16, y: 8 }, wordWrap: { width: 600 },
+        }).setOrigin(.5, 1).setVisible(this.heldEnergy === definition.energyId);
       this.details.push(detail);
       button.on('pointerdown', () => {
         this.details.forEach(item => item.setVisible(false));
@@ -145,13 +144,18 @@ export class ShowcaseBattleHUDView {
       this.objects.push(detail);
       this.objects.push(halo, button, icon, badge, count, name, state);
     });
+    this.objects.forEach(object => {
+      const view = object as unknown as Phaser.GameObjects.Components.Visible & Phaser.GameObjects.Components.Depth;
+      this.intendedVisibility.set(object, view.visible);
+      view.setDepth(500);
+    });
     this.setVisible(this.visible);
   }
 
   setVisible(visible: boolean): void {
     this.visible = visible;
     if (!visible) this.heldEnergy = undefined;
-    this.objects.forEach((object) => (object as unknown as Phaser.GameObjects.Components.Visible).setVisible(visible));
+    this.objects.forEach((object) => (object as unknown as Phaser.GameObjects.Components.Visible).setVisible(visible && (this.intendedVisibility.get(object) ?? true)));
   }
 
   destroy(): void {
@@ -160,6 +164,7 @@ export class ShowcaseBattleHUDView {
 
   private destroyObjects(): void {
     this.details = [];
+    this.intendedVisibility.clear();
     this.objects.splice(0).forEach((object) => object.destroy());
   }
 }

@@ -2,6 +2,10 @@
 
 ## Mission
 
+For owner-reference frame animation work, follow the repository workflow in
+`docs/FRAME-ANIMATION-AGENT-WORKFLOW.md`. It records the owner-requested prompt
+format, actual sheet slicing, foot registration, playback and validation.
+
 Maintain a coherent visual language across AI-generated and human-edited assets for Beast Link Battle.
 
 The agent's priority is **style consistency + gameplay readability**, not generating the largest number of attractive images.

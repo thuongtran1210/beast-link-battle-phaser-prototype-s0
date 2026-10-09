@@ -27,9 +27,9 @@ export function castControlState(reason: string, paused: boolean): CastControlSt
 export function setupEnergyInventory(entries: ReadonlyArray<EnergyQueueEntry>): Array<EnergyQueueEntry & { shortLabel: string; displayName: string; shortDescription: string }> { return entries.filter(entry => entry.charges > 0).map(entry => { const definition = tacticalEnergyDefinition(entry.energyId); return { ...entry, shortLabel: entry.energyId.replace('energy-', '').toUpperCase(), displayName: definition?.displayName ?? entry.energyId, shortDescription: definition?.shortDescription ?? 'Stored Energy' }; }); }
 
 /** Display-only formation summary. The squad cap and board capacity intentionally remain separate. */
-export function formationBoardSummary(activeCount: number, gridPositions = 18): string {
-  const active = Math.max(0, Math.min(activeCount, P1V14B_ACTIVE_SQUAD_LIMIT));
-  return `ACTIVE ${active} / ${P1V14B_ACTIVE_SQUAD_LIMIT} · GRID ${gridPositions}`;
+export function formationBoardSummary(activeCount: number, gridPositions = 18, limit = P1V14B_ACTIVE_SQUAD_LIMIT): string {
+  const active = Math.max(0, Math.min(activeCount, limit));
+  return `ACTIVE ${active} / ${limit} · GRID ${gridPositions}`;
 }
 
 /** Idle empty cells are tactical positions; placement feedback appears only during a drag. */

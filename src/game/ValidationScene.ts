@@ -45,8 +45,13 @@ import { GameTopHUD } from './ui/GameTopHUD';
 import { PhaseStatusPanel } from './ui/PhaseStatusPanel';
 import { LandscapeLayout } from './ui/layout/LandscapeLayout';
 import { HudTokens } from './ui/layout/HudTokens';
+import { wavesForRunLevel, selectedRunLevel } from './run/RunLevels';
+import { discoverCampBeasts } from './run/CampState';
 import { ensureIconTextures } from './ui/icons/IconFactory';
 import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
+import { preloadOwnerEnergyArt } from './ui/icons/OwnerEnergyArt';
+import { preloadSnowguardAnimations } from './ui/art/SnowguardAnimationPlayer';
+import { preloadIroncladAnimations } from './ui/art/IroncladAnimationPlayer';
 import { preloadEnemyCharacterArt } from './ui/art/EnemyCharacterLoader';
 import { runBattleCharacterArtChecks } from './ui/art/BattleCharacterArtChecks';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
@@ -72,7 +77,7 @@ export class ValidationScene extends Phaser.Scene {
   private battleModel?: AutonomousBattleModel;
   private battleTickAccumulator = 0;
   private battleOutcome?: 'Win' | 'Lose';
-  private readonly waveRun = new WaveRunController();
+  private readonly waveRun = isTestHarness() ? new WaveRunController() : new WaveRunController(wavesForRunLevel(selectedRunLevel().id), selectedRunLevel().id);
   private readonly runRoster = new RunRoster();
   private readonly shardPool = new RunLinkShardPool();
   private waveResultView?: WaveResultView;
@@ -104,6 +109,10 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   preload(): void {
+    preloadSnowguardAnimations(this);
+    preloadIroncladAnimations(this);
+    preloadOwnerEnergyArt(this);
+    this.load.image('owner-camp-battle', '/assets/backgrounds/owner-camp-battle-v1.png');
     preloadBattleCharacterArt(this);
     preloadEnemyCharacterArt(this);
   }
@@ -478,6 +487,7 @@ export class ValidationScene extends Phaser.Scene {
         this.battleQueue.consume(entry.contentId, entry.count);
       }
       this.runRoster.recruit(converted);
+      if (!isTestHarness()) discoverCampBeasts(converted.map(unit => unit.contentId));
       this.formation = new BattleFormation(this.runRoster.formationUnits());
     }
     this.renderBattleSetup();
@@ -507,6 +517,11 @@ export class ValidationScene extends Phaser.Scene {
       this.runRoster,
       (selectedUnitId) => this.consolidateReserveUnit(selectedUnitId),
       this.shardPool,
+      () => {
+        if (this.phaseController.phase !== GamePhase.BattleSetup || !this.runRoster.buyFifthSlot(this.shardPool)) return;
+        this.metrics.recordLinkShardsSpent(2);
+        this.renderBattleSetup();
+      },
     );
     this.battleSetupView.render();
     this.syncTopHud();
@@ -573,7 +588,7 @@ export class ValidationScene extends Phaser.Scene {
   private startBattle(): void {
     if (this.phaseController.phase !== GamePhase.BattleSetup || !this.formation) return;
     const active = this.formation.units.filter((unit) => unit.slotId !== null && this.runRoster.canDeploy(unit.unitId));
-    if (active.length < 1 || active.length > P1V14B_ACTIVE_SQUAD_LIMIT) return;
+    if (active.length < 1 || active.length > this.runRoster.squadLimit) return;
     this.metrics.startBattle(this.energyQueue.getAll(), this.formation.units);
     this.phaseController.setPhase(GamePhase.Battle);
   }

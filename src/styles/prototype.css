@@ -4,6 +4,114 @@
   background: #0b0f17;
 }
 
+/* Mobile navigation and deck: flat illustrated camp palette, restrained outlines. */
+.main-menu { position:absolute; inset:0; z-index:20; display:flex; align-items:center; padding:clamp(20px,5vw,80px); overflow:hidden; color:#fff3d7; background:radial-gradient(ellipse at 75% 75%,#53644b 0%,#283e32 43%,#142620 85%); }
+.main-menu::before { content:""; position:absolute; inset:12px; border:1px solid #71816a55; border-radius:24px; pointer-events:none; }
+.menu-copy { width:48%; z-index:1; }
+.menu-eyebrow { color:#c3d2b8; font-size:11px; font-weight:800; letter-spacing:.14em; }
+.main-menu h1 { margin:14px 0; color:#fff3d7; font-size:clamp(34px,6.5vw,88px); font-weight:950; line-height:.98; letter-spacing:-.045em; text-shadow:0 4px #17241b; }
+.main-menu h1 em { color:#edc16d; font-style:normal; }
+.menu-copy p { color:#c9d1be; font-size:clamp(13px,1.7vw,20px); line-height:1.5; }
+.menu-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:380px; margin:20px 0 14px; }
+.menu-actions button,.game-dialog button { min-height:48px; border:1px solid #71816a; border-radius:14px; padding:10px 16px; background:#314738; color:#f1ecd9; font:inherit; font-weight:750; cursor:pointer; }
+.menu-actions .menu-play { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; background:#edc16d; border-color:#f5d99b; color:#352b19; font-size:23px; box-shadow:0 4px #7b5b35; }
+.menu-play span { font-size:12px; font-weight:650; }
+.menu-footnote { color:#9fb29b; font-size:11px; }
+.menu-party { position:absolute; bottom:15%; right:4%; width:47%; height:65%; display:flex; align-items:end; justify-content:center; }
+.menu-party::before { content:""; position:absolute; bottom:-10px; left:0; right:0; height:18%; border-radius:50%; background:#15291f66; }
+.menu-party img { width:43%; height:85%; object-fit:contain; margin:0 -7%; z-index:1; filter:drop-shadow(0 10px 0 #17241b33); }
+.menu-party img:nth-child(2) { height:100%; z-index:2; }
+.game-dialog { width:min(520px,90vw); max-height:85dvh; overflow:auto; padding:24px; border:2px solid #8c7957; border-radius:22px; background:#24352b; color:#f5edd9; font:inherit; box-shadow:0 20px 80px #0006; }
+.game-dialog::backdrop { background:#0b1713b8; }
+.game-dialog h2 { margin:0 0 12px; font-size:24px; }
+.game-dialog p { color:#c0cebe; line-height:1.5; }
+.game-dialog ol { padding-left:22px; }
+.game-dialog li { margin:14px 0; }
+.game-dialog li p { margin:4px 0; font-size:14px; }
+.game-dialog button { width:100%; margin-top:8px; }
+.game-dialog .resume-run { background:#edc16d; color:#352b19; }
+.pause-dialog .return-menu { font-size:13px; }
+.rotate-notice { display:none; }
+.camp-view { position:absolute; inset:0; z-index:20; padding:16px; display:flex; flex-direction:column; gap:10px; background:#20352b; overflow:hidden; }
+.camp-view header { flex-shrink:0; gap:12px; }
+.camp-view header p { color:#b6c7b4; font-size:12px; margin:4px 0; }
+.camp-view header h1 { color:#f4efdf; }
+.camp-wood { margin-left:auto; color:#edc16d; white-space:nowrap; }
+.camp-diary-button,.camp-workshop button { border:1px solid #71816a; border-radius:12px; min-height:44px; padding:8px 14px; background:#344837; color:#f4efdf; font:inherit; cursor:pointer; }
+.camp-ground { flex:1; min-height:150px; position:relative; border:4px solid #344e39; border-radius:28px; background:radial-gradient(ellipse,#b1ad7d 0%,#8e9970 65%,#658359 66%); overflow:hidden; }
+.camp-station { position:absolute; bottom:8%; width:24%; height:35%; border:2px dashed #667a51; border-radius:22px; background:#71835755; cursor:pointer; color:#33472c; }
+.camp-station:nth-child(1) { left:5%; }.camp-station:nth-child(2) { left:38%; }.camp-station:nth-child(3) { left:71%; }
+.camp-station[aria-pressed="true"] { border:2px solid #edd098; background:#eedbb32b; }
+.camp-station span { position:absolute; bottom:4px; left:0; right:0; font-size:10px; font-weight:800; }
+.camp-station svg { width:100%; height:85%; }.camp-station i { font-size:40px; font-style:normal; }
+.camp-beast { position:absolute; width:13%; height:40%; border:0; background:transparent; padding:0; cursor:pointer; animation:camp-stroll 6s ease-in-out infinite alternate; transition:left .6s,top .6s; }
+.camp-beast img { width:100%; height:85%; object-fit:contain; filter:drop-shadow(0 4px 0 #33472c33); }
+.camp-beast small { display:block; font-size:9px; color:#263626; font-weight:800; }
+.camp-status { min-height:28px; font-size:12px; color:#d9d2b7; }
+.camp-workshop { display:flex; gap:8px; overflow:auto; flex-shrink:0; }
+.camp-workshop button { flex:1; min-width:120px; text-align:left; }
+.camp-workshop span { display:block; font-size:11px; margin-top:3px; color:#c6cdb8; }.camp-workshop button:disabled { opacity:.45; cursor:default; }
+.camp-empty { position:absolute; top:15%; width:100%; text-align:center; color:#30422e; font-weight:700; padding:0 15px; }
+.camp-party { animation:camp-hop .25s ease-in-out infinite alternate; }
+@keyframes camp-stroll { from { transform:translateX(-7px) rotate(-2deg); } to { transform:translateX(16px) rotate(2deg); } }
+@keyframes camp-hop { from { transform:translateY(0) rotate(-7deg); } to { transform:translateY(-12px) rotate(7deg); } }
+.camp-action-bath img { clip-path:inset(0 0 28% 0); animation:camp-soak .4s ease-in-out infinite alternate; }
+.camp-action-carrot img { animation:camp-nibble .15s ease-in-out infinite alternate; }
+.camp-action-anvil svg path:last-child { transform-box:fill-box; transform-origin:bottom right; animation:camp-hammer .25s ease-in-out infinite alternate; }
+/* Owner camp art: uncluttered play space, atlas furniture and scattered residents. */
+.camp-view { padding:10px 14px; gap:6px; background:#20352b; }
+.camp-view header h1 { font-size:clamp(20px,3vw,32px); margin:0; }
+.camp-view header p { display:none; }
+.camp-ground { border:0; border-radius:16px; background:#e6bd7b url('/assets/ui/camp/owner-background-v1.png') center/cover no-repeat; isolation:isolate; }
+.camp-station { bottom:6%; width:25%; height:34%; border:0; border-radius:50%; background:transparent; z-index:60; }
+.camp-station:nth-child(1) { left:6%; }.camp-station:nth-child(2) { left:36%; }.camp-station:nth-child(3) { left:66%; }
+.camp-station[aria-pressed="true"] { border:0; background:transparent; }
+.camp-station::after { content:''; position:absolute; left:24%; right:24%; bottom:0; height:4px; border-radius:50%; background:transparent; }
+.camp-station[aria-pressed="true"]::after { background:#fff1bf; box-shadow:0 1px 2px #49311e; }
+.camp-station span { display:none; }
+.camp-station i { display:inline-grid; place-items:center; width:44px; height:44px; font-size:26px; border:2px solid #71543166; border-radius:50%; background:#fff0c466; color:#61462d; }
+.camp-station svg.camp-furniture { width:100%; height:100%; overflow:hidden; filter:drop-shadow(0 3px 1px #54391933); }
+.camp-beast { width:10%; height:27%; min-width:44px; min-height:44px; }
+.camp-beast img { height:100%; }
+.camp-beast small { visibility:hidden; background:#fff2cf; border-radius:6px; padding:3px; color:#443521; }
+.camp-beast:focus-visible small,.camp-beast:hover small,.camp-beast.camp-party small { visibility:visible; }
+.camp-workshop { gap:6px; }
+.camp-workshop button { min-width:110px; min-height:44px; border-color:#7c694d; background:#493d2c; padding:6px 10px; font-size:12px; }
+.camp-workshop span { font-size:11px; margin-top:2px; color:#edcf9d; }
+.camp-status { min-height:18px; font-size:12px; }
+.camp-empty { top:42%; left:20%; width:60%; border-radius:12px; background:#fff0cfdd; padding:10px; color:#493824; }
+.camp-action-anvil .camp-furniture { animation:camp-nibble .3s ease-in-out infinite alternate; }
+@keyframes camp-soak { from { transform:translateY(12px) rotate(-3deg); } to { transform:translateY(20px) rotate(3deg); } }
+@keyframes camp-nibble { from { transform:rotate(-7deg) scale(.97); } to { transform:rotate(7deg) scale(1.03); } }
+@keyframes camp-hammer { from { transform:rotate(-35deg) translateY(-8px); } to { transform:rotate(15deg); } }
+@media(max-height:450px) { .camp-view { padding:8px 12px; gap:6px; } .camp-view header p { display:none; } .camp-status { font-size:11px; min-height:24px; } .camp-workshop button { padding:6px 10px; font-size:12px; } }
+@media(orientation:portrait) { .camp-view header { flex-wrap:wrap; } .camp-beast { width:20%; } .camp-ground { min-height:230px; } }
+@media(prefers-reduced-motion:reduce) { .camp-beast,.camp-party,.camp-beast img,.camp-station svg path { animation:none; } }
+.level-selection { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; gap:20px; padding:24px; background:#20352b; color:#f4efdf; overflow:hidden; }
+.level-selection header { flex-shrink:0; }
+.level-selection h1 { color:#f4efdf; font-size:clamp(22px,3vw,34px); }
+.level-selection header p { color:#b6c7b4; margin:5px 0 0; font-size:13px; }
+.level-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; min-height:0; flex:1; overflow:auto; padding:3px 3px 8px; align-items:start; }
+.level-card { border:1px solid #71816a; border-radius:22px; overflow:hidden; background:#2d4032; text-align:left; padding:0; color:#f4efdf; font:inherit; cursor:pointer; box-shadow:0 4px #13251b; }
+.level-art { position:relative; height:clamp(90px,23vh,220px); display:flex; align-items:center; justify-content:center; background:#526548; }
+.level-shadow .level-art { background:#514c60; }
+.level-stronghold .level-art { background:#705b40; }
+.level-art img { width:45%; height:85%; object-fit:contain; }
+.level-number { position:absolute; top:14px; left:16px; font-size:32px; font-weight:900; color:#fff5d5; opacity:.8; }
+.level-complete { position:absolute; right:12px; bottom:12px; background:#15251be0; padding:6px 9px; border-radius:8px; font-size:11px; color:#e5d2a0; font-weight:800; }
+.level-copy { padding:18px; }
+.level-copy h2 { margin:0 0 6px; font-size:clamp(17px,2vw,25px); }
+.level-copy strong { font-size:13px; color:#dec68b; }
+.level-copy p { min-height:36px; color:#c0cebe; font-size:13px; line-height:1.4; margin:12px 0; }
+.level-enter { display:block; padding:12px; border-radius:12px; background:#edc16d; color:#352b19; font-weight:800; text-align:center; }
+.level-selection footer { font-size:12px; color:#a6baa1; flex-shrink:0; }
+@media(max-height:450px) { .level-selection { padding:12px; gap:10px; } .level-cards { gap:10px; } .level-art { height:90px; } .level-copy { padding:12px; } .level-copy p { font-size:11px; margin:8px 0; } .level-copy strong { font-size:11px; } .level-enter { min-height:44px; padding:10px; } .level-number { font-size:22px; top:10px; left:10px; } }
+@media(orientation:portrait) { .level-cards { grid-template-columns:1fr; } .level-art { height:140px; } .level-selection { padding:18px; } }
+@media(orientation:portrait) { .run-active .rotate-notice { display:flex; position:absolute; inset:0; z-index:15; background:#20352b; align-items:center; justify-content:center; flex-direction:column; padding:32px; text-align:center; gap:12px; color:#f4efdf; } .rotate-notice strong { font-size:26px; } .rotate-notice span { color:#bcccb7; } }
+button:focus-visible { outline:3px solid #e9cf91; outline-offset:3px; }
+@media(max-height:450px) { .main-menu { padding:20px 5vw; } .main-menu h1 { margin:8px 0; font-size:clamp(32px,6vw,55px); } .menu-copy p { margin:8px 0; font-size:13px; } .menu-actions { margin:12px 0; gap:8px; } .menu-eyebrow { font-size:9px; } }
+@media(orientation:portrait) { .main-menu { align-items:start; padding:40px 28px; } .menu-copy { width:100%; } .main-menu h1 { font-size:58px; } .menu-party { bottom:3%; right:10%; width:80%; height:36%; } }
+
 * {
   box-sizing: border-box;
 }
@@ -119,3 +227,154 @@ canvas {
 @media(max-height: 500px) { .deck-picker { padding: 12px; gap: 8px; } .deck-picker h1 { font-size: 22px; } .deck-card { gap: 5px; padding: 8px 4px; } .deck-card img { max-height: 85px; } }
 .deck-cards { grid-template-columns: repeat(4, minmax(0,1fr)); }
 @media(min-width: 1100px) { .deck-cards { grid-template-columns: repeat(7, minmax(0,1fr)); } }
+/* Owner-provided transparent atlas rendered with CSS sprite windows. */
+.deck-picker { background:radial-gradient(ellipse at 50% -20%,#2b4b40,#142a29 45%,#0e1c20 85%); padding:18px 24px 12px; gap:14px; }
+.deck-header { display:flex; align-items:center; gap:16px; flex-shrink:0; }
+.deck-title { flex:1; min-width:0; }
+.deck-title h1 { padding:10px 20px; border:3px solid #382719; border-radius:16px; background:linear-gradient(#70482d,#432c20); color:#fff4d7; text-shadow:2px 3px #201b14; font-size:clamp(23px,3vw,40px); font-weight:900; }
+.deck-title em { color:#ffd36b; font-style:normal; }
+.deck-picker .deck-title p { color:#d8c9a7; font-size:clamp(12px,1.2vw,16px); margin:7px 0 0; }
+.deck-counter { display:flex; align-items:center; gap:12px; background:#1d2722; border:6px solid #64472d; border-radius:16px; padding:10px 18px; }
+.deck-counter strong { color:#ffda77; font-size:clamp(26px,3.5vw,44px); text-shadow:2px 2px #151710; }
+.deck-counter span { font-weight:bold; color:#f1ecdd; }
+.deck-counter small { display:block; font-size:11px; color:#b4c7bd; font-weight:normal; }
+.deck-cards { border:7px solid #604329; border-radius:22px; background:rgba(32,35,27,.8); padding:12px; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; align-content:start; scrollbar-color:#ad9060 #26362d; }
+.deck-card { position:relative; isolation:isolate; aspect-ratio:184/244; min-height:200px; justify-content:flex-start; border:0; border-radius:14px; padding:20px 12px 16px; background:transparent; box-shadow:none; }
+.deck-card::before { content:""; position:absolute; inset:0; z-index:-1; background-image:url('/assets/ui/deck/owner-atlas-v1.png'); background-repeat:no-repeat; background-size:903.53% 419.67%; background-position:2.05% 5%; }
+.deck-card[aria-pressed="true"] { background:transparent; border:0; }
+.deck-card[aria-pressed="true"]::before { background-size:808.42% 379.26%; background-position:15.45% 3.98%; }
+.deck-card img { width:76%; max-width:130px; max-height:none; margin:0 auto 6px; }
+.deck-card strong { font-size:clamp(11px,1.3vw,16px); color:#fff9ea; text-shadow:1px 2px #151812; }
+.deck-card span { font-size:clamp(11px,1.2vw,15px); color:#e4bd76; }
+.deck-card small { font-size:clamp(11px,1.1vw,13px); line-height:1.35; color:#c3d3cd; margin-top:8px; }
+.deck-check { position:absolute; right:9%; top:6%; width:27px; height:27px; border:2px solid #4b452f; border-radius:50%; font-style:normal; color:transparent; }
+.deck-card[aria-pressed="true"] .deck-check { background:#ffd26c; color:#fff; border-color:#98672d; text-shadow:1px 1px #463725; font-weight:900; }
+.deck-picker footer { flex-shrink:0; min-height:60px; }
+.deck-message { margin:0; color:#dfd1ad; font-size:14px; }
+.deck-start { width:240px; height:75px; flex-shrink:0; color:#241b0c; font-size:25px; font-weight:900; background:linear-gradient(#ffdc80,#efac34); border:5px solid #6c4927; border-radius:24px; box-shadow:0 4px #30261b; }
+.deck-card:focus-visible,.deck-start:focus-visible { outline:3px solid #e9d7a6; outline-offset:3px; }
+@media(max-width:900px) { .deck-cards { grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; padding:8px; } .deck-card { min-height:185px; padding:14px 8px 12px; } }
+@media(max-height:500px) { .deck-picker { padding:10px 14px; gap:8px; } .deck-title h1 { font-size:24px; padding:5px 14px; } .deck-counter { padding:5px 10px; border-width:4px; } .deck-counter strong { font-size:28px; } .deck-counter span { font-size:12px; } .deck-title p { font-size:11px!important; } .deck-cards { border-width:4px; } .deck-card img { max-height:none; } .deck-picker footer { min-height:48px; } .deck-start { height:48px; width:190px; font-size:20px; border-width:3px; border-radius:16px; } .deck-message { font-size:12px; } }
+@media(max-width:560px) { .deck-cards { grid-template-columns:repeat(3,minmax(0,1fr)); } .deck-counter small { display:none; } }
+.deck-title h1 { background-image:url('/assets/ui/deck/owner-atlas-v1.png'); background-repeat:no-repeat; background-size:404.21% 1248.78%; background-position:1.73% 32.38%; background-color:#4b3325; }
+.deck-start { background-image:url('/assets/ui/deck/owner-atlas-v1.png'); background-repeat:no-repeat; background-size:795.85% 1101.08%; background-position:69.84% 61.01%; background-color:#efb748; padding-left:62px; }
+/* Keep all card copy inside the supplied frame; atlas already includes selection check. */
+.deck-card { aspect-ratio:auto; height:300px; min-height:300px; padding:44px 12px 20px; gap:7px; overflow:hidden; }
+.deck-card img { width:110px; height:110px; max-width:80%; flex-shrink:0; margin:0 auto 10px; }
+.deck-card small { margin-top:7px; max-width:100%; min-height:40px; white-space:normal; overflow-wrap:break-word; }
+.deck-check { display:none; }
+.deck-card[aria-pressed="true"]::before { background-size:853.33% 393.85%; background-position:15.49% 3.93%; }
+.deck-start { width:280px; padding:8px 12px 8px 90px; font-size:24px; white-space:nowrap; }
+@media(max-height:500px) { .deck-card { height:270px; min-height:270px; padding:38px 8px 16px; } .deck-card img { width:90px; height:90px; margin-bottom:6px; } .deck-start { width:210px; font-size:19px; padding-left:65px; } }
+@media(max-width:560px) { .deck-card { padding-left:6px; padding-right:6px; } .deck-picker footer { gap:8px; } .deck-message { max-width:45%; } }
+
+/* Dedicated mobile deck surface. Override legacy atlas frames without removing them. */
+.mobile-landscape .deck-picker { padding:14px 20px; gap:10px; overflow:hidden; background:#20352b; }
+.mobile-landscape .deck-header { gap:12px; }
+.deck-back { width:48px; min-width:48px; height:48px; border:1px solid #8c7957; border-radius:14px; background:#574430; color:#f5dc9f; font-size:28px; cursor:pointer; }
+.deck-back[hidden] { display:none; }
+.mobile-landscape .deck-title h1 { padding:0; background:none; border:0; text-shadow:none; font-size:clamp(20px,3vw,30px); }
+.mobile-landscape .deck-title p { font-size:12px; color:#b6c7b4; margin:4px 0 0; }
+.mobile-landscape .deck-counter { border:1px solid #71816a; border-radius:14px; padding:6px 12px; gap:8px; background:#2b4233; }
+.mobile-landscape .deck-counter strong { font-size:28px; text-shadow:none; }
+.mobile-landscape .deck-counter span { font-size:11px; }
+.deck-selected { display:flex; align-items:center; gap:8px; min-height:46px; padding:0 4px; }
+.deck-selected-unit { position:relative; width:44px; height:44px; flex-shrink:0; border:1px solid #8c7957; border-radius:50%; padding:2px; background:#344837; cursor:pointer; }
+.deck-selected-unit img { width:100%; height:100%; object-fit:contain; }
+.deck-selected-unit span { position:absolute; right:-4px; top:-4px; width:16px; height:16px; border-radius:50%; background:#e9c982; color:#382c1a; font-size:13px; line-height:16px; }
+.mobile-landscape .deck-cards { grid-template-columns:repeat(5,minmax(0,1fr)); border:0; border-radius:0; background:none; padding:2px 4px 8px; gap:10px; scrollbar-width:thin; align-content:start; }
+.mobile-landscape .deck-card { aspect-ratio:auto; min-height:164px; height:auto; padding:12px 10px; gap:4px; background:#2d4032; border:1px solid #60715d; border-radius:16px; overflow:visible; box-shadow:0 3px #15251c; }
+.mobile-landscape .deck-card::before { display:none; }
+.mobile-landscape .deck-card[aria-pressed="true"] { background:#435339; border:2px solid #d5ba7b; padding:11px 9px; }
+.mobile-landscape .deck-card img { width:72px; height:72px; max-width:80%; margin:0 auto 3px; }
+.mobile-landscape .deck-card strong { font-size:12px; text-shadow:none; }
+.mobile-landscape .deck-card span { font-size:11px; }
+.mobile-landscape .deck-card small { min-height:0; margin:4px 0 0; font-size:11px; line-height:1.35; }
+.mobile-landscape .deck-check { display:block; top:7px; right:7px; width:20px; height:20px; border:1px solid #71816a; background:#24372b; }
+.mobile-landscape .deck-card[aria-pressed="true"] .deck-check { color:#352b19; text-shadow:none; background:#edc16d; }
+.mobile-landscape .deck-picker footer { min-height:48px; border-top:1px solid #60715d66; padding-top:8px; }
+.mobile-landscape .deck-start { width:190px; height:48px; min-height:48px; padding:8px 18px; background:#edc16d; border:1px solid #f5d99b; border-radius:14px; box-shadow:0 3px #7b5b35; font-size:18px; }
+.mobile-landscape .deck-message { font-size:12px; color:#d4ddc9; }
+.mobile-landscape .deck-new-run { left:10px; right:auto; bottom:10px; width:44px; height:44px; padding:0; font-size:22px; background:#263a2e; border-color:#71816a; }
+@media(max-height:450px) { .mobile-landscape .deck-picker { padding:8px 12px; gap:6px; } .mobile-landscape .deck-title p { font-size:10px!important; } .deck-selected { min-height:40px; gap:6px; } .deck-selected-unit { width:38px; height:38px; } .mobile-landscape .deck-card { min-height:146px; padding:9px 7px; } .mobile-landscape .deck-card[aria-pressed="true"] { padding:8px 6px; } .mobile-landscape .deck-card img { width:58px; height:58px; } .mobile-landscape .deck-card strong { font-size:11px; } .mobile-landscape .deck-card small { font-size:10px; } }
+@media(orientation:portrait) { .mobile-landscape .deck-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } .mobile-landscape .deck-header { flex-wrap:wrap; } .mobile-landscape .deck-counter small { display:none; } .mobile-landscape .deck-message { max-width:48%; } }
+
+/* Camp activity prototype: work starts autonomously at the rendered prop. */
+.camp-beast.camp-autonomous { animation:none; transition:left 1.2s linear,top 1.2s linear; }
+.camp-working::after { content:attr(data-activity); position:absolute; bottom:-18px; left:50%; transform:translateX(-50%); white-space:nowrap; color:#443521; background:#fff2cf; border-radius:6px; padding:3px 6px; font-size:11px; }
+.camp-working.camp-action-anvil img { transform-origin:50% 95%; animation:camp-forge-work .65s ease-in-out infinite; }
+@keyframes camp-forge-work { 0%,100% {transform:rotate(0deg)} 40% {transform:rotate(-9deg) translateY(-3px)} 55% {transform:rotate(7deg) translateY(2px)} }
+@media(prefers-reduced-motion:reduce) { .camp-beast.camp-autonomous {transition:none} .camp-working img,.camp-working svg {animation:none !important} }
+
+/* Reflect only the body; names and activity labels stay readable. */
+.camp-beast img { scale:var(--camp-facing,1) 1; }
+
+/* Owner village: fixed world pixels, one camera for background and props. */
+.village-camp .village-viewport { background:#a0c85e; border-radius:14px; touch-action:none; cursor:grab; }
+.village-camp .village-world { position:absolute; width:1536px; height:1024px; left:0; top:0; transform-origin:0 0; background:url('/assets/ui/camp/village-owner-v1/map.png') 0 0/1536px 1024px no-repeat; }
+.village-world .camp-station { left:auto; top:800px; bottom:auto; width:145px; height:110px; border-radius:12px; }
+.village-world .camp-station:nth-child(1) {left:560px}.village-world .camp-station:nth-child(2) {left:760px}.village-world .camp-station:nth-child(3) {left:960px}
+.village-world .camp-station[data-decor="anvil"] {left:1150px;top:560px;width:250px;height:177px;z-index:700}
+.village-world .camp-station[data-decor="bath"] {z-index:840}.village-world .camp-station[data-decor="carrot"] {z-index:840}
+.village-world .village-garden {position:absolute;left:180px;top:490px;width:280px;height:184px;background:transparent;border:0;padding:0;z-index:640;cursor:pointer}
+.village-garden svg {width:100%;height:100%}
+.village-world .village-fishing {position:absolute;left:1160px;top:145px;width:160px;height:90px;border:0;background:transparent;z-index:100;cursor:pointer}
+.village-fishing span {position:absolute;left:20px;bottom:-18px;font-size:13px;background:#fff0ce;color:#4a3925;padding:3px 9px;border-radius:8px}
+.village-world .camp-beast {width:92px;height:108px;min-width:0;min-height:0;animation:none}
+.village-world .camp-beast small {font-size:13px}
+.village-world .camp-beast img {filter:drop-shadow(0 3px 0 #493c2426)}
+.village-water-tool,.village-rod {display:none;position:absolute;pointer-events:none}
+.camp-working.camp-action-garden .village-water-tool {display:block;width:66px;height:50px;right:-20px;top:48px;animation:village-water 1.4s ease-in-out infinite}
+.village-water-tool svg {width:100%;height:100%}
+.camp-working.camp-action-garden img {animation:camp-forge-work 1.4s ease-in-out infinite}
+.camp-working.camp-action-fishing .village-rod {display:block;width:90px;height:4px;left:65px;top:54px;background:#795329;border:1px solid #3b3426;transform-origin:left;transform:rotate(-22deg);animation:village-fish 2s ease-in-out infinite}
+.village-rod::after {content:'';position:absolute;right:0;top:0;width:1px;height:64px;background:#eee4bd;transform:rotate(22deg)}
+.village-rod::before {content:'';position:absolute;right:-21px;top:57px;width:8px;height:12px;border-radius:50%;background:#e57364;border:1px solid #684b33}
+@keyframes village-water {0%,100% {transform:rotate(0)} 45%,65% {transform:rotate(18deg)}}
+@keyframes village-fish {0%,80%,100% {transform:rotate(-22deg)} 90% {transform:rotate(-35deg)}}
+@media(prefers-reduced-motion:reduce) {.village-water-tool,.village-rod {animation:none !important}}
+
+.camp-working[data-facing="left"] .village-water-tool {left:-45px;right:auto;scale:-1 1}
+
+/* Village review: compact navigation, contextual construction, calm movement. */
+.village-camp {padding:8px 12px;gap:6px}
+.village-camp .deck-header {min-height:44px;gap:10px}
+.village-camp .deck-header h1 {margin:0;font-size:24px}
+.village-camp .deck-header p {display:none}
+.village-camp .deck-back {width:44px;min-width:44px;height:44px;padding:0;border-radius:12px}
+.village-camp .village-viewport {background:#334b34}
+.village-overview-button {min-height:44px;border:1px solid #806c49;border-radius:12px;background:#4e4730;color:#fff0ce;padding:8px 12px;font:inherit;cursor:pointer}
+.village-navigation {display:flex;gap:8px;flex-shrink:0}
+.village-navigation button {flex:1;min-height:44px;padding:8px 12px;border:1px solid #736342;border-radius:12px;background:#493e2e;color:#f6ecd5;font:inherit;font-weight:700;cursor:pointer}
+.village-navigation button[aria-expanded="true"] {background:#d7b674;color:#382e1d}
+.village-camp .camp-status {font-size:11px;line-height:16px;min-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.village-camp .camp-workshop {position:absolute;bottom:64px;left:12px;right:12px;z-index:2000;padding:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;background:#2c3f31;border:1px solid #8a7753;border-radius:16px;box-shadow:0 8px 24px #14221b55;max-height:55%;overflow:auto}
+.village-camp .camp-workshop[hidden] {display:none !important}
+.village-build-heading {align-self:center;color:#fff0cb;font-size:14px}
+.village-camp .camp-workshop .village-build-close {min-width:44px;justify-self:end;padding:8px 16px}
+.village-world .camp-beast.camp-autonomous {transition:left var(--camp-travel,3s) linear,top var(--camp-travel,3s) linear}
+.village-world .village-garden {left:150px;top:465px;width:345px;height:226px;z-index:635}
+.village-world .camp-station[data-decor="anvil"] {left:1170px;top:590px;width:225px;height:159px;z-index:720}
+.village-world .camp-station[data-decor="carrot"] {left:850px;top:720px;width:130px;height:100px;z-index:800}
+.village-world .camp-station[data-decor="bath"] {left:630px;top:730px;width:140px;height:120px;z-index:820}
+.village-world .camp-working::after,.village-fishing span {display:none}
+.village-world .camp-working:focus-visible::after,.village-world .camp-working:hover::after,.village-fishing:focus-visible span {display:block}
+@media(orientation:portrait) {.village-camp .deck-header {flex-wrap:nowrap}.village-camp .deck-header h1 {font-size:20px}.village-overview-button {font-size:12px;padding:7px}.village-camp .camp-wood {font-size:13px}}
+@media(prefers-reduced-motion:reduce) {.village-world .camp-beast.camp-autonomous {transition:none}}
+
+.village-world .village-garden {z-index:100}
+
+/* Mobile village: full-bleed world with viewport-fixed touch controls. */
+.camp-view.village-camp {display:block;padding:0;background:#334b34}
+.village-camp .village-viewport {position:absolute;inset:0;min-height:0;border-radius:0}
+.village-camp .deck-header {position:absolute;top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));z-index:1200;min-height:44px;margin:0;padding:4px 6px;background:#20352be8;border-radius:14px;gap:8px;pointer-events:auto}
+.village-camp .deck-header h1 {font-size:19px;white-space:nowrap}
+.village-camp .camp-wood {font-size:13px}
+.village-camp .village-overview-button {font-size:12px;padding:6px 10px}
+.village-camp .village-navigation {position:absolute;bottom:max(10px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(420px,calc(100% - 20px));z-index:1200;gap:6px;padding:5px;background:#20352be8;border-radius:16px;box-sizing:border-box}
+.village-camp .village-navigation button {min-height:44px;padding:8px;font-size:13px;border-radius:11px}
+.village-camp .camp-status {position:absolute;bottom:76px;left:50%;transform:translateX(-50%);z-index:1100;max-width:calc(100% - 100px);padding:5px 10px;border-radius:10px;color:#fff1d0;background:#263a2bdd;font-size:11px;min-height:0;box-sizing:border-box;pointer-events:none}
+.village-zoom-controls {position:absolute;right:max(10px,env(safe-area-inset-right));top:42%;z-index:1200;display:grid;gap:6px}
+.village-zoom-controls button {width:44px;height:44px;border:1px solid #b69a66;border-radius:12px;background:#3b4933ed;color:#fff1d0;font-size:26px;line-height:1;cursor:pointer}
+.village-camp .camp-workshop {bottom:76px;left:50%;right:auto;transform:translateX(-50%);width:min(520px,calc(100% - 24px));box-sizing:border-box;max-height:calc(100% - 150px);z-index:2100}
+@media(max-width:400px) {.village-camp .deck-header h1 {font-size:17px}.village-camp .deck-header {gap:5px}.village-camp .village-overview-button {padding:6px;font-size:11px}}

@@ -15,6 +15,10 @@ import type { EnergyQueueEntry } from '../energy/EnergyQueue';
 import { BattleStarUpgradePreviewRenderer } from './battle/BattleStarUpgradePreviewRenderer';
 import { BattleSetupRightCTARenderer } from './battle/BattleSetupRightCTARenderer';
 import { BattleDeploymentTrayRenderer } from './battle/BattleDeploymentTrayRenderer';
+import { createPlayerBattleLayout, playerSlotPosition, enemySlotPosition } from './BattleFieldLayout';
+import { BattleCharacterView } from './art/BattleCharacterView';
+import { EnemyCharacterView } from './art/EnemyCharacterView';
+import { mobileSetupSlot } from './layout/MobileSetupLayout';
 
 export interface BattleSetupLayoutMetrics {
   panelX: number;
@@ -46,6 +50,7 @@ interface SlotVisualTarget {
  */
 export class BattleSetupView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
+  private readonly setupCharacters: BattleCharacterView[] = [];
   private readonly controller: BattleSetupInteractionController;
   private readonly playerSlotVisuals: SlotVisualTarget[] = [];
   private readonly starUpgradePreviewRenderer: BattleStarUpgradePreviewRenderer;
@@ -76,8 +81,10 @@ export class BattleSetupView {
     private readonly runRoster?: RunRoster,
     private readonly onConsolidate?: (selectedUnitId: string) => string | undefined,
     private readonly shardPool?: import('../run/RunLinkShardPool').RunLinkShardPool,
+    private readonly onBuySlot?: () => void,
   ) {
-    this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, ACTIVE_SQUAD_LIMIT);
+    if (isCompactLandscape() && !onEnemyBoardEdit) { this.trayBounds.y = 500; this.trayBounds.height = 205; }
+    this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, () => this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT);
     this.starUpgradePreviewRenderer = new BattleStarUpgradePreviewRenderer(
       this.scene,
       this.formation,
@@ -91,6 +98,8 @@ export class BattleSetupView {
       this.storedEnergy,
       this.startBattle,
       this.shardPool,
+      () => this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT,
+      this.onBuySlot,
     );
     this.deploymentTrayRenderer = new BattleDeploymentTrayRenderer(
       this.scene,
@@ -135,6 +144,11 @@ export class BattleSetupView {
     const viewportW = this.scene.scale.width || 1280;
     const viewportH = this.scene.scale.height || 720;
     const layoutMetrics = BattleSetupView.computeLayout(viewportH);
+    if (isCompactLandscape() && !this.onEnemyBoardEdit) {
+      layoutMetrics.panelX = viewportW - 282;
+      this.trayBounds.x = 132; // Leave the DOM pause button a clear lower-left pocket.
+      this.trayBounds.width = viewportW - 432;
+    }
 
     this.renderHeader();
     this.renderBattleField();
@@ -145,6 +159,7 @@ export class BattleSetupView {
   }
 
   destroy(): void {
+    this.setupCharacters.splice(0).forEach(character=>character.dispose());
     if (this.pointerMoveHandler) {
       this.scene.input.off('pointermove', this.pointerMoveHandler);
       this.pointerMoveHandler = undefined;
@@ -245,6 +260,7 @@ export class BattleSetupView {
   }
 
   private renderBattleField(): void {
+    if (isCompactLandscape() && !this.onEnemyBoardEdit) { this.renderMobileBattleField(); return; }
     const arenaX = 24;
     const arenaY = 72;
     const arenaW = 1230;
@@ -275,7 +291,7 @@ export class BattleSetupView {
     const squad = this.squadPresentation();
     const playerHeading = this.text(dividerX - 170, topLaneY - 58, '◀ YOUR SQUAD', 12, '#38bdf8', 'bold').setOrigin(0.5);
     const enemyHeading = this.text(dividerX + 180, topLaneY - 58, 'ENEMY THREAT ▶', 12, '#f87171', 'bold').setOrigin(0.5);
-    const squadTitle = this.text(dividerX - 170, topLaneY - 42, formationBoardSummary(squad.activeCount), 9, squad.isFull ? '#fbbf24' : '#7dd3fc', 'bold').setOrigin(0.5);
+    const squadTitle = this.text(dividerX - 170, topLaneY - 42, formationBoardSummary(squad.activeCount, 18, this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT), 9, squad.isFull ? '#fbbf24' : '#7dd3fc', 'bold').setOrigin(0.5);
     this.objects.push(playerHeading, enemyHeading, squadTitle);
 
     // Row labels
@@ -392,6 +408,40 @@ export class BattleSetupView {
     }
   }
 
+  private renderMobileBattleField(): void {
+    const squad = this.squadPresentation();
+    const layout=createPlayerBattleLayout(this.scene.scale.width,this.scene.scale.height,true);
+    if(this.scene.textures.exists('owner-camp-battle')) {
+      const background=this.scene.add.image(this.scene.scale.width/2,this.scene.scale.height/2,'owner-camp-battle').setDepth(-10);
+      background.setScale(Math.max(this.scene.scale.width/background.width,this.scene.scale.height/background.height));
+      this.objects.push(background);
+    }
+    const heading=this.text(36,76,`Đội hình ${squad.activeCount}/${squad.limit} · Chạm thú rồi chạm vị trí`,18,'#fff3d7','bold');
+    heading.setBackgroundColor('#29372ddd').setPadding(10,6);
+    this.text(this.scene.scale.width-36,76,`Địch: ${this.enemies.length}`,18,'#fff3d7','bold').setOrigin(1,0).setBackgroundColor('#29372ddd').setPadding(10,6);
+    for(const row of ['Back','Mid','Front'] as const) {
+      this.text(playerSlotPosition(layout,row,1).x,132,row.toUpperCase(),14,'#fff3d7','bold').setOrigin(.5).setBackgroundColor('#29372dbb').setPadding(6,3);
+    }
+    for (let lane = 1; lane <= 6; lane++) {
+      const laneY=playerSlotPosition(layout,'Front',lane).y;
+      this.text(playerSlotPosition(layout,'Back',lane).x-66,laneY,`${lane}`,13,'#fff3d7','bold').setOrigin(.5);
+      for (const row of ['Front', 'Mid', 'Back'] as const) {
+        const pos = mobileSetupSlot(row,lane,this.scene.scale.width);
+        const slotId = `${row.toLowerCase()}-${lane}`;
+        this.playerSlotVisuals.push({ slotId, row, column: lane, ...pos });
+        this.renderPlayerSlot(slotId, row, lane, pos.x, pos.y, pos.width, pos.height);
+      }
+    }
+    this.enemies.forEach(enemy=>{
+      const pos=enemySlotPosition(layout,enemy.row,enemy.column);
+      const character=new EnemyCharacterView(this.scene,enemy.archetype??'Frontliner',true);
+      character.root.setPosition(pos.x,pos.y).setDepth(100+pos.y/10);
+      this.objects.push(character.root);
+      const hp=this.scene.add.rectangle(pos.x,pos.y+character.hpAnchorY,46,4,0xf17383).setDepth(200);
+      this.objects.push(hp);
+    });
+  }
+
   private renderPlayerSlot(
     slotId: string,
     row: FormationSlot['row'],
@@ -404,33 +454,50 @@ export class BattleSetupView {
     const formationSlot = this.formation.getSlot(slotId);
     const occupantUnit = formationSlot?.unitId ? this.formation.getUnit(formationSlot.unitId) : undefined;
     const isSelected = occupantUnit && occupantUnit.unitId === this.controller.selectedId;
+    const onBattlefield=isCompactLandscape()&&!this.onEnemyBoardEdit;
 
     if (occupantUnit) {
       // Occupied Player Slot
       const body = this.scene.add
-        .rectangle(x, y, width - 6, height - 6, 0x1e293b, 0.96)
-        .setStrokeStyle(isSelected ? 3 : 1.5, isSelected ? 0xc8b58a : 0x48514e);
+        .rectangle(x, y, width - 6, height - 6, 0x1e293b, onBattlefield?0:0.96)
+        .setStrokeStyle(onBattlefield?0:isSelected ? 3 : 1.5, isSelected ? 0xc8b58a : 0x48514e);
       this.objects.push(body);
 
-      const icon = createIconImage(this.scene, occupantUnit.beastId, x - 15, y - 5, 36);
-      this.objects.push(icon);
+      const large = height >= 90;
+      if(onBattlefield) {
+        const marker=this.scene.add.ellipse(x,y+5,78,22,0x344838,.3).setStrokeStyle(isSelected?3:1,isSelected?0xffdf83:0xf2e2b2,isSelected?1:.45);
+        const character=new BattleCharacterView(this.scene,occupantUnit.beastId,true);
+        this.setupCharacters.push(character);
+        // Idle motion owns the root's local y/scale. Position its parent on the
+        // field, just as BattleUnitVisualManager does during combat.
+        const anchor=this.scene.add.container(x,y,[character.root]).setDepth(100+y/10);
+        this.objects.push(marker,anchor);
+        const roster=this.runRoster?.get(occupantUnit.unitId);
+        const ratio=roster ? roster.currentHp/Math.max(1,roster.maxHp):1;
+        this.objects.push(this.scene.add.rectangle(x-23,y+character.hpAnchorY,46*ratio,4,0x56cc83).setOrigin(0,.5).setDepth(200));
+      } else {
+        this.objects.push(createIconImage(this.scene, occupantUnit.beastId, x - 15, y - 8, large ? 60 : 36));
+      }
 
       const roleBadge = createRoleIconImage(this.scene, occupantUnit.role, x + 16, y - 10, 16);
+      roleBadge.setVisible(!onBattlefield);
       this.objects.push(roleBadge);
 
       const stars = '★'.repeat(occupantUnit.star);
-      const starLabel = this.text(x + 16, y + 6, stars, 9, HudTokens.colors.textGold, 'bold').setOrigin(0.5);
+      const starLabel = this.text(x + (large ? 34 : 16), y + 6, stars, large ? 13 : 9, HudTokens.colors.textGold, 'bold').setOrigin(0.5);
+      if(onBattlefield) starLabel.setPosition(x,y+12).setFontSize(12).setDepth(201);
       this.objects.push(starLabel);
 
       const rosterUnit = this.runRoster?.get(occupantUnit.unitId);
       const hpLabel = this.text(
         x,
-        y + 16,
+        y + (large ? 34 : 16),
         rosterUnit ? `${rosterUnit.currentHp}/${rosterUnit.maxHp} HP` : 'HP',
-        7,
+        large ? 13 : 7,
         HudTokens.colors.textMuted,
         'bold',
       ).setOrigin(0.5);
+      hpLabel.setVisible(!onBattlefield);
       this.objects.push(hpLabel);
 
       if (isSelected && this.scene.tweens) {
@@ -468,11 +535,12 @@ export class BattleSetupView {
     // Empty Player Slot: a tactical position, not an additional squad slot.
     const squad = this.squadPresentation();
     const isDragging = this.controller.state.mode !== 'idle';
-    const blockedByFullSquad = reserveTargetAffordance(squad.activeCount, false, this.controller.state.mode === 'draggingFromTray') === 'blocked';
+    const blockedByFullSquad = reserveTargetAffordance(squad.activeCount, false, this.controller.state.mode === 'draggingFromTray', this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT) === 'blocked';
     const emptySlot = this.scene.add
-      .rectangle(x, y, width, height, 0x1e293b, blockedByFullSquad ? 0.3 : 0.5)
-      .setStrokeStyle(1.5, blockedByFullSquad ? 0x48514e : 0x667a73, blockedByFullSquad ? 0.35 : 0.4);
-    const slotLabel = emptyFormationSlotLabel(isDragging, blockedByFullSquad);
+      .rectangle(x, y, width, height, 0x6c7b59, onBattlefield?0:blockedByFullSquad ? 0.06 : 0.14)
+      .setStrokeStyle(onBattlefield?0:1, 0x98a58b, isDragging || this.controller.selectedId ? .65 : .18);
+    if(onBattlefield) this.objects.push(this.scene.add.ellipse(x,y,66,20,0x344838,.12).setStrokeStyle(1,0xffedc0,isDragging||Boolean(this.controller.selectedId)? .8:.35));
+    const slotLabel = onBattlefield ? (blockedByFullSquad?'':'+') : emptyFormationSlotLabel(isDragging, blockedByFullSquad);
     const footprint = slotLabel
       ? this.text(x, y, slotLabel, blockedByFullSquad ? 7 : 8, blockedByFullSquad ? '#64748b' : '#7dd3fc', 'bold').setOrigin(0.5).setAlpha(0.8)
       : undefined;
@@ -610,7 +678,7 @@ export class BattleSetupView {
     const slot = this.formation.getSlot(target.slotId);
     const isOccupied = Boolean(slot?.unitId && slot.unitId !== unitId);
     const squad = this.squadPresentation();
-    const affordance = reserveTargetAffordance(squad.activeCount, isOccupied, this.controller.state.mode === 'draggingFromTray');
+    const affordance = reserveTargetAffordance(squad.activeCount, isOccupied, this.controller.state.mode === 'draggingFromTray', this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT);
 
     const container = this.scene.add.container(target.x, target.y);
     container.setDepth(150);
@@ -750,6 +818,7 @@ export class BattleSetupView {
       units.filter((unit) => unit.slotId !== null && isLiving(unit)).length,
       units.filter((unit) => unit.slotId === null && isLiving(unit)).length,
       units.filter((unit) => unit.slotId === null && !isLiving(unit)).length,
+      this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT,
     );
   }
 
@@ -761,7 +830,7 @@ export class BattleSetupView {
     const squad = this.squadPresentation();
     this.playerSlotVisuals.forEach((target) => {
       const slot = this.formation.getSlot(target.slotId);
-      const affordance = reserveTargetAffordance(squad.activeCount, Boolean(slot?.unitId), true);
+      const affordance = reserveTargetAffordance(squad.activeCount, Boolean(slot?.unitId), true, this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT);
       if (affordance === 'place') {
         const glow = this.scene.add.rectangle(target.x, target.y, target.width - 4, target.height - 4, 0x0284c7, 0.12).setStrokeStyle(1.5, 0x38bdf8, 0.7);
         glow.setDepth(120);

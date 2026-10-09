@@ -5,6 +5,7 @@ import type { UnitVisual, EnemyVisual } from './BattleUnitVisualManager';
 
 export class BattleFunControlsRenderer {
   private funMarkers: Phaser.GameObjects.GameObject[] = [];
+  private readonly bombs = new Map<string, {at: number; x: number; y: number}>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -15,6 +16,19 @@ export class BattleFunControlsRenderer {
   ) {}
 
   renderFunControls(snapshot: AutonomousBattleSnapshot): void {
+    const now = snapshot.elapsedTime ?? 0;
+    for (const [id, bomb] of this.bombs) {
+      if (now >= bomb.at) {
+        const smoke = this.scene.add.graphics().setPosition(bomb.x, bomb.y).setDepth(232);
+        smoke.fillStyle(0xeee1c6, .9); smoke.fillCircle(-19, 0, 24); smoke.fillCircle(19, 0, 24); smoke.fillCircle(0, -18, 29);
+        smoke.lineStyle(3, 0x38463a); smoke.strokeCircle(-19, 0, 24); smoke.strokeCircle(19, 0, 24);
+        this.managedObjects.push(smoke);
+        this.scene.tweens.add({targets:smoke, alpha:0, scaleX:1.3, scaleY:1.3, duration:350, onComplete:() => {
+          const index = this.managedObjects.indexOf(smoke); if (index >= 0) this.managedObjects.splice(index, 1); smoke.destroy();
+        }});
+        this.bombs.delete(id);
+      }
+    }
     this.funMarkers.splice(0).forEach((object) => {
       const index = this.managedObjects.indexOf(object);
       if (index >= 0) this.managedObjects.splice(index, 1);
@@ -49,9 +63,15 @@ export class BattleFunControlsRenderer {
           const y = ally.container.y - 50;
           const g = this.scene.add.graphics().setDepth(180);
           g.fillStyle(unit.signatureId === 'ToyWorkshop' ? 0xc8b58a : 0xeeb6ac);
-          g.fillCircle(x - 9, y - 4, 12);
-          g.fillCircle(x + 9, y - 4, 12);
-          g.fillTriangle(x - 20, y, x + 20, y, x, y + 23);
+          if (unit.signatureId === 'ToyWorkshop') {
+            g.fillRoundedRect(x + 32, y + 20, 34, 40, 6);
+            g.lineStyle(3, 0x17251e); g.strokeRoundedRect(x + 32, y + 20, 34, 40, 6);
+            g.fillStyle(0x17251e); g.fillCircle(x + 42, y + 32, 3); g.fillCircle(x + 55, y + 32, 3);
+            g.fillStyle(0xa7bdc6); g.fillRoundedRect(x + 46, y + 43, 28, 30, 5);
+          } else {
+            g.fillCircle(x - 9, y - 4, 12); g.fillCircle(x + 9, y - 4, 12);
+            g.fillTriangle(x - 20, y, x + 20, y, x, y + 23);
+          }
           if (unit.star === 3) {
             g.lineStyle(4, 0xf2e9d5, 0.9);
             g.strokeRoundedRect(x - 34, y - 22, 68, 63, 23);
@@ -61,10 +81,10 @@ export class BattleFunControlsRenderer {
               x,
               y - 36,
               unit.signatureId === 'ToyWorkshop'
-                ? 'TOY SHIELD'
+                ? 'TOY GUARD'
                 : unit.star === 3
-                ? 'WOOL HUG · HEAL + SHIELD'
-                : 'WOOLKEEPER · HEAL',
+                ? 'WOOL HUG!'
+                : '♥ HEAL',
               {
                 fontFamily: 'Arial',
                 fontSize: '14px',
@@ -88,36 +108,39 @@ export class BattleFunControlsRenderer {
       if (enemy.bombAt !== undefined && enemy.bombAt > (snapshot.elapsedTime ?? 0)) {
         const x = visual.container.x + 38;
         const y = visual.container.y - 30;
-        const bomb = this.scene.add.circle(x, y, 19, 0x202725).setStrokeStyle(3, 0xc8b58a).setDepth(180);
+        this.bombs.set(enemy.enemyId, {at:enemy.bombAt,x,y});
+        const remaining = enemy.bombAt - now;
+        const bomb = this.scene.add.circle(x, y, 24, remaining < .4 ? 0xb67c65 : 0x202725).setStrokeStyle(3, 0xc8b58a).setDepth(230);
         const count = this.scene.add
-          .text(x, y, `${Math.max(0, enemy.bombAt - (snapshot.elapsedTime ?? 0)).toFixed(1)}`, {
+          .text(x, y, `${Math.max(1, Math.ceil(remaining / .4))}`, {
             fontFamily: 'Arial',
-            fontSize: '15px',
+            fontSize: '20px',
             color: '#f6db9f',
             fontStyle: 'bold',
           })
           .setOrigin(0.5)
-          .setDepth(181);
+            .setDepth(231);
         this.funMarkers.push(bomb, count);
         this.managedObjects.push(bomb, count);
       }
       if (!active) return;
-      const g = this.scene.add.graphics().setDepth(180);
+      const g = this.scene.add.graphics().setDepth(220);
       const duck = enemy.funControlKind === 'Duck';
       const point =
         duck || enemy.funControlKind === 'Bubble' || enemy.funControlKind === 'Disrupt'
           ? { x: visual.container.x, y: visual.container.y - 22 }
           : battleModelPosition(this.layout, enemy.carrotX ?? enemy.positionX, enemy.carrotLane ?? enemy.positionLane);
       const x = point.x;
-      const y = point.y;
+      const y = point.y + (duck ? Math.sin(now * 16) * 4 : 0);
       g.lineStyle(4, 0x10151b);
       if (enemy.funControlKind === 'Disrupt') {
         g.lineStyle(5, 0xc8b58a);
         g.lineBetween(x - 16, y - 16, x + 16, y + 16);
         g.lineBetween(x + 16, y - 16, x - 16, y + 16);
       } else if (enemy.funControlKind === 'Bubble') {
-        g.lineStyle(4, 0xa7c9bd);
-        g.strokeCircle(x, y, 42);
+        g.fillStyle(0xa7c9bd, .1); g.fillCircle(x, y - 16, 60);
+        g.lineStyle(3, 0xa7c9bd); g.strokeCircle(x, y - 16, 60);
+        g.fillStyle(0xffffff, .8); g.fillEllipse(x - 29, y - 46, 11, 22);
       } else if (duck) {
         g.fillStyle(0xffffff);
         g.fillEllipse(x, y + 8, 54, 42);
@@ -146,12 +169,12 @@ export class BattleFunControlsRenderer {
           x,
           y - 76,
           enemy.funControlKind === 'Disrupt'
-            ? 'INTERRUPTED · 1s'
+            ? 'INTERRUPTED'
             : enemy.funControlKind === 'Bubble'
-            ? 'BUBBLE · ACTION BLOCKED'
+            ? 'POP?'
             : duck
-            ? 'QUACK! · SKILL BLOCKED'
-            : 'LOOK HERE! · DECOY',
+            ? 'QUACK!'
+            : 'YUM!',
           {
             fontFamily: 'Arial',
             fontSize: '14px',
@@ -168,6 +191,7 @@ export class BattleFunControlsRenderer {
   }
 
   clear(): void {
+    this.bombs.clear();
     this.funMarkers.splice(0).forEach((object) => {
       const index = this.managedObjects.indexOf(object);
       if (index >= 0) this.managedObjects.splice(index, 1);

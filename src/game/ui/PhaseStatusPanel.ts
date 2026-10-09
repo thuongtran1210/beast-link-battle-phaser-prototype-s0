@@ -509,7 +509,7 @@ export class PhaseStatusPanel {
       return panel;
     };
     let y = this.y;
-    surface(y, 132, accent);
+    surface(y, 132, urgent ? HudTokens.colors.strokeRed : HudTokens.colors.strokeDefault);
     addText(this.x + 18, y + 12, data.isReady ? 'MATCH TO START' : 'COLLECT ENERGY', 20, HudTokens.colors.textBlue);
     this.timerValue = addText(this.x + 18, y + 38, `${Math.max(0, data.timerSeconds).toFixed(1)}s`, 46,
       urgent ? HudTokens.colors.textRed : HudTokens.colors.textPrimary);
@@ -531,10 +531,9 @@ export class PhaseStatusPanel {
     this.queueCenter = {x: this.x + w / 2, y: y + 34};
     data.queueItems.slice(0, 4).forEach((item, index) => {
       const rowY = y + index * 70;
-      const def = getIconDefinition(item.id);
       const bg = this.scene.add.rectangle(this.x + w / 2, rowY + 32, w - 8, 64,
-        item.count > 0 ? def.bgFill : HudTokens.colors.bgSurfaceDark, .95)
-        .setStrokeStyle(1, def.primaryColor, item.count > 0 ? .7 : .25);
+        item.count > 0 ? HudTokens.colors.bgSurfaceElevated : HudTokens.colors.bgSurfaceDark, .95)
+        .setStrokeStyle(1, HudTokens.colors.strokeDefault, .6);
       const icon = createIconImage(this.scene, item.id, this.x + 32, rowY + 32, 46);
       const count = addText(this.x + w - 16, rowY + 16, `×${item.count}`, 29,
         item.count > 0 ? HudTokens.colors.textGold : HudTokens.colors.textMuted).setOrigin(1, 0);
@@ -561,7 +560,7 @@ export class PhaseStatusPanel {
       return object;
     };
     let y = this.y;
-    this.objects.push(drawCard(this.scene, this.x, y, w, 142, HudTokens.colors.bgPhaseSoft, 1, accent));
+    this.objects.push(drawCard(this.scene, this.x, y, w, 142, HudTokens.colors.bgPhaseSoft, 1, HudTokens.colors.strokeDefault));
     text(this.x + 16, y + 12, data.isReady ? 'MATCH TO START' : 'TIME LEFT', 20, HudTokens.colors.textSecondary);
     this.timerValue = text(this.x + 16, y + 39, `${Math.max(0, data.timerSeconds).toFixed(1)}s`, 46,
       !data.isReady && data.timerSeconds < 3 ? HudTokens.colors.textRed : HudTokens.colors.textPrimary);

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Snowguard · Animation</title>
+<style>body{margin:0;padding:20px;background:#20352b;color:#fff1ce;font-family:system-ui}h1{font-size:24px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}article{background:#344837;border-radius:16px;padding:12px;text-align:center}canvas{width:220px;height:190px;background:#dfc696;border-radius:12px}button{min-height:44px;background:#edc478;border:0;border-radius:10px;padding:10px 18px;color:#342b1e;cursor:pointer}p{max-width:900px}</style>
+<h1>Snowguard · 6 animation</h1><p>Đứng chờ và đi bộ lặp liên tục. Các động tác còn lại phát một lần; KO giữ frame cuối. Đây là trang kiểm tra asset, không chạy mô phỏng chiến đấu.</p><main></main>
+<script type="module">
+const base='/assets/characters/duck-guardian/animation_v01/';
+const frames=await fetch(base+'frames.json').then(r=>r.json());
+const names={idle:'Đứng chờ',walk:'Đi bộ',ko:'KO',hit:'Trúng đòn',skill:'Kỹ năng',attack:'Tấn công'};
+for(const [clip,cells]of Object.entries(frames)){
+ const card=document.createElement('article');card.innerHTML=`<h2>${names[clip]}</h2><canvas width="440" height="380"></canvas><p><button>Phát lại</button></p>`;document.querySelector('main').append(card);
+ const image=new Image();image.src=base+clip+'.png';await image.decode();const canvas=card.querySelector('canvas'),ctx=canvas.getContext('2d');let started=performance.now();card.querySelector('button').onclick=()=>started=performance.now();
+ const fps=clip==='idle'?7:clip==='walk'?10:clip==='ko'?8000/850:clip==='skill'?8000/820:clip==='hit'?20:8000/550;
+ function draw(now){let index=Math.floor((now-started)*fps/1000);index=clip==='idle'||clip==='walk'?index%8:Math.min(index,7);const f=cells[index];let scale=220/cells[0].bodyHeight;if(clip==='idle')scale=220/f.bodyHeight*(1+(f.bodyHeight/cells[0].bodyHeight-1)*.1);ctx.clearRect(0,0,440,380);ctx.strokeStyle='#98825f';ctx.beginPath();ctx.moveTo(30,320);ctx.lineTo(410,320);ctx.stroke();ctx.drawImage(image,f.x,f.y,f.width,f.height,220-f.width*scale/2,320-f.groundY*scale,f.width*scale,f.height*scale);requestAnimationFrame(draw);}requestAnimationFrame(draw);
+}
+</script></html>

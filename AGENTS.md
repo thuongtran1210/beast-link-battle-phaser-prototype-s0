@@ -32,6 +32,9 @@ Use repository-local art sources:
 
 Do not mass-generate a roster before owner approval of the Master Reference.
 
+For frame-by-frame character animation prompts, sheet QA and runtime integration,
+also read `docs/FRAME-ANIMATION-AGENT-WORKFLOW.md`.
+
 ## Mixed code + art task
 
 Read both coding and art instructions.
