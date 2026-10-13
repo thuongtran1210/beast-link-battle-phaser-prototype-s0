@@ -2,6 +2,10 @@
 
 This manifest tracks art approval state.
 
+## Character Studio owner edits — 2026-10-13
+
+Owner saves for Snowguard/Windstrider are preserved in CharacterProjects.json, with software-rendered content-hashed atlases under public/assets/character-custom and previous records under art/backups/character-studio. Editor source crop/mask/offset settings bake into registered 2048×1024 atlases; original animation_v01 PNGs remain unchanged. Shared Review/runtime integration and raster/PNG checks do not constitute STYLE APPROVED or GAME READY. Manual owner art/gameplay review remains open. See docs/CHARACTER-STUDIO-GUIDE.md.
+
 ## Windstrider owner animation — 2026-10-13
 
 Six owner-supplied RGBA 1774×887 sheets (8 frames, 4×2), in requested order Idle / Run / Attack / Skill / Hit / KO, preserved unchanged at public/assets/characters/rabbit-archer/animation_v01. Run maps to walk.png for the shared rig. Measured alpha windows/foot origins in WindstriderFrames.json; Setup/Battle integration via shared animation state machine. Preview /windstrider-animation-preview.html. OWNER-SUPPLIED / INTEGRATED; live Battle/mobile review open, no STYLE APPROVED or GAME READY claim.

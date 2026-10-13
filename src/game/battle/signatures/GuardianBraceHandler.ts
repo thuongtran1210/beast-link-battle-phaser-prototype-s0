@@ -5,7 +5,7 @@ import {
   guardianBraceShareRatio,
   signatureStrengthForStar,
 } from '../../run/StarProfile';
-import { P1V13A_SIGNATURE_FIXTURE } from '../BattleConfig';
+import {skillValue} from '../../config/CharacterProjects';
 
 export class GuardianBraceHandler {
   static activate(ctx: SignatureContext, unit: CombatUnit, targetId: string): void {
@@ -16,7 +16,7 @@ export class GuardianBraceHandler {
     ) return;
 
     const shield = signatureStrengthForStar('GuardianBrace', unit.star);
-    const expiresAt = (ctx.state.elapsedTime ?? 0) + P1V13A_SIGNATURE_FIXTURE.guardianBraceDuration;
+    const expiresAt = (ctx.state.elapsedTime ?? 0) + skillValue('GuardianBrace',unit.star,'duration');
     unit.temporaryShieldHp = Math.max(unit.temporaryShieldHp ?? 0, shield);
     unit.temporaryShieldExpiresAt = expiresAt;
     unit.temporaryShieldSourceSignatureId = 'GuardianBrace';

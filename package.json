@@ -8,7 +8,8 @@
     "dev:test": "vite --mode test",
     "build": "tsc -b && vite build",
     "check": "esbuild src/game/runChecks.ts --bundle --platform=node --format=cjs --outfile=dist/checks.cjs && node dist/checks.cjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:studio-server": "node scripts/unit-editor-server-checks.js"
   },
   "dependencies": {
     "phaser": "^3.90.0"

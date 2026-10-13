@@ -1,5 +1,6 @@
 import type { CombatUnit, EnemyCombatUnit, PlayerCombatHit } from '../BattleTypes';
 import type { SignatureContext } from './SignatureContext';
+import {skillValue} from '../../config/CharacterProjects';
 import {
   focusPierceRatio,
   focusPierceTargets,
@@ -51,7 +52,7 @@ export class RangerCombatHandler {
         if (unit.star >= 2 && !unit.signatureActivationCount && target.currentHp > 0) {
           target.funControlKind = 'Carrot';
           target.funControlStar = unit.star as 2 | 3;
-          target.funControlUntil = (ctx.state.elapsedTime ?? 0) + (unit.star === 3 ? 2 : 1);
+          target.funControlUntil = (ctx.state.elapsedTime ?? 0) + skillValue('FocusShot',unit.star,'carrotDuration');
           target.carrotX = unit.positionX + 0.7;
           target.carrotLane = unit.positionLane;
         }

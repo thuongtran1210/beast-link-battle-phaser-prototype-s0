@@ -1,4 +1,5 @@
 import type { BeastSignatureId } from '../battle/BeastRoles';
+import {skillValue} from '../config/CharacterProjects';
 
 export type StarLevel = 1 | 2 | 3;
 
@@ -20,7 +21,7 @@ export const V14B3_SIGNATURE_STAR_PROFILE: Readonly<Record<BeastSignatureId, Rea
 
 export function starStatMultiplier(star: StarLevel): number { return STAR_STAT_MULTIPLIERS[star]; }
 export function signatureStrengthForStar(signature: BeastSignatureId, star: StarLevel): number {
-  return V14B3_SIGNATURE_STAR_PROFILE[signature][star];
+  return ['BubbleTrap','ToyWorkshop','TickingBomb'].includes(signature)?V14B3_SIGNATURE_STAR_PROFILE[signature][star]:skillValue(signature,star,'strength');
 }
 
 
@@ -29,57 +30,57 @@ export function signatureStrengthForStar(signature: BeastSignatureId, star: Star
  * These helpers intentionally keep the rules deterministic and easy to validate.
  */
 export function guardianBraceActivationLimit(star: StarLevel): number {
-  return star === 1 ? 1 : 2;
+  return skillValue('GuardianBrace',star,'activationLimit');
 }
 export function guardianBraceShareRatio(star: StarLevel): number {
-  return star === 3 ? 0.45 : 0;
+  return skillValue('GuardianBrace',star,'shareRatio');
 }
 
 export function ambushActivationLimit(star: StarLevel): number {
-  return star === 1 ? 1 : star === 2 ? 2 : 3;
+  return skillValue('AmbushStrike',star,'activationLimit');
 }
 export function ambushChainRatio(star: StarLevel): number {
-  return star === 3 ? 0.65 : 0;
+  return skillValue('AmbushStrike',star,'chainRatio');
 }
 
 export function focusHoldThresholdForStar(star: StarLevel): number {
-  return star === 1 ? 1.6 : star === 2 ? 1.25 : 1.0;
+  return skillValue('FocusShot',star,'holdThreshold');
 }
 export function focusPierceTargets(star: StarLevel): number {
-  return star === 3 ? 1 : 0;
+  return skillValue('FocusShot',star,'pierceTargets');
 }
 export function focusPierceRatio(star: StarLevel): number {
-  return star === 3 ? 0.55 : 0;
+  return skillValue('FocusShot',star,'pierceRatio');
 }
 
 export function arcaneBloomRadiusForStar(star: StarLevel): number {
-  return star === 1 ? 1.25 : star === 2 ? 1.55 : 1.85;
+  return skillValue('ArcaneBloom',star,'radius');
 }
 export function arcaneBloomSecondaryLimitForStar(star: StarLevel): number {
-  return star === 1 ? 2 : star === 2 ? 3 : 4;
+  return skillValue('ArcaneBloom',star,'secondaryLimit');
 }
 export function arcaneBloomEchoRatio(star: StarLevel): number {
-  return star === 3 ? 0.35 : 0;
+  return skillValue('ArcaneBloom',star,'echoRatio');
 }
 
 export function ironRamKnockbackForStar(star: StarLevel): number {
-  return star === 1 ? 0.35 : star === 2 ? 0.55 : 0.7;
+  return skillValue('IronRam',star,'knockback');
 }
 export function ironRamStaggerForStar(star: StarLevel): number {
-  return star === 1 ? 0 : star === 2 ? 0.35 : 0.55;
+  return skillValue('IronRam',star,'stagger');
 }
 export function ironRamCleaveTargets(star: StarLevel): number {
-  return star === 3 ? 1 : 0;
+  return skillValue('IronRam',star,'cleaveTargets');
 }
 export function ironRamCleaveRatio(star: StarLevel): number {
-  return star === 3 ? 0.6 : 0;
+  return skillValue('IronRam',star,'cleaveRatio');
 }
 
 export function twinVolleyAttackThreshold(star: StarLevel): number {
-  return star === 1 ? 3 : star === 2 ? 2 : 1;
+  return skillValue('TwinVolley',star,'attackThreshold');
 }
 export function twinVolleySecondaryTargets(star: StarLevel): number {
-  return star === 3 ? 2 : 1;
+  return skillValue('TwinVolley',star,'secondaryTargets');
 }
 
 

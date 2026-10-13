@@ -1,4 +1,6 @@
 import { BATTLE_CHARACTER_ART } from './art/BattleCharacterManifest';
+import { showSettingsDialog } from './SettingsDialog';
+import { toggleFullscreen } from './layout/MobileDisplayManager';
 import { showCamp } from './CampView';
 import { transitionScreen } from './SceneTransition';
 import { firstJourneyStage } from '../run/FirstJourney';
@@ -36,10 +38,12 @@ export function showMainMenu(play: () => void): void {
   };
   const fullscreen = root.querySelector<HTMLButtonElement>('.menu-fullscreen')!;
   const options=document.createElement('details');options.className='cozy-options';
-  const toggle=document.createElement('summary');toggle.setAttribute('aria-label','Tùy chọn');toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 17h16"/><circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="16" cy="17" r="3" fill="currentColor"/></svg>';options.append(toggle);
-  const actions=document.createElement('div');actions.className='cozy-option-actions';actions.append(root.querySelector('.menu-help')!,fullscreen);options.append(actions);root.append(options);
+  const toggle=document.createElement('summary');toggle.setAttribute('aria-label','Cài đặt');toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 17h16"/><circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="16" cy="17" r="3" fill="currentColor"/></svg>';options.append(toggle);
+  const settingsBtn=document.createElement('button');settingsBtn.className='menu-settings';settingsBtn.textContent='Cài đặt & Hiển thị';
+  settingsBtn.onclick=()=>{ options.removeAttribute('open'); showSettingsDialog(); };
+  const actions=document.createElement('div');actions.className='cozy-option-actions';actions.append(root.querySelector('.menu-help')!,settingsBtn,fullscreen);options.append(actions);root.append(options);
   fullscreen.onclick = async () => {
-    try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
+    try { await toggleFullscreen(); }
     catch { fullscreen.textContent = 'Full screen unavailable'; }
   };
   document.getElementById('game-shell')!.append(root);

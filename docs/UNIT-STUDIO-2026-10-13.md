@@ -1,5 +1,7 @@
 # Unit Studio — avatar Grid và thông số
 
+**Cập nhật:** slice ban đầu bên dưới đã được mở rộng thành Character Studio. Đích ghi hiện là `CharacterProjects.json`, có kỹ năng theo STAR và lịch sử/restore; xem `docs/CHARACTER-STUDIO-GUIDE.md`. UnitOverrides cũ chỉ dùng migration.
+
 Owner yêu cầu chỉnh avatar Grid Board và thông số thuận tiện cùng workflow review/animation. `/unit-editor.html?unit=beast-a` hỗ trợ cả 10 Beast; Review liên kết theo Beast đang chọn. Ba Beast có sheet hiện có thêm liên kết Animation Studio.
 
 ## Đã tích hợp

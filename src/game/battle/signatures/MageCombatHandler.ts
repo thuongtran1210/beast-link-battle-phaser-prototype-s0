@@ -1,5 +1,6 @@
 import type { CombatUnit, EnemyCombatUnit, PlayerCombatHit } from '../BattleTypes';
 import type { SignatureContext } from './SignatureContext';
+import {skillValue} from '../../config/CharacterProjects';
 import {
   arcaneBloomEchoRatio,
   arcaneBloomRadiusForStar,
@@ -55,11 +56,11 @@ export class MageCombatHandler {
               enemy.currentHp > 0 &&
               ctx.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius,
           )
-          .slice(0, unit.star === 3 ? 3 : 1)
+          .slice(0, skillValue('ArcaneBloom',unit.star,'duckTargets'))
           .forEach((enemy) => {
             enemy.funControlKind = 'Duck';
             enemy.funControlStar = unit.star as 2 | 3;
-            enemy.funControlUntil = (ctx.state.elapsedTime ?? 0) + (unit.star === 3 ? 1.5 : 1);
+            enemy.funControlUntil = (ctx.state.elapsedTime ?? 0) + skillValue('ArcaneBloom',unit.star,'duckDuration');
           });
       }
       ctx.activateSignature(unit, target.enemyId);

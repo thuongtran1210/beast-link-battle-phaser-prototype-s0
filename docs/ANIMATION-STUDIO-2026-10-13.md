@@ -1,5 +1,7 @@
 # Animation Studio — công cụ chỉnh bản nháp
 
+**Cập nhật:** tài liệu bên dưới ghi slice ban đầu. Character Studio hiện đã có mask, xuất atlas, lưu trực tiếp, runtime integration và lịch sử; xem `docs/CHARACTER-STUDIO-GUIDE.md` và `docs/CHARACTER-STUDIO-IMPLEMENTATION-PLAN.md` cho trạng thái hiện tại.
+
 Trang `/unit-review.html` có nút mở `/animation-editor.html` theo nhân vật và clip đang xem. Studio hỗ trợ ba sheet rig Snowguard, Ironclad, Windstrider; chỉnh vùng cắt, điểm chân, tỷ lệ, dịch chuyển, thời lượng và thứ tự frame. Có preview, onion skin, undo/redo, lưu bản nháp local và import/export JSON đã kiểm tra cấu trúc. Review có tùy chọn xem bản nháp trên máy.
 
 Ảnh nguồn và cấu hình Battle không tự thay đổi. JSON xuất là bản nháp cần tích hợp riêng. `npm run check` và `npm run build` đã qua; thao tác nhập thông số/lưu/reload cần tiếp tục kiểm chứng trực tiếp trên trình duyệt.

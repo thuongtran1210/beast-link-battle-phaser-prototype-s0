@@ -13,6 +13,7 @@ import { ValidationScene } from './game/ValidationScene';
 import './styles/prototype.css';
 import { isCompactLandscape } from './game/ui/layout/MobilePresentation';
 import { installVietnamese } from './game/ui/Vietnamese';
+import { requestLandscapeFullscreen } from './game/ui/layout/MobileDisplayManager';
 
 const compact = isCompactLandscape();
 if (!isTestHarness()) installVietnamese(Phaser);
@@ -54,7 +55,21 @@ else {
     shell.classList.add('run-active');
     const game = new Phaser.Game({ ...config, width: compact ? Math.max(1280, Math.round(720 * window.innerWidth / window.innerHeight)) : 1280 });
     const rotate = document.createElement('div'); rotate.className = 'rotate-notice';
-    rotate.innerHTML = '<strong>Turn your phone sideways</strong><span>Your squad needs a little more room.</span>';
+    rotate.innerHTML = `
+      <svg class="rotate-phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+        <path d="M12 18h.01"/>
+      </svg>
+      <strong>Xoay ngang điện thoại</strong>
+      <span>Đội hình thú chiến đấu cần không gian màn hình ngang.</span>
+      <button class="rotate-action-btn">Toàn màn hình & Khóa ngang</button>
+    `;
+    const rotateBtn = rotate.querySelector<HTMLButtonElement>('.rotate-action-btn');
+    if (rotateBtn) {
+      rotateBtn.onclick = async () => {
+        await requestLandscapeFullscreen();
+      };
+    }
     shell.append(rotate);
     let orientationPaused: Phaser.Scene[] = [];
     const orientation = () => {

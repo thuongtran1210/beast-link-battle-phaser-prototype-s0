@@ -19,6 +19,7 @@ import {
   COMBAT_DISTANCE_EPSILON,
 } from '../BattleConfig';
 import { ambushActivationLimit } from '../../run/StarProfile';
+import {skillValue} from '../../config/CharacterProjects';
 import { BattleTargetingSystem } from '../systems/BattleTargetingSystem';
 import { BattleMovementSystem } from '../systems/BattleMovementSystem';
 import { SignatureCombatDispatcher } from '../signatures/SignatureCombatDispatcher';
@@ -389,7 +390,7 @@ export class TimelineCombatResolver {
     for (const bomb of ctx.state.enemies.filter(enemy => enemy.bombAt !== undefined && enemy.bombAt <= now)) {
       const source = ctx.state.units.find(unit => unit.unitId === bomb.bombSourceId);
       const victims = ctx.state.enemies.filter(enemy => enemy.currentHp > 0 &&
-        BattleMovementSystem.distance(enemy.positionX, enemy.positionLane, bomb.positionX, bomb.positionLane) <= 1.5)
+        BattleMovementSystem.distance(enemy.positionX, enemy.positionLane, bomb.positionX, bomb.positionLane) <= skillValue('TickingBomb',ctx.state.units.find(unit=>unit.unitId===bomb.bombSourceId)?.star??1,'radius'))
         .sort((a, b) => BattleMovementSystem.distance(a.positionX, a.positionLane, bomb.positionX, bomb.positionLane) - BattleMovementSystem.distance(b.positionX, b.positionLane, bomb.positionX, bomb.positionLane) || a.enemyId.localeCompare(b.enemyId))
         .slice(0, bomb.bombTargets ?? 1);
       const hits = victims.map(enemy => ({ enemyId: enemy.enemyId, damage: ctx.applyDamage(enemy, bomb.bombDamage ?? 0) }));

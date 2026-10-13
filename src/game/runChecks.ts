@@ -1,3 +1,4 @@
+import './config/CheckCharacterDefaults';
 import { runBattleBoardExhaustionChecks } from './battle/BattleBoardExhaustionChecks';
 import { runP1S2Checks } from './battle/P1S2Checks';
 import { runP1S3Checks } from './battle/P1S3Checks';
@@ -151,3 +152,7 @@ import { firstJourneyChecks } from './run/FirstJourneyChecks';
 firstJourneyChecks();
 import { animationProjectChecks } from './ui/art/AnimationProjectChecks';
 animationProjectChecks();
+import { characterStudioChecks } from './config/CharacterStudioChecks';
+characterStudioChecks();
+import { runVillageIncidentsChecks } from './run/VillageIncidentsChecks';
+runVillageIncidentsChecks();
