@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { unitOverride } from '../../config/UnitOverrides';
 import {
   BATTLE_CHARACTER_ART,
   battleCharacterDefinition,
@@ -42,7 +43,7 @@ export function preloadBattleCharacterArt(scene: Phaser.Scene): void {
     queueImage(
       scene,
       battleCharacterV2TextureKey(definition.beastId, 'icon'),
-      definition.icon,
+      unitOverride(definition.beastId).avatar??definition.icon,
     );
     queueImage(
       scene,

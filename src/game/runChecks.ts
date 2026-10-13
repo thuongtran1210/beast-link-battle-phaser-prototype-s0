@@ -149,3 +149,5 @@ import { villageGoalChecks } from './run/VillageGoalChecks';
 villageGoalChecks();
 import { firstJourneyChecks } from './run/FirstJourneyChecks';
 firstJourneyChecks();
+import { animationProjectChecks } from './ui/art/AnimationProjectChecks';
+animationProjectChecks();

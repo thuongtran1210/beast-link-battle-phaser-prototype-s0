@@ -1,5 +1,6 @@
 import { type BattleFormation, type FormationUnit } from './BattleFormation';
 import { starStatMultiplier } from '../run/StarProfile';
+import { unitBaseStats } from '../config/UnitOverrides';
 import { signatureForBeast, type BeastRole, type BeastSignatureId } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import { BattleEnergySystem } from './systems/BattleEnergySystem';
@@ -321,7 +322,7 @@ export class AutonomousBattleModel {
     slot: { row: CombatUnit['row']; column: number },
     index = 0,
   ): CombatUnit {
-    const base = baseStats[unit.role];
+    const base = unitBaseStats(unit.beastId,baseStats[unit.role]);
     const multiplier = starStatMultiplier(unit.star);
     const maxHp = base.hp * multiplier;
     const profile = P1V11A_ACTION_TIMING_FIXTURE[unit.role];
