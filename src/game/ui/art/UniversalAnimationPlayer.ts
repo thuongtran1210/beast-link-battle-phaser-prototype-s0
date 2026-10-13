@@ -59,7 +59,11 @@ export class UniversalAnimationPlayer {
   private alive = true;
   private clock: AnimationClock | undefined;
   private customUpdate = (_time: number, delta: number) => {
-    this.clock!.step(delta / 1000);
+    if (!this.sprite || ('scene' in this.sprite && (!this.sprite.scene || this.sprite.active === false))) {
+      this.dispose();
+      return;
+    }
+    this.clock?.step(delta / 1000);
     this.showCustom();
   };
 
@@ -86,6 +90,11 @@ export class UniversalAnimationPlayer {
         .sprite(0, groundOffset, `${rig.prefix}-sheet-idle`, 0)
         .setOrigin(0.5, 440 / 512)
         .setScale(height / 320);
+      if (typeof this.sprite.once === 'function') {
+        this.sprite.once('destroy', () => this.dispose());
+      } else if (typeof this.sprite.on === 'function') {
+        this.sprite.on('destroy', () => this.dispose());
+      }
       scene.events.on('update', this.customUpdate);
       this.showCustom();
       return;
@@ -109,6 +118,11 @@ export class UniversalAnimationPlayer {
     }
 
     this.sprite = scene.add.sprite(0, groundOffset, `${rig.prefix}-sheet-idle`, 0);
+    if (typeof this.sprite.once === 'function') {
+      this.sprite.once('destroy', () => this.dispose());
+    } else if (typeof this.sprite.on === 'function') {
+      this.sprite.on('destroy', () => this.dispose());
+    }
     this.sprite.on('animationupdate', () => this.align());
     this.sprite.on('animationcomplete', () => {
       if (this.alive && this.state !== 'ko') this.loop(this.locomotion);
@@ -117,8 +131,14 @@ export class UniversalAnimationPlayer {
   }
 
   private showCustom(): void {
-    const clock = this.clock!;
-    this.sprite.setTexture(`${this.rig.prefix}-sheet-${clock.clip}`, String(clock.frame));
+    if (!this.sprite || ('scene' in this.sprite && (!this.sprite.scene || this.sprite.active === false))) return;
+    const clock = this.clock;
+    if (!clock) return;
+    try {
+      this.sprite.setTexture(`${this.rig.prefix}-sheet-${clock.clip}`, String(clock.frame));
+    } catch {
+      this.dispose();
+    }
   }
 
   private align(): void {
@@ -180,9 +200,19 @@ export class UniversalAnimationPlayer {
   }
 
   dispose(): void {
-    if (this.clock) this.scene.events.off('update', this.customUpdate);
-    this.sprite.stop();
-    this.sprite.removeAllListeners();
+    if (this.clock) {
+      try {
+        this.scene.events.off('update', this.customUpdate);
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      this.sprite?.stop?.();
+      this.sprite?.removeAllListeners?.();
+    } catch {
+      // ignore
+    }
   }
 
   static available(scene: Phaser.Scene, rig: FrameAnimationRig): boolean {

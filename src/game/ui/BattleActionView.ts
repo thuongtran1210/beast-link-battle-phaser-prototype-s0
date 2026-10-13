@@ -432,6 +432,7 @@ export class BattleActionView {
     this.gridCreated = false;
     this.intentRenderer.destroy();
     this.units.forEach((visual) => visual.characterView.dispose());
+    this.enemies.forEach((visual) => visual.characterView.dispose());
     this.scene.tweens.killTweensOf([...this.objects]);
     this.objects.splice(0).forEach((object) => object.destroy());
     this.gridObjects.splice(0);

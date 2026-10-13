@@ -9,10 +9,13 @@
     "build": "tsc -b && vite build",
     "check": "esbuild src/game/runChecks.ts --bundle --platform=node --format=cjs --outfile=dist/checks.cjs && node dist/checks.cjs",
     "preview": "vite preview",
-    "check:studio-server": "node scripts/unit-editor-server-checks.js"
+    "check:studio-server": "node scripts/unit-editor-server-checks.js",
+    "server": "node scripts/start-game-server.js"
   },
   "dependencies": {
-    "phaser": "^3.90.0"
+    "@types/ws": "^8.18.2",
+    "phaser": "^3.90.0",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

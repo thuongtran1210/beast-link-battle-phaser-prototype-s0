@@ -6,14 +6,30 @@ import type { BattleActionView } from '../ui/BattleActionView';
 import type { AutonomousBattleModel } from '../battle/AutonomousBattleModel';
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import type { SessionMetrics } from '../metrics/SessionMetrics';
-import { STRATEGIC_ENERGY_POOL as V14G_ENERGY_RUSH_POOL } from '../energy/TacticalEnergyCatalog';
+import { STRATEGIC_ENERGY_POOL as V14G_ENERGY_RUSH_POOL, tacticalEnergyDefinition } from '../energy/TacticalEnergyCatalog';
 import { FeedbackEffects } from '../ui/feedback/FeedbackEffects';
-import { tacticalEnergyControl, tacticalEnergyCastFeedback } from '../ui/TacticalEnergyPresentation';
+import { tacticalEnergyControl, tacticalEnergyCastFeedback, type TacticalEnergyControlPresentation } from '../ui/TacticalEnergyPresentation';
+
+import type { IBattleController } from '../battle/controller/IBattleController';
+
+function defaultTacticalPresentation(energyId: string, charges: number): TacticalEnergyControlPresentation {
+  const def = tacticalEnergyDefinition(energyId);
+  return {
+    energyId,
+    displayName: def?.displayName ?? energyId,
+    shortDescription: def?.shortDescription ?? '',
+    charges,
+    stateLabel: 'READY',
+    enabled: true,
+    suggested: false,
+  };
+}
 
 export interface BattlePresentationContext {
   scene: Phaser.Scene;
   getLayout: () => LandscapeLayout;
   getBattleModel: () => AutonomousBattleModel | undefined;
+  getBattleController?: () => IBattleController | undefined;
   getBattleActionView: () => BattleActionView | undefined;
   getFlowPanel: () => PrototypeFlowPanel | undefined;
   getShowcaseBattleHud: () => ShowcaseBattleHUDView | undefined;
@@ -32,6 +48,19 @@ export class BattlePhaseCoordinator {
   constructor(private readonly ctx: BattlePresentationContext) {}
 
   castEnergy(energyId: string): void {
+    const controller = this.ctx.getBattleController?.();
+    if (controller && controller.isRemote) {
+      const sent = controller.sendCommand({
+        type: 'CastTacticalEnergy',
+        tick: controller.currentSnapshot.elapsedTicks,
+        energyId,
+      });
+      if (sent) {
+        FeedbackEffects.showToast(this.ctx.scene, this.ctx.getLayout().leftCenter.x, this.ctx.getLayout().leftCenter.y, 'CAST SENT', '#f6d675', 650);
+      }
+      return;
+    }
+
     const battleModel = this.ctx.getBattleModel();
     if (!battleModel) return;
 
@@ -101,7 +130,8 @@ export class BattlePhaseCoordinator {
 
   renderBattle(): void {
     const battleModel = this.ctx.getBattleModel();
-    const battle = battleModel?.snapshot;
+    const controller = this.ctx.getBattleController?.();
+    const battle = controller ? controller.currentSnapshot : battleModel?.snapshot;
     if (!battle) return;
 
     const showcaseMode = this.ctx.isShowcaseMode();
@@ -112,7 +142,9 @@ export class BattlePhaseCoordinator {
 
     const isRunning = battle.status === 'Running';
     const energyEntries = this.ctx.energyQueue.getAll().filter((entry) => entry.charges > 0);
-    const frontline = battleModel.frontmostAliveUnit();
+    const frontline = battleModel
+      ? battleModel.frontmostAliveUnit()
+      : battle.units.find((u) => u.currentHp > 0);
 
     actionView?.setShowcaseMode(showcaseMode);
     actionView?.render(battle);
@@ -131,39 +163,35 @@ export class BattlePhaseCoordinator {
         (energyId) => this.castEnergy(energyId),
         showcasePaused,
         (energyId) =>
-          tacticalEnergyControl(
-            battleModel.tacticalEnergyEligibility(energyId, this.ctx.energyQueue),
-            this.ctx.energyQueue.getCharges(energyId),
-            showcasePaused,
-          ),
+          battleModel
+            ? tacticalEnergyControl(
+                battleModel.tacticalEnergyEligibility(energyId, this.ctx.energyQueue),
+                this.ctx.energyQueue.getCharges(energyId),
+                showcasePaused,
+              )
+            : defaultTacticalPresentation(energyId, this.ctx.energyQueue.getCharges(energyId)),
       );
     } else {
       showcaseHud?.setVisible(false);
       const energyRows =
         isRunning && energyEntries.length > 0
-          ? energyEntries.map((entry) => ({
-              label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
-              energyId: entry.energyId,
-              displayName:
-                tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)?.displayName ??
-                entry.energyId,
-              shortDescription:
-                tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)?.shortDescription ??
-                '',
-              charges: entry.charges,
-              stateLabel:
-                tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)?.stateLabel ??
-                'DISABLED',
-              reasonLabel: tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)
-                ?.reasonLabel,
-              enabled:
-                tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)?.enabled ??
-                false,
-              suggested:
-                tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)?.suggested ??
-                false,
-              onAction: () => this.castEnergy(entry.energyId),
-            }))
+          ? energyEntries.map((entry) => {
+              const control = battleModel
+                ? tacticalEnergyControl(battleModel.tacticalEnergyEligibility(entry.energyId, this.ctx.energyQueue), entry.charges, false)
+                : defaultTacticalPresentation(entry.energyId, entry.charges);
+              return {
+                label: `${entry.energyId.toUpperCase()}  ·  ${entry.charges} charge${entry.charges === 1 ? '' : 's'}`,
+                energyId: entry.energyId,
+                displayName: control?.displayName ?? entry.energyId,
+                shortDescription: control?.shortDescription ?? '',
+                charges: entry.charges,
+                stateLabel: control?.stateLabel ?? 'DISABLED',
+                reasonLabel: control?.reasonLabel,
+                enabled: control?.enabled ?? true,
+                suggested: control?.suggested ?? false,
+                onAction: () => this.castEnergy(entry.energyId),
+              };
+            })
           : undefined;
 
       flowPanel?.render(

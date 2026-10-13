@@ -1,4 +1,4 @@
-import { BoardGenerator } from './BoardGenerator';
+import { BoardGenerator, type RandomSource } from './BoardGenerator';
 import { BoardModel } from './BoardModel';
 import { OnetMatcher } from './OnetMatcher';
 
@@ -17,7 +17,7 @@ export class DeadlockResolver {
     private readonly maxRetries = 20,
   ) {}
 
-  ensurePlayable(board: BoardModel, random = Math.random): DeadlockResolution {
+  ensurePlayable(board: BoardModel, random: RandomSource = Math.random): DeadlockResolution {
     if (board.occupiedTiles().length < 2 || this.matcher.findAnyMatch(board)) {
       return { recovered: true, reshuffled: false, attempts: 0 };
     }

@@ -156,3 +156,24 @@ import { characterStudioChecks } from './config/CharacterStudioChecks';
 characterStudioChecks();
 import { runVillageIncidentsChecks } from './run/VillageIncidentsChecks';
 runVillageIncidentsChecks();
+
+import { runPrngChecks } from './random/PrngChecks';
+runPrngChecks();
+console.log('PRNG & Deterministic Puzzle checks passed.');
+
+import { runCombatEntityChecks } from './battle/CombatEntityChecks';
+runCombatEntityChecks();
+console.log('Unified CombatEntity & Multi-Team checks passed.');
+
+import { runBattleCommandEventChecks } from './battle/BattleCommandEventChecks';
+runBattleCommandEventChecks();
+console.log('Battle Command Protocol & Event Stream checks passed.');
+
+import { runBattleControllerChecks } from './battle/BattleControllerChecks';
+runBattleControllerChecks();
+console.log('Battle Controller (Local & Remote Adapter) checks passed.');
+
+import { runServerRoomChecks } from '../server/ServerRoomChecks';
+runServerRoomChecks();
+console.log('Game Server & Room Networking checks passed.');
+

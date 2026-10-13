@@ -9,8 +9,33 @@ import {
   COMBAT_DISTANCE_EPSILON,
   rowOrder,
 } from '../BattleConfig';
+import { type CombatEntity, isEntityAlive } from '../entities/CombatEntity';
 
 export class BattleTargetingSystem {
+  static targetEntity(
+    entities: CombatEntity[],
+    rules: Readonly<BattleCombatRules>,
+    side: 'TeamA' | 'TeamB' = 'TeamA',
+  ): CombatEntity | undefined {
+    const living = entities.filter(isEntityAlive);
+    if (!living.length) return undefined;
+
+    if (rules.movement || rules.timeline) {
+      return living.sort((a, b) => {
+        const dx = side === 'TeamA' ? b.positionX - a.positionX : a.positionX - b.positionX;
+        return (
+          dx ||
+          a.positionLane - b.positionLane ||
+          rowOrder[a.row] - rowOrder[b.row]
+        );
+      })[0];
+    }
+
+    return living.sort(
+      (a, b) => rowOrder[a.row] - rowOrder[b.row] || a.column - b.column,
+    )[0];
+  }
+
   static target(
     units: CombatUnit[],
     rules: Readonly<BattleCombatRules>,

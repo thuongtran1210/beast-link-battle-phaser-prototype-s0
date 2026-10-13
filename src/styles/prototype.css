@@ -599,10 +599,12 @@ canvas {
 .main-menu.cozy-menu h1{position:absolute;z-index:2;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);margin:0;width:max-content;max-width:80%;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:0;line-height:1.1;color:#35462e;text-shadow:0 1px 3px #ffffff,0 0 12px #ffffff}
 .main-menu.cozy-menu h1 em{font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:500;color:#46573c;margin:6px 0 0;letter-spacing:.02em;text-shadow:0 1px 2px #ffffff}
 .farming-menu.cozy-menu .menu-party{display:none}
-.cozy-menu .menu-actions{position:absolute;z-index:2;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:10px;width:min(300px,calc(100% - 40px));max-width:none;margin:0;padding:0;background:none}
+.cozy-menu .menu-actions{position:absolute;z-index:2;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:10px;width:min(440px,calc(100% - 40px));max-width:none;margin:0;padding:0;background:none}
 .farming-menu.cozy-menu .menu-actions button{flex:1;display:block;min-height:46px;padding:10px 14px;border-radius:18px;text-align:center;font-size:14px;font-weight:650;border:1px solid #c3ab7a;box-shadow:0 2px 0 #9a825844}
 .farming-menu.cozy-menu .menu-actions .menu-home{background:#f1d899;color:#4c442d}
 .farming-menu.cozy-menu .menu-actions .menu-play{background:#f8f0dce8;color:#536348;border-color:#c4c5a3}
+.farming-menu.cozy-menu .menu-actions .menu-online{background:#bae6fd;color:#0369a1;border-color:#7dd3fc}
+.farming-menu.cozy-menu .menu-actions .menu-online:hover{background:#7dd3fc}
 .cozy-options{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:4}
 .cozy-options summary{list-style:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#526045;background:#fbf1dccc;border:1px solid #c3ba9566;box-sizing:border-box}
 .cozy-options summary::-webkit-details-marker{display:none}

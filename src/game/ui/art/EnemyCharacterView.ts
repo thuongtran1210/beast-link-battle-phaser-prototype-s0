@@ -110,6 +110,10 @@ export class EnemyCharacterView {
     });
   }
 
+  dispose(): void {
+    this.scene.tweens.killTweensOf(this.root);
+  }
+
   private showAuthored(show: boolean): void {
     this.image?.setVisible(show);
     this.fallbackBody.setVisible(!show);

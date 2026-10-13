@@ -23,6 +23,7 @@ import { compactEventLabel, type BeastRushEvent } from '../ui/BeastRushHudPresen
 import { energyRushInventory, energyRushMatchLabel, type EnergyRushInventoryEntry } from '../ui/EnergyRushPresentation';
 import { STRATEGIC_ENERGY } from '../energy/TacticalEnergyCatalog';
 import { BoardView as ConcreteBoardView } from '../ui/BoardView';
+import { PrngService } from '../random/PrngService';
 
 export interface PuzzlePhaseContext {
   scene: Phaser.Scene;
@@ -50,8 +51,17 @@ export class PuzzlePhaseCoordinator {
   private boardSubtitle?: Phaser.GameObjects.Text;
   private beastRushEvent: BeastRushEvent = { kind: 'idle' };
   private recentActionText = '';
+  private prng = new PrngService();
 
   constructor(private readonly ctx: PuzzlePhaseContext) {}
+
+  setSeed(seed: number): void {
+    this.prng.setSeed(seed);
+  }
+
+  getPrng(): PrngService {
+    return this.prng;
+  }
 
   get currentBoard(): BoardModel | undefined {
     return this.board;
@@ -106,7 +116,7 @@ export class PuzzlePhaseCoordinator {
       this.boardSubtitle.setVisible(false);
     }
 
-    this.board = this.ctx.boardGenerator.generate(RuleConfig.boardSize, contentIds, Math.random, type);
+    this.board = this.ctx.boardGenerator.generate(RuleConfig.boardSize, contentIds, this.prng, type);
     this.boardView?.destroy();
     this.boardView = new ConcreteBoardView(
       this.ctx.scene,
@@ -143,7 +153,7 @@ export class PuzzlePhaseCoordinator {
     this.ctx.metrics.comboQuality(combo.currentStreak, combo.bestStreak, combo.breakCount);
     this.ctx.metrics.beastMatch();
     this.ctx.battleQueue.addBeastMatch(contentId);
-    const recovery = this.ctx.deadlockResolver.ensurePlayable(this.board);
+    const recovery = this.ctx.deadlockResolver.ensurePlayable(this.board, this.prng);
     this.boardView.render();
 
     this.beastRushEvent = recovery.reshuffled ? { kind: 'reshuffle' } : { kind: 'match', beastName: beastDisplayName(contentId), comboStreak: combo.currentStreak };
@@ -183,7 +193,7 @@ export class PuzzlePhaseCoordinator {
     this.ctx.energyTimer.start();
     this.ctx.energyQueue.addCharge(contentId);
     this.ctx.metrics.energyMatch();
-    const recovery = this.ctx.deadlockResolver.ensurePlayable(this.board);
+    const recovery = this.ctx.deadlockResolver.ensurePlayable(this.board, this.prng);
     this.boardView.render();
 
     const reshuffle = recovery.reshuffled ? ` (Reshuffled: ${recovery.attempts} attempt(s))` : '';

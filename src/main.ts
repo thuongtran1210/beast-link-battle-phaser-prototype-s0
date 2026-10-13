@@ -15,6 +15,9 @@ import './styles/prototype.css';
 import { isCompactLandscape } from './game/ui/layout/MobilePresentation';
 import { installVietnamese } from './game/ui/Vietnamese';
 import { requestLandscapeFullscreen } from './game/ui/layout/MobileDisplayManager';
+import { setOnlineBattleSession, clearOnlineBattleSession } from './game/network/OnlineBattleSession';
+import type { WebSocketClientAdapter } from './game/network/WebSocketClientAdapter';
+import type { MatchStartMessage } from './network/protocol/NetworkMessages';
 
 const compact = isCompactLandscape();
 if (!isTestHarness()) installVietnamese(Phaser);
@@ -41,7 +44,11 @@ const config: Phaser.Types.Core.GameConfig = {
 
 if (isTestHarness()) new Phaser.Game(config);
 else {
-  const openMenu = () => showMainMenu(openLevels);
+  const startOnlineMatch = (adapter: WebSocketClientAdapter, matchInfo: MatchStartMessage) => {
+    setOnlineBattleSession(adapter, matchInfo);
+    startRun(['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f']);
+  };
+  const openMenu = () => showMainMenu(openLevels, startOnlineMatch);
   const openLevels = () => {
     if(firstJourneyStage()==='expedition'){
       if(!saveFirstJourney('expedition')){showLevelSelection(id=>{selectRunLevel(id);openPicker();},openMenu);return;}
@@ -83,6 +90,7 @@ else {
     window.addEventListener('resize', orientation);
     const change = document.createElement('button');
     const returnVillage=()=>{
+      clearOnlineBattleSession();
       change.remove();rotate.remove();shell.classList.remove('run-active');
       window.removeEventListener('orientationchange',orientation);window.removeEventListener('resize',orientation);
       window.removeEventListener('beast-link-return-village',returnVillage);
@@ -100,6 +108,7 @@ else {
       dialog.querySelector<HTMLButtonElement>('.resume-run')!.onclick = () => dialog.close();
       dialog.onclose = () => { scenes.forEach(scene => scene.scene.resume()); dialog.remove(); orientation(); };
       dialog.querySelector<HTMLButtonElement>('.return-menu')!.onclick = () => transitionScreen(dialog,()=>{
+        clearOnlineBattleSession();
         dialog.onclose = null; dialog.remove(); change.remove(); rotate.remove(); shell.classList.remove('run-active');
         window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);
         window.removeEventListener('beast-link-return-village',returnVillage);

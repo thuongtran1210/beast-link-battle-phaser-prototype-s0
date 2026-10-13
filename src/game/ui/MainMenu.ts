@@ -6,8 +6,15 @@ import { firstJourneyStage } from '../run/FirstJourney';
 import { bgmManager } from '../audio/BgmManager';
 import { MainMenuParallax } from './menu/MainMenuParallax';
 
+import { showOnlineLobbyDialog } from './network/OnlineLobbyDialog';
+import type { WebSocketClientAdapter } from '../network/WebSocketClientAdapter';
+import type { MatchStartMessage } from '../../network/protocol/NetworkMessages';
+
 /** DOM navigation stays separate from the pre-run deck and gameplay scene. */
-export function showMainMenu(play: () => void): void {
+export function showMainMenu(
+  play: () => void,
+  onStartOnlineMatch?: (adapter: WebSocketClientAdapter, matchInfo: MatchStartMessage) => void,
+): void {
   bgmManager.playLobby();
   const root = document.createElement('section');
   root.className = 'main-menu farming-menu cozy-menu';
@@ -28,12 +35,27 @@ export function showMainMenu(play: () => void): void {
   const camp = document.createElement('button');
   camp.className = 'menu-home';
   camp.textContent = 'Về làng';
-  camp.onclick = () => cleanupAndNavigate(() => showCamp(() => showMainMenu(play), play));
+  camp.onclick = () => cleanupAndNavigate(() => showCamp(() => showMainMenu(play, onStartOnlineMatch), play));
   root.querySelector('.menu-actions')!.prepend(camp);
+
+  const onlineBtn = document.createElement('button');
+  onlineBtn.className = 'menu-online';
+  onlineBtn.textContent = '⚔️ Đấu Online';
+  onlineBtn.onclick = () => {
+    showOnlineLobbyDialog({
+      onMatchStart: (adapter, matchInfo) => {
+        cleanupAndNavigate(() => {
+          onStartOnlineMatch?.(adapter, matchInfo);
+        });
+      },
+    });
+  };
+  root.querySelector('.menu-actions')!.append(onlineBtn);
 
   const onboarding = firstJourneyStage();
   if (onboarding === 'expedition') {
     camp.remove();
+    onlineBtn.remove();
     root.querySelector('.menu-play')!.textContent = 'Chuyến đi đầu tiên →';
     root.querySelector('h1 em')!.textContent = 'Bắt đầu ở Đường mòn rừng';
   } else if (onboarding === 'village') {

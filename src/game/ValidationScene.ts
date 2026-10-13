@@ -18,6 +18,9 @@ import {
   type EnemyFixture,
   SIMULATION_STEP,
 } from './battle/AutonomousBattleModel';
+import type { IBattleController } from './battle/controller/IBattleController';
+import { LocalBattleController } from './battle/controller/LocalBattleController';
+import { getOnlineBattleSession } from './network/OnlineBattleSession';
 import { P1V13A1_LEVELS } from './battle/ValidationLevels';
 import { deriveBattleTickPresentation } from './battle/BattlePresentation';
 import { SessionMetrics } from './metrics/SessionMetrics';
@@ -77,6 +80,7 @@ export class ValidationScene extends Phaser.Scene {
   private readonly starConverter = new StarConverter();
   private formation?: BattleFormation;
   private battleModel?: AutonomousBattleModel;
+  private battleController?: IBattleController;
   private battleTickAccumulator = 0;
   private battleOutcome?: 'Win' | 'Lose';
   private readonly waveRun = isTestHarness() ? new WaveRunController() : new WaveRunController(wavesForRunLevel(selectedRunLevel().id), selectedRunLevel().id);
@@ -198,6 +202,7 @@ export class ValidationScene extends Phaser.Scene {
       scene: this,
       getLayout: () => this.layout,
       getBattleModel: () => this.battleModel,
+      getBattleController: () => this.battleController,
       getBattleActionView: () => this.battleActionView,
       getFlowPanel: () => this.flowPanel,
       getShowcaseBattleHud: () => this.showcaseBattleHud,
@@ -270,6 +275,12 @@ export class ValidationScene extends Phaser.Scene {
     this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
       this.layout = new LandscapeLayout(gameSize.width, gameSize.height);
     });
+
+    // If an online battle session is active, transition directly to Battle phase
+    const onlineSession = getOnlineBattleSession();
+    if (onlineSession) {
+      this.phaseController.setPhase(GamePhase.Battle);
+    }
   }
 
   update(_time: number, delta: number): void {
@@ -309,26 +320,35 @@ export class ValidationScene extends Phaser.Scene {
     }
 
     // Autonomous Battle ticking
-    if (this.phaseController.phase === GamePhase.Battle && this.battleModel) {
-      const status = this.battleModel.snapshot.status;
-      if (status !== 'Running') {
-        this.handleBattleEnded(status);
-      } else if (!this.showcaseController.isShowcaseMode || !this.showcaseController.isShowcasePaused) {
-        this.battleTickAccumulator += delta;
-        let ticked = false;
-        const STEP_MS = SIMULATION_STEP * 1000;
-        while (this.battleTickAccumulator >= STEP_MS && this.battleModel.snapshot.status === 'Running') {
-          this.battleTickAccumulator -= STEP_MS;
-          const before = this.battleModel.snapshot;
-          const after = this.battleModel.step(SIMULATION_STEP);
-          this.battleActionView?.render(after);
-          this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
-          ticked = true;
+    if (this.phaseController.phase === GamePhase.Battle) {
+      const controller = this.battleController;
+      const model = this.battleModel;
+      if (controller && controller.isRemote) {
+        const status = controller.currentSnapshot.status;
+        if (status !== 'Running') {
+          this.handleBattleEnded(status);
         }
-        if (ticked) this.battleCoordinator.renderBattle();
-        const finalStatus = this.battleModel.snapshot.status;
-        if (finalStatus !== 'Running') {
-          this.handleBattleEnded(finalStatus);
+      } else if (model) {
+        const status = model.snapshot.status;
+        if (status !== 'Running') {
+          this.handleBattleEnded(status);
+        } else if (!this.showcaseController.isShowcaseMode || !this.showcaseController.isShowcasePaused) {
+          this.battleTickAccumulator += delta;
+          let ticked = false;
+          const STEP_MS = SIMULATION_STEP * 1000;
+          while (this.battleTickAccumulator >= STEP_MS && model.snapshot.status === 'Running') {
+            this.battleTickAccumulator -= STEP_MS;
+            const before = model.snapshot;
+            const after = model.step(SIMULATION_STEP);
+            this.battleActionView?.render(after);
+            this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
+            ticked = true;
+          }
+          if (ticked) this.battleCoordinator.renderBattle();
+          const finalStatus = model.snapshot.status;
+          if (finalStatus !== 'Running') {
+            this.handleBattleEnded(finalStatus);
+          }
         }
       }
     }
@@ -450,6 +470,19 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private syncTopHud(): void {
+    const onlineSession = getOnlineBattleSession();
+    if (onlineSession) {
+      const modeLabel = onlineSession.matchInfo.mode === 'pvp' ? 'SOLO 1v1 PvP' : 'CO-OP ĐỒNG ĐỘI';
+      this.topHud?.update(this.phaseController.phase, 0, this.energyQueue.getTotalCharges(), {
+        primaryTitle: `⚔️ ĐẤU ONLINE · ${modeLabel}`,
+        secondaryTitle: `Phòng: ${onlineSession.matchInfo.seed ? 'Đã kết nối' : 'Đang đấu'}`,
+        waveLabel: 'ONLINE MATCH',
+        linkShards: 0,
+      });
+      this.topHud?.setVisible(true);
+      return;
+    }
+
     const beastCount = this.battleQueue.entries().reduce((s, e) => s + e.count, 0);
     const energyCount = this.energyQueue.getTotalCharges();
     const wave = this.waveRun.currentWave;
@@ -573,6 +606,32 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterBattle(): void {
+    const onlineSession = getOnlineBattleSession();
+    if (onlineSession) {
+      this.battleController = onlineSession.controller;
+      this.battleModel = undefined;
+      this.battleTickAccumulator = 0;
+      this.isConcludingBattle = false;
+      this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
+      this.battleActionView.setShowcaseMode(false);
+      this.battleActionView.render(onlineSession.controller.currentSnapshot);
+
+      onlineSession.controller.onSnapshot((snapshot) => {
+        this.battleActionView?.render(snapshot);
+        this.battleCoordinator.renderBattle();
+      });
+
+      onlineSession.controller.onStatus((status) => {
+        if (status !== 'Running') {
+          this.handleBattleEnded(status);
+        }
+      });
+
+      this.battleCoordinator.renderBattle();
+      this.syncTopHud();
+      return;
+    }
+
     if (!this.formation) return;
     this.battleModel = new AutonomousBattleModel(
       this.formation,
@@ -580,6 +639,7 @@ export class ValidationScene extends Phaser.Scene {
       P1V13A_SIGNATURE_RULES,
       Object.fromEntries(this.runRoster.units.map((unit) => [unit.instanceId, unit.currentHp])),
     );
+    this.battleController = new LocalBattleController(this.battleModel, this.energyQueue);
     this.battleTickAccumulator = 0;
     this.isConcludingBattle = false;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);

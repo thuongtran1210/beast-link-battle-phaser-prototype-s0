@@ -16,6 +16,14 @@ import { tacticalEnergyDefinition, type TacticalEnergyKind } from '../energy/Tac
 import type { FormationValidationMetrics } from './FormationValidationHarness';
 
 export * from './BattleTypes';
+export * from './entities/CombatEntity';
+export * from './commands/BattleCommand';
+export * from './events/BattleEvents';
+export * from './controller/IBattleController';
+export * from './controller/LocalBattleController';
+export * from './controller/RemoteBattleController';
+import type { BattleCommand } from './commands/BattleCommand';
+import type { BattleEvent } from './events/BattleEvents';
 export { P1V11A_ACTION_TIMING_FIXTURE, SIMULATION_STEP, P1V13A_SIGNATURE_FIXTURE, LEGACY_BATTLE_COMBAT_RULES, P1V8_ROLE_POSITIONING_RULES, P1V9_AUTONOMOUS_MOVEMENT_RULES, P1V11A_TIMELINE_RULES, P1V11B_ENGAGEMENT_FIXTURE, P1V11B_ENGAGEMENT_RULES, P1V11B1_ROLE_IDENTITY_RULES, P1V11C_ARCHETYPE_RULES, P1V13A_SIGNATURE_RULES, P1V11C_ENEMY_ARCHETYPE_FIXTURE, P1V11C_FIXTURE_A_FRONTLINE, P1V11C_FIXTURE_B_DIVERS, P1V11C_FIXTURE_C_PROTECTED_RANGED, EXPERIMENTAL_FRONTLINE_HEAL_HP, FRONTLINE_HEAL_HP, LEGACY_SINGLE_ENEMY_FIXTURE } from './BattleConfig';
 import type { BattleStatus, BattleRow, PlayerActionKind, CombatActionState, RoleMovementState, FormationAnchor, ActionTimingProfile, CombatUnit, SignatureBattleEvent, SignatureMetrics, EnemyArchetype, EnemyFixture, EnemyCombatUnit, PlayerCombatHit, PlayerCombatAction, BattleCombatRules, EngagementFixture, EnemyArchetypeProfile, EngagementBattleEvent, FormationConsequenceMetrics, AutonomousBattleSnapshot, RoleMovementConfig, FrontlineHealCastReason, FrontlineHealCastResult, TacticalEnergyAvailability, TacticalEnergyCastReason, TacticalEnergyEligibility, TacticalEnergyCastResult } from './BattleTypes';
 import { P1V11A_ACTION_TIMING_FIXTURE, SIMULATION_STEP, P1V13A_SIGNATURE_FIXTURE, LEGACY_BATTLE_COMBAT_RULES, P1V8_ROLE_POSITIONING_RULES, P1V9_AUTONOMOUS_MOVEMENT_RULES, P1V11A_TIMELINE_RULES, P1V11B_ENGAGEMENT_FIXTURE, P1V11B_ENGAGEMENT_RULES, P1V11B1_ROLE_IDENTITY_RULES, P1V11C_ARCHETYPE_RULES, P1V13A_SIGNATURE_RULES, P1V11C_ENEMY_ARCHETYPE_FIXTURE, P1V11C_FIXTURE_A_FRONTLINE, P1V11C_FIXTURE_B_DIVERS, P1V11C_FIXTURE_C_PROTECTED_RANGED, EXPERIMENTAL_FRONTLINE_HEAL_HP, FRONTLINE_HEAL_HP, LEGACY_SINGLE_ENEMY_FIXTURE, baseStats, rowOrder, PLAYER_SPAWN_X, ENEMY_SPAWN_X, LANE_DISTANCE_SCALE, PLAYER_MIN_X, PLAYER_MAX_X, ENEMY_MIN_X, ENEMY_MAX_X, movementProfile, ENEMY_MOVE_SPEED, ENEMY_ATTACK_RANGE, COMBAT_DISTANCE_EPSILON } from './BattleConfig';
@@ -35,6 +43,7 @@ export class AutonomousBattleModel {
   private signatureMetrics: SignatureMetrics = { signatureActivationsByUnit: {}, signatureDamageByUnit: {}, shieldDamageAbsorbedByUnit: {}, focusShotsResolved: 0, arcaneBloomTargetsHit: 0, ambushStrikesResolved: 0, guardianBraceAbsorbed: 0 };
   private consequenceMetrics: FormationConsequenceMetrics = createInitialConsequenceMetrics();
   private energySystem!: BattleEnergySystem;
+  private eventBuffer: BattleEvent[] = [];
 
   constructor(
     formation: BattleFormation,
@@ -140,6 +149,13 @@ export class AutonomousBattleModel {
     if (this.state.enemyHp === 0) {
       this.state.status = 'Win';
       this.freezeOnTerminal();
+      this.eventBuffer.push({
+        type: 'BattleEnded',
+        tick: this.state.elapsedTicks,
+        time: this.state.elapsedTime ?? 0,
+        status: 'Win',
+        winnerTeamId: 'TeamA',
+      });
       return this.snapshot;
     }
 
@@ -148,6 +164,13 @@ export class AutonomousBattleModel {
     if (!this.state.units.some((unit) => unit.currentHp > 0)) {
       this.state.status = 'Lose';
       this.freezeOnTerminal();
+      this.eventBuffer.push({
+        type: 'BattleEnded',
+        tick: this.state.elapsedTicks,
+        time: this.state.elapsedTime ?? 0,
+        status: 'Lose',
+        winnerTeamId: 'TeamB',
+      });
     }
 
     this.syncEnemyAggregates();
@@ -220,7 +243,61 @@ export class AutonomousBattleModel {
   }
 
   castTacticalEnergy(energyId: string, energyQueue: EnergyQueue): TacticalEnergyCastResult {
-    return this.energySystem.castTacticalEnergy(energyId, energyQueue);
+    const result = this.energySystem.castTacticalEnergy(energyId, energyQueue);
+    this.eventBuffer.push({
+      type: 'TacticalEnergyCast',
+      tick: this.state.elapsedTicks,
+      time: this.state.elapsedTime ?? 0,
+      energyId,
+      kind: result.kind ?? 'Unknown',
+      targetEntityId: result.targetUnitId ?? result.targetEnemyId,
+      amount: result.amount ?? 0,
+      success: result.success,
+      reason: result.reason,
+    });
+    return result;
+  }
+
+  pollEvents(): BattleEvent[] {
+    const events = [...this.eventBuffer];
+    this.eventBuffer = [];
+    return events;
+  }
+
+  executeCommand(command: BattleCommand, energyQueue?: EnergyQueue): boolean {
+    if (command.type === 'CastTacticalEnergy') {
+      if (!energyQueue) return false;
+      const res = this.castTacticalEnergy(command.energyId, energyQueue);
+      return res.success;
+    }
+    if (command.type === 'Surrender') {
+      this.state.status = command.teamId === 'TeamA' ? 'Lose' : 'Win';
+      this.freezeOnTerminal();
+      this.eventBuffer.push({
+        type: 'BattleEnded',
+        tick: this.state.elapsedTicks,
+        time: this.state.elapsedTime ?? 0,
+        status: this.state.status,
+        winnerTeamId: this.state.status === 'Win' ? 'TeamA' : 'TeamB',
+      });
+      return true;
+    }
+    return false;
+  }
+
+  stepWithCommands(
+    deltaSeconds = SIMULATION_STEP,
+    commands?: BattleCommand[],
+    energyQueue?: EnergyQueue,
+  ): { snapshot: AutonomousBattleSnapshot; events: BattleEvent[] } {
+    if (commands && commands.length > 0) {
+      for (const cmd of commands) {
+        this.executeCommand(cmd, energyQueue);
+      }
+    }
+    const snapshot = this.step(deltaSeconds);
+    const events = this.pollEvents();
+    return { snapshot, events };
   }
 
   private resolveStaticBattleTick(): void {
