@@ -139,6 +139,17 @@ export class BattleFunControlsRenderer {
         g.lineStyle(5, 0xc8b58a);
         g.lineBetween(x - 16, y - 16, x + 16, y + 16);
         g.lineBetween(x + 16, y - 16, x - 16, y + 16);
+        // Orbiting chibi dizzy stars
+        const starAngle = now * 8;
+        for (let s = 0; s < 3; s++) {
+          const a = starAngle + (s * Math.PI * 2) / 3;
+          const sx = x + Math.cos(a) * 22;
+          const sy = y - 32 + Math.sin(a) * 8;
+          g.fillStyle(0xfde047, 0.95);
+          g.fillCircle(sx, sy, 4);
+          g.lineStyle(1.5, 0x854d0e);
+          g.strokeCircle(sx, sy, 4);
+        }
       } else if (enemy.funControlKind === 'Bubble') {
         g.fillStyle(0xa7c9bd, .1); g.fillCircle(x, y - 16, 60);
         g.lineStyle(3, 0xa7c9bd); g.strokeCircle(x, y - 16, 60);

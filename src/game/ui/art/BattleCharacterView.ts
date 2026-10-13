@@ -13,9 +13,8 @@ import {
   resolveBattleCharacterTexture,
 } from './BattleCharacterLoader';
 import { battleMotionProfile } from './BattleMotionProfiles';
-import { SnowguardAnimationPlayer } from './SnowguardAnimationPlayer';
-import { IroncladAnimationPlayer } from './IroncladAnimationPlayer';
-import { WindstriderAnimationPlayer } from './WindstriderAnimationPlayer';
+import { UniversalAnimationPlayer } from './UniversalAnimationPlayer';
+import { CartoonJuiceAnimator } from './CartoonJuiceAnimator';
 
 /**
  * Presentation-only Beast visual.
@@ -32,7 +31,7 @@ export class BattleCharacterView {
   readonly fallbackIcon: Phaser.GameObjects.Image;
 
   private authoredImage?: Phaser.GameObjects.Image;
-  private frameAnimation?: SnowguardAnimationPlayer;
+  private frameAnimation?: UniversalAnimationPlayer;
   private idleTween?: Phaser.Tweens.Tween;
   private poseReset?: Phaser.Time.TimerEvent;
   private currentPose: BattlePose = 'idle';
@@ -84,20 +83,18 @@ export class BattleCharacterView {
       this.showAuthored(false);
     }
 
-    if(beastId==='beast-a'&&definition&&SnowguardAnimationPlayer.available(scene)) {
-      this.frameAnimation=new SnowguardAnimationPlayer(scene,definition.displayHeight*.85,definition.groundOffsetY);
-      this.root.add(this.frameAnimation.sprite);
-      this.authoredImage?.setVisible(false);
-    }
-    if(beastId==='beast-e'&&definition&&IroncladAnimationPlayer.available(scene)) {
-      this.frameAnimation=new IroncladAnimationPlayer(scene,definition.displayHeight*.85,definition.groundOffsetY);
-      this.root.add(this.frameAnimation.sprite);
-      this.authoredImage?.setVisible(false);
-    }
-    if(beastId==='beast-c'&&definition&&WindstriderAnimationPlayer.available(scene)) {
-      this.frameAnimation=new WindstriderAnimationPlayer(scene,definition.displayHeight*.85,definition.groundOffsetY);
-      this.root.add(this.frameAnimation.sprite);
-      this.authoredImage?.setVisible(false);
+    if (definition) {
+      const player = UniversalAnimationPlayer.tryCreate(
+        scene,
+        beastId,
+        definition.displayHeight * 0.85,
+        definition.groundOffsetY,
+      );
+      if (player) {
+        this.frameAnimation = player;
+        this.root.add(this.frameAnimation.sprite);
+        this.authoredImage?.setVisible(false);
+      }
     }
     this.startIdleMotion();
   }

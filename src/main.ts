@@ -1,4 +1,5 @@
 import { rushSfx } from './game/ui/feedback/RushSfx';
+import { bgmManager } from './game/audio/BgmManager';
 import { transitionScreen } from './game/ui/SceneTransition';
 import Phaser from 'phaser';
 import { showDeckPicker } from './game/ui/DeckPicker';
@@ -50,6 +51,7 @@ else {
     showLevelSelection(id => { selectRunLevel(id); openPicker(); }, openMenu);
   };
   const startRun = (deck:string[]) => {
+    bgmManager.pause();
     lockRunDeck(deck);
     const shell = document.getElementById('game-shell')!;
     shell.classList.add('run-active');
@@ -84,7 +86,7 @@ else {
       change.remove();rotate.remove();shell.classList.remove('run-active');
       window.removeEventListener('orientationchange',orientation);window.removeEventListener('resize',orientation);
       window.removeEventListener('beast-link-return-village',returnVillage);
-      game.destroy(true);showCamp(openMenu,openLevels);
+      game.destroy(true);bgmManager.playLobby();showCamp(openMenu,openLevels);
     };
     window.addEventListener('beast-link-return-village',returnVillage);
     change.className = 'deck-new-run'; change.textContent = '☰'; change.setAttribute('aria-label', 'Pause and open menu');
@@ -94,13 +96,14 @@ else {
       dialog.innerHTML = '<h2>Take a breather</h2><p>Your Run is paused.</p><button class="resume-run">Continue</button><button class="return-menu">End Run & return to menu</button>';
       document.getElementById('game-shell')!.append(dialog); dialog.showModal();
       const sound=document.createElement('button');sound.textContent=rushSfx.enabled?'Âm thanh: Bật':'Âm thanh: Tắt';sound.setAttribute('aria-pressed',String(rushSfx.enabled));sound.onclick=()=>{rushSfx.setEnabled(!rushSfx.enabled);rushSfx.unlock();sound.textContent=rushSfx.enabled?'Âm thanh: Bật':'Âm thanh: Tắt';sound.setAttribute('aria-pressed',String(rushSfx.enabled));};dialog.insertBefore(sound,dialog.querySelector('.return-menu'));
+      const bgm=document.createElement('button');bgm.textContent=bgmManager.enabled?'Nhạc nền: Bật':'Nhạc nền: Tắt';bgm.setAttribute('aria-pressed',String(bgmManager.enabled));bgm.onclick=()=>{bgmManager.setEnabled(!bgmManager.enabled);bgm.textContent=bgmManager.enabled?'Nhạc nền: Bật':'Nhạc nền: Tắt';bgm.setAttribute('aria-pressed',String(bgmManager.enabled));};dialog.insertBefore(bgm,dialog.querySelector('.return-menu'));
       dialog.querySelector<HTMLButtonElement>('.resume-run')!.onclick = () => dialog.close();
       dialog.onclose = () => { scenes.forEach(scene => scene.scene.resume()); dialog.remove(); orientation(); };
       dialog.querySelector<HTMLButtonElement>('.return-menu')!.onclick = () => transitionScreen(dialog,()=>{
         dialog.onclose = null; dialog.remove(); change.remove(); rotate.remove(); shell.classList.remove('run-active');
         window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);
         window.removeEventListener('beast-link-return-village',returnVillage);
-        game.destroy(true);openMenu();
+        game.destroy(true);bgmManager.playLobby();openMenu();
       });
     };
     document.getElementById('game-shell')!.append(change);

@@ -27,6 +27,9 @@ import {
 import { BattleFunControlsRenderer } from './battle/BattleFunControlsRenderer';
 import { beastDisplayName } from './icons/UnitIconRegistry';
 import { CleanProjectileRenderer } from './battle/CleanProjectileRenderer';
+import { BattleIntentRenderer } from './battle/BattleIntentRenderer';
+import { CartoonJuiceAnimator } from './art/CartoonJuiceAnimator';
+import { StatusEmotionOverlay } from './art/StatusEmotionOverlay';
 
 export class BattleActionView {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -43,6 +46,9 @@ export class BattleActionView {
   private readonly funControlsRenderer: BattleFunControlsRenderer;
   private showcaseMode = false;
   private readonly projectiles: CleanProjectileRenderer;
+  private readonly intentRenderer: BattleIntentRenderer;
+  private lastSnapshot?: AutonomousBattleSnapshot;
+  private gridCreated = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -56,6 +62,7 @@ export class BattleActionView {
     this.gridRenderer = new BattleArenaGridRenderer(this.scene, this.layout, this.objects, this.gridObjects);
     this.floatingTextSystem = new BattleFloatingTextSystem(this.scene, this.objects);
     this.signatureVfxRenderer = new BattleSignatureVfxRenderer(this.scene, this.objects, this.units, this.enemies);
+    this.intentRenderer = new BattleIntentRenderer(this.scene, this.objects, this.units, this.enemies);
     this.unitVisualManager = new BattleUnitVisualManager(
       this.scene,
       this.layout,
@@ -64,6 +71,7 @@ export class BattleActionView {
       this.enemies,
       this.unitPresentationOffsets,
       this.enemyPresentationOffsets,
+      (unitId) => this.intentRenderer.selectUnit(unitId),
     );
     this.funControlsRenderer = new BattleFunControlsRenderer(
       this.scene,
@@ -79,7 +87,9 @@ export class BattleActionView {
   }
 
   render(snapshot: AutonomousBattleSnapshot): void {
-    if (this.objects.length === 0) {
+    this.lastSnapshot = snapshot;
+    if (!this.gridCreated) {
+      this.gridCreated = true;
       this.createBattleGrid();
       this.scheduleGridFade();
     }
@@ -88,11 +98,55 @@ export class BattleActionView {
     snapshot.units.forEach((unit) => this.syncUnit(unit));
     snapshot.enemies.forEach((enemy) => this.syncEnemy(enemy));
     this.funControlsRenderer.renderFunControls(snapshot);
+    this.intentRenderer.update(snapshot);
   }
   playTick(event: BattleTickPresentation): void {
-    event.attackWindups.forEach(windup=>{
-      const source=windup.isPlayer?this.units.get(windup.unitId):this.enemies.get(windup.unitId);
-      if(source)FeedbackEffects.pulseRing(this.scene,source.container.x,source.container.y-30,windup.role==='Mage'?0xb69cdd:windup.role==='Ranger'?0x9fbf8f:0xe9c982,12);
+    event.attackWindups.forEach(windup => {
+      const source = windup.isPlayer ? this.units.get(windup.unitId) : this.enemies.get(windup.unitId);
+      if (!source) return;
+
+      const color = windup.isPlayer
+        ? (windup.role === 'Mage' ? 0xb69cdd : windup.role === 'Ranger' ? 0x9fbf8f : 0xe9c982)
+        : 0xf97316;
+
+      FeedbackEffects.pulseRing(this.scene, source.container.x, source.container.y - 12, color, 24);
+      CartoonJuiceAnimator.squashAndStretch(this.scene, source.container, {
+        squashFactor: -0.04,
+        duration: 140,
+      });
+
+      if (windup.isPlayer) {
+        const u = this.lastSnapshot?.units.find(x => x.unitId === windup.unitId);
+        if (u?.targetEnemyId) {
+          const target = this.enemies.get(u.targetEnemyId);
+          if (target) {
+            this.intentRenderer.flashTelegraph(
+              source.container.x,
+              source.container.y - 20,
+              target.container.x,
+              target.container.y - 25,
+              color,
+              300,
+            );
+          }
+        }
+      } else {
+        const e = this.lastSnapshot?.enemies.find(x => x.enemyId === windup.unitId);
+        const targetId = e?.engagedTargetId ?? e?.targetUnitId;
+        if (targetId) {
+          const target = this.units.get(targetId);
+          if (target) {
+            this.intentRenderer.flashTelegraph(
+              source.container.x,
+              source.container.y - 20,
+              target.container.x,
+              target.container.y - 20,
+              0xf97316,
+              320,
+            );
+          }
+        }
+      }
     });
     event.attackers.forEach(attacker => {
       const source=this.units.get(attacker.unitId);if(!source)return;
@@ -117,7 +171,10 @@ export class BattleActionView {
       source.characterView.setFacing(target.container.x>=source.container.x?'right':'left');
       source.characterView.playAttack();
       this.projectiles.resolve({x:source.container.x,y:source.container.y-38},target.characterView.getEffectPoint(target.container.x,target.container.y),attacker.archetype==='Ranged'?'arrow':'melee');
-      if(attacker.absorbed>0)this.floatCombatText(target.container.x,target.container.y,'Khiên chặn','#72bff5',attacker.targetUnitId+'-shield');
+      if (attacker.absorbed > 0) {
+        StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, target.container.x, target.container.y, 'CLANG');
+        this.floatCombatText(target.container.x, target.container.y, 'Khiên chặn', '#72bff5', attacker.targetUnitId + '-shield');
+      }
     });
     event.signatureFx.forEach(fx => {
       const kind = fx.signatureId === 'WoollyRescue' ? 'heart' : fx.signatureId === 'ToyWorkshop' ? 'toy' : fx.signatureId === 'BubbleTrap' ? 'bubble' : undefined;
@@ -136,12 +193,22 @@ export class BattleActionView {
       // Authored enemy cutout hit response; fallback body flash remains
       // available when an asset is missing.
       visual.characterView.playHit();
+      const isSignatureHit = event.signatureFx.some(fx => fx.targetIds.includes(damageEvent.enemyId));
+      CartoonJuiceAnimator.squashAndStretch(this.scene, visual.container, {
+        squashFactor: isSignatureHit ? 0.07 : 0.04,
+        duration: isSignatureHit ? 140 : 110,
+      });
+
       this.flash(visual.body, 0xffffff, 70, () => {
         this.flash(visual.body, 0xef4444, 50);
       });
 
       // Impact ring burst
       FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
+
+      if (isSignatureHit || damageEvent.damage >= 45) {
+        StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'BONK');
+      }
 
       // Floating combat text
       this.floatCombatText(
@@ -150,6 +217,7 @@ export class BattleActionView {
         `-${formatNumber(damageEvent.damage)}`,
         '#f87171',
         damageEvent.enemyId,
+        isSignatureHit || damageEvent.damage >= 40,
       );
     });
 
@@ -163,12 +231,21 @@ export class BattleActionView {
         // Hit flash / pose. Fallback body keeps the original flash while authored art
         // receives a presentation-only hit pose/tint.
         visual.characterView.playHit(180);
+        CartoonJuiceAnimator.squashAndStretch(this.scene, visual.container, {
+          squashFactor: unitDamage.damage >= 45 ? 0.07 : 0.04,
+          duration: 110,
+        });
+
         this.flash(visual.body, 0xffffff, 70, () => {
           this.flash(visual.body, 0xef4444, 50);
         });
 
         // Impact ring burst
         FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
+
+        if (unitDamage.damage >= 45) {
+          StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'OUCH');
+        }
 
         // Floating combat text
         this.floatCombatText(
@@ -177,6 +254,7 @@ export class BattleActionView {
           `-${formatNumber(unitDamage.damage)}`,
           '#ef4444',
           unitDamage.unitId,
+          unitDamage.damage >= 45,
         );
       });
     } else if (event.enemyTargetId && event.targetDamage > 0) {
@@ -211,6 +289,7 @@ export class BattleActionView {
       if(killer)this.floatCombatText(visual.container.x,visual.container.y,`KO ← ${ killer.archetype==='Ranged'?'Xạ thủ':killer.archetype==='Diver'?'Đột kích':'Tiền tuyến'}`,'#ffbc9c',unitId+'-ko');
       visual.characterView.setAlive(false);
       this.scene.tweens.killTweensOf(visual.container);
+      StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'DIZZY');
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
         targets: visual.container,
@@ -230,6 +309,7 @@ export class BattleActionView {
       if(killer){const source=this.units.get(killer.unitId);if(source)this.floatCombatText(visual.container.x,visual.container.y,`KO ← ${beastDisplayName(source.characterView.beastId)}`,'#efd093',enemyId+'-ko');}
       visual.characterView.playKo();
       this.scene.tweens.killTweensOf(visual.container);
+      StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'POOF');
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
         targets: visual.container,
@@ -253,6 +333,8 @@ export class BattleActionView {
 
     // Green pulse ring
     FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0x22c55e, 38);
+    StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'COZY');
+    CartoonJuiceAnimator.hopBounce(this.scene, visual.container, { height: 10, duration: 220 });
 
     // Floating combat text showing actual healed amount
     this.floatCombatText(
@@ -319,6 +401,17 @@ export class BattleActionView {
     this.scene.tweens.add({ targets: projectile, x: target.x, y: target.y, duration: 260,
       onComplete: () => {
         FeedbackEffects.pulseRing(this.scene, target.x, target.y, color, mobile ? 32 : 65);
+        if (energyId === 'energy-f') {
+          StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, target.x, target.y - 10, 'BONK', '💥 CANCELLED!');
+          StatusEmotionOverlay.spawnDizzyStars(this.scene, this.objects, target.x, target.y, 1400);
+          CartoonJuiceAnimator.hitWobble(this.scene, visual.container, { facing: 'left', distance: 10, angle: 8, duration: 200 });
+        } else if (energyId === 'energy-e') {
+          StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, target.x, target.y - 10, 'CLANG', '🛡️ KHIÊN!');
+          CartoonJuiceAnimator.squashAndStretch(this.scene, visual.container, { squashFactor: -0.05, duration: 160 });
+        } else if (energyId === 'energy-c') {
+          StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, target.x, target.y - 10, 'BONK', '🔨 PHÁ GIÁP!');
+          CartoonJuiceAnimator.squashAndStretch(this.scene, visual.container, { squashFactor: 0.06, duration: 140 });
+        }
         dispose(projectile);
       },
     });
@@ -336,6 +429,8 @@ export class BattleActionView {
   }
 
   destroy(): void {
+    this.gridCreated = false;
+    this.intentRenderer.destroy();
     this.units.forEach((visual) => visual.characterView.dispose());
     this.scene.tweens.killTweensOf([...this.objects]);
     this.objects.splice(0).forEach((object) => object.destroy());
@@ -386,8 +481,9 @@ export class BattleActionView {
     text: string,
     color: string,
     unitKey: string,
+    isCrit = false,
   ): void {
-    this.floatingTextSystem.floatCombatText(x, y, text, color, unitKey);
+    this.floatingTextSystem.floatCombatText(x, y, text, color, unitKey, isCrit);
   }
 }
 

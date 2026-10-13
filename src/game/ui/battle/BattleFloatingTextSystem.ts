@@ -14,6 +14,7 @@ export class BattleFloatingTextSystem {
     text: string,
     color: string,
     unitKey: string,
+    isCrit = false,
   ): void {
     const now = Date.now();
     let hitInfo = this.unitHitTracking.get(unitKey);
@@ -35,21 +36,32 @@ export class BattleFloatingTextSystem {
     const txt = this.scene.add
       .text(spawnX, spawnY, text, {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        color,
+        fontSize: isCrit ? '18px' : '14px',
+        color: isCrit ? '#fef08a' : color,
         fontStyle: 'bold',
         stroke: '#0f172a',
-        strokeThickness: 3,
+        strokeThickness: isCrit ? 4 : 3,
       })
       .setOrigin(0.5)
       .setDepth(150);
 
+    if (isCrit) {
+      txt.setScale(0.7);
+      this.scene.tweens.add({
+        targets: txt,
+        scaleX: 1.25,
+        scaleY: 1.25,
+        duration: 140,
+        ease: 'Back.Out',
+      });
+    }
+
     this.managedObjects.push(txt);
     this.scene.tweens.add({
       targets: txt,
-      y: spawnY - 26,
+      y: spawnY - (isCrit ? 36 : 26),
       alpha: 0,
-      duration: 650,
+      duration: isCrit ? 800 : 650,
       ease: 'Cubic.Out',
       onComplete: () => {
         const index = this.managedObjects.indexOf(txt);

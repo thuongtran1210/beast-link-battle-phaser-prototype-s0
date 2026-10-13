@@ -1,29 +1,44 @@
-import { BATTLE_CHARACTER_ART } from './art/BattleCharacterManifest';
 import { showSettingsDialog } from './SettingsDialog';
 import { toggleFullscreen } from './layout/MobileDisplayManager';
 import { showCamp } from './CampView';
 import { transitionScreen } from './SceneTransition';
 import { firstJourneyStage } from '../run/FirstJourney';
+import { bgmManager } from '../audio/BgmManager';
+import { MainMenuParallax } from './menu/MainMenuParallax';
 
 /** DOM navigation stays separate from the pre-run deck and gameplay scene. */
 export function showMainMenu(play: () => void): void {
+  bgmManager.playLobby();
   const root = document.createElement('section');
   root.className = 'main-menu farming-menu cozy-menu';
-  root.innerHTML = `<div class="menu-copy"><span class="menu-eyebrow">A LITTLE SQUAD. A BIG ADVENTURE.</span><h1>Beast Link<br><em>Battle</em></h1><p>Match Beasts. Build your squad.<br>Turn a tiny team into a ridiculous legend.</p><div class="menu-actions"><button class="menu-play">Play <span>Choose a region →</span></button><button class="menu-help">How to play</button><button class="menu-fullscreen">Full screen</button></div><small class="menu-footnote">6 Beast types · 3 Waves · one Run</small></div><div class="menu-party" aria-hidden="true">${(['beast-e', 'beast-d', 'beast-f'] as const).map(id => `<img src="${BATTLE_CHARACTER_ART[id].base}" alt="">`).join('')}</div>`;
-  root.querySelector<HTMLButtonElement>('.menu-play')!.onclick = () => transitionScreen(root,()=>{root.remove();play();});
-  root.querySelector('.menu-eyebrow')!.remove();root.querySelector('.menu-copy>p')!.remove();root.querySelector('.menu-footnote')!.remove();
-  root.querySelector('h1')!.innerHTML='Làng Thú<em>Một góc quê, một khởi đầu</em>';
-  root.querySelector('.menu-play')!.textContent='Thám hiểm';
-  const camp = document.createElement('button');camp.className='menu-home';camp.textContent='Về làng';
-  camp.onclick=()=>transitionScreen(root,()=>{root.remove();showCamp(()=>showMainMenu(play),play);});
+  root.innerHTML = `<div class="menu-copy"><h1>Làng Thú<em>Một góc quê, một khởi đầu</em></h1><div class="menu-actions"><button class="menu-play">Thám hiểm</button><button class="menu-help">How to play</button><button class="menu-fullscreen">Full screen</button></div></div>`;
+
+  const parallax = new MainMenuParallax(root);
+
+  const cleanupAndNavigate = (next: () => void) => {
+    transitionScreen(root, () => {
+      parallax.destroy();
+      root.remove();
+      next();
+    });
+  };
+
+  root.querySelector<HTMLButtonElement>('.menu-play')!.onclick = () => cleanupAndNavigate(play);
+
+  const camp = document.createElement('button');
+  camp.className = 'menu-home';
+  camp.textContent = 'Về làng';
+  camp.onclick = () => cleanupAndNavigate(() => showCamp(() => showMainMenu(play), play));
   root.querySelector('.menu-actions')!.prepend(camp);
-  const onboarding=firstJourneyStage();
-  if(onboarding==='expedition'){
-    camp.remove();root.querySelector('.menu-play')!.textContent='Chuyến đi đầu tiên →';
-    root.querySelector('h1 em')!.textContent='Bắt đầu ở Đường mòn rừng';
-  }else if(onboarding==='village'){
-    root.querySelector('.menu-play')!.textContent='Khám phá Làng →';
-    root.querySelector<HTMLButtonElement>('.menu-play')!.onclick=camp.onclick;
+
+  const onboarding = firstJourneyStage();
+  if (onboarding === 'expedition') {
+    camp.remove();
+    root.querySelector('.menu-play')!.textContent = 'Chuyến đi đầu tiên →';
+    root.querySelector('h1 em')!.textContent = 'Bắt đầu ở Đường mòn rừng';
+  } else if (onboarding === 'village') {
+    root.querySelector('.menu-play')!.textContent = 'Khám phá Làng →';
+    root.querySelector<HTMLButtonElement>('.menu-play')!.onclick = camp.onclick;
     camp.remove();
   }
   root.querySelector<HTMLButtonElement>('.menu-help')!.onclick = () => {

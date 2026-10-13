@@ -1,4 +1,5 @@
 import { rushSfx } from './feedback/RushSfx';
+import { bgmManager } from '../audio/BgmManager';
 import { getFullscreenCapabilities, toggleFullscreen, requestLandscapeFullscreen } from './layout/MobileDisplayManager';
 
 export function showSettingsDialog(onClose?: () => void): void {
@@ -49,6 +50,30 @@ export function showSettingsDialog(onClose?: () => void): void {
   };
   audioRow.append(audioBtn);
   body.append(audioRow);
+
+  // 1.1 BGM Section
+  const bgmRow = document.createElement('div');
+  bgmRow.className = 'settings-row';
+  bgmRow.innerHTML = `
+    <div class="settings-row-info">
+      <strong>Nhạc nền (BGM)</strong>
+      <p>Giai điệu sảnh chờ và làng thú</p>
+    </div>
+  `;
+  const bgmBtn = document.createElement('button');
+  bgmBtn.className = 'settings-toggle-btn';
+  const updateBgmText = () => {
+    bgmBtn.textContent = bgmManager.enabled ? 'Đang Bật' : 'Đang Tắt';
+    bgmBtn.setAttribute('aria-pressed', String(bgmManager.enabled));
+    bgmBtn.classList.toggle('active', bgmManager.enabled);
+  };
+  updateBgmText();
+  bgmBtn.onclick = () => {
+    bgmManager.setEnabled(!bgmManager.enabled);
+    updateBgmText();
+  };
+  bgmRow.append(bgmBtn);
+  body.append(bgmRow);
 
   // 2. Fullscreen & Landscape Section
   const screenRow = document.createElement('div');

@@ -105,6 +105,7 @@ export class ValidationScene extends Phaser.Scene {
   private summary?: SessionSummaryView;
   private showcaseBattleHud?: ShowcaseBattleHUDView;
   private captureEnemyFixtures?: ReadonlyArray<EnemyFixture>;
+  private isConcludingBattle = false;
 
   constructor() {
     super('ValidationScene');
@@ -308,32 +309,45 @@ export class ValidationScene extends Phaser.Scene {
     }
 
     // Autonomous Battle ticking
-    if (
-      this.phaseController.phase === GamePhase.Battle &&
-      this.battleModel?.snapshot.status === 'Running' &&
-      (!this.showcaseController.isShowcaseMode || !this.showcaseController.isShowcasePaused)
-    ) {
-      this.battleTickAccumulator += delta;
-      let ticked = false;
-      const STEP_MS = SIMULATION_STEP * 1000;
-      while (this.battleTickAccumulator >= STEP_MS && this.battleModel.snapshot.status === 'Running') {
-        this.battleTickAccumulator -= STEP_MS;
-        const before = this.battleModel.snapshot;
-        const after = this.battleModel.step(SIMULATION_STEP);
-        this.battleActionView?.render(after);
-        this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
-        ticked = true;
-      }
-      if (ticked) this.battleCoordinator.renderBattle();
+    if (this.phaseController.phase === GamePhase.Battle && this.battleModel) {
       const status = this.battleModel.snapshot.status;
       if (status !== 'Running') {
-        this.battleCoordinator.renderBattle();
-        this.runRoster.reconcile(this.battleModel.snapshot.units);
-        this.metrics.result(status, this.energyQueue.getAll());
-        this.battleOutcome = status;
-        this.phaseController.setPhase(status === 'Win' && !this.waveRun.isFinalWave ? GamePhase.WaveResult : GamePhase.Result);
+        this.handleBattleEnded(status);
+      } else if (!this.showcaseController.isShowcaseMode || !this.showcaseController.isShowcasePaused) {
+        this.battleTickAccumulator += delta;
+        let ticked = false;
+        const STEP_MS = SIMULATION_STEP * 1000;
+        while (this.battleTickAccumulator >= STEP_MS && this.battleModel.snapshot.status === 'Running') {
+          this.battleTickAccumulator -= STEP_MS;
+          const before = this.battleModel.snapshot;
+          const after = this.battleModel.step(SIMULATION_STEP);
+          this.battleActionView?.render(after);
+          this.battleActionView?.playTick(deriveBattleTickPresentation(before, after));
+          ticked = true;
+        }
+        if (ticked) this.battleCoordinator.renderBattle();
+        const finalStatus = this.battleModel.snapshot.status;
+        if (finalStatus !== 'Running') {
+          this.handleBattleEnded(finalStatus);
+        }
       }
     }
+  }
+
+  private handleBattleEnded(status: 'Win' | 'Lose'): void {
+    if (this.isConcludingBattle) return;
+    this.isConcludingBattle = true;
+    this.battleCoordinator.renderBattle();
+
+    // Allow 800ms for final attack/KO presentations and feedback to complete before transitioning
+    this.time.delayedCall(800, () => {
+      this.isConcludingBattle = false;
+      if (this.phaseController.phase !== GamePhase.Battle) return;
+      this.runRoster.reconcile(this.battleModel?.snapshot.units ?? []);
+      this.metrics.result(status, this.energyQueue.getAll());
+      this.battleOutcome = status;
+      this.phaseController.setPhase(status === 'Win' && !this.waveRun.isFinalWave ? GamePhase.WaveResult : GamePhase.Result);
+    });
   }
 
   private renderStartupFailure(error: unknown): void {
@@ -422,6 +436,7 @@ export class ValidationScene extends Phaser.Scene {
     this.summary?.setVisible(false);
     this.waveResultView?.destroy();
     this.showcaseController.resetShowcaseState();
+    this.isConcludingBattle = false;
 
     this.syncTopHud();
 
@@ -566,6 +581,7 @@ export class ValidationScene extends Phaser.Scene {
       Object.fromEntries(this.runRoster.units.map((unit) => [unit.instanceId, unit.currentHp])),
     );
     this.battleTickAccumulator = 0;
+    this.isConcludingBattle = false;
     this.battleActionView = new BattleActionView(this, this.layout.leftX, this.layout.leftY);
     this.battleActionView.setShowcaseMode(this.showcaseController.isShowcaseMode);
     this.battleActionView.render(this.battleModel.snapshot);

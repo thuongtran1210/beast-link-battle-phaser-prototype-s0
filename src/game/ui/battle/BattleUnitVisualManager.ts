@@ -61,6 +61,7 @@ export class BattleUnitVisualManager {
     private readonly enemies: Map<string, EnemyVisual>,
     private readonly unitPresentationOffsets: Map<string, { x: number; y: number }>,
     private readonly enemyPresentationOffsets: Map<string, { x: number; y: number }>,
+    private readonly onUnitSelected?: (unitId: string) => void,
   ) {}
 
   private movementTweens = new Map<Phaser.GameObjects.Container, Phaser.Tweens.Tween>();
@@ -122,6 +123,9 @@ export class BattleUnitVisualManager {
     const offset = this.unitPresentationOffsets.get(unit.unitId) ?? { x: 0, y: 0 };
     if (unit.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
+      if (!this.scene.tweens.isTweening(visual.container)) {
+        visual.container.setScale(1, 1);
+      }
       visual.characterView.setMoving(unit.actionState === 'Moving');
       this.moveVisual(visual.container, position.x + offset.x, position.y + offset.y);
     }
@@ -178,6 +182,9 @@ export class BattleUnitVisualManager {
     const offset = this.enemyPresentationOffsets.get(enemy.enemyId) ?? { x: 0, y: 0 };
     if (enemy.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
+      if (!this.scene.tweens.isTweening(visual.container)) {
+        visual.container.setScale(1, 1);
+      }
       this.moveVisual(visual.container, position.x + offset.x, position.y + offset.y);
     }
   }
@@ -196,7 +203,7 @@ export class BattleUnitVisualManager {
     }
 
     visual.hpBarContainer.setAlpha(1);
-    const targetWidth = 46 * ratio;
+    const targetWidth = 48 * ratio;
 
     if (ratio < visual.currentHpRatio) {
       visual.hpFill.width = targetWidth;
@@ -204,9 +211,9 @@ export class BattleUnitVisualManager {
       this.scene.tweens.add({
         targets: visual.ghostFill,
         width: targetWidth,
-        duration: 300,
+        duration: 320,
         ease: 'Quad.Out',
-        delay: 70,
+        delay: 80,
       });
     } else if (ratio > visual.currentHpRatio) {
       visual.hpFill.width = targetWidth;
@@ -245,9 +252,9 @@ export class BattleUnitVisualManager {
     }).setOrigin(0.5);
 
     const hpBarContainer = this.scene.add.container(0, characterView.hpAnchorY);
-    const hpBorder = this.scene.add.rectangle(0, 0, 48, 6, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
-    const ghostFill = this.scene.add.rectangle(-23, 0, 46, 4, 0xfca5a5, 0.9).setOrigin(0, 0.5);
-    const hpFill = this.scene.add.rectangle(-23, 0, 46, 4, 0x22c55e, 1.0).setOrigin(0, 0.5);
+    const hpBorder = this.scene.add.rectangle(0, 0, 52, 7, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
+    const ghostFill = this.scene.add.rectangle(-24, 0, 48, 5, 0xfca5a5, 0.9).setOrigin(0, 0.5);
+    const hpFill = this.scene.add.rectangle(-24, 0, 48, 5, 0x22c55e, 1.0).setOrigin(0, 0.5);
     hpBarContainer.add([hpBorder, ghostFill, hpFill]);
 
     const container = this.scene.add.container(
@@ -255,6 +262,10 @@ export class BattleUnitVisualManager {
       position.y,
       [characterView.root, signatureRing, label],
     );
+    container.setSize(64, 64).setInteractive({ useHandCursor: true });
+    container.on('pointerup', () => {
+      this.onUnitSelected?.(unit.unitId);
+    });
 
     hpBarContainer.setPosition(position.x, position.y+characterView.hpAnchorY).setDepth(210);
     container.setDepth(100+position.y/10);
@@ -291,9 +302,9 @@ export class BattleUnitVisualManager {
     }).setOrigin(0.5);
 
     const hpBarContainer = this.scene.add.container(0, characterView.hpAnchorY);
-    const hpBorder = this.scene.add.rectangle(0, 0, 48, 6, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
-    const ghostFill = this.scene.add.rectangle(-23, 0, 46, 4, 0xfca5a5, 0.9).setOrigin(0, 0.5);
-    const hpFill = this.scene.add.rectangle(-23, 0, 46, 4, 0xef4444, 1.0).setOrigin(0, 0.5);
+    const hpBorder = this.scene.add.rectangle(0, 0, 52, 7, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
+    const ghostFill = this.scene.add.rectangle(-24, 0, 48, 5, 0xfef08a, 0.95).setOrigin(0, 0.5);
+    const hpFill = this.scene.add.rectangle(-24, 0, 48, 5, 0xef4444, 1.0).setOrigin(0, 0.5);
     hpBarContainer.add([hpBorder, ghostFill, hpFill]);
 
     const container = this.scene.add.container(

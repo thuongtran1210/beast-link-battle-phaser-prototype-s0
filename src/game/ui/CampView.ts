@@ -23,6 +23,7 @@ import { showVillageResidentDialog } from './village/VillageResidentDialog';
 import { showVillageDiaryDialog } from './village/VillageDiaryDialog';
 import { renderVillageWorkshopPanel } from './village/VillageWorkshopPanel';
 import { rollVillageIncident, type IncidentKind } from '../run/VillageIncidents';
+import { bgmManager } from '../audio/BgmManager';
 const props:Record<string,string> = {
   bath:'<svg viewBox="0 0 120 90"><ellipse cx="60" cy="34" rx="49" ry="18" fill="#aad1cf" stroke="#293c30" stroke-width="5"/><path d="M11 34 Q15 77 60 77 Q105 77 109 34" fill="#e3d6b8" stroke="#293c30" stroke-width="5"/><circle cx="42" cy="25" r="7" fill="white"/><circle cx="78" cy="20" r="5" fill="white"/></svg>',
   carrot:'<svg viewBox="0 0 120 90"><path d="M25 30 L93 48 L28 79 Z" fill="#e9a15e" stroke="#293c30" stroke-width="5"/><path d="M28 38 L9 14 M28 38 L40 9" stroke="#769953" stroke-width="10" stroke-linecap="round"/><path d="M47 44 L44 56 M63 47 L60 58" stroke="#ae643c" stroke-width="4"/></svg>',
@@ -41,6 +42,7 @@ props.anvil='<svg class="camp-furniture" viewBox="35 230 1202 849" aria-hidden="
 const gardenProp='<svg viewBox="46 284 1160 759" aria-hidden="true"><image href="/assets/ui/camp/village-owner-v1/garden.png" width="1254" height="1254"/></svg>';
 const residentPositions=[[36,29],[52,40],[22,36],[60,27],[36,51],[56,55],[13,52],[60,73],[47,43],[54,68]];
 export function showCamp(back:()=>void,explore?:()=>void):void {
+  bgmManager.playLobby();
   const state = loadCamp();
   // Current editor still uses legacy slots; retain authored forge ownership and
   // expose its saved placement through the same visible controls.

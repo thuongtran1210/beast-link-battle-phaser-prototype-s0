@@ -85,7 +85,7 @@ export class BattleArenaGridRenderer {
 
   createBattleGrid(showcaseMode: boolean): void {
     const layout = this.layout;
-    if (showcaseMode) this.createChibiArena();
+    if (showcaseMode || this.scene.textures.exists('owner-camp-battle')) this.createChibiArena();
 
     if (!showcaseMode) {
       this.pushGridText(
