@@ -1,4 +1,5 @@
-import type { AutonomousBattleSnapshot } from '../../game/battle/BattleTypes';
+import type { AutonomousBattleSnapshot, BattleRow } from '../../game/battle/BattleTypes';
+import type { BeastRole } from '../../game/battle/BeastRoles';
 import type { BattleCommand } from '../../game/battle/commands/BattleCommand';
 import type { BattleEvent } from '../../game/battle/events/BattleEvents';
 import type { TeamSide } from '../../game/battle/entities/CombatEntity';
@@ -43,8 +44,26 @@ export interface PingMessage {
   timestamp: number;
 }
 
+export interface DeployedFormationUnit {
+  unitId: string;
+  beastId: string;
+  role: BeastRole;
+  star: 1 | 2 | 3;
+  slotId: string;
+  row: BattleRow;
+  column: number;
+  maxHp: number;
+  currentHp: number;
+  damage: number;
+}
+
 export interface LeaveRoomMessage {
   type: 'LEAVE_ROOM';
+}
+
+export interface DeployFormationMessage {
+  type: 'DEPLOY_FORMATION';
+  units: DeployedFormationUnit[];
 }
 
 export type ClientMessage =
@@ -53,7 +72,8 @@ export type ClientMessage =
   | SetReadyMessage
   | BattleCommandMessage
   | PingMessage
-  | LeaveRoomMessage;
+  | LeaveRoomMessage
+  | DeployFormationMessage;
 
 /* ---------------- Server -> Client Messages ---------------- */
 
@@ -108,6 +128,19 @@ export interface PongMessage {
   timestamp: number;
 }
 
+export interface OnlineBattleStartMessage {
+  type: 'ONLINE_BATTLE_START';
+  snapshot: AutonomousBattleSnapshot;
+  teamAPlayerId: string;
+  teamBPlayerId: string;
+}
+
+export interface OpponentFormationReadyMessage {
+  type: 'OPPONENT_FORMATION_READY';
+  opponentPlayerId: string;
+  opponentUnitCount: number;
+}
+
 export type ServerMessage =
   | RoomJoinedMessage
   | RoomUpdateMessage
@@ -115,4 +148,6 @@ export type ServerMessage =
   | BattleTickMessage
   | MatchEndMessage
   | ErrorMessage
-  | PongMessage;
+  | PongMessage
+  | OnlineBattleStartMessage
+  | OpponentFormationReadyMessage;

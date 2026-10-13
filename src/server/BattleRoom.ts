@@ -11,10 +11,11 @@ import type {
   RoomState,
   RoomPlayerInfo,
   ServerMessage,
+  DeployedFormationUnit,
 } from '../network/protocol/NetworkMessages';
 import type { BattleCommand } from '../game/battle/commands/BattleCommand';
 import type { BattleEvent } from '../game/battle/events/BattleEvents';
-import type { AutonomousBattleSnapshot } from '../game/battle/BattleTypes';
+import type { AutonomousBattleSnapshot, EnemyFixture } from '../game/battle/BattleTypes';
 
 export interface PlayerConnection {
   info: RoomPlayerInfo;
@@ -28,6 +29,7 @@ export class BattleRoom {
   state: RoomState = 'WAITING';
 
   private players = new Map<string, PlayerConnection>();
+  private playerFormations = new Map<string, DeployedFormationUnit[]>();
   private battleModel?: AutonomousBattleModel;
   private prng?: PrngService;
   private matchSeed: number = 0;
@@ -125,12 +127,88 @@ export class BattleRoom {
     return this.battleModel.executeCommand(command);
   }
 
+  deployFormation(playerId: string, units: DeployedFormationUnit[]): void {
+    this.playerFormations.set(playerId, units);
+
+    // Notify other players in the room
+    for (const player of this.players.values()) {
+      if (player.info.playerId !== playerId) {
+        player.send({
+          type: 'OPPONENT_FORMATION_READY',
+          opponentPlayerId: playerId,
+          opponentUnitCount: units.length,
+        });
+      }
+    }
+
+    // When both players have deployed, launch the real PvP battle!
+    if (this.players.size >= 2 && this.playerFormations.size >= 2) {
+      this.startOnlineBattle();
+    }
+  }
+
+  startOnlineBattle(): void {
+    this.state = 'BATTLE';
+
+    const playerList = Array.from(this.players.values());
+    const teamAPlayer = playerList.find((p) => p.info.teamId === 'TeamA') ?? playerList[0];
+    const teamBPlayer = playerList.find((p) => p.info.teamId === 'TeamB') ?? playerList[1];
+
+    const teamAUnits = this.playerFormations.get(teamAPlayer.info.playerId) ?? [];
+    const teamBUnits = this.playerFormations.get(teamBPlayer.info.playerId) ?? [];
+
+    const formationA = new BattleFormation(
+      teamAUnits.map((u) => ({
+        contentId: u.beastId,
+        star: u.star,
+        instanceId: u.unitId,
+      })),
+    );
+    teamAUnits.forEach((u) => {
+      formationA.place(u.unitId, u.slotId);
+    });
+
+    const teamBFixtures: EnemyFixture[] = teamBUnits.map((u) => ({
+      enemyId: u.unitId,
+      slotId: u.slotId,
+      row: u.row,
+      column: u.column,
+      maxHp: u.maxHp,
+      damage: u.damage,
+      archetype:
+        u.role === 'Tanker'
+          ? 'Frontliner'
+          : u.role === 'Assassin'
+            ? 'Diver'
+            : 'Ranged',
+      beastId: u.beastId,
+      role: u.role,
+      star: u.star,
+    }));
+
+    this.battleModel = new AutonomousBattleModel(
+      formationA,
+      teamBFixtures,
+      P1V13A_SIGNATURE_RULES,
+      Object.fromEntries(teamAUnits.map((u) => [u.unitId, u.currentHp])),
+    );
+
+    this.broadcast({
+      type: 'ONLINE_BATTLE_START',
+      snapshot: this.battleModel.snapshot,
+      teamAPlayerId: teamAPlayer.info.playerId,
+      teamBPlayerId: teamBPlayer.info.playerId,
+    });
+
+    this.startTicking();
+  }
+
   startCountdown(): void {
     this.state = 'COUNTDOWN';
     this.broadcastUpdate();
     setTimeout(() => {
       if (this.state === 'COUNTDOWN') {
-        this.startMatch(true);
+        this.startMatch(false);
       }
     }, 1500);
   }

@@ -148,6 +148,14 @@ export class GameServer {
         break;
       }
 
+      case 'DEPLOY_FORMATION': {
+        const binding = this.clientRooms.get(ws);
+        if (binding) {
+          binding.room.deployFormation(binding.playerId, msg.units);
+        }
+        break;
+      }
+
       case 'LEAVE_ROOM': {
         const binding = this.clientRooms.get(ws);
         if (binding) {

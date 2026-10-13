@@ -253,6 +253,10 @@ export class BattleCharacterView {
     });
   }
 
+  playKo(): void {
+    this.setAlive(false);
+  }
+
   getEffectPoint(worldX: number, worldY: number): { x: number; y: number } {
     return { x: worldX, y: worldY + this.effectAnchorY };
   }

@@ -86,4 +86,28 @@ export function runServerRoomChecks(): void {
   // Test 6: Room disposal
   manager.removeRoom(room.roomId);
   expect(manager.getRoom(room.roomId) === undefined, 'Room must be removed from RoomManager');
+
+  // Test 7: Formation Deployment & Authoritative PvP Battle Start
+  const pvpRoom = manager.createRoom('pvp');
+  const p1PvpMsgs: ServerMessage[] = [];
+  const p2PvpMsgs: ServerMessage[] = [];
+  pvpRoom.addPlayer('pvp-1', 'Alice', (m) => p1PvpMsgs.push(m));
+  pvpRoom.addPlayer('pvp-2', 'Bob', (m) => p2PvpMsgs.push(m));
+
+  pvpRoom.deployFormation('pvp-1', [
+    { unitId: 'u-1', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-1', row: 'Front', column: 1, maxHp: 100, currentHp: 100, damage: 10 },
+  ]);
+  const opponentReadyMsg = p2PvpMsgs.find((m) => m.type === 'OPPONENT_FORMATION_READY');
+  expect(Boolean(opponentReadyMsg), 'Player 2 should receive OPPONENT_FORMATION_READY when Player 1 deploys');
+
+  pvpRoom.deployFormation('pvp-2', [
+    { unitId: 'u-2', beastId: 'beast-b', role: 'Assassin', star: 1, slotId: 'mid-1', row: 'Mid', column: 1, maxHp: 80, currentHp: 80, damage: 15 },
+  ]);
+  const onlineBattleStart = p1PvpMsgs.find((m) => m.type === 'ONLINE_BATTLE_START');
+  expect(Boolean(onlineBattleStart), 'Both players should receive ONLINE_BATTLE_START after both deploy');
+  if (onlineBattleStart && onlineBattleStart.type === 'ONLINE_BATTLE_START') {
+    expect(onlineBattleStart.snapshot.enemies.length === 1, 'Enemy team should have Bob deployed beast');
+    expect(onlineBattleStart.snapshot.enemies[0].beastId === 'beast-b', 'Enemy beastId must match Bob deployed unit');
+  }
+  manager.removeRoom(pvpRoom.roomId);
 }

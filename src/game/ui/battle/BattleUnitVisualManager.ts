@@ -26,7 +26,7 @@ export interface UnitVisual {
 
 export interface EnemyVisual {
   container: Phaser.GameObjects.Container;
-  characterView: EnemyCharacterView;
+  characterView: EnemyCharacterView | BattleCharacterView;
   body: Phaser.GameObjects.Rectangle;
   icon: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
@@ -288,12 +288,21 @@ export class BattleUnitVisualManager {
   createEnemy(enemy: EnemyCombatUnit, showcaseMode: boolean): EnemyVisual {
     const position = battleModelPosition(this.layout, enemy.positionX, enemy.positionLane);
     const archetype = enemy.archetype ?? 'Frontliner';
-    const characterView = new EnemyCharacterView(this.scene, archetype, showcaseMode);
+    const characterView: EnemyCharacterView | BattleCharacterView = enemy.beastId
+      ? new BattleCharacterView(this.scene, enemy.beastId, showcaseMode)
+      : new EnemyCharacterView(this.scene, archetype, showcaseMode);
+
+    if (enemy.beastId && 'setFacing' in characterView) {
+      (characterView as BattleCharacterView).setFacing('left');
+    }
 
     const body = characterView.fallbackBody;
     const icon = characterView.fallbackIcon;
 
-    const label = this.scene.add.text(0, 16, '', {
+    const labelText = enemy.beastId
+      ? `${beastDisplayName(enemy.beastId)} · ${enemy.star ?? 1}★`
+      : '';
+    const label = this.scene.add.text(0, 16, labelText, {
       fontFamily: 'Arial, sans-serif',
       fontSize: '7px',
       color: '#fff4f2',

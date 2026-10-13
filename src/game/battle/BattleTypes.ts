@@ -75,6 +75,9 @@ export interface EnemyFixture {
   maxHp: number;
   damage: number;
   archetype?: EnemyArchetype;
+  beastId?: string;
+  role?: BeastRole;
+  star?: 1 | 2 | 3;
 }
 
 export interface EnemyCombatUnit extends EnemyFixture {

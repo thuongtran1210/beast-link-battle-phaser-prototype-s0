@@ -11,6 +11,9 @@ import type {
   MatchStartMessage,
   ErrorMessage,
   GameMode,
+  DeployedFormationUnit,
+  OnlineBattleStartMessage,
+  OpponentFormationReadyMessage,
 } from '../../network/protocol/NetworkMessages';
 
 export class WebSocketClientAdapter implements NetworkTransportAdapter {
@@ -22,6 +25,8 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
   private statusListeners = new Set<(st: 'Running' | 'Win' | 'Lose') => void>();
   private roomUpdateListeners = new Set<(update: RoomUpdateMessage) => void>();
   private matchStartListeners = new Set<(start: MatchStartMessage) => void>();
+  private onlineBattleStartListeners = new Set<(start: OnlineBattleStartMessage) => void>();
+  private opponentReadyListeners = new Set<(msg: OpponentFormationReadyMessage) => void>();
   private errorListeners = new Set<(err: ErrorMessage) => void>();
 
   private joinPromiseResolver?: (msg: RoomJoinedMessage) => void;
@@ -102,6 +107,13 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
     });
   }
 
+  deployFormation(units: DeployedFormationUnit[]): void {
+    this.send({
+      type: 'DEPLOY_FORMATION',
+      units,
+    });
+  }
+
   sendCommand(command: BattleCommand): void {
     this.send({
       type: 'BATTLE_COMMAND',
@@ -132,6 +144,16 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
   onMatchStart(handler: (start: MatchStartMessage) => void): UnsubscribeFn {
     this.matchStartListeners.add(handler);
     return () => this.matchStartListeners.delete(handler);
+  }
+
+  onOnlineBattleStart(handler: (start: OnlineBattleStartMessage) => void): UnsubscribeFn {
+    this.onlineBattleStartListeners.add(handler);
+    return () => this.onlineBattleStartListeners.delete(handler);
+  }
+
+  onOpponentFormationReady(handler: (msg: OpponentFormationReadyMessage) => void): UnsubscribeFn {
+    this.opponentReadyListeners.add(handler);
+    return () => this.opponentReadyListeners.delete(handler);
   }
 
   onError(handler: (err: ErrorMessage) => void): UnsubscribeFn {
@@ -180,6 +202,17 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
 
       case 'MATCH_START': {
         this.matchStartListeners.forEach((l) => l(msg));
+        break;
+      }
+
+      case 'ONLINE_BATTLE_START': {
+        this.onlineBattleStartListeners.forEach((l) => l(msg));
+        this.snapshotListeners.forEach((l) => l(msg.snapshot));
+        break;
+      }
+
+      case 'OPPONENT_FORMATION_READY': {
+        this.opponentReadyListeners.forEach((l) => l(msg));
         break;
       }
 

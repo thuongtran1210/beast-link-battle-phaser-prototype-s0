@@ -14,7 +14,7 @@ export interface UnitVisualHandle {
 
 export interface EnemyVisualHandle {
   container: Phaser.GameObjects.Container;
-  characterView: EnemyCharacterView;
+  characterView: EnemyCharacterView | BattleCharacterView;
   body: Phaser.GameObjects.Rectangle;
 }
 
