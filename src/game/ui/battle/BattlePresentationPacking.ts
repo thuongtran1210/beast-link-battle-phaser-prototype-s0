@@ -26,3 +26,8 @@ export function packBattleBodies(entries: PresentationBody[], bounds: Presentati
   }
   return result;
 }
+
+/** Keep combat X/range truthful. Stable small lane insets never reflow after a death. */
+export function combatBodyOffsets(ids: readonly string[]): Map<string,{x:number;y:number}> {
+  return new Map([...ids].sort().map((id,index)=>[id,{x:0,y:((index%3)-1)*24}]));
+}

@@ -80,6 +80,7 @@ export interface EnemyFixture {
 export interface EnemyCombatUnit extends EnemyFixture {
   funControlUntil?: number;
   funControlKind?: 'Duck' | 'Carrot' | 'Bubble' | 'Disrupt';
+  funControlStar?: 2 | 3;
   bombAt?: number;
   bombSourceId?: string;
   bombDamage?: number;
@@ -109,6 +110,15 @@ export interface EnemyCombatUnit extends EnemyFixture {
 export interface PlayerCombatHit {
   enemyId: string;
   damage: number;
+}
+
+export interface EnemyCombatAction {
+  enemyId: string;
+  targetUnitId: string;
+  archetype: EnemyArchetype;
+  damage: number;
+  absorbed: number;
+  defeated: boolean;
 }
 
 export interface PlayerCombatAction {
@@ -176,6 +186,7 @@ export interface AutonomousBattleSnapshot {
   units: CombatUnit[];
   enemies: EnemyCombatUnit[];
   lastPlayerActions?: PlayerCombatAction[];
+  lastEnemyActions?: EnemyCombatAction[];
   engagementEvents?: EngagementBattleEvent[];
   consequenceMetrics?: FormationConsequenceMetrics;
   signatureEvents?: SignatureBattleEvent[];

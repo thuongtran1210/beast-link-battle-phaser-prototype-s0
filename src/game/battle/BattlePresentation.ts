@@ -2,6 +2,7 @@ import type {
   AutonomousBattleSnapshot,
   PlayerActionKind,
   EnemyArchetype,
+  EnemyCombatAction,
 } from './AutonomousBattleModel';
 import type { BeastRole, BeastSignatureId } from './BeastRoles';
 
@@ -10,6 +11,7 @@ export interface BattleAttackerPresentation {
   role: BeastRole;
   kind?: PlayerActionKind;
   targetEnemyIds: string[];
+  hits?: Array<{enemyId:string;damage:number}>;
 }
 
 export interface EnemyDamagePresentation {
@@ -53,6 +55,7 @@ export interface SignatureFxPresentation {
 
 export interface BattleTickPresentation {
   attackers: BattleAttackerPresentation[];
+  enemyAttackers?: EnemyCombatAction[];
   enemyDamage: number;
   enemyDamages: EnemyDamagePresentation[];
   enemyTargetId?: string;
@@ -92,7 +95,11 @@ export function deriveBattleTickPresentation(
   );
 
   const hasExplicitActions = after.lastPlayerActions !== undefined;
-  const attackers = before.units
+  const attackers = hasExplicitActions ? (after.lastPlayerActions ?? []).map(action => ({
+    unitId: action.unitId, role: action.role, kind: action.kind,
+    targetEnemyIds: action.hits.filter(hit => hit.damage > 0).map(hit => hit.enemyId),
+    hits: action.hits.map(hit => ({ ...hit })),
+  })).filter(action => action.targetEnemyIds.length > 0) : before.units
     .filter((unit) => unit.currentHp > 0)
     .map((unit) => {
       const action = actionMap.get(unit.unitId);
@@ -209,6 +216,7 @@ export function deriveBattleTickPresentation(
 
   return {
     attackers,
+    enemyAttackers: after.lastEnemyActions?.map(action => ({ ...action })),
     enemyDamage,
     enemyDamages,
     enemyTargetId,

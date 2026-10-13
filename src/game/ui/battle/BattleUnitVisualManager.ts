@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { packBattleBodies, type PresentationBody } from './BattlePresentationPacking';
+import { combatBodyOffsets } from './BattlePresentationPacking';
 import type {
   AutonomousBattleSnapshot,
   CombatUnit,
@@ -63,6 +63,7 @@ export class BattleUnitVisualManager {
     private readonly enemyPresentationOffsets: Map<string, { x: number; y: number }>,
   ) {}
 
+  private movementTweens = new Map<Phaser.GameObjects.Container, Phaser.Tweens.Tween>();
   private facingSnapshot?: AutonomousBattleSnapshot;
 
   updatePresentationOffsets(snapshot: AutonomousBattleSnapshot, showcaseMode: boolean): void {
@@ -71,19 +72,10 @@ export class BattleUnitVisualManager {
     this.facingSnapshot = snapshot;
     if (!showcaseMode || snapshot.elapsedTicks === 0) return;
 
-    const entries: PresentationBody[] = [
-      ...snapshot.units.filter(u=>u.currentHp>0).map(u=>({id:`player:${u.unitId}`,side:'player' as const,...battleModelPosition(this.layout,u.positionX,u.positionLane)})),
-      ...snapshot.enemies.filter(u=>u.currentHp>0).map(u=>({id:`enemy:${u.enemyId}`,side:'enemy' as const,...battleModelPosition(this.layout,u.positionX,u.positionLane)})),
-    ];
-    const packed=packBattleBodies(entries, {
-      left:this.layout.baseX+60, right:this.layout.dividerX*2-this.layout.baseX-60,
-      top:this.layout.topLaneY-20, bottom:this.layout.topLaneY+5*this.layout.laneGap,
-    });
-    for(const entry of entries) {
-      const position=packed.get(entry.id)!;
-      const output=entry.side==='player' ? this.unitPresentationOffsets : this.enemyPresentationOffsets;
-      output.set(entry.id.slice(entry.id.indexOf(':')+1),{x:position.x-entry.x,y:position.y-entry.y});
-    }
+    const playerOffsets=combatBodyOffsets(snapshot.units.map(unit=>unit.unitId));
+    const enemyOffsets=combatBodyOffsets(snapshot.enemies.map(enemy=>enemy.enemyId));
+    for(const [id,offset] of playerOffsets)this.unitPresentationOffsets.set(id,offset);
+    for(const [id,offset] of enemyOffsets)this.enemyPresentationOffsets.set(id,offset);
   }
 
   syncUnit(unit: CombatUnit, showcaseMode: boolean): void {
@@ -130,7 +122,7 @@ export class BattleUnitVisualManager {
     const offset = this.unitPresentationOffsets.get(unit.unitId) ?? { x: 0, y: 0 };
     if (unit.currentHp > 0) {
       visual.container.setAlpha(1).setAngle(0);
-      visual.characterView.setMoving(Math.abs(visual.container.x-position.x-offset.x)>1||Math.abs(visual.container.y-position.y-offset.y)>1);
+      visual.characterView.setMoving(unit.actionState === 'Moving');
       this.moveVisual(visual.container, position.x + offset.x, position.y + offset.y);
     }
   }
@@ -335,15 +327,15 @@ export class BattleUnitVisualManager {
     };
     align();
     if (Math.abs(container.x - x) < 0.5 && Math.abs(container.y - y) < 0.5) return;
-    this.scene.tweens.killTweensOf(container);
-    this.scene.tweens.add({
+    this.movementTweens.get(container)?.stop();
+    this.movementTweens.set(container, this.scene.tweens.add({
       targets: container,
       x,
       y,
       duration: 100,
       ease: 'Linear',
       onUpdate: align,
-      onComplete: align,
-    });
+      onComplete: () => { align(); this.movementTweens.delete(container); },
+    }));
   }
 }

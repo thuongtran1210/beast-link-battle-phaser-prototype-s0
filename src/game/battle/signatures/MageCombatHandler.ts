@@ -48,17 +48,18 @@ export class MageCombatHandler {
     }
 
     if (bloom) {
-      if (unit.star === 3 && !unit.signatureActivationCount) {
+      if (unit.star >= 2 && !unit.signatureActivationCount) {
         ctx.state.enemies
           .filter(
             (enemy) =>
               enemy.currentHp > 0 &&
               ctx.distance(enemy.positionX, enemy.positionLane, target.positionX, target.positionLane) <= bloomRadius,
           )
-          .slice(0, 3)
+          .slice(0, unit.star === 3 ? 3 : 1)
           .forEach((enemy) => {
             enemy.funControlKind = 'Duck';
-            enemy.funControlUntil = (ctx.state.elapsedTime ?? 0) + 1.5;
+            enemy.funControlStar = unit.star as 2 | 3;
+            enemy.funControlUntil = (ctx.state.elapsedTime ?? 0) + (unit.star === 3 ? 1.5 : 1);
           });
       }
       ctx.activateSignature(unit, target.enemyId);

@@ -1,0 +1,74 @@
+{
+  "idle": {
+    "source": "codex-clipboard-b581fa95-2d3f-46b2-a93c-32c110d05dfe.png",
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGBA",
+    "alpha": [
+      0,
+      255
+    ]
+  },
+  "walk": {
+    "source": "codex-clipboard-028f0cc9-0351-4e34-af2a-6735d8e87549.png",
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGBA",
+    "alpha": [
+      0,
+      255
+    ]
+  },
+  "attack": {
+    "source": "codex-clipboard-5b689d0e-04a9-452c-917e-96c64e21131a.png",
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGBA",
+    "alpha": [
+      0,
+      255
+    ]
+  },
+  "skill": {
+    "source": "codex-clipboard-bb53cea7-2ca1-40f9-a46f-bf3c0bdb6610.png",
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGBA",
+    "alpha": [
+      0,
+      255
+    ]
+  },
+  "hit": {
+    "source": "codex-clipboard-638b57cf-5736-457e-a487-af8283988194.png",
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGBA",
+    "alpha": [
+      0,
+      255
+    ]
+  },
+  "ko": {
+    "source": "codex-clipboard-c7701cda-d8fd-4f75-b636-df988d83c9a7.png",
+    "size": [
+      1774,
+      887
+    ],
+    "mode": "RGBA",
+    "alpha": [
+      0,
+      255
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import { runDeckPool } from './run/RunDeck';
+import { showFirstJourneyPhase } from './ui/FirstJourneyView';
 import Phaser from 'phaser';
 import { BeastRushPhaseTimer } from './combo/BeastRushPhaseTimer';
 import { ComboQualityTracker } from './combo/ComboQualityTracker';
@@ -52,6 +53,7 @@ import { preloadBattleCharacterArt } from './ui/art/BattleCharacterLoader';
 import { preloadOwnerEnergyArt } from './ui/icons/OwnerEnergyArt';
 import { preloadSnowguardAnimations } from './ui/art/SnowguardAnimationPlayer';
 import { preloadIroncladAnimations } from './ui/art/IroncladAnimationPlayer';
+import { preloadWindstriderAnimations } from './ui/art/WindstriderAnimationPlayer';
 import { preloadEnemyCharacterArt } from './ui/art/EnemyCharacterLoader';
 import { runBattleCharacterArtChecks } from './ui/art/BattleCharacterArtChecks';
 import { FeedbackEffects } from './ui/feedback/FeedbackEffects';
@@ -111,6 +113,7 @@ export class ValidationScene extends Phaser.Scene {
   preload(): void {
     preloadSnowguardAnimations(this);
     preloadIroncladAnimations(this);
+    preloadWindstriderAnimations(this);
     preloadOwnerEnergyArt(this);
     this.load.image('owner-camp-battle', '/assets/backgrounds/owner-camp-battle-v1.png');
     preloadBattleCharacterArt(this);
@@ -428,6 +431,7 @@ export class ValidationScene extends Phaser.Scene {
     else if (phase === GamePhase.Battle) this.enterBattle();
     else if (phase === GamePhase.WaveResult) this.lifecycleCoordinator.enterWaveResult();
     else this.lifecycleCoordinator.enterResult();
+    if(!isTestHarness()&&this.waveRun.levelId==='woodland')showFirstJourneyPhase(this,phase);
   }
 
   private syncTopHud(): void {

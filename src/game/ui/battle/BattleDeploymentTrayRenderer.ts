@@ -198,39 +198,38 @@ export class BattleDeploymentTrayRenderer {
       const card=this.scene.add.graphics();
       card.fillStyle(selected?0x586749:0x354739);card.fillRoundedRect(cardX,cardY,cardW,cardH,12);
       if(selected){card.lineStyle(2,0xe7cb8d);card.strokeRoundedRect(cardX,cardY,cardW,cardH,12);}
-      this.managedObjects.push(card,createIconImage(this.scene,unit.beastId,cx,cardY+38,60));
-      this.addText(cx,cardY+76,beastDisplayName(unit.beastId),14,'#fff1ce','bold').setOrigin(.5);
+      this.managedObjects.push(card,createIconImage(this.scene,unit.beastId,cx,cardY+29,48));
+      this.addText(cx,cardY+65,beastDisplayName(unit.beastId),14,'#fff1ce','bold').setOrigin(.5);
       const preview=this.runRoster?.consolidationPreview(unit.unitId,deployedIds,this.shardPool?.count??0);
-      this.addText(cx,cardY+101,`${'★'.repeat(unit.star)}${preview?.canConsolidate?'  ·  Gộp được':''}`,14,preview?.canConsolidate?'#efd093':'#c1ccb1','bold').setOrigin(.5);
+      const canMerge=Boolean(preview?.canConsolidate&&this.onConsolidate);
+      if(!canMerge) this.addText(cx,cardY+101,'★'.repeat(unit.star),14,'#c1ccb1','bold').setOrigin(.5);
       const count=stacks.find(stack=>stack.unit.unitId===unit.unitId)?.count??1;
       if(count>1) this.addText(cardX+cardW-8,cardY+7,`×${count}`,16,'#efd093','bold').setOrigin(1,0);
       const roster=this.runRoster?.get(unit.unitId);
       if(roster&&roster.currentHp<roster.maxHp) this.addText(cardX+8,cardY+7,'♥',16,'#f4a38e','bold');
-      const hit=this.scene.add.rectangle(cx,cardY+cardH/2,cardW,cardH,0xffffff,0).setInteractive({useHandCursor:true});
+      const hit=this.scene.add.rectangle(cx,cardY+(canMerge?74:cardH)/2,cardW,canMerge?74:cardH,0xffffff,0).setInteractive({useHandCursor:true});
       this.managedObjects.push(hit);
       hit.on('pointerdown',(pointer:Phaser.Input.Pointer)=>this.onStartDrag?.(unit.unitId,null,pointer));
-      hit.on('pointerup',()=>{if(this.controller.state.mode==='idle'){this.controller.selectUnit(unit.unitId);this.onReRender?.();}});
+      hit.on('pointerup',(pointer:Phaser.Input.Pointer)=>{
+        if(pointer.getDistance()<=10) { this.controller.cancelDrag();this.controller.selectUnit(unit.unitId);this.onReRender?.(); }
+      });
+      if(canMerge) {
+        const by=cardY+96;
+        const button=this.scene.add.rectangle(cx,by,cardW-8,44,0xe4bf76).setInteractive({useHandCursor:true});
+        this.managedObjects.push(button);
+        this.addText(cx,by,`Gộp ${'★'.repeat(preview!.targetStar!)} · ${preview!.isShardAssisted?'◆1':'3 thú'}`,14,'#392e20','bold').setOrigin(.5);
+        button.on('pointerup',()=>{
+          const upgradedId=this.onConsolidate?.(unit.unitId);
+          if(upgradedId){this.controller.selectUnit(null);this.controller.selectUnit(upgradedId);this.onArrangementChanged?.();}
+          this.onReRender?.();
+        });
+      }
     });
 
     const selected=this.formation.units.find(unit=>unit.unitId===this.controller.selectedId);
     const roster=selected?this.runRoster?.get(selected.unitId):undefined;
-    const preview=selected?this.runRoster?.consolidationPreview(selected.unitId,deployedIds,this.shardPool?.count??0):undefined;
-    const canMerge=Boolean(preview?.canConsolidate&&this.onConsolidate);
     const text=selected ? `${beastDisplayName(selected.beastId)} · ${selected.role.toUpperCase()} · ${roster?`${Math.round(roster.currentHp)}/${Math.round(roster.maxHp)} HP`:'Chạm vị trí để đặt'}` : groups.reserve.length?'Chạm thú → chạm vị trí trên sân':'Kéo thú xuống đây để đưa về dự bị';
-    this.addText(x+18,y+178,text,15,'#d4d7c1').setWordWrapWidth(width-(canMerge?286:36));
-    if(canMerge&&selected) {
-      const bx=x+width-132,by=y+180;
-      const button=this.scene.add.graphics();button.fillStyle(0xe4bf76);button.fillRoundedRect(bx-118,by-24,236,48,12);
-      this.managedObjects.push(button);
-      const cost=preview!.isShardAssisted?'2 thú + ◆1':'3 thú';
-      this.addText(bx,by,`Gộp ${'★'.repeat(preview!.targetStar!)} · ${cost}`,17,'#392e20','bold').setOrigin(.5);
-      const hit=this.scene.add.rectangle(bx,by,236,48,0xffffff,0).setInteractive({useHandCursor:true});this.managedObjects.push(hit);
-      hit.on('pointerup',()=>{
-        const upgradedId=this.onConsolidate?.(selected.unitId);
-        if(upgradedId){this.controller.selectUnit(null);this.controller.selectUnit(upgradedId);this.onArrangementChanged?.();FeedbackEffects.floatText(this.scene,bx,y-16,`Đã gộp ${'★'.repeat(preview!.targetStar!)}`,'#f4dc9d','20px',850);}
-        this.onReRender?.();
-      });
-    }
+    this.addText(x+18,y+height-24,text,15,'#d4d7c1').setWordWrapWidth(width-36);
     if(!page.items.length) this.addText(x+width/2,y+92,'Đội hình đã sẵn sàng',22,'#e4d4af','bold').setOrigin(.5);
   }
 

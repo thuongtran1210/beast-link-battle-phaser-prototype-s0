@@ -111,14 +111,14 @@ export function signatureTierSummary(signature: BeastSignatureId, star: StarLeve
       return star === 1
         ? 'Hold safely to charge Focus'
         : star === 2
-        ? 'Focus charges faster'
-        : 'Focused shot pierces one extra target';
+        ? 'Faster Focus + first-shot carrot lure 1s'
+        : 'Focus pierces + first-shot carrot lure 2s';
     case 'ArcaneBloom':
       return star === 1
         ? 'Clustered enemies trigger splash'
         : star === 2
-        ? 'Bloom reaches a wider cluster'
-        : 'Bloom echoes into a second impact';
+        ? 'Wider Bloom + first Bloom ducks one enemy 1s'
+        : 'Bloom Echo + first Bloom ducks up to three enemies 1.5s';
     case 'IronRam':
       return star === 1
         ? 'Opening ram knocks the Frontliner back'
@@ -144,8 +144,8 @@ export function signatureTierTagline(signature: BeastSignatureId, star: StarLeve
     case 'WoollyRescue': return star === 1 ? 'Heal the most injured ally' : star === 2 ? 'Faster, stronger healing' : 'Heal two allies + wool shields';
     case 'GuardianBrace': return star === 1 ? '1st intercept shield' : star === 2 ? '2 intercept shields' : 'share shield with ally';
     case 'AmbushStrike': return star === 1 ? 'deep-target burst' : star === 2 ? 're-arm once' : 'kill chains a strike';
-    case 'FocusShot': return star === 1 ? 'hold → charge Focus' : star === 2 ? 'faster Focus charge' : 'pierce + one-shot carrot decoy';
-    case 'ArcaneBloom': return star === 1 ? 'cluster splash' : star === 2 ? 'wider Bloom' : 'Echo + one-shot duck flock';
+    case 'FocusShot': return star === 1 ? 'hold → charge Focus' : star === 2 ? 'Focus + carrot lure 1s once' : 'pierce + giant carrot lure 2s once';
+    case 'ArcaneBloom': return star === 1 ? 'cluster splash' : star === 2 ? 'Bloom + one duck 1s once' : 'Echo + crowned duck flock 1.5s once';
     case 'IronRam': return star === 1 ? 'knockback Frontliner' : star === 2 ? 'Ram + stagger' : 'Ram + cleave';
     case 'TwinVolley': return star === 1 ? 'Volley every 3rd' : star === 2 ? 'Volley every 2nd' : 'Volley every shot';
   }

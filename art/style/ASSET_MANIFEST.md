@@ -2,6 +2,10 @@
 
 This manifest tracks art approval state.
 
+## Windstrider owner animation — 2026-10-13
+
+Six owner-supplied RGBA 1774×887 sheets (8 frames, 4×2), in requested order Idle / Run / Attack / Skill / Hit / KO, preserved unchanged at public/assets/characters/rabbit-archer/animation_v01. Run maps to walk.png for the shared rig. Measured alpha windows/foot origins in WindstriderFrames.json; Setup/Battle integration via shared animation state machine. Preview /windstrider-animation-preview.html. OWNER-SUPPLIED / INTEGRATED; live Battle/mobile review open, no STYLE APPROVED or GAME READY claim.
+
 ## Owner Village scene and props — 2026-10-09
 
 Original files preserved unchanged in public/assets/ui/camp/village-owner-v1: map.png (1536x1024 RGB), forge/garden/dock.png (1254x1254 RGBA). Camp renders the map in one fixed-coordinate world/camera, garden on the left clearing, forge as the owned anvil replacement on the right. Dock source retained for alternate placement; current scene uses its already baked-in pier, avoiding double piers. World crop windows use threshold-alpha bounds without bitmap edits. Garden and existing pier are shared scene facilities, not purchased/unlocked save items; residents still require actual recruitment. Procedural watering/fishing and existing forge interaction are prototypes, not authored profession sheets. OWNER-SUPPLIED / INTEGRATED for map/garden/forge, dock STORED; no live composition or GAME READY claim.
@@ -80,3 +84,21 @@ art/
 ```
 
 Create production directories when real assets are added. Do not add empty placeholder binaries.
+
+## Owner river village map — 2026-10-09
+
+Cloud rendering correction supersedes CSS drift below: runtime WebGL UV shader, 28 world px/sec wind, 0.32 alpha, 0.92 world-center camera parallax including zoom and saturated fringe suppression. Original bitmap unchanged. GPU/live seam review pending.
+
+Owner cloud original `river-owner-v1/clouds.png` preserved unchanged (2172x724 RGBA). Viewport foreground repeats horizontally at 1086x362, opacity 0.2, 90s drift period and camera translation factors x0.2/y0.15. Above scene/below HUD, ignores pointer input; hidden-tab pause and reduced-motion support. Live seam/composition review pending.
+
+Owner house original integrated as `public/assets/ui/camp/river-owner-v1/house.png`, unchanged bitmap, at world x210/y8, width420 with intrinsic aspect ratio. Decorative scene object above shore and below residents, sharing camera pan/zoom. No purchase/save mechanic added; live composition review pending.
+
+OWNER-SUPPLIED / INTEGRATED; live visual review pending, not STYLE APPROVED or GAME READY.
+
+| Runtime original | Format | Use |
+| --- | --- | --- |
+| `public/assets/ui/camp/river-owner-v1/complete.png` | 1536x1024 RGB | Complete composition reference and loading/error fallback |
+| `public/assets/ui/camp/river-owner-v1/shore.png` | 1536x1024 RGBA | Registered fixed land layer above water |
+| `public/assets/ui/camp/river-owner-v1/water.png` | 1536x1024 RGB | Slowly moving texture beneath shore, reduced-motion/hidden-tab support |
+
+Original bitmap files copied unchanged. Existing `village-owner-v1/dock.png` now supplies the separate river work prop through an SVG window. Props/residents remain above both map layers. No new character art or profession sheets generated; procedural work motion remains a prototype. Old map assets retained.

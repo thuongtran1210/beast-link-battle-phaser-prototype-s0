@@ -126,12 +126,14 @@ export class BattleFunControlsRenderer {
       if (!active) return;
       const g = this.scene.add.graphics().setDepth(220);
       const duck = enemy.funControlKind === 'Duck';
+      const special = enemy.funControlStar === 3 && (duck || enemy.funControlKind === 'Carrot');
       const point =
         duck || enemy.funControlKind === 'Bubble' || enemy.funControlKind === 'Disrupt'
           ? { x: visual.container.x, y: visual.container.y - 22 }
           : battleModelPosition(this.layout, enemy.carrotX ?? enemy.positionX, enemy.carrotLane ?? enemy.positionLane);
       const x = point.x;
       const y = point.y + (duck ? Math.sin(now * 16) * 4 : 0);
+      if(special){g.translateCanvas(x,y);g.scaleCanvas(1.15,1.15);g.translateCanvas(-x,-y);}
       g.lineStyle(4, 0x10151b);
       if (enemy.funControlKind === 'Disrupt') {
         g.lineStyle(5, 0xc8b58a);
@@ -152,6 +154,12 @@ export class BattleFunControlsRenderer {
         g.strokeEllipse(x + 35, y - 8, 26, 13);
         g.fillStyle(0x10151b);
         g.fillCircle(x + 17, y - 17, 3);
+        if(special){
+          g.fillStyle(0xe7c668);g.fillPoints([
+            {x:x-1,y:y-35},{x:x-3,y:y-49},{x:x+7,y:y-42},
+            {x:x+13,y:y-53},{x:x+20,y:y-42},{x:x+29,y:y-49},{x:x+27,y:y-35},
+          ],true);
+        }
       } else {
         g.fillStyle(0xf68b32);
         g.fillTriangle(x - 23, y - 38, x + 23, y - 38, x, y + 32);
@@ -163,6 +171,7 @@ export class BattleFunControlsRenderer {
         g.fillRoundedRect(x - 19, y - 25, 38, 13, 3);
         g.lineStyle(3, 0xffffff);
         g.lineBetween(x - 6, y + 1, x + 6, y + 1);
+        if(special){g.fillStyle(0xffe6a0);g.fillCircle(x+27,y-45,3);g.fillCircle(x-28,y-5,3);}
       }
       const text = this.scene.add
         .text(
@@ -173,8 +182,8 @@ export class BattleFunControlsRenderer {
             : enemy.funControlKind === 'Bubble'
             ? 'POP?'
             : duck
-            ? 'QUACK!'
-            : 'YUM!',
+            ? (special?'VỊT VƯƠNG!':'QUACK!')
+            : (special?'ĐẠI TIỆC!':'YUM!'),
           {
             fontFamily: 'Arial',
             fontSize: '14px',

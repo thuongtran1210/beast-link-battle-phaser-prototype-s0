@@ -50,10 +50,11 @@ export class SnowguardAnimationPlayer {
   }
   play(clip:'attack'|'skill'|'hit'|'ko',duration:number):void {
     if(!this.alive&&clip!=='ko')return;
+    if(this.state==='attack'&&clip==='hit')return;
     if(this.state==='skill'&&(clip==='attack'||clip==='hit'))return;
     if(clip==='ko')this.alive=false;
     this.state=clip;
-    this.sprite.play({key:`${this.rig.prefix}-anim-${clip}`,frameRate:8000/duration,repeat:0});this.align();
+    this.sprite.play({key:`${this.rig.prefix}-anim-${clip}`,frameRate:this.rig.frames[clip].length*1000/Math.max(1,duration),repeat:0});this.align();
   }
   revive():void {this.alive=true;this.locomotion='idle';this.loop('idle');}
   dispose():void {this.sprite.stop();this.sprite.removeAllListeners();}

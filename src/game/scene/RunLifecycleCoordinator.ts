@@ -18,7 +18,9 @@ import type { TransitionCueView } from '../ui/TransitionCueView';
 import type { ShowcaseModeController } from './ShowcaseModeController';
 import { GamePhase } from '../state/GamePhase';
 import { markRunLevelComplete } from '../run/RunLevels';
-import { rewardCampWin } from '../run/CampState';
+import { loadCamp, rewardCampWin } from '../run/CampState';
+import { forgeGoal } from '../run/VillageGoal';
+import { finishFirstExpedition } from '../run/FirstJourney';
 
 export interface RunLifecycleContext {
   waveRun: WaveRunController;
@@ -57,6 +59,8 @@ export interface RunLifecycleContext {
 
 export class RunLifecycleCoordinator {
   private campRewardGranted = false;
+  private campRunId = `run-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  private campReport?: string;
   constructor(private readonly ctx: RunLifecycleContext) {}
 
   enterResult(): void {
@@ -64,8 +68,21 @@ export class RunLifecycleCoordinator {
     const validationMetrics = battleModel?.getValidationMetrics();
     const { comparison, history } = this.ctx.fixtureManager.recordMetrics(validationMetrics);
     const battleOutcome = this.ctx.getBattleOutcome();
+    finishFirstExpedition(this.ctx.waveRun.levelId,battleOutcome,this.ctx.waveRun.isFinalWave);
     if (battleOutcome === 'Win' && this.ctx.waveRun.isFinalWave && this.ctx.waveRun.levelId) markRunLevelComplete(this.ctx.waveRun.levelId);
-    if (battleOutcome === 'Win' && this.ctx.waveRun.isFinalWave && this.ctx.waveRun.levelId && !this.campRewardGranted) {rewardCampWin();this.campRewardGranted=true;}
+    let rewardPending=false;
+    if (battleOutcome === 'Win' && this.ctx.waveRun.isFinalWave && this.ctx.waveRun.levelId && !this.campRewardGranted) {
+      const result=rewardCampWin(this.campRunId);
+      this.campRewardGranted=result.saved;rewardPending=!result.saved;
+      this.campReport=result.saved?`Đã lưu +${result.woodGranted} Gỗ · ${result.before.wood} → ${result.after.wood} Gỗ`:'Chưa lưu được thưởng Gỗ · Thử lưu lại trước khi rời Run';
+    }
+    if(this.ctx.waveRun.levelId){
+      const camp=loadCamp(),goal=camp.trackedGoal==='forge'?forgeGoal(camp):undefined;
+      this.ctx.getSummaryView()?.setVillageReport(
+        `${this.campReport??'Chưa nhận Gỗ · Chỉ thắng trọn Run mới có thưởng'}${goal?`\n${goal.progress}`:''}`,
+        rewardPending?()=>this.enterResult():undefined,
+      );
+    }
 
     this.ctx.getSummaryView()?.render(
       this.ctx.metrics.snapshot,
@@ -118,6 +135,8 @@ export class RunLifecycleCoordinator {
   restartRun(): void {
     if (this.ctx.phaseController.phase !== GamePhase.Result) return;
     this.campRewardGranted=false;
+    this.campReport=undefined;
+    this.campRunId=`run-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     this.ctx.getSummaryView()?.setVisible(false);
     this.ctx.setBattleTickAccumulator(0);

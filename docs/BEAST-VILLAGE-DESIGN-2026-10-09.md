@@ -1,5 +1,7 @@
 # Làng Thú — cuộc sống bên ngoài chiến đấu
 
+Cập nhật hướng truyện được chủ dự án chấp thuận: [Về quê khởi nghiệp](VILLAGE-STORY-DIRECTION-2026-10-09.md). Căn nhà bên sông và mảnh vườn là điểm bắt đầu; cư dân cùng xây sinh kế. Run có vai trò kể chuyện thám hiểm/tìm vật liệu/gặp bạn, không tự đổi luật gameplay. Kinh tế mới được đề xuất riêng trong VILLAGE-LIFE-ECONOMY-DESIGN-2026-10-09.md; các đoạn hiện trạng/bản đầu bên dưới là lịch sử thiết kế, đối chiếu CURRENT_REPO_HANDOFF.md cho implementation hiện tại.
+
 Ngày: 2026-10-09. Trạng thái: thiết kế đề xuất theo yêu cầu chủ dự án; chưa triển khai, chưa live PASS hay adopted.
 Kế hoạch: [BEAST-VILLAGE-IMPLEMENTATION-PLAN-2026-10-09.md](BEAST-VILLAGE-IMPLEMENTATION-PLAN-2026-10-09.md).
 

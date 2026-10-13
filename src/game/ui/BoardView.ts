@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { rushSfx } from './feedback/RushSfx';
 import { BoardModel, type BoardPosition } from '../puzzle/BoardModel';
 import { type MatchResult, OnetMatcher } from '../puzzle/OnetMatcher';
 import { HudTokens } from './layout/HudTokens';
@@ -17,6 +18,8 @@ interface TileVisual {
   container: Phaser.GameObjects.Container;
   cell: RoundedPanel;
   position: BoardPosition;
+  icon:Phaser.GameObjects.Image;
+  contentId:string;
 }
 
 /** S1 presentation only: renders the model, handles interactive feedback and relays selection outcomes to the scene. */
@@ -28,6 +31,10 @@ export class BoardView {
   private inputEnabled = true;
   private pendingMatch?: Phaser.Time.TimerEvent;
   private destroyed = false;
+  private pendingInvalid?:Phaser.Time.TimerEvent;
+  private lastMatchAt=-Infinity;
+  private cosmeticStreak=0;
+  private readonly reducedMotion=typeof window!=='undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private readonly tileMap = new Map<string, TileVisual>();
 
   constructor(
@@ -47,6 +54,9 @@ export class BoardView {
 
   render(): void {
     if (this.destroyed) return;
+    const previous=new Map([...this.tileMap].map(([key,tile])=>[key,tile.contentId]));
+    this.tileMap.forEach(tile=>{this.scene.tweens.killTweensOf(tile.container);this.scene.tweens.killTweensOf(tile.icon);});
+    let introduced=false;
     this.container.removeAll(true);
     this.tileMap.clear();
     const totalSize = this.board.size * this.cellSize + (this.board.size - 1) * this.gap;
@@ -86,7 +96,7 @@ export class BoardView {
       const fill = !this.inputEnabled
         ? HudTokens.colors.bgSurfaceDark
         : selected
-        ? 0x203a68
+        ? 0x3d4632
         : HudTokens.colors.bgPhaseSoft;
 
       const stroke = !this.inputEnabled
@@ -129,7 +139,7 @@ export class BoardView {
         .text(0, this.cellSize * 0.35, roleText, {
           fontFamily: HudTokens.fonts.family,
           fontSize: `${energyPresentation ? Math.max(9, Math.round(this.cellSize * 0.13)) : Math.max(8, Math.round(this.cellSize * 0.11))}px`,
-          color: selected ? '#93c5fd' : '#cbd5e1',
+          color: selected ? '#fff0c8' : '#cbd5e1',
           fontStyle: 'bold',
         })
         .setOrigin(0.5);
@@ -146,7 +156,12 @@ export class BoardView {
       this.container.add(tileContainer);
 
       const key = `${position.row},${position.col}`;
-      this.tileMap.set(key, { container: tileContainer, cell, position });
+      this.tileMap.set(key, { container: tileContainer, cell, position,icon:iconImage,contentId:contentId.contentId });
+      if(previous.get(key)!==contentId.contentId && !this.reducedMotion) {
+        introduced=true;
+        iconImage.setAlpha(.35).setScale(iconImage.scaleX*.94,iconImage.scaleY*.94);
+        this.scene.tweens.add({targets:iconImage,alpha:1,scaleX:iconImage.scaleX/.94,scaleY:iconImage.scaleY/.94,duration:160,delay:Math.min(120,position.row*18+position.col*8),ease:'Quad.Out'});
+      }
 
       if (selected) {
         tileContainer.setScale(1.07);
@@ -200,13 +215,14 @@ export class BoardView {
     });
 
     this.container.setSize(totalSize, totalSize);
+    if(introduced && previous.size>0 && this.inputEnabled) rushSfx.play('spawn','beast-a');
   }
 
   pulseBoard(): void {
     if (this.destroyed) return;
     this.scene.tweens.add({
       targets: this.container,
-      alpha: 0.35,
+      alpha: 0.86,
       duration: 120,
       yoyo: true,
       ease: 'Sine.InOut',
@@ -215,12 +231,14 @@ export class BoardView {
 
   destroy(): void {
     if (this.destroyed) return;
+    this.pendingInvalid?.remove(false);
+    this.pendingInvalid=undefined;
     this.pendingMatch?.remove(false);
     this.pendingMatch = undefined;
     this.destroyed = true;
     if (this.scene.tweens) {
       this.scene.tweens.killTweensOf(this.container);
-      this.tileMap.forEach((tile) => this.scene.tweens.killTweensOf(tile.container));
+      this.tileMap.forEach((tile) => {this.scene.tweens.killTweensOf(tile.container);this.scene.tweens.killTweensOf(tile.icon);});
     }
     this.container.destroy();
     this.pathGraphics.destroy();
@@ -233,6 +251,8 @@ export class BoardView {
     this.selected = [];
     if (!enabled) {
       this.inputLocked = true;
+      this.pendingInvalid?.remove(false);
+      this.pendingInvalid=undefined;
       this.pendingMatch?.remove(false);
       this.pendingMatch = undefined;
       this.pathGraphics.clear();
@@ -247,6 +267,7 @@ export class BoardView {
   }
 
   private select(position: BoardPosition): void {
+    rushSfx.unlock();
     if (this.inputLocked || !this.inputEnabled) return;
 
     if (this.selected.length === 1 && samePosition(this.selected[0], position)) {
@@ -255,23 +276,19 @@ export class BoardView {
       return;
     }
 
+    const clicked=this.board.getContent(position);
+    if(!clicked)return;
+    rushSfx.play('select',clicked.contentId);
     this.selected.push(position);
 
     if (this.selected.length < 2) {
-      // First tile selected: play subtle punch
-      const key = `${position.row},${position.col}`;
-      const visual = this.tileMap.get(key);
-      if (visual) {
-        this.scene.tweens.add({
-          targets: visual.container,
-          scaleX: 1.08,
-          scaleY: 1.08,
-          duration: 100,
-          ease: 'Back.Out',
-        });
-        visual.cell.setStrokeStyle(3.5, 0xfbbf24);
-      }
       this.render();
+      const visual=this.tileMap.get(`${position.row},${position.col}`);
+      if(visual && !this.reducedMotion) {
+        this.scene.tweens.killTweensOf(visual.container);
+        visual.container.setScale(.96);
+        this.scene.tweens.add({targets:visual.container,scaleX:1.07,scaleY:1.07,duration:140,ease:'Back.Out'});
+      }
       return;
     }
 
@@ -279,6 +296,8 @@ export class BoardView {
     const result = this.matcher.findMatch(this.board, first, second);
 
     if (!result.valid) {
+      this.cosmeticStreak=0;
+      rushSfx.play('invalid',clicked.contentId);
       // INVALID MATCH FEEDBACK
       this.inputLocked = true;
       this.drawInvalidPath(first, second);
@@ -287,15 +306,19 @@ export class BoardView {
       const v2 = this.tileMap.get(`${second.row},${second.col}`);
 
       if (v1) {
-        v1.cell.setStrokeStyle(3.5, 0xef4444);
-        FeedbackEffects.shake(this.scene, v1.container, 5, 180);
+        this.scene.tweens.killTweensOf(v1.container);
+      v1.cell.setStrokeStyle(3.5, 0xef4444);
+        if(!this.reducedMotion) FeedbackEffects.shake(this.scene, v1.container, 3, 150);
       }
       if (v2) {
-        v2.cell.setStrokeStyle(3.5, 0xef4444);
-        FeedbackEffects.shake(this.scene, v2.container, 5, 180);
+        this.scene.tweens.killTweensOf(v2.container);
+      v2.cell.setStrokeStyle(3.5, 0xef4444);
+        if(!this.reducedMotion) FeedbackEffects.shake(this.scene, v2.container, 3, 150);
       }
 
-      this.scene.time.delayedCall(190, () => {
+      this.pendingInvalid=this.scene.time.delayedCall(190, () => {
+        this.pendingInvalid=undefined;
+        if(this.destroyed||!this.inputEnabled)return;
         this.pathGraphics.clear();
         this.selected = [];
         this.inputLocked = false;
@@ -309,6 +332,9 @@ export class BoardView {
     const matchedContent = this.board.getContent(first);
     if (!matchedContent) return;
 
+    this.cosmeticStreak=this.scene.time.now-this.lastMatchAt<2000?Math.min(4,this.cosmeticStreak+1):1;
+    this.lastMatchAt=this.scene.time.now;
+    rushSfx.play('match',matchedContent.contentId,1+(this.cosmeticStreak-1)*.035);
     this.inputLocked = true;
     this.drawPath(result.pathPoints);
 
@@ -316,31 +342,35 @@ export class BoardView {
     const pos2 = this.pixelPosition(second);
     const midpoint = { x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2 };
 
-    // Success pulse rings on both matched tiles
-    FeedbackEffects.pulseRing(this.scene, pos1.x, pos1.y, 0x22c55e, 38);
-    FeedbackEffects.pulseRing(this.scene, pos2.x, pos2.y, 0x22c55e, 38);
+    // Small identity marks stay inside the matched cells
+    this.drawMatchMark(pos1,matchedContent.contentId);
+    this.drawMatchMark(pos2,matchedContent.contentId);
 
     const v1 = this.tileMap.get(`${first.row},${first.col}`);
     const v2 = this.tileMap.get(`${second.row},${second.col}`);
 
-    // Pop and fade matched tiles
+    // Local reaction and shrink/fade keep neighboring tiles readable
     if (v1) {
-      v1.cell.setStrokeStyle(3.5, 0x22c55e);
+      this.scene.tweens.killTweensOf(v1.container);
+      v1.cell.setStrokeStyle(2, 0xedce83);
+      this.playIconReaction(v1,matchedContent.contentId,-1);
       this.scene.tweens.add({
         targets: v1.container,
-        scaleX: 1.25,
-        scaleY: 1.25,
+        scaleX: this.reducedMotion?1:.86,
+        scaleY: this.reducedMotion?1:.86,
         alpha: 0,
         duration: 220,
         ease: 'Sine.Out',
       });
     }
     if (v2) {
-      v2.cell.setStrokeStyle(3.5, 0x22c55e);
+      this.scene.tweens.killTweensOf(v2.container);
+      v2.cell.setStrokeStyle(2, 0xedce83);
+      this.playIconReaction(v2,matchedContent.contentId,1);
       this.scene.tweens.add({
         targets: v2.container,
-        scaleX: 1.25,
-        scaleY: 1.25,
+        scaleX: this.reducedMotion?1:.86,
+        scaleY: this.reducedMotion?1:.86,
         alpha: 0,
         duration: 220,
         ease: 'Sine.Out',
@@ -372,23 +402,29 @@ export class BoardView {
     const firstContent = points.length ? this.board.getContent(points[0]) : undefined;
     const pathColor = firstContent?.contentId.startsWith('energy-') ? HudTokens.colors.blue : HudTokens.colors.gold;
 
-    // Glowing underlay
-    this.pathGraphics.lineStyle(11, pathColor, 0.38);
-    points.forEach((point, index) => {
-      const p = this.pixelPosition(point);
-      if (index === 0) this.pathGraphics.beginPath().moveTo(p.x, p.y);
-      else this.pathGraphics.lineTo(p.x, p.y);
-    });
+    this.pathGraphics.lineStyle(2.5,pathColor,.9);
+    points.forEach((point,index)=>{const p=this.pixelPosition(point);if(index===0)this.pathGraphics.beginPath().moveTo(p.x,p.y);else this.pathGraphics.lineTo(p.x,p.y);});
     this.pathGraphics.strokePath();
+  }
 
-    // Sharp bright core line
-    this.pathGraphics.lineStyle(3.5, 0xf7fbff, 1.0);
-    points.forEach((point, index) => {
-      const p = this.pixelPosition(point);
-      if (index === 0) this.pathGraphics.beginPath().moveTo(p.x, p.y);
-      else this.pathGraphics.lineTo(p.x, p.y);
-    });
-    this.pathGraphics.strokePath();
+  private playIconReaction(tile:TileVisual,contentId:string,sign:number):void {
+    if(this.reducedMotion)return;
+    this.scene.tweens.killTweensOf(tile.icon);
+    tile.icon.setAlpha(1);
+    const angle=contentId==='energy-c'?sign*16:contentId==='energy-f'?sign*12:sign*6;
+    this.scene.tweens.add({targets:tile.icon,angle,y:tile.icon.y-4,duration:90,yoyo:true,ease:'Sine.Out'});
+  }
+
+  private drawMatchMark(p:{x:number;y:number},contentId:string):void {
+    const g=this.pathGraphics,x=p.x+this.cellSize*.30,y=p.y-this.cellSize*.30;
+    if(!contentId.startsWith('energy-')) {
+      g.fillStyle(0xedce83,1);g.fillEllipse(x,y+3,8,6);g.fillCircle(x-4,y-3,2);g.fillCircle(x+1,y-5,2);g.fillCircle(x+5,y-2,2);return;
+    }
+    g.lineStyle(2,0xffedbd,1);
+    if(contentId==='energy-a'){g.beginPath().moveTo(x-4,y).lineTo(x+4,y).moveTo(x,y-4).lineTo(x,y+4).strokePath();}
+    else if(contentId==='energy-e'){g.strokeRoundedRect(x-4,y-5,8,10,2);}
+    else if(contentId==='energy-c'){g.beginPath().moveTo(x-3,y-5).lineTo(x+1,y-1).lineTo(x-2,y+2).lineTo(x+3,y+5).strokePath();}
+    else {g.beginPath().moveTo(x,y-5).lineTo(x,y+1).strokePath();g.fillStyle(0xffedbd,1).fillCircle(x,y+5,1.5);}
   }
 
   private drawInvalidPath(p1: BoardPosition, p2: BoardPosition): void {
@@ -396,8 +432,7 @@ export class BoardView {
     const pos1 = this.pixelPosition(p1);
     const pos2 = this.pixelPosition(p2);
 
-    this.pathGraphics.lineStyle(4, 0xef4444, 0.85);
-    this.pathGraphics.beginPath().moveTo(pos1.x, pos1.y).lineTo(pos2.x, pos2.y).strokePath();
+    this.pathGraphics.lineStyle(2, 0xc78f7b, .9);
 
     const drawCross = (cx: number, cy: number) => {
       this.pathGraphics.beginPath();

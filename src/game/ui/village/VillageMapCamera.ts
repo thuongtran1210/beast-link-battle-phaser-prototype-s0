@@ -9,6 +9,7 @@ export function mountVillageCamera(viewport:HTMLElement,world:HTMLElement):()=>v
     const w=viewport.clientWidth,h=viewport.clientHeight;
     ({x,y}=villageClampCamera(w,h,scale,x,y));
     world.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
+    viewport.dispatchEvent(new CustomEvent('village-camera-transform',{detail:{x,y,scale}}));
   };
   let initialized=false;
   const resize=()=>{

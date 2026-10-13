@@ -1,5 +1,8 @@
-import { packBattleBodies, type PresentationBody } from './BattlePresentationPacking';
+import { combatBodyOffsets, packBattleBodies, type PresentationBody } from './BattlePresentationPacking';
 export function battlePresentationPackingChecks(): void {
+  const offsets=combatBodyOffsets(['b','a','c','d']);
+  for(const offset of offsets.values())if(offset.x!==0||Math.abs(offset.y)>24)throw Error('Combat packing changes range or lane excessively');
+  if(JSON.stringify([...offsets])!==JSON.stringify([...combatBodyOffsets(['d','c','a','b'])]))throw Error('Combat offsets depend on snapshot order');
   const bodies:PresentationBody[]=Array.from({length:10},(_,i)=>({id:`unit-${i}`,x:640,y:330,side:i<5?'player':'enemy'}));
   const bounds={left:78,right:1202,top:210,bottom:470};
   const packed=packBattleBodies(bodies,bounds);

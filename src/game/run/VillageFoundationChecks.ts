@@ -1,6 +1,6 @@
 import { CAMP_SAVE_KEY, LEGACY_CAMP_SAVE_KEY, campInventory, loadCamp, parseCamp, recordVillageStory, saveCamp } from './CampState';
 import { VILLAGE_PROFESSIONS, VILLAGE_STATIONS } from './VillageCatalog';
-import { VILLAGE_OBSTACLES, VILLAGE_PATHS, VILLAGE_STATION_LAYOUTS, VILLAGE_WAYPOINTS, villagePointInWorld } from './VillageLayout';
+import { VILLAGE_OBSTACLES, VILLAGE_PATHS, VILLAGE_STATION_LAYOUTS, VILLAGE_WAYPOINTS, VILLAGE_WORLD, villagePointInWorld } from './VillageLayout';
 import { DECK_UNITS } from './RunDeck';
 import { createVillagePreviewFixture } from './VillageFixtures';
 
@@ -14,7 +14,7 @@ export function villageFoundationChecks():void {
   const records=new Map<string,string>([[LEGACY_CAMP_SAVE_KEY,JSON.stringify(old)]]);
   const storage={getItem:(key:string)=>records.get(key)??null,setItem:(key:string,value:string)=>{records.set(key,value);}};
   const migrated=loadCamp(storage);
-  expect(migrated.version===2 && migrated.wood===47 && migrated.residents.length===3,'migration preserves balance and residents');
+  expect(migrated.version===3 && migrated.wood===47 && migrated.residents.length===3,'migration preserves balance and residents');
   expect(migrated.crafted.length===3 && migrated.slots[1]==='carrot' && migrated.diary.length===2,'ownership, legacy placements and history preserved');
   expect(campInventory(migrated).includes('anvil') && !migrated.crafted.includes('garden'),'unplaced item retained; no free stations');
   saveCamp(migrated,storage);
@@ -28,7 +28,9 @@ export function villageFoundationChecks():void {
   saveCamp(migrated,{getItem:storage.getItem,setItem:()=>{throw Error('quota');}});
   expect(records.get(LEGACY_CAMP_SAVE_KEY)===JSON.stringify(old),'failed writes preserve backup');
   const corrupted=parseCamp({wood:NaN,crafted:['anvil','garden','fake'],slots:['anvil','anvil','fake'],placements:{forge:{x:1400,y:780},garden:{x:-1,y:780},fishing:{x:1390,y:510}},seenStoryIds:['fake']});
-  expect(corrupted.slots[1]===null && corrupted.placements.forge?.x===1400 && !corrupted.placements.garden && !corrupted.placements.fishing,'duplicate, invalid and unowned placement sanitization');
+  expect(corrupted.slots[1]===null && corrupted.placements.forge?.x===VILLAGE_STATION_LAYOUTS.forge.workAnchor.x && !corrupted.placements.garden && !corrupted.placements.fishing,'duplicate, invalid and unowned placement sanitization');
+  expect(VILLAGE_WORLD.width===1536&&VILLAGE_WORLD.height===1024,'layout matches owner renderer');
+  expect(JSON.stringify(parseCamp(corrupted))===JSON.stringify(corrupted),'anchor migration is idempotent');
   expect(corrupted.slots[0]===null,'world placement cannot duplicate legacy decor placement');
   expect(corrupted.seenStoryIds.length===0,'unknown story IDs stripped');
   expect(recordVillageStory(migrated,'forge.toy-duck') && !recordVillageStory(migrated,'forge.toy-duck'),'story records once');

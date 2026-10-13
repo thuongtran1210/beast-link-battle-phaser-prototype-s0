@@ -1,0 +1,14 @@
+import type { CampState } from '../run/CampState';
+import { VILLAGE_RECIPES, VILLAGE_RESOURCES, productionBlockReason, type ProductionKind } from '../run/VillageEconomy';
+export function showVillageProduction(root:HTMLElement,state:CampState,kind:ProductionKind,onManage?:()=>void):void{
+ const recipe=VILLAGE_RECIPES[kind],dialog=document.createElement('dialog');dialog.className='game-dialog village-diary-dialog';dialog.setAttribute('aria-label',recipe.name);
+ const header=document.createElement('header');header.className='diary-panel-header';const title=document.createElement('h2');title.textContent=recipe.name;const close=document.createElement('button');close.className='diary-panel-close';close.textContent='×';close.setAttribute('aria-label','Đóng công việc');close.onclick=()=>dialog.close();header.append(title,close);dialog.append(header);
+ const content=document.createElement('div');content.className='diary-event-list';const card=document.createElement('article');card.className='journey-step';
+ const name=document.createElement('strong');name.textContent=kind==='fishing'?'Shadowclaw · Người câu cá':'Ironclad · Thợ mộc';
+ const formula=document.createElement('p');formula.textContent=`${recipe.inputQuantity} ${VILLAGE_RESOURCES[recipe.input].name}${recipe.money?` + ${recipe.money} Đồng`:''} → ${recipe.seconds} giây làm việc → ${recipe.quantity} ${VILLAGE_RESOURCES[recipe.output].name}`;
+ const note=document.createElement('p');note.textContent=kind==='fishing'?'Cá có hạn dùng 1 ngày và cung cấp 2 phần ăn/con. Mồi được lấy từ lô cà rốt gần hết hạn.':'Giá vốn gồm Gỗ thực tế và 1 Đồng vật tư. Đồ chơi có thể bán trong Kho.';card.append(name,formula,note);content.append(card);
+ const status=document.createElement('p');status.setAttribute('role','status');const progress=document.createElement('progress');progress.max=recipe.seconds;progress.setAttribute('aria-label','Tiến độ sản xuất');content.append(status,progress);
+ const hint=document.createElement('p');hint.textContent='Cư dân tự tới trạm và làm khi đủ nguyên liệu. Thiếu ăn làm chậm 25%. Tiến độ được lưu; không sản xuất offline.';content.append(hint);
+ if(onManage){const manage=document.createElement('button');manage.textContent='Quản lý vị trí xây dựng';manage.onclick=()=>{dialog.close();onManage();};content.append(manage);}
+ const refresh=()=>{const job=state.economy[kind];progress.value=job?recipe.seconds-job.remaining:0;status.textContent=!state.residents.includes(recipe.worker)?'Cần đón cư dân phụ trách từ chuyến thám hiểm':job?job.remaining>0?`Còn ${Math.ceil(job.remaining)} giây làm việc · Giá vốn ${job.cost.toLocaleString('vi-VN',{maximumFractionDigits:2})} Đồng`:'Đã làm xong · Chờ giao vào kho':productionBlockReason(state,kind)??'Sẵn sàng · Chờ cư dân tới trạm';};refresh();const timer=window.setInterval(refresh,1000);dialog.onclose=()=>{window.clearInterval(timer);dialog.remove();};dialog.append(content);root.append(dialog);dialog.showModal();
+}

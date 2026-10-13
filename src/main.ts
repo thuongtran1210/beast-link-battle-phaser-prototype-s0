@@ -1,9 +1,13 @@
+import { rushSfx } from './game/ui/feedback/RushSfx';
+import { transitionScreen } from './game/ui/SceneTransition';
 import Phaser from 'phaser';
 import { showDeckPicker } from './game/ui/DeckPicker';
 import { showMainMenu } from './game/ui/MainMenu';
+import { showCamp } from './game/ui/CampView';
 import { showLevelSelection } from './game/ui/LevelSelection';
 import { selectRunLevel, selectedRunLevel } from './game/run/RunLevels';
 import { lockRunDeck } from './game/run/RunDeck';
+import { firstJourneyStage, saveFirstJourney } from './game/run/FirstJourney';
 import { isTestHarness } from './game/config/RuntimeMode';
 import { ValidationScene } from './game/ValidationScene';
 import './styles/prototype.css';
@@ -36,8 +40,15 @@ const config: Phaser.Types.Core.GameConfig = {
 if (isTestHarness()) new Phaser.Game(config);
 else {
   const openMenu = () => showMainMenu(openLevels);
-  const openLevels = () => showLevelSelection(id => { selectRunLevel(id); openPicker(); }, openMenu);
-  const openPicker = () => showDeckPicker(deck => {
+  const openLevels = () => {
+    if(firstJourneyStage()==='expedition'){
+      if(!saveFirstJourney('expedition')){showLevelSelection(id=>{selectRunLevel(id);openPicker();},openMenu);return;}
+      selectRunLevel('woodland');startRun(['beast-a','beast-b','beast-c','beast-d','beast-e','beast-f']);return;
+    }
+    if(firstJourneyStage()==='village'){showCamp(openMenu,openLevels);return;}
+    showLevelSelection(id => { selectRunLevel(id); openPicker(); }, openMenu);
+  };
+  const startRun = (deck:string[]) => {
     lockRunDeck(deck);
     const shell = document.getElementById('game-shell')!;
     shell.classList.add('run-active');
@@ -54,21 +65,31 @@ else {
     window.addEventListener('orientationchange', orientation);
     window.addEventListener('resize', orientation);
     const change = document.createElement('button');
+    const returnVillage=()=>{
+      change.remove();rotate.remove();shell.classList.remove('run-active');
+      window.removeEventListener('orientationchange',orientation);window.removeEventListener('resize',orientation);
+      window.removeEventListener('beast-link-return-village',returnVillage);
+      game.destroy(true);showCamp(openMenu,openLevels);
+    };
+    window.addEventListener('beast-link-return-village',returnVillage);
     change.className = 'deck-new-run'; change.textContent = '☰'; change.setAttribute('aria-label', 'Pause and open menu');
     change.onclick = () => {
       const scenes = game.scene.getScenes(true); scenes.forEach(scene => scene.scene.pause());
       const dialog = document.createElement('dialog'); dialog.className = 'game-dialog pause-dialog';
       dialog.innerHTML = '<h2>Take a breather</h2><p>Your Run is paused.</p><button class="resume-run">Continue</button><button class="return-menu">End Run & return to menu</button>';
       document.getElementById('game-shell')!.append(dialog); dialog.showModal();
+      const sound=document.createElement('button');sound.textContent=rushSfx.enabled?'Âm thanh: Bật':'Âm thanh: Tắt';sound.setAttribute('aria-pressed',String(rushSfx.enabled));sound.onclick=()=>{rushSfx.setEnabled(!rushSfx.enabled);rushSfx.unlock();sound.textContent=rushSfx.enabled?'Âm thanh: Bật':'Âm thanh: Tắt';sound.setAttribute('aria-pressed',String(rushSfx.enabled));};dialog.insertBefore(sound,dialog.querySelector('.return-menu'));
       dialog.querySelector<HTMLButtonElement>('.resume-run')!.onclick = () => dialog.close();
       dialog.onclose = () => { scenes.forEach(scene => scene.scene.resume()); dialog.remove(); orientation(); };
-      dialog.querySelector<HTMLButtonElement>('.return-menu')!.onclick = () => {
+      dialog.querySelector<HTMLButtonElement>('.return-menu')!.onclick = () => transitionScreen(dialog,()=>{
         dialog.onclose = null; dialog.remove(); change.remove(); rotate.remove(); shell.classList.remove('run-active');
         window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);
-        game.destroy(true); window.setTimeout(openMenu, 0);
-      };
+        window.removeEventListener('beast-link-return-village',returnVillage);
+        game.destroy(true);openMenu();
+      });
     };
     document.getElementById('game-shell')!.append(change);
-  }, openLevels, selectedRunLevel().name);
+  };
+  const openPicker = () => showDeckPicker(startRun, openLevels, selectedRunLevel().name);
   openMenu();
 }

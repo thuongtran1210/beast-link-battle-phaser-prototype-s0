@@ -72,7 +72,7 @@ export class EnemyCharacterView {
     this.scene.tweens.killTweensOf(this.root);
     this.scene.tweens.add({
       targets: this.root,
-      x: this.facing==='left' ? -8:8,
+      x: this.archetype==='Ranged' ? 0 : this.facing==='left' ? -8:8,
       scaleX: 1.06,
       scaleY: 0.96,
       duration: 90,

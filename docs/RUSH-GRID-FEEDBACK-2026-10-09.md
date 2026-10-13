@@ -1,0 +1,11 @@
+# Match grid feedback + SFX
+
+Owner-authorized visual/audio pass for Beast Rush and Energy Rush, 2026-10-09. No new raster assets.
+
+BoardView now renders selection before starting its punch animation (previous render destroyed the animated object). First selection has a warm quiet stroke and short .96→1.07 punch. Pair success uses one thin legal Onet path, a small cell-corner paw mark for Beast, or plus/shield/crack/stop mark for Energy; icons tilt locally and cells shrink/fade rather than expanding green rings across neighbors. Incorrect pairs shake only their cells and show two muted crosses, with no red connector suggesting a legal route. Introduced/reshuffled icons fade/pop with short row staggering; unchanged cells do not replay spawn motion after every render. Existing reshuffle board pulse dims only mildly.
+
+Web Audio synthesized prototype SFX: select, invalid, match and respawn cues. Beast matches use two soft rising tones; strategic Energy kinds have separate recipes. Cosmetic consecutive success pitch increases modestly with a cap; does not change gameplay combo tracking. Maximum four oscillator voices, short envelopes, silence while the document is hidden, context created/resumed only from user input. Pause menu has persisted sound on/off under beast-link-sfx; unavailable audio/storage never blocks play. No claim of recorded animal sounds, sampled bandage/hammer Foley or mastered final audio.
+
+Existing valid-match 240ms commit/input gate and invalid 190ms feedback gate remain unchanged; no extra presentation delay is added. No refill/gravity, rewards, timer, Onet rules, target selection or balance changes. Reduced-motion suppresses punch/tilt/shake/spawn movement while retaining strokes/path/marks/fade. Tile/icon tweens are canceled on rebuild/disposal; invalid feedback timer now canceled alongside pending-match timer at phase end.
+
+Validation: SFX checks cover bounded recipe lengths/durations and preference on/off with no audio support. Existing puzzle/gameplay checks retained. Check/build evidence is separate from pending live touch timing, first-gesture audio unlock, phone volume/repetition and reduced-motion review. Opening the new settings control and listening on a real phone remain required before audio quality is considered accepted.

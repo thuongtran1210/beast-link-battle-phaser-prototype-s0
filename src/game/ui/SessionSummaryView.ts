@@ -3,6 +3,7 @@ import type { SessionMetricSnapshot } from '../metrics/SessionMetrics';
 import type { FormationValidationMetrics, FormationRunDelta } from '../battle/FormationValidationHarness';
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
+import { firstJourneyStage } from '../run/FirstJourney';
 
 /**
  * Landscape Game Result Screen:
@@ -22,6 +23,10 @@ export class SessionSummaryView {
   private cachedRunA?: FormationValidationMetrics;
   private cachedRunB?: FormationValidationMetrics;
   private cachedRunLabel?: string;
+  private villageReport?: string;
+  private retryVillageSave?: ()=>void;
+
+  setVillageReport(text:string,retry?:()=>void):void { this.villageReport=text;this.retryVillageSave=retry; }
 
   constructor(scene: Phaser.Scene, centerX: number, centerY: number, onRestart: () => void) {
     this.scene = scene;
@@ -94,6 +99,19 @@ export class SessionSummaryView {
       .setOrigin(0.5);
 
     this.container.add([bannerBg, resultTitle, resultSubtitle]);
+    if(this.villageReport){
+      const report=this.scene.add.text(-panelW/2+24,-160,this.villageReport,{
+        fontFamily:HudTokens.fonts.family,fontSize:'12px',color:HudTokens.colors.textPrimary,
+        wordWrap:{width:panelW-220},
+      });
+      const home=this.scene.add.text(panelW/2-24,-160,this.retryVillageSave?'Thử lưu lại':'Về làng →',{
+        fontFamily:HudTokens.fonts.family,fontSize:'16px',color:HudTokens.colors.textGold,
+        padding:{x:12,y:14},backgroundColor:'#294436',
+      }).setOrigin(1,0).setInteractive({useHandCursor:true});
+      let armed=true;
+      home.on('pointerup',()=>{if(!armed)return;armed=false;if(this.retryVillageSave)this.retryVillageSave();else window.dispatchEvent(new Event('beast-link-return-village'));});
+      this.container.add([report,home]);
+    }
 
     if (!this.showingDetails) {
       // 4 STAT CARDS IN 2x2 GRID
@@ -333,7 +351,7 @@ export class SessionSummaryView {
       .setInteractive({ useHandCursor: true });
 
     const restartLabel = this.scene.add
-      .text(panelW / 4, btnRowY, '↺ RESTART RUN', {
+      .text(panelW / 4, btnRowY, this.retryVillageSave?'Lưu thưởng trước khi chơi lại':'↺ RESTART RUN', {
         fontFamily: HudTokens.fonts.family,
         fontSize: '14px',
         color: '#ffffff',
@@ -343,13 +361,16 @@ export class SessionSummaryView {
       .setInteractive({ useHandCursor: true });
 
     const triggerRestart = () => {
-      if (!this.restartArmed) return;
+      if (!this.restartArmed || this.retryVillageSave) return;
       this.restartArmed = false;
+      if(this.villageReport&&firstJourneyStage()==='village'){window.dispatchEvent(new Event('beast-link-return-village'));return;}
       this.onRestart();
     };
+    if(this.villageReport&&firstJourneyStage()==='village'&&!this.retryVillageSave)restartLabel.setText('Tiếp theo · Khám phá Làng →');
 
     restartBg.on('pointerdown', triggerRestart);
     restartLabel.on('pointerdown', triggerRestart);
+    if(this.retryVillageSave){restartBg.disableInteractive().setAlpha(0.5);restartLabel.disableInteractive().setAlpha(0.7);}
     this.container.add([restartBg, restartLabel]);
   }
 

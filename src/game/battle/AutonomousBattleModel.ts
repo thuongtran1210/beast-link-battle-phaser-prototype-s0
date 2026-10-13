@@ -105,6 +105,7 @@ export class AutonomousBattleModel {
       ...this.state,
       units: this.state.units.map((unit) => ({ ...unit })),
       enemies: this.state.enemies.map((enemy) => ({ ...enemy })),
+      lastEnemyActions: this.state.lastEnemyActions?.map(action => ({ ...action })),
       lastPlayerActions: this.state.lastPlayerActions?.map((action) => ({
         ...action,
         hits: action.hits.map((hit) => ({ ...hit })),
@@ -130,6 +131,7 @@ export class AutonomousBattleModel {
     this.state.elapsedTicks += 1;
     this.state.elapsedTime = Math.round(((this.state.elapsedTime ?? 0) + deltaSeconds) * 1000) / 1000;
     this.state.lastPlayerActions = [];
+    this.state.lastEnemyActions = [];
 
     this.resolveTimelinePlayerUnits(deltaSeconds);
     this.syncEnemyAggregates();
@@ -164,6 +166,7 @@ export class AutonomousBattleModel {
 
     this.state.elapsedTicks += 1;
     this.state.lastPlayerActions = [];
+    this.state.lastEnemyActions = [];
 
     if (this.combatRules.movement) {
       this.resolveMovementBattleTick();

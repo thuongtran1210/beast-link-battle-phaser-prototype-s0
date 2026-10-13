@@ -128,3 +128,24 @@ import { campMovementChecks } from './ui/village/CampMovementChecks';
 campMovementChecks();
 import { villageCameraLayoutChecks } from './ui/village/VillageCameraLayoutChecks';
 villageCameraLayoutChecks();
+import { rushSfxChecks } from './ui/feedback/RushSfxChecks';
+rushSfxChecks();
+
+import { villageSimulationChecks } from './run/VillageSimulationChecks';
+villageSimulationChecks();
+
+import { villageEconomyChecks } from './run/VillageEconomyChecks';
+villageEconomyChecks();
+
+import { villageLifeChecks } from './run/VillageLifeChecks';
+villageLifeChecks();
+
+import { villageProductionChecks } from './run/VillageProductionChecks';
+villageProductionChecks();
+
+import { battleCausalityChecks } from './battle/BattleCausalityChecks';
+battleCausalityChecks();
+import { villageGoalChecks } from './run/VillageGoalChecks';
+villageGoalChecks();
+import { firstJourneyChecks } from './run/FirstJourneyChecks';
+firstJourneyChecks();

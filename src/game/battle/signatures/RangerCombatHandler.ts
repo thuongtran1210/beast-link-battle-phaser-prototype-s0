@@ -48,9 +48,10 @@ export class RangerCombatHandler {
       if (damage > 0) hits.push({ enemyId: target.enemyId, damage });
 
       if (focus) {
-        if (unit.star === 3 && !unit.signatureActivationCount) {
+        if (unit.star >= 2 && !unit.signatureActivationCount && target.currentHp > 0) {
           target.funControlKind = 'Carrot';
-          target.funControlUntil = (ctx.state.elapsedTime ?? 0) + 2;
+          target.funControlStar = unit.star as 2 | 3;
+          target.funControlUntil = (ctx.state.elapsedTime ?? 0) + (unit.star === 3 ? 2 : 1);
           target.carrotX = unit.positionX + 0.7;
           target.carrotLane = unit.positionLane;
         }

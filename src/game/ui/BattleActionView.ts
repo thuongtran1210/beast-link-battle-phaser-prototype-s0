@@ -25,6 +25,7 @@ import {
   type EnemyVisual,
 } from './battle/BattleUnitVisualManager';
 import { BattleFunControlsRenderer } from './battle/BattleFunControlsRenderer';
+import { beastDisplayName } from './icons/UnitIconRegistry';
 import { CleanProjectileRenderer } from './battle/CleanProjectileRenderer';
 
 export class BattleActionView {
@@ -89,54 +90,43 @@ export class BattleActionView {
     this.funControlsRenderer.renderFunControls(snapshot);
   }
   playTick(event: BattleTickPresentation): void {
-    const projectileTargets = new Set(event.attackers.filter(attacker => attacker.role === 'Ranger' || attacker.role === 'Mage').flatMap(attacker => attacker.targetEnemyIds));
-    event.attackers.filter(attacker => attacker.role === 'Ranger' || attacker.role === 'Mage').forEach(attacker => {
-      const source = this.units.get(attacker.unitId);
-      if (!source) return;
-      const signature = event.signatureFx.find(fx => fx.unitId === attacker.unitId);
-      if (signature && ['WoollyRescue', 'ToyWorkshop', 'BubbleTrap', 'TickingBomb'].includes(signature.signatureId)) return;
-      source.characterView.playAttack(300);
-      const origin = source.characterView.getEffectPoint(source.container.x, source.container.y);
-      [...new Set(attacker.targetEnemyIds)].slice(0, 3).forEach(id => {
-        const target = this.enemies.get(id); if (!target) return;
-        this.projectiles.play(origin, {x:target.container.x, y:target.container.y - 38}, attacker.role === 'Ranger' ? 'arrow' : 'magic', Boolean(signature));
-      });
+    event.attackWindups.forEach(windup=>{
+      const source=windup.isPlayer?this.units.get(windup.unitId):this.enemies.get(windup.unitId);
+      if(source)FeedbackEffects.pulseRing(this.scene,source.container.x,source.container.y-30,windup.role==='Mage'?0xb69cdd:windup.role==='Ranger'?0x9fbf8f:0xe9c982,12);
+    });
+    event.attackers.forEach(attacker => {
+      const source=this.units.get(attacker.unitId);if(!source)return;
+      const signature=event.signatureFx.find(fx=>fx.unitId===attacker.unitId);
+      // A delayed bomb detonates at its target; its caster need not be alive or attack again.
+      if(signature?.signatureId==='TickingBomb'){
+        for(const id of attacker.targetEnemyIds){const target=this.enemies.get(id);if(target)FeedbackEffects.pulseRing(this.scene,target.container.x,target.container.y-38,0xe9c982,42);}
+        return;
+      }
+      const primary=this.enemies.get(attacker.targetEnemyIds[0]);
+      if(primary)source.characterView.setFacing(primary.container.x>=source.container.x?'right':'left');
+      source.characterView.playAttack();
+      const kind=attacker.role==='Ranger'?'arrow':attacker.role==='Mage'?'magic':'melee';
+      const origin=source.characterView.getEffectPoint(source.container.x,source.container.y);
+      for(const id of new Set(attacker.targetEnemyIds)) {
+        const target=this.enemies.get(id);if(target)this.projectiles.resolve(origin,{x:target.container.x,y:target.container.y-38},kind,event.signatureFx.some(fx=>fx.unitId===attacker.unitId));
+      }
+    });
+    event.enemyAttackers?.forEach(attacker => {
+      const source=this.enemies.get(attacker.enemyId),target=this.units.get(attacker.targetUnitId);
+      if(!source||!target)return;
+      source.characterView.setFacing(target.container.x>=source.container.x?'right':'left');
+      source.characterView.playAttack();
+      this.projectiles.resolve({x:source.container.x,y:source.container.y-38},target.characterView.getEffectPoint(target.container.x,target.container.y),attacker.archetype==='Ranged'?'arrow':'melee');
+      if(attacker.absorbed>0)this.floatCombatText(target.container.x,target.container.y,'Khiên chặn','#72bff5',attacker.targetUnitId+'-shield');
     });
     event.signatureFx.forEach(fx => {
-      const kind = fx.signatureId === 'WoollyRescue' ? 'heart' : fx.signatureId === 'ToyWorkshop' ? 'toy' : fx.signatureId === 'BubbleTrap' ? 'bubble' : fx.signatureId === 'TickingBomb' ? 'bomb' : undefined;
+      const kind = fx.signatureId === 'WoollyRescue' ? 'heart' : fx.signatureId === 'ToyWorkshop' ? 'toy' : fx.signatureId === 'BubbleTrap' ? 'bubble' : undefined;
       const source = this.units.get(fx.unitId); if (!kind || !source) return;
       fx.targetIds.slice(0, 3).forEach(id => {
         const target = kind === 'heart' || kind === 'toy' ? this.units.get(id) : this.enemies.get(id);
         if (target) this.projectiles.play(source.characterView.getEffectPoint(source.container.x, source.container.y), {x:target.container.x,y:target.container.y-35}, kind, fx.star === 3);
       });
     });
-    // 1. Attack windup anticipation
-    if (event.attackWindups && event.attackWindups.length > 0) {
-      event.attackWindups.forEach((windup) => {
-        const visual = windup.isPlayer
-          ? this.units.get(windup.unitId)
-          : this.enemies.get(windup.unitId);
-        if (!visual || visual.container.alpha <= 0.2) return;
-
-        if (windup.isPlayer) {
-          this.units.get(windup.unitId)?.characterView.playAttack(260);
-        } else {
-          this.enemies.get(windup.unitId)?.characterView.playAttack();
-        }
-
-        const leanX = windup.isPlayer ? 4 : -4;
-        this.scene.tweens.add({
-          targets: visual.container,
-          x: visual.container.x + leanX,
-          scaleX: 1.07,
-          scaleY: 1.07,
-          duration: 120,
-          yoyo: true,
-          ease: 'Quad.Out',
-        });
-      });
-    }
-
     // 2. Player attacks resolved against enemies
     event.enemyDamages.forEach((damageEvent) => {
       if (damageEvent.damage <= 0) return;
@@ -151,10 +141,7 @@ export class BattleActionView {
       });
 
       // Impact ring burst
-      if (!projectileTargets.has(damageEvent.enemyId)) FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
-
-      // Visual recoil on target (never alters model coordinates)
-      this.recoilVisual(visual.container, 4);
+      FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
 
       // Floating combat text
       this.floatCombatText(
@@ -183,9 +170,6 @@ export class BattleActionView {
         // Impact ring burst
         FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
 
-        // Visual recoil on target
-        this.recoilVisual(visual.container, -4);
-
         // Floating combat text
         this.floatCombatText(
           visual.container.x,
@@ -204,7 +188,7 @@ export class BattleActionView {
           this.flash(visual.body, 0xef4444, 50);
         });
         FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
-        this.recoilVisual(visual.container, -4);
+
         this.floatCombatText(
           visual.container.x,
           visual.container.y,
@@ -223,16 +207,15 @@ export class BattleActionView {
       const visual = this.units.get(unitId);
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
+      const killer=event.enemyAttackers?.slice().reverse().find(action=>action.targetUnitId===unitId&&action.defeated);
+      if(killer)this.floatCombatText(visual.container.x,visual.container.y,`KO ← ${ killer.archetype==='Ranged'?'Xạ thủ':killer.archetype==='Diver'?'Đột kích':'Tiền tuyến'}`,'#ffbc9c',unitId+'-ko');
       visual.characterView.setAlive(false);
       this.scene.tweens.killTweensOf(visual.container);
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
         targets: visual.container,
         alpha: 0.2,
-        y: visual.container.y + 10,
-        scaleX: 0.8,
-        scaleY: 0.8,
-        angle: 12,
+        delay: 650,
         duration: 220,
         ease: 'Quad.In',
       });
@@ -243,16 +226,15 @@ export class BattleActionView {
       const visual = this.enemies.get(enemyId);
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
+      const killer=event.attackers.slice().reverse().find(action=>action.targetEnemyIds.includes(enemyId));
+      if(killer){const source=this.units.get(killer.unitId);if(source)this.floatCombatText(visual.container.x,visual.container.y,`KO ← ${beastDisplayName(source.characterView.beastId)}`,'#efd093',enemyId+'-ko');}
       visual.characterView.playKo();
       this.scene.tweens.killTweensOf(visual.container);
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
         targets: visual.container,
         alpha: 0.2,
-        y: visual.container.y + 10,
-        scaleX: 0.8,
-        scaleY: 0.8,
-        angle: -12,
+        delay: 400,
         duration: 220,
         ease: 'Quad.In',
       });
@@ -380,21 +362,6 @@ export class BattleActionView {
 
   private syncEnemy(enemy: EnemyCombatUnit): void {
     this.unitVisualManager.syncEnemy(enemy, this.showcaseMode);
-  }
-
-  private recoilVisual(container: Phaser.GameObjects.Container, offsetX: number): void {
-    if (!container || !container.active || container.alpha <= 0.2) return;
-    const startX = container.x;
-    this.scene.tweens.add({
-      targets: container,
-      x: startX + offsetX,
-      duration: 55,
-      yoyo: true,
-      ease: 'Quad.Out',
-      onComplete: () => {
-        if (container.active) container.x = startX;
-      },
-    });
   }
 
   private flash(

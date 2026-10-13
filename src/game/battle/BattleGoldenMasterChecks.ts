@@ -105,7 +105,8 @@ function runScenario(rules: Readonly<BattleCombatRules>, units: UnitSpec[], enem
   const queue = new EnergyQueue();
   if (withEnergy) ENERGY_IDS.forEach((id) => queue.addCharge(id, 2));
 
-  let h = fnv1a(0x811c9dc5, JSON.stringify(battle.snapshot));
+  // Source metadata is verified by BattleCausalityChecks; preserve every pre-existing gameplay fingerprint.
+  let h = fnv1a(0x811c9dc5, JSON.stringify(battle.snapshot, (key,value) => key === 'lastEnemyActions' || key === 'funControlStar' ? undefined : value));
   const maxSteps = rules.timeline ? 600 : 60;
   for (let i = 0; i < maxSteps && battle.snapshot.status === 'Running'; i++) {
     if (withEnergy && i % 25 === 7) {
@@ -115,12 +116,12 @@ function runScenario(rules: Readonly<BattleCombatRules>, units: UnitSpec[], enem
       h = fnv1a(h, JSON.stringify(queue.getAll()));
     }
     const snap = rules.timeline ? battle.step(SIMULATION_STEP) : battle.tick();
-    h = fnv1a(h, JSON.stringify(snap));
+    h = fnv1a(h, JSON.stringify(snap, (key,value) => key === 'lastEnemyActions' || key === 'funControlStar' ? undefined : value));
   }
   h = fnv1a(h, JSON.stringify(battle.getConsequenceMetrics()));
   h = fnv1a(h, JSON.stringify(battle.getValidationMetrics()));
   h = fnv1a(h, JSON.stringify(battle.target() ?? null));
-  h = fnv1a(h, JSON.stringify(battle.enemyTarget() ?? null));
+  h = fnv1a(h, JSON.stringify(battle.enemyTarget() ?? null, (key,value)=>key==='funControlStar'?undefined:value));
   return `${battle.snapshot.status}:${h.toString(16).padStart(8, '0')}`;
 }
 

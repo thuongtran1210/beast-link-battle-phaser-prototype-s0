@@ -6,6 +6,19 @@ export class CleanProjectileRenderer {
   private active = 0;
   constructor(private readonly scene: Phaser.Scene, private readonly objects: Phaser.GameObjects.GameObject[]) {}
 
+  /** Combat damage resolves immediately: show the entire shot and contact in that same tick. */
+  resolve(from: {x:number;y:number}, to: {x:number;y:number}, kind: 'arrow'|'magic'|'melee', strong=false): void {
+    const color=kind==='arrow'?0xe9c982:kind==='magic'?0xb69cdd:0xefad8e;
+    const g=this.scene.add.graphics().setDepth(230);
+    g.lineStyle(strong?4:2,color,.8);g.lineBetween(from.x,from.y,to.x,to.y);
+    const angle=Math.atan2(to.y-from.y,to.x-from.x);
+    const length=kind==='melee'?14:22;
+    g.lineBetween(to.x,to.y,to.x-Math.cos(angle-.45)*length,to.y-Math.sin(angle-.45)*length);
+    g.lineBetween(to.x,to.y,to.x-Math.cos(angle+.45)*length,to.y-Math.sin(angle+.45)*length);
+    this.objects.push(g);this.impact(to,color);
+    this.scene.tweens.add({targets:g,alpha:0,duration:strong?240:160,onComplete:()=>this.remove(g)});
+  }
+
   play(from: {x: number; y: number}, to: {x: number; y: number}, kind: CleanProjectileKind, strong = false): void {
     if (this.active >= 18) return;
     this.active++;

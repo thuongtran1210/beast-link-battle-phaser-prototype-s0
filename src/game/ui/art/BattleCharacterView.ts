@@ -15,6 +15,7 @@ import {
 import { battleMotionProfile } from './BattleMotionProfiles';
 import { SnowguardAnimationPlayer } from './SnowguardAnimationPlayer';
 import { IroncladAnimationPlayer } from './IroncladAnimationPlayer';
+import { WindstriderAnimationPlayer } from './WindstriderAnimationPlayer';
 
 /**
  * Presentation-only Beast visual.
@@ -93,6 +94,11 @@ export class BattleCharacterView {
       this.root.add(this.frameAnimation.sprite);
       this.authoredImage?.setVisible(false);
     }
+    if(beastId==='beast-c'&&definition&&WindstriderAnimationPlayer.available(scene)) {
+      this.frameAnimation=new WindstriderAnimationPlayer(scene,definition.displayHeight*.85,definition.groundOffsetY);
+      this.root.add(this.frameAnimation.sprite);
+      this.authoredImage?.setVisible(false);
+    }
     this.startIdleMotion();
   }
 
@@ -144,7 +150,7 @@ export class BattleCharacterView {
 
   playAttack(duration?: number): void {
     if (!this.alive) return;
-    if(this.frameAnimation){this.frameAnimation.play('attack',Math.max(400,duration??550));return;}
+    if(this.frameAnimation){this.frameAnimation.play('attack',duration??this.profile().attackDuration);return;}
     const profile = this.profile();
     this.resetToBaseTexture();
     this.stopMotion(true);

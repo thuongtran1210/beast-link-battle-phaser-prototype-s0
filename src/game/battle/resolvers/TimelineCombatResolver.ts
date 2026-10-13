@@ -569,7 +569,15 @@ export class TimelineCombatResolver {
         }
         enemy.attackWindupRemaining = (enemy.attackWindupRemaining ?? 0) - deltaSeconds;
         if (enemy.attackWindupRemaining <= COMBAT_DISTANCE_EPSILON) {
+          ctx.expireShield(target);
+          const shieldBefore = target.temporaryShieldHp ?? 0;
           const appliedDamage = ctx.applyDamageToUnit(target, enemy.damage);
+          (ctx.state.lastEnemyActions ??= []).push({
+            enemyId: enemy.enemyId, targetUnitId: target.unitId,
+            archetype: enemy.archetype ?? 'Frontliner', damage: appliedDamage,
+            absorbed: Math.max(0, shieldBefore - (target.temporaryShieldHp ?? 0)),
+            defeated: target.currentHp <= 0,
+          });
 
           if (ctx.consequenceMetrics.firstPlayerContactTime === undefined) {
             ctx.consequenceMetrics.firstPlayerContactTime = currentTime;

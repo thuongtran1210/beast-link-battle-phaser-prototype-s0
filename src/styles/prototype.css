@@ -313,7 +313,7 @@ canvas {
 .village-camp .village-viewport { background:#a0c85e; border-radius:14px; touch-action:none; cursor:grab; }
 .village-camp .village-world { position:absolute; width:1536px; height:1024px; left:0; top:0; transform-origin:0 0; background:url('/assets/ui/camp/village-owner-v1/map.png') 0 0/1536px 1024px no-repeat; }
 .village-world .camp-station { left:auto; top:800px; bottom:auto; width:145px; height:110px; border-radius:12px; }
-.village-world .camp-station:nth-child(1) {left:560px}.village-world .camp-station:nth-child(2) {left:760px}.village-world .camp-station:nth-child(3) {left:960px}
+.village-world .camp-station[data-slot="0"] {left:560px}.village-world .camp-station[data-slot="1"] {left:760px}.village-world .camp-station[data-slot="2"] {left:960px}
 .village-world .camp-station[data-decor="anvil"] {left:1150px;top:560px;width:250px;height:177px;z-index:700}
 .village-world .camp-station[data-decor="bath"] {z-index:840}.village-world .camp-station[data-decor="carrot"] {z-index:840}
 .village-world .village-garden {position:absolute;left:180px;top:490px;width:280px;height:184px;background:transparent;border:0;padding:0;z-index:640;cursor:pointer}
@@ -378,3 +378,318 @@ canvas {
 .village-zoom-controls button {width:44px;height:44px;border:1px solid #b69a66;border-radius:12px;background:#3b4933ed;color:#fff1d0;font-size:26px;line-height:1;cursor:pointer}
 .village-camp .camp-workshop {bottom:76px;left:50%;right:auto;transform:translateX(-50%);width:min(520px,calc(100% - 24px));box-sizing:border-box;max-height:calc(100% - 150px);z-index:2100}
 @media(max-width:400px) {.village-camp .deck-header h1 {font-size:17px}.village-camp .deck-header {gap:5px}.village-camp .village-overview-button {padding:6px;font-size:11px}}
+
+/* Owner river map: water below transparent shore, both under scene objects. */
+.village-camp .village-world {background-image:url('/assets/ui/camp/river-owner-v1/complete.png');overflow:hidden;isolation:isolate}
+.village-world.village-river-ready::before {content:'';position:absolute;inset:-32px;z-index:0;pointer-events:none;background:url('/assets/ui/camp/river-owner-v1/water.png') center/cover no-repeat;animation:village-river-flow 14s ease-in-out infinite alternate;will-change:transform}
+.village-world.village-river-ready::after {content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:url('/assets/ui/camp/river-owner-v1/shore.png') 0 0/1536px 1024px no-repeat}
+@keyframes village-river-flow {from {transform:translate(-10px,-12px)} to {transform:translate(10px,12px)}}
+.village-world.village-water-paused::before {animation-play-state:paused}
+.village-world .village-fishing {left:1070px;top:650px;width:230px;height:169px;z-index:20}
+.village-world .village-fishing svg {width:100%;height:100%;overflow:hidden}
+.village-world .camp-station[data-decor="anvil"] {left:710px;top:430px;width:225px;height:159px;z-index:20}
+.village-world .camp-station[data-decor="empty"] {z-index:10}
+@media(prefers-reduced-motion:reduce) {.village-world.village-river-ready::before {animation:none;will-change:auto}}
+.village-world .village-house{position:absolute;left:210px;top:8px;width:420px;height:auto;z-index:5;pointer-events:none;user-select:none}
+.village-camp .village-viewport::after{content:none;animation:none}
+.village-cloud-shader{position:absolute;inset:0;width:100%;height:100%;z-index:1000;pointer-events:none}
+
+/* Compact village HUD: independent corner groups and contextual sheets. */
+.village-camp .deck-header{background:none;padding:0;min-height:44px;pointer-events:none;gap:5px}
+.village-camp .deck-header>*{pointer-events:auto}
+.village-camp .deck-back{width:44px;height:44px;min-width:44px;padding:0;border-radius:50%;font-size:24px;background:#493e2ee0}
+.village-camp .deck-header>div{padding:6px 9px;background:#20352bbd;border-radius:12px}
+.village-camp .deck-header h1{font-size:16px;margin:0}
+.village-camp .camp-wood{margin-left:auto;padding:7px 10px;border-radius:20px;background:#493e2edb;font-size:12px}
+.village-camp .village-overview-button{width:44px;height:44px;min-width:44px;padding:11px;border-radius:50%;background:#20352bd9}
+.village-camp .village-overview-button svg{width:22px;height:22px}
+.village-camp .village-navigation{width:228px;gap:2px;padding:2px;background:#20352bcc;border-radius:16px;box-shadow:0 2px 8px #15271f33}
+.village-camp .village-navigation button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;padding:4px 6px;background:transparent;border:0;border-radius:12px;font-size:10px;font-weight:600;box-shadow:none}
+.village-camp .village-navigation button svg{width:20px;height:20px}
+.village-camp .village-navigation button[aria-expanded="true"]{background:#cfaf7280;color:#fff1d0}
+.village-camp .village-zoom-controls{top:auto;bottom:max(12px,env(safe-area-inset-bottom));right:max(8px,env(safe-area-inset-right));gap:0;background:#20352bcd;border-radius:14px;overflow:hidden}
+.village-camp .village-zoom-controls button{width:44px;height:44px;border:0;border-radius:0;background:transparent;font-size:23px}
+.village-camp .camp-status{bottom:72px;font-size:10px;padding:4px 8px;max-width:calc(100% - 110px);transition:opacity .25s}
+.village-camp .camp-status.village-status-hidden{opacity:0}
+.village-camp .camp-workshop{bottom:max(68px,calc(env(safe-area-inset-bottom) + 58px));padding:12px;border-radius:18px;width:min(390px,calc(100% - 20px));max-height:65%;overflow:auto}
+.village-camp .camp-workshop button{min-height:44px;padding:8px 10px;font-size:12px}
+.village-camp .game-dialog{position:absolute;inset:auto 10px max(68px,calc(env(safe-area-inset-bottom) + 58px));margin:0 auto;width:min(390px,calc(100% - 44px));max-height:65%;padding:14px;border-radius:18px;font-size:12px;box-sizing:border-box;overflow:auto}
+.village-camp .game-dialog h2{font-size:17px;margin:0 0 10px}
+.village-camp .game-dialog button{min-height:44px;padding:8px 10px;font-size:12px}
+@media(orientation:landscape) and (max-height:600px){
+ .village-camp .camp-workshop{left:auto;right:8px;top:60px;bottom:62px;transform:none;width:280px;max-height:none}
+ .village-camp .game-dialog{inset:60px 8px 62px auto;margin:0;width:280px;max-height:none}
+ .village-camp .deck-header h1{font-size:15px}
+}
+
+/* Resident sheet: visible sprites, live activity, independently scrolling list. */
+.village-camp .village-resident-dialog[open]{display:flex;flex-direction:column;overflow:hidden;padding:12px;width:min(390px,calc(100% - 24px));height:min(440px,65%);border:1px solid #b59c6a80;background:#22372ff5;box-shadow:0 12px 40px #10241f55}
+.resident-panel-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
+.village-camp .resident-panel-header h2{margin:0;font-size:17px}
+.village-camp .resident-panel-header .resident-panel-close{width:44px;height:44px;min-width:44px;margin:0;padding:0;background:transparent;border:0;font-size:25px}
+.village-camp .resident-panel-hint{margin:0 0 10px;font-size:11px;color:#bdc9b6;flex-shrink:0}
+.resident-card-list{min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:7px;padding:0 2px 4px;scrollbar-width:thin}
+.village-camp .resident-card-list .resident-card{display:grid;grid-template-columns:64px minmax(0,1fr) 18px;align-items:center;gap:10px;width:100%;margin:0;padding:8px;background:#354b3acc;border:1px solid #78916a55;border-radius:14px;text-align:left;flex-shrink:0;font-weight:400}
+.resident-portrait{display:flex;align-items:center;justify-content:center;width:64px;height:72px;border-radius:12px;background:radial-gradient(ellipse at 50% 90%,#b09b5666,transparent 70%),#20372c}
+.resident-portrait img{width:58px;height:66px;object-fit:contain;filter:drop-shadow(0 2px 1px #12261f55)}
+.resident-card-info{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.resident-card-info strong{font-size:12px;line-height:1.2;color:#fff0cf}
+.resident-profession{font-size:11px;line-height:1.3;color:#c6d0bd}
+.resident-activity{font-size:10px;line-height:1.3;padding:3px 6px;border-radius:7px;background:#20362dd9;color:#c7d2bb}
+.resident-activity[data-working="true"]{background:#5e713b;color:#fff1bd}
+.resident-find{color:#dcc38d;font-size:20px}
+.resident-card:focus-visible{outline:2px solid #edcf83;outline-offset:-2px}
+@media(orientation:landscape) and (max-height:600px){.village-camp .village-resident-dialog[open]{width:310px;height:auto;max-height:none;inset:60px 8px 62px auto}.resident-portrait{width:56px;height:62px}.resident-portrait img{width:50px;height:58px}.village-camp .resident-card-list .resident-card{grid-template-columns:56px minmax(0,1fr) 16px;gap:8px;padding:7px}}
+
+/* Construction sheet: fixed controls, prop previews and explicit slot choice. */
+.village-camp .camp-workshop{display:flex;flex-direction:column;gap:9px;overflow:hidden;height:min(440px,65%)}
+.build-panel-header{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.build-panel-header .village-build-heading{font-size:17px;margin-right:auto}
+.build-balance{font-size:11px;color:#e6c888;background:#493e2e;padding:5px 8px;border-radius:12px}
+.village-camp .build-panel-header .village-build-close{width:44px;height:44px;min-width:44px;padding:0;border:0;background:transparent;font-size:25px}
+.build-slot-tabs{display:flex;gap:5px;flex-shrink:0}
+.village-camp .build-slot-tabs button{flex:1;padding:6px 3px;font-size:10px;border-radius:10px;background:#23392e;border:1px solid #70866566}
+.village-camp .build-slot-tabs button[aria-pressed="true"]{background:#ccb075;color:#2b3022;border-color:#e6ce91}
+.build-card-list{display:flex;flex-direction:column;gap:7px;overflow-y:auto;min-height:0;overscroll-behavior:contain;scrollbar-width:thin;padding:2px}
+.village-camp .build-card-list .build-decor-card{display:grid;grid-template-columns:70px minmax(0,1fr);gap:4px 9px;text-align:left;padding:8px;flex-shrink:0;background:#354b3a;border:1px solid #78916a66;border-radius:13px}
+.build-decor-preview{grid-row:1/3;display:flex;align-items:center;justify-content:center;background:#22372d;border-radius:10px;min-height:75px}
+.build-decor-preview svg{width:66px;height:66px;overflow:hidden}
+.build-decor-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.build-decor-info strong{font-size:12px;color:#fff1d0}
+.build-decor-info span,.build-decor-info small{font-size:10px;line-height:1.3;color:#bccbb3}
+.build-decor-action{justify-self:start;font-size:10px;font-weight:700;background:#d1b479;color:#303521;padding:4px 8px;border-radius:8px}
+.village-camp .build-card-list .build-decor-card:disabled{opacity:1;background:#2b3d30;border-color:#57664b}
+.build-decor-card:disabled .build-decor-action{background:#445039;color:#b7c1a8}
+.build-decor-card:focus-visible{outline:2px solid #edcf83;outline-offset:-2px}
+.village-camp .camp-workshop .build-clear-slot{flex-shrink:0;background:transparent;border:1px solid #8b785855;font-size:11px;padding:7px;min-height:44px}
+@media(orientation:landscape) and (max-height:600px){.village-camp .camp-workshop{width:310px;height:auto}.build-decor-preview{min-height:64px}.build-decor-preview svg{height:60px}}
+
+/* Isolate construction cards from the legacy horizontal workshop rules. */
+.village-camp .camp-workshop button{min-width:0;box-sizing:border-box}
+.village-camp .build-panel-header .village-build-close{flex:0 0 44px;margin:0}
+.village-camp .build-slot-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));min-width:0;width:100%}
+.village-camp .build-slot-tabs button{min-width:0;width:100%;margin:0;white-space:nowrap;text-align:center}
+.village-camp .build-card-list{flex:1 1 auto;min-width:0;min-height:0;overflow-x:hidden;overflow-y:auto}
+.village-camp .build-card-list .build-decor-card{flex:0 0 auto;min-height:98px;width:100%;margin:0;grid-template-rows:auto auto;overflow:hidden}
+.village-camp .camp-workshop span{margin-top:0}
+.village-camp .build-decor-card .build-decor-preview{display:flex;align-self:stretch;min-height:75px}
+.village-camp .build-decor-card .build-decor-info{display:flex;min-width:0;line-height:1.3}
+.village-camp .build-decor-card .build-decor-action{display:block;color:#303521;line-height:1.3}
+.village-camp .build-decor-card:disabled .build-decor-action{color:#b7c1a8}
+.village-camp .camp-workshop .build-clear-slot{flex:0 0 auto;width:100%;margin:0;min-height:44px}
+@media(orientation:landscape) and (max-height:600px){.village-camp .build-card-list .build-decor-card{min-height:92px}}
+
+/* Diary: bounded sheet, persistent header and readable event cards. */
+.village-camp .village-diary-dialog[open]{display:flex;flex-direction:column;overflow:hidden;padding:12px;width:min(390px,calc(100% - 24px));height:min(440px,65%);border:1px solid #b59c6a80;background:#22372ff5;box-shadow:0 12px 40px #10241f55}
+.diary-panel-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
+.village-camp .diary-panel-header h2{font-size:17px;margin:0}
+.village-camp .diary-panel-header .diary-panel-close{flex:0 0 44px;width:44px;height:44px;min-width:44px;margin:0;padding:0;border:0;background:transparent;font-size:25px}
+.village-camp .diary-panel-hint{margin:0 0 10px;font-size:11px;color:#bdc9b6;flex-shrink:0}
+.village-camp .diary-event-list{list-style:none;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0;padding:0 2px 4px;scrollbar-width:thin}
+.village-camp .diary-event-list .diary-event{display:grid;grid-template-columns:46px minmax(0,1fr);gap:10px;padding:10px;margin:0;flex-shrink:0;border:1px solid #78916a44;border-radius:13px;background:#304637}
+.diary-event-portrait{display:flex;justify-content:center;align-items:center;width:46px;height:54px;border-radius:10px;background:#22372d}
+.diary-event-portrait img{width:42px;height:50px;object-fit:contain}
+.diary-event-portrait svg{width:24px;height:24px;color:#dcc38d}
+.diary-event strong{font-size:11px;color:#e8d19c;line-height:1.3}
+.village-camp .diary-event p{margin:4px 0 0;font-size:12px;line-height:1.5;color:#d4dec9;overflow-wrap:anywhere}
+.village-camp .diary-empty{margin:8px;font-size:12px;line-height:1.6;text-align:center}
+@media(orientation:landscape) and (max-height:600px){.village-camp .village-diary-dialog[open]{inset:60px 8px 62px auto;width:320px;height:auto;max-height:none}}
+
+/* Returning-home presentation and shared story milestones. */
+.farming-menu{background:linear-gradient(90deg,#20382af5 0%,#20382aec 42%,#20382a26 100%),url('/assets/ui/camp/river-owner-v1/complete.png') center/cover}
+.farming-menu .menu-party{background:url('/assets/ui/camp/river-owner-v1/house.png') center 25%/contain no-repeat;height:85%;align-items:flex-end;padding-bottom:8%;box-sizing:border-box}
+.farming-menu .menu-home{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;background:#edc16d;color:#352b19;border-color:#f5d99b;font-size:23px;font-weight:800}
+.farming-menu .menu-home span{font-size:12px;font-weight:600}
+.farming-menu .menu-play{background:#314738;color:#f1ecd9;border-color:#71816a;font-size:17px;box-shadow:none}
+.farming-menu .menu-footnote{display:block;line-height:1.5;color:#d9dfbf}
+.village-world button.village-house{padding:0;border:0;background:none;pointer-events:auto;cursor:pointer;min-height:0}
+.village-house img{display:block;width:100%;height:auto;pointer-events:none}
+.village-house:focus-visible{outline:2px solid #efcf89;border-radius:14px}
+.journey-step{padding:10px;border:1px solid #78916a55;background:#304637;border-radius:12px;flex-shrink:0}
+.journey-step strong{font-size:12px;color:#f0d8a1}
+.village-camp .journey-step p{font-size:11px;line-height:1.5;margin:5px 0 0}
+@media(max-width:600px){.farming-menu .menu-home{font-size:19px}.farming-menu .menu-home span{font-size:10px}.farming-menu .menu-party{opacity:.55}}
+
+/* Home menu composition: house first, compact actions, no giant sprite pile. */
+.main-menu.farming-menu{padding:clamp(18px,3.5vw,52px);box-sizing:border-box;overflow-y:auto;align-items:center;container-type:size}
+.farming-menu::before{inset:10px;border-radius:18px;border-color:#ced5a422}
+.farming-menu .menu-copy{width:43%;max-width:430px;flex-shrink:0}
+.farming-menu .menu-eyebrow{font-size:9px;letter-spacing:.1em;line-height:1.5}
+.farming-menu h1{font-size:clamp(32px,4.3vw,58px);line-height:1.08;margin:10px 0 12px;letter-spacing:-.035em;text-shadow:0 2px #17241b}
+.farming-menu h1 em{display:block;font-size:.42em;line-height:1.4;letter-spacing:0;margin-top:6px;font-weight:650}
+.farming-menu .menu-copy>p{font-size:13px;line-height:1.5;margin:0 0 16px;max-width:310px}
+.farming-menu .menu-actions{width:100%;max-width:350px;margin:0 0 14px;gap:7px}
+.farming-menu .menu-actions button{min-height:44px;padding:10px 12px;border-radius:12px;box-sizing:border-box}
+.farming-menu .menu-actions .menu-home{font-size:18px;min-height:50px;box-shadow:0 2px 6px #182c2333}
+.farming-menu .menu-actions .menu-play{font-size:14px;min-height:46px;box-shadow:none}
+.farming-menu .menu-home span,.farming-menu .menu-play span{font-size:10px;font-weight:500}
+.farming-menu .menu-actions .menu-help,.farming-menu .menu-actions .menu-fullscreen{font-size:11px;background:#233c2d77;border-color:#a4b18a44;min-height:44px;padding:7px}
+.farming-menu .menu-footnote{font-size:10px;line-height:1.5;max-width:350px}
+.menu-save-summary{display:block;color:#f0d79f;margin-bottom:3px}
+.menu-next-goal{display:block;color:#b8c8aa}
+.farming-menu .menu-party{right:3%;bottom:8%;width:49%;height:80%;padding:0;background-position:center 28%;background-size:100% 78%;opacity:1;pointer-events:none}
+.farming-menu .menu-party::before{content:none}
+.farming-menu .menu-party img{position:absolute;bottom:8%;width:21%;height:28%;margin:0;filter:drop-shadow(0 3px 1px #17241b33)}
+.farming-menu .menu-party img:nth-child(1){left:17%}
+.farming-menu .menu-party img:nth-child(2){left:42%;height:30%}
+.farming-menu .menu-party img:nth-child(3){left:67%}
+@media(orientation:landscape) and (max-height:450px){
+ .main-menu.farming-menu{padding:14px 4%}.farming-menu h1{font-size:34px;margin:6px 0 8px}.farming-menu .menu-copy>p{font-size:11px;margin-bottom:10px}.farming-menu .menu-actions{gap:5px;margin-bottom:8px}.farming-menu .menu-actions .menu-home{min-height:44px;font-size:16px}.farming-menu .menu-actions .menu-play{min-height:44px;font-size:13px}.farming-menu .menu-party{height:88%;bottom:4%}
+}
+@media(orientation:portrait){
+ .main-menu.farming-menu{align-items:flex-start;padding:24px 22px;background:linear-gradient(#20382acf,#20382af5),url('/assets/ui/camp/river-owner-v1/complete.png') center/cover}
+ .farming-menu .menu-copy{width:100%;max-width:none;padding-top:36cqh;box-sizing:border-box}.farming-menu .menu-party{top:10px;bottom:auto;right:15%;width:70%;height:34cqh;background-position:center;background-size:contain}
+ .farming-menu h1{font-size:34px;margin:8px 0}.farming-menu h1 em{font-size:16px}.farming-menu .menu-copy>p{font-size:12px;margin-bottom:12px}.farming-menu .menu-actions{max-width:none}.farming-menu .menu-party img{bottom:0;height:28%}.farming-menu .menu-party img:nth-child(2){height:30%}
+}
+
+/* Cozy home: a single scene, two actions and tucked-away utilities. */
+.main-menu.farming-menu.cozy-menu{display:block;padding:0;overflow:hidden;background:linear-gradient(#f9efcc22,#f9e6b033),url('/assets/ui/camp/river-owner-v1/complete.png') center/cover;color:#35462e}
+.cozy-menu::before{content:none}
+.cozy-menu .menu-copy{display:contents;padding:0}
+.main-menu.cozy-menu h1{position:absolute;z-index:2;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);margin:0;width:max-content;max-width:80%;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:clamp(28px,4vw,42px);font-weight:700;letter-spacing:0;line-height:1.1;color:#35462e;text-shadow:0 1px 0 #fff3d9}
+.main-menu.cozy-menu h1 em{font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:450;color:#536348;margin:6px 0 0;letter-spacing:.02em}
+.farming-menu.cozy-menu .menu-party{top:22%;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:min(460px,60%);height:58%;padding:0;background-position:center;background-size:contain;opacity:1}
+.farming-menu.cozy-menu .menu-party img{bottom:0;width:16%;height:22%;filter:drop-shadow(0 2px 1px #463e2b33)}
+.farming-menu.cozy-menu .menu-party img:nth-child(1){left:20%}.farming-menu.cozy-menu .menu-party img:nth-child(2){left:43%;height:23%}.farming-menu.cozy-menu .menu-party img:nth-child(3){left:66%}
+.cozy-menu .menu-actions{position:absolute;z-index:2;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:10px;width:min(300px,calc(100% - 40px));max-width:none;margin:0;padding:0;background:none}
+.farming-menu.cozy-menu .menu-actions button{flex:1;display:block;min-height:46px;padding:10px 14px;border-radius:18px;text-align:center;font-size:14px;font-weight:650;border:1px solid #c3ab7a;box-shadow:0 2px 0 #9a825844}
+.farming-menu.cozy-menu .menu-actions .menu-home{background:#f1d899;color:#4c442d}
+.farming-menu.cozy-menu .menu-actions .menu-play{background:#f8f0dce8;color:#536348;border-color:#c4c5a3}
+.cozy-options{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:4}
+.cozy-options summary{list-style:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#526045;background:#fbf1dccc;border:1px solid #c3ba9566;box-sizing:border-box}
+.cozy-options summary::-webkit-details-marker{display:none}
+.cozy-options summary svg{width:20px;height:20px}
+.cozy-option-actions{position:absolute;right:0;top:50px;width:160px;padding:6px;display:flex;flex-direction:column;gap:4px;border:1px solid #c3ba95;border-radius:14px;background:#fbf1dc;box-shadow:0 4px 15px #463e2b22}
+.cozy-option-actions button{min-height:44px;padding:8px;border:0;border-radius:10px;background:transparent;color:#526045;font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.cozy-menu button:focus-visible,.cozy-options summary:focus-visible{outline:2px solid #63734c;outline-offset:3px}
+@media(orientation:portrait){.farming-menu.cozy-menu .menu-party{top:22%;width:94%;height:48%}.cozy-menu .menu-actions{flex-direction:column;width:210px;bottom:max(30px,env(safe-area-inset-bottom))}.main-menu.cozy-menu h1{top:max(30px,env(safe-area-inset-top));font-size:34px}}
+@media(orientation:landscape) and (max-height:350px){.main-menu.cozy-menu h1{top:10px;font-size:26px}.farming-menu.cozy-menu .menu-party{top:23%;height:52%}.cozy-menu .menu-actions{bottom:10px}}
+
+.scene-transition-curtain{position:absolute;inset:0;z-index:10000;background:#f4ecd8;opacity:0;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){.scene-transition-curtain{opacity:1}}
+
+/* Inventory and ledger share the bounded mobile village sheet. */
+.village-camp .village-navigation{width:min(292px,calc(100% - 80px))}
+.economy-tabs{display:flex;gap:6px;flex-shrink:0;margin-bottom:8px}
+.village-camp .economy-tabs button{flex:1;min-width:0;margin:0;background:#314b39}
+.village-camp .economy-tabs button[aria-pressed="true"]{background:#d8bf86;color:#3c422d}
+.inventory-resource{padding:10px;border:1px solid #78916a55;border-radius:12px;background:#304637;flex-shrink:0}
+.inventory-resource strong{color:#f0d8a1;font-size:13px}
+.village-camp .inventory-resource p{font-size:10px;margin:5px 0;line-height:1.4}
+.inventory-trade-row{display:flex;gap:6px}
+.inventory-trade-row input{width:60px;min-width:0;min-height:44px;border:1px solid #87966c;border-radius:9px;background:#21392c;color:#f5ebd2;text-align:center;font:inherit;font-size:13px;box-sizing:border-box}
+.village-camp .inventory-trade-row button{flex:1;width:auto;min-width:0;min-height:44px;margin:0;padding:6px}
+.economy-report{padding:10px;border-radius:12px;background:#405238;color:#eee1b7;font-size:11px;line-height:1.6;flex-shrink:0}
+.village-camp .economy-notice{font-size:10px;line-height:1.4;margin:6px 0 0;flex-shrink:0}
+@media(max-width:400px){.village-camp .camp-wood{font-size:10px;padding:5px 7px}.village-camp .deck-header h1{font-size:14px}}
+
+/* Inventory owns its height: fixed compact chrome, one usable scrolling body. */
+.village-camp .economy-dialog[open]{width:min(460px,calc(100% - 20px));height:min(580px,calc(100% - 24px));max-height:calc(100% - 24px);padding:12px;gap:8px;background:#263e32;border-radius:20px;box-sizing:border-box}
+.village-camp .economy-dialog .diary-panel-header{margin:0;flex:0 0 auto}
+.village-camp .economy-dialog .inventory-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:0 0 auto}
+.inventory-summary>div,.inventory-report-grid>div{display:flex;flex-direction:column;gap:4px;padding:8px;background:#354d3c;border-radius:10px;min-width:0}
+.inventory-summary span,.inventory-report-grid span{font-size:11px;color:#c9d1bd}
+.inventory-summary strong,.inventory-report-grid strong{font-size:13px;color:#fff0c9}
+.village-camp .economy-dialog .economy-tabs{margin:0;gap:6px}
+.village-camp .economy-dialog .economy-tabs button{min-height:40px;padding:6px;font-size:13px;border-radius:10px}
+.village-camp .economy-dialog .inventory-content{flex:1 1 0;min-height:0;display:block;overflow-y:auto;padding:0 2px 4px}
+.inventory-resource-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.village-camp .economy-dialog .inventory-pick{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;min-width:0;min-height:84px;margin:0;padding:8px 3px;background:#354d3c;border-radius:12px;color:#f7edcf;font-size:11px;border:1px solid #70896b}
+.village-camp .economy-dialog .inventory-pick[aria-pressed="true"]{background:#dfc891;color:#293c2e;border-color:#f5dfaa}
+.inventory-symbol{font-size:25px;line-height:1.1}.inventory-pick strong{font-size:18px}
+.village-camp .economy-dialog .inventory-resource{background:#314a38;padding:10px}
+.village-camp .economy-dialog .inventory-resource p{font-size:12px;line-height:1.5}
+.village-camp .economy-dialog .inventory-trade-row button{min-height:44px;font-size:13px}
+.village-camp .economy-dialog .inventory-trade-row button:first-of-type{background:#dfc891;color:#293c2e}
+.village-camp .economy-dialog .economy-notice{margin:0;min-height:16px;font-size:11px;color:#f2dfb1}
+.inventory-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.inventory-ledger-card{padding:10px;margin:8px 0;background:#354d3c;border-radius:10px;font-size:13px}
+.village-camp .economy-dialog .inventory-ledger-card p,.village-camp .economy-dialog .inventory-capacity,.village-camp .economy-dialog .inventory-accounting p{font-size:12px;line-height:1.5;color:#d0d8c5;margin:6px 0}
+.inventory-accounting summary{padding:12px 4px;cursor:pointer;font-size:13px;color:#efdfb8}
+@media(orientation:landscape) and (max-height:600px){.village-camp .economy-dialog[open]{inset:10px 10px 10px auto;margin:0;width:min(520px,calc(100% - 20px));height:calc(100% - 20px);max-height:none}.village-camp .economy-dialog .inventory-summary>div{padding:6px 8px}.village-camp .economy-dialog .inventory-pick{min-height:74px}.village-camp .economy-dialog .diary-panel-header h2{font-size:18px}}
+@media(max-width:360px){.inventory-resource-grid{gap:4px}.inventory-summary strong{font-size:11px}}
+.village-goal-button {min-height:44px;padding:8px 12px;border:1px solid #857653;border-radius:12px;background:#344b3e;color:#f6ecd5;font:inherit;cursor:pointer}
+.village-goal-dialog {position:relative;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box}
+.village-goal-dialog h2 {padding-right:44px}
+.village-goal-close {position:absolute;right:12px;top:12px;min-width:44px;min-height:44px}
+.village-goal-dialog button {min-height:44px;margin:4px;padding:8px 12px}
+.village-goal-slots {display:flex;flex-wrap:wrap}
+.adventure-goal {flex-shrink:0;margin:0;padding:10px 14px;border-radius:12px;background:#344b3e;font-size:13px;line-height:1.4}
+@media(max-height:450px){.adventure-goal{padding:6px 10px;font-size:11px}.village-goal-button{font-size:11px;padding:6px}}
+
+/* Expedition postcards: warm Village palette, one scroll area, touch-first cards. */
+.expedition-selection{box-sizing:border-box;background:radial-gradient(ellipse at 100% 0%,#d9e5cc88,transparent 55%),#f4eedf;color:#334637;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));gap:16px}
+.expedition-selection .deck-header{gap:14px;align-items:center;max-width:1080px;width:100%;margin:0 auto}
+.expedition-selection .deck-back{flex:0 0 48px;min-width:48px;height:48px;padding:0;border:1px solid #cdd1bc;background:#fffaf0;color:#46563e;border-radius:16px;box-shadow:0 3px 0 #d5d1bc;font-size:24px}
+.expedition-eyebrow{display:block;font-size:10px;font-weight:800;letter-spacing:.16em;color:#7a8966;margin-bottom:5px}
+.expedition-selection h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(24px,3.5vw,34px);line-height:1.15;color:#334637;margin:0}
+.expedition-selection .deck-header p{color:#72806a;font-size:13px;line-height:1.4;margin:5px 0 0}
+.expedition-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b6c2a3 transparent;width:100%;max-width:1080px;margin:0 auto;padding:2px 3px 10px;box-sizing:border-box}
+.expedition-reward{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:12px 16px;border:1px solid #e1d2ab;border-radius:18px;background:#f6e9c6}
+.expedition-reward-icon{display:grid;place-items:center;flex:0 0 38px;height:38px;background:#d9b883;color:#725638;border-radius:12px;font-size:26px;transform:rotate(-8deg)}
+.expedition-reward strong{display:block;color:#635338;font-size:14px;margin-bottom:3px}
+.expedition-reward span:not(.expedition-reward-icon){font-size:12px;color:#79694c;line-height:1.4}
+.expedition-selection .level-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;overflow:visible;padding:0;align-items:stretch}
+.expedition-selection .level-card{display:flex;flex-direction:column;border:1px solid #ced4bd;background:#fffdf5;border-radius:24px;color:#334637;box-shadow:0 5px 0 #d9ddca,0 10px 24px #4b5b3710;transition:transform .15s,border-color .15s;min-width:0;touch-action:manipulation}
+.expedition-selection .level-card:active{transform:translateY(3px);box-shadow:0 2px 0 #d9ddca}
+.expedition-selection .level-card:focus-visible{outline:3px solid #54734b;outline-offset:3px}
+.expedition-selection .level-art{height:160px;flex-shrink:0;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 70% 35%,#dce9b2,transparent 55%),linear-gradient(145deg,#abc796,#6f9977)}
+.expedition-selection .level-shadow .level-art{background:radial-gradient(ellipse at 70% 35%,#d4cae7,transparent 55%),linear-gradient(145deg,#aaa8c6,#717d9b)}
+.expedition-selection .level-stronghold .level-art{background:radial-gradient(ellipse at 70% 35%,#eed5a1,transparent 55%),linear-gradient(145deg,#d2b68a,#9b8266)}
+.expedition-selection .level-art::before,.expedition-selection .level-art::after{content:'';position:absolute;z-index:-1;width:130%;height:75%;left:-25%;bottom:-43%;border-radius:50%;background:#36573f33;transform:rotate(-12deg)}
+.expedition-selection .level-art::after{left:15%;bottom:-50%;background:#fff9d030;transform:rotate(15deg)}
+.level-terrain{position:absolute;left:16px;top:16px;font-size:10px;letter-spacing:.13em;font-weight:800;color:#fffdf3}
+.level-landmark{position:absolute;left:18px;bottom:35px;width:80px;height:80px;fill:#2e4a3833}
+.expedition-selection .level-number{top:38px;left:15px;font-family:Georgia,serif;font-size:48px;color:#fffce8;opacity:.8;line-height:1}
+.expedition-selection .level-art img{width:48%;height:88%;margin-left:30%;object-fit:contain;filter:drop-shadow(0 6px 0 #283d3020);user-select:none}
+.expedition-selection .level-complete{bottom:12px;right:12px;background:#fffaf0e8;color:#536647;border-radius:20px;font-size:10px;font-weight:750;padding:6px 10px}
+.expedition-selection .level-complete.is-cleared{background:#34583d;color:#fff8dc}
+.expedition-selection .level-copy{display:flex;flex-direction:column;flex:1;padding:18px;min-width:0}
+.expedition-selection .level-copy h2{font-size:21px;font-family:Georgia,serif;line-height:1.2;color:#344a36;margin:0 0 6px}
+.expedition-selection .level-copy>strong{font-size:12px;font-weight:650;color:#718265}
+.expedition-selection .level-copy>p{font-size:13px;line-height:1.5;color:#7a816f;min-height:0;margin:10px 0 14px}
+.level-stage-route{display:flex;gap:5px;margin:auto 0 16px;align-items:center}
+.level-stage-route>span{display:flex;align-items:center;gap:4px;flex:1;font-size:10px;color:#71806c;white-space:nowrap}
+.level-stage-route i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#edf0e5;font-size:10px;font-style:normal;font-weight:750;flex-shrink:0}
+.expedition-selection .level-enter{display:flex;justify-content:space-between;align-items:center;min-height:46px;box-sizing:border-box;padding:12px 16px;border-radius:14px;background:#e9cf8f;color:#625031;font-size:14px;font-weight:750}
+.expedition-selection footer{display:flex;justify-content:space-between;gap:12px;max-width:1080px;width:100%;margin:auto auto 0;font-size:11px;color:#869078;line-height:1.4}
+.expedition-goal{margin-bottom:12px;border:1px solid #cad7bd;border-radius:14px;background:#e7eedc;color:#55684a}
+.expedition-goal summary{min-height:44px;box-sizing:border-box;padding:12px 14px;cursor:pointer;font-size:12px;font-weight:650}
+.expedition-goal p{padding:0 14px 12px;margin:0;font-size:12px;line-height:1.5}
+@media(hover:hover){.expedition-selection .level-card:hover{transform:translateY(-3px);border-color:#81986c}}
+@media(orientation:portrait),(max-width:560px){.expedition-selection{gap:12px;padding:18px 16px 12px}.expedition-selection .level-cards{grid-template-columns:1fr;gap:16px}.expedition-selection .level-card{display:grid;grid-template-columns:34% minmax(0,1fr);border-radius:20px}.expedition-selection .level-art{height:100%;min-height:210px}.expedition-selection .level-copy{padding:16px}.expedition-selection .level-art img{width:94%;height:55%;margin:0;align-self:center}.expedition-selection .level-terrain{font-size:8px;left:12px;top:12px}.expedition-selection .level-number{font-size:36px;top:28px;left:12px}.expedition-selection .level-landmark{width:60px;height:60px;bottom:28px;left:5px}.expedition-selection .level-complete{right:auto;left:8px;bottom:12px;padding:5px 7px;font-size:9px}.expedition-selection .level-copy h2{font-size:20px}.expedition-selection .level-copy>p{font-size:12px}.level-stage-route{gap:4px;flex-wrap:wrap;margin:0 0 12px}.level-stage-route>span{flex:0 0 auto;font-size:9px}.expedition-reward{padding:10px 12px;margin-bottom:14px}}
+@media(orientation:landscape) and (max-height:500px){.expedition-selection{padding:12px 16px 8px;gap:10px}.expedition-eyebrow{display:none}.expedition-selection h1{font-size:24px}.expedition-selection .deck-header p{margin-top:3px;font-size:11px}.expedition-reward{padding:8px 12px;margin-bottom:12px}.expedition-reward-icon{height:30px;flex-basis:30px;font-size:20px}.expedition-selection .level-art{height:108px}.expedition-selection .level-number{font-size:34px;top:30px}.expedition-selection .level-copy{padding:12px}.expedition-selection .level-copy h2{font-size:18px}.expedition-selection .level-copy>p{font-size:11px;margin:8px 0 10px}.level-stage-route{flex-wrap:wrap;gap:4px;margin-bottom:10px}.level-stage-route>span{flex:0 0 auto;font-size:9px}.expedition-selection .level-cards{gap:12px}.expedition-selection .level-enter{min-height:44px;font-size:12px;padding:10px 12px}}
+@media(prefers-reduced-motion:reduce){.expedition-selection .level-card{transition:none}.expedition-selection .level-card:hover{transform:none}}
+
+/* Compact horizontal region picker; keep every card action inside the viewport. */
+.expedition-selection{gap:10px;padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.expedition-selection .deck-header{gap:10px}
+.expedition-selection .deck-back{flex-basis:44px;min-width:44px;height:44px;border-radius:13px}
+.expedition-selection h1{font-size:22px}
+.expedition-selection .deck-header p{font-size:11px;margin-top:3px}
+.expedition-scroll{display:flex;flex-direction:column;overflow:hidden;padding:0;gap:8px}
+.expedition-goal{flex-shrink:0;margin:0}
+.expedition-goal summary{padding:10px 12px;font-size:11px;min-height:44px}
+.expedition-goal p{max-height:64px;overflow:auto;font-size:11px}
+.expedition-selection .level-cards{display:flex;flex:1;min-height:0;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;overscroll-behavior-x:contain;padding:2px 3px 8px;align-items:center;scrollbar-width:thin;touch-action:pan-x pan-y}
+.expedition-selection .level-card{display:flex;flex-direction:column;flex:0 0 216px;width:216px;max-height:100%;border-radius:18px;scroll-snap-align:start;box-shadow:0 3px 0 #d9ddca;overflow:auto;scrollbar-width:none}
+.expedition-selection .level-art{height:94px;min-height:94px}
+.expedition-selection .level-art img{width:46%;height:92%;margin-left:30%}
+.expedition-selection .level-terrain{font-size:8px;left:12px;top:10px}
+.expedition-selection .level-number{font-size:32px;top:25px;left:12px}
+.expedition-selection .level-landmark{width:48px;height:48px;left:12px;bottom:10px}
+.expedition-selection .level-complete{left:auto;right:8px;bottom:8px;font-size:9px;padding:4px 7px}
+.expedition-selection .level-copy{flex:0 0 auto;padding:12px;gap:0}
+.expedition-selection .level-copy h2{font-size:18px;margin:0 0 5px}
+.expedition-selection .level-copy>strong{font-size:11px}
+.expedition-selection .level-stage-route{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 12px}
+.expedition-selection .level-stage-route>span{flex:0 0 auto;font-size:9px}
+.expedition-selection .level-stage-route i{width:16px;height:16px;font-size:9px}
+.expedition-selection .level-enter{min-height:44px;padding:10px 12px;font-size:12px;border-radius:11px}
+.expedition-selection footer{font-size:10px}
+@media(orientation:portrait){.expedition-selection .level-card{flex-basis:240px;width:240px}.expedition-selection .level-art{height:140px;min-height:140px}.expedition-selection .level-cards{align-items:flex-start;padding-top:10px}.expedition-selection .level-copy{padding:14px}.expedition-selection .level-copy h2{font-size:20px}}
+@media(orientation:landscape) and (max-height:380px){.expedition-selection{gap:6px;padding-top:8px}.expedition-selection h1{font-size:20px}.expedition-selection .level-art{height:56px;min-height:56px}.expedition-selection .level-copy{padding:8px 10px}.expedition-selection .level-copy h2{font-size:16px}.expedition-selection .level-stage-route{margin:5px 0 6px}.expedition-selection .level-card{flex-basis:206px;width:206px}.expedition-goal summary{padding:8px 12px}.expedition-selection .level-number{top:20px;font-size:24px}.expedition-selection .level-terrain{top:7px;font-size:7px}.expedition-selection .level-complete{bottom:5px;font-size:8px;padding:3px 6px}}
+.first-journey-dialog{width:min(430px,calc(100vw - 32px));max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box;border-radius:20px;padding:20px;background:#fff7e5;color:#3c503b;border:1px solid #c8d0b6}
+.first-journey-dialog h2{font-size:20px;line-height:1.25;margin:0 0 12px;color:#334a35}
+.first-journey-dialog p,.first-journey-dialog li{font-size:14px;line-height:1.6;color:#5c6b52}
+.first-journey-dialog button{min-height:44px;padding:10px 16px;background:#e8cd8b;color:#58492e;border:0;border-radius:12px;font:inherit;cursor:pointer}
