@@ -20,13 +20,13 @@ export function villageEconomyChecks():void{
  const farm=parseCamp(null),wallet=farm.economy.wallet;
  expect(beginGarden(farm)&&farm.economy.wallet===wallet-1,'garden charges inputs once');
  advanceGarden(farm,12);const restored=parseCamp(JSON.parse(JSON.stringify(farm)));
- expect(beginGarden(restored)&&restored.economy.wallet===wallet-1&&restored.economy.garden?.remaining===18,'reload resumes existing paid work');
+ expect(beginGarden(restored)&&restored.economy.wallet===wallet-1&&restored.economy.garden?.remaining===48,'reload resumes existing paid work');
  expect(!finishGarden(restored)&&resourceCount(restored,'carrot')===6,'no products before completion');
- advanceGarden(restored,18);expect(finishGarden(restored)&&resourceCount(restored,'carrot')===9,'completed batch enters inventory');
- expect(!finishGarden(restored)&&resourceCount(restored,'carrot')===9,'cannot deliver same batch twice');
+ advanceGarden(restored,48);expect(finishGarden(restored)&&resourceCount(restored,'carrot')===11,'completed batch enters inventory');
+ expect(!finishGarden(restored)&&resourceCount(restored,'carrot')===11,'cannot deliver same batch twice');
  expect(restored.economy.lots.at(-1)?.cost===1&&restored.economy.revenue===0&&restored.economy.cogs===0,'production capitalizes cost and never invents sales');
  const blocked=parseCamp({wood:98,economy:{wallet:20,lots:[]}});expect(!beginGarden(blocked)&&blocked.economy.wallet===20,'full warehouse blocks before charging');
- const reserved=parseCamp({wood:97,economy:{wallet:20,lots:[]}});expect(beginGarden(reserved)&&!tradeResource(reserved,'wood',1,'buy'),'production reserves future output space');
- reserved.wood+=15;advanceGarden(reserved,30);expect(!finishGarden(reserved)&&!!reserved.economy.garden,'incoming Run wood leaves ready output pending, never discarded');
+ const reserved=parseCamp({wood:95,economy:{wallet:20,lots:[]}});expect(beginGarden(reserved)&&!tradeResource(reserved,'wood',1,'buy'),'production reserves future output space');
+ reserved.wood+=15;advanceGarden(reserved,60);expect(!finishGarden(reserved)&&!!reserved.economy.garden,'incoming Run wood leaves ready output pending, never discarded');
  const broke=parseCamp({wood:0,economy:{wallet:0,lots:[]}});expect(!beginGarden(broke)&&!broke.economy.garden,'insufficient funds never create job');
 }

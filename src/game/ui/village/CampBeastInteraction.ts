@@ -1,10 +1,11 @@
 import { BATTLE_CHARACTER_ART } from '../art/BattleCharacterManifest';
 import { beastDisplayName, type BeastId } from '../icons/UnitIconRegistry';
-import { villageProfession } from '../../run/VillageCatalog';
+import { villageActivityStation, villageProfession, type VillageResidentId } from '../../run/VillageCatalog';
 import { CAMP_DECOR, type CampState } from '../../run/CampState';
 import { villageWorkPercent } from '../../run/VillageSceneLayout';
 import type { CampActivityController } from './CampActivityController';
 import { getResidentBanter } from '../../run/VillageIncidents';
+import { VILLAGE_PROTOTYPE_TOOLS, VILLAGE_RESIDENT_ACTIVITIES } from './VillagePresentationCatalog';
 
 export const RESIDENT_DEFAULT_POSITIONS: readonly [number, number][] = [
   [36, 29], [52, 40], [22, 36], [60, 27], [36, 51],
@@ -62,35 +63,17 @@ export class CampBeastInteractionManager {
       const art = BATTLE_CHARACTER_ART[id as BeastId]?.base ?? '';
       beast.innerHTML = `<img src="${art}" alt=""><small>${beastDisplayName(id)}</small>`;
 
-      // Visual tool decorations
-      if (id === 'beast-c') {
-        beast.insertAdjacentHTML(
-          'beforeend',
-          '<span class="village-water-tool" aria-hidden="true"><svg viewBox="0 0 80 60"><path d="M10 18 Q-2 18 4 35" fill="none" stroke="#3b4235" stroke-width="5"/><path d="M12 15 H40 V44 H12 Z M40 25 L64 16 L68 23 L40 36" fill="#81bca3" stroke="#3b4235" stroke-width="3"/><path d="M64 30 L70 43 M70 28 L77 40" stroke="#73bed0" stroke-width="3"/></svg></span>',
-        );
-      }
-      if (id === 'beast-b') {
-        beast.insertAdjacentHTML('beforeend', '<span class="village-rod" aria-hidden="true"></span>');
-      }
-
-      // Activity registration
       const favorite = CAMP_DECOR.find((d) => d.favorite === id && state.slots.includes(d.id));
-      if (id === 'beast-c') {
-        activities.add(beast, garden, 'garden', x, y, villageWorkPercent('garden'));
-      } else if (id === 'beast-b') {
-        activities.add(beast, fishing, 'fishing', x, y, villageWorkPercent('fishing'));
-      } else if (favorite) {
-        const station = ground.querySelector<HTMLElement>(`.camp-station[data-decor="${favorite.id}"]`);
-        if (station) {
-          activities.add(
-            beast,
-            station,
-            favorite.id,
-            x,
-            y,
-            favorite.id === 'anvil' ? villageWorkPercent('forge') : undefined,
-          );
-        }
+      const kind = id==='beast-a'?undefined:VILLAGE_RESIDENT_ACTIVITIES[id as VillageResidentId] ?? favorite?.id;
+      if (kind) {
+        const tool = VILLAGE_PROTOTYPE_TOOLS[kind];
+        if (tool) beast.insertAdjacentHTML('beforeend', tool);
+        const station = kind === 'garden' ? garden : kind === 'fishing' ? fishing
+          : ground.querySelector<HTMLElement>(`.camp-station[data-decor="${kind}"]`);
+        const stationId = villageActivityStation(kind);
+        const anchor = stationId === 'garden' || stationId === 'fishing' || stationId === 'forge'
+          ? villageWorkPercent(stationId) : undefined;
+        if (station) activities.add(beast, station, kind, x, y, anchor);
       }
 
       // Interaction click handler: Status bar + Speech bubble banter

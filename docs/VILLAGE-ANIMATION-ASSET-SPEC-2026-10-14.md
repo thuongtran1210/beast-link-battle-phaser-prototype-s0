@@ -1,3 +1,5 @@
+Cập nhật mới nhất 2026-10-14: Swiftwing vận chuyển vườn; Starcaller bỏ phụ vận chuyển, chèo xuồng bán hàng thành phẩm khi Kho đầy; Snowguard có sheet đi tuần và tuyến thử. Chi tiết trạng thái/code/checklist: [carrier/boat/patrol](VILLAGE-CARRIER-BOAT-PATROL-2026-10-14.md). Các đoạn “chưa triển khai” bên dưới là lịch sử nếu trùng phạm vi này; trạm canh/báo động vẫn chưa làm.
+
 # Làng Thú — Đặc tả asset và prompt animation cư dân, công cụ, trạm
 
 Ngày: 2026-10-14. Trạng thái: **ĐẶC TẢ CHUẨN BỊ ASSET / CHƯA TẠO ẢNH / CHƯA TÍCH HỢP / LIVE QA CHƯA THỰC HIỆN**.
@@ -10,7 +12,7 @@ Tài liệu này đặc tả hình ảnh cho hoạt động làng, bao gồm nh�
 
 Nguồn: `VILLAGE-STORY-DIRECTION-2026-10-09.md`, `FRAME-ANIMATION-AGENT-WORKFLOW.md`, `../ART_AGENT_INSTRUCTIONS.md`, bộ `../art/style/`, `../src/game/run/VillageCatalog.ts`, asset owner hiện có. Repo là nguồn dùng trong công việc này, không gọi Notion.
 
-Hiện runtime có vườn/câu cá/xưởng và chuyển động nghề dạng prototype. Snowguard vẫn ghi bảo vệ kiêm giao hàng; Starcaller vẫn ghi nhà thiên văn. Nghề chăm hoa/trang trí của Starcaller, giao hàng chính cho Swiftwing và các clip trong tài liệu là mục tiêu mới, không phải báo cáo đã chạy.
+Hiện runtime có vườn/câu cá/xưởng và animation prototype/fallback. Hướng mới là vận chuyển đi bộ cho Swiftwing/Starcaller, điểm nhận chung và trạm canh/tuần tra; chưa có runtime cho chuỗi đó. Không dùng mô tả prompt làm báo cáo tính năng đã chạy.
 
 Chỉ chuẩn bị prompt cho sáu cư dân; không coi tài liệu là phê duyệt STYLE APPROVED hoặc lệnh mass-generate. Không ghi đè source owner, không tự đổi thiết kế để khớp mô tả loài cũ.
 
@@ -21,11 +23,11 @@ Chỉ chuẩn bị prompt cho sáu cư dân; không coi tài liệu là phê duy
 | beast-a | Snowguard / vịt trắng | duck-guardian | Tuần tra, kiểm tra cổng và kho |
 | beast-b | Shadowclaw / gấu mèo | raccoon-swordsman | Câu cá |
 | beast-c | Windstrider / thỏ | rabbit-archer | Trồng và thu hoạch cà rốt |
-| beast-d | Starcaller / lửng tím | badger-mage | Chăm hoa, trang trí không gian chung |
+| beast-d | Starcaller / lửng mật tím | badger-mage | Phụ vận chuyển đi bộ, cất trượng khi ôm kiện |
 | beast-e | Ironclad / gấu nâu | bear-hammer | Chế tác đồ chơi, sửa đồ |
-| beast-f | Swiftwing / cáo | fox-archer | Giao hàng, thư và tin nhắn |
+| beast-f | Swiftwing / cáo | fox-archer | Vận chuyển đi bộ chính đến điểm nhận chung |
 
-Đính kèm ảnh toàn thân owner đang dùng cho đúng slug, không dùng icon tròn hoặc ảnh chụp UI làm reference sản xuất. Chọn `base_owner_v01.png` nếu có và đang được dùng; nếu không, kiểm tra `base_v01.png` cùng trang Review/Character Studio. Lưu đường dẫn reference thực tế vào metadata khi bàn giao. Chưa inspect ảnh toàn thân trong công việc viết tài liệu này; mô tả chi tiết trang phục của từng reference phải được kiểm tra trước khi tạo ảnh.
+Đính kèm ảnh toàn thân owner đang dùng cho đúng slug, không dùng icon tròn hoặc ảnh chụp UI làm reference sản xuất. Chọn `base_owner_v01.png` nếu có và đang được dùng; nếu không, kiểm tra `base_v01.png` cùng trang Review/Character Studio. Lưu đường dẫn reference thực tế vào metadata khi bàn giao. Cập nhật prompt chi tiết: đã xem sáu ảnh toàn thân đang được manifest dùng và garden/forge/dock; đường dẫn, identity và trang phục có trong tài liệu prompt chi tiết. Owner vẫn cần đính kèm file thật khi tạo ảnh.
 
 Giữ mặt, loài, tỷ lệ, màu, mũ, áo và phụ kiện nhận diện. Dụng cụ nghề chỉ thay vật cầm tay trong clip nghề được chỉ định; vũ khí chiến đấu được cất ngoài hình, không vừa câu cá vừa cầm kiếm/cung. Đây là biến thể nghề trong làng, không sửa bộ Battle. Ironclad dùng chính búa reference, không thêm búa thứ hai.
 
@@ -100,127 +102,22 @@ Mỗi dòng dưới là ACTION frame 1→8; tạo một file riêng, không ghé
 
 Idle/walk dùng thiết bị đi đường cố định cho mỗi cư dân. Chuyển vào clip nghề bằng enter, không để công cụ bật hiện giữa vòng walk. Bản giao hàng riêng của Swiftwing ở dưới luôn có kiện hàng.
 
-## 5. Prompt hành động nghề cho từng cư dân
+## 5. Prompt chi tiết nghề cho sáu cư dân
 
-Đoạn ACTION viết bằng tiếng Anh để dán trực tiếp vào prompt chung. Số 1–8 luôn tương ứng vị trí frame, không được vẽ số vào ảnh.
+Nguồn pose/prompt chi tiết hiện hành: [VILLAGE-PROFESSION-ANIMATION-PROMPTS-2026-10-14.md](VILLAGE-PROFESSION-ANIMATION-PROMPTS-2026-10-14.md). Các ACTION rút gọn cũ được thay bằng tài liệu này để không giữ hai bộ pose khác nhau. Mỗi clip có một file `.txt` đầy đủ, bao gồm nguyên Style Lock/Negative Lock, identity đã kiểm ảnh và tám frame cụ thể.
 
-### 5.1. Snowguard — tuần tra và kiểm tra
+Owner chốt hướng mới nhất: **Swiftwing vận chuyển đi bộ chính, Starcaller chèo xuồng bán hàng thành phẩm khi Kho đầy; sản phẩm đặt tại trạm rồi đưa đến giỏ/kệ cạnh nhà chung**. Bỏ phép dịch chuyển và chăm hoa trong bộ hiện hành. **Snowguard tuần tra/trạm canh gần cổng; cư dân trong đội hình vẫn làm nghề, báo động giữ tiến độ và cargo.** Runtime các hướng mới chưa triển khai. Xem [cập nhật transport/guard](VILLAGE-TRANSPORT-GUARD-UPDATE-2026-10-14.md).
 
-PROP: giữ khiên reference cho patrol; inspect dùng bàn tay trống, không thêm giáo/còi. Motif: mũ đỏ, vịt trắng, khiên; dáng thấp vững của Tanker.
+| Cư dân | Bộ tối thiểu | Điểm cần khóa |
+| --- | --- | --- |
+| Snowguard | idle, walk, inspect | Vịt trắng, mũ đỏ, suit/tie, khiên chữ nhật reference |
+| Shadowclaw | idle, walk, fishing-enter/work/finish | Gấu mèo, scarf đỏ, một cần; catch/xô rời, hàng để tại bến |
+| Windstrider | idle, walk, garden-enter/work/finish | Thỏ hood xanh, bình pickup frame 4/release frame 4; giỏ output rời |
+| Starcaller | idle, walk, delivery-pickup, loaded-walk, delivery-finish | Giữ mũ/áo tím; trượng ngoài hình; một kiện, không teleport |
+| Ironclad | idle, walk, forge-enter/work/finish | Gấu nâu, mũ đen, hai buckle; một búa; đồ chơi để tại bàn |
+| Swiftwing | idle, walk, delivery-pickup, loaded-walk, delivery-finish | Nhặt frame 4/đặt frame 5 ở điểm nhận cạnh nhà chung |
 
-**patrol-inspect — one-shot, 8 fps:**
-```text
-1. Stand planted with the reference shield at rest.
-2. Turn eyes toward a checkpoint on the right.
-3. Lean slightly forward while keeping both feet grounded.
-4. Raise the free hand above the eyes to inspect.
-5. Hold a serious, exaggerated watchful expression.
-6. Lower the free hand.
-7. Give a small satisfied nod.
-8. Settle into the same shield-at-rest idle.
-```
-**patrol-startle — one-shot, 10 fps, tùy chọn:** 1 idle; 2 phát hiện; 3 giật vai; 4 nép sau khiên; 5 hé mắt nhìn; 6 nhận ra báo động nhầm; 7 cười ngượng; 8 idle. Không vẽ địch/chuông/chữ. Không xem đây là logic kích hoạt raid.
-
-### 5.2. Shadowclaw — câu cá
-
-PROP: một cần câu đơn giản thay kiếm, hai tay giữ nhất quán. Giữ mặt nạ lông và trang phục gấu mèo theo reference; không biến thành mèo. Bến, cá, xô, phao rời.
-
-**fishing-enter — one-shot, 8 fps:**
-```text
-1. Stand holding one fishing rod low beside the body.
-2. Plant feet and raise the rod slightly.
-3. Draw the rod backward without leaving the cell.
-4. Swing the rigid rod forward toward the right.
-5. Extend both hands into the fishing position.
-6. Relax the shoulders.
-7. Settle the grip and look toward the water socket.
-8. Hold the exact fishing-work starting pose.
-Do not draw water, a floating bobber or a caught fish in this character sheet.
-```
-**fishing-work — loop, 8 fps:** 1 giữ cần; 2 thở vào; 3 cần nâng nhẹ nguyên khối; 4 nhìn phao; 5 thở ra; 6 hạ nhẹ; 7 chớp mắt; 8 nối 1. Không liên tục giả giật được cá.
-
-**fishing-finish — one-shot, 10 fps:** 1 pose work; 2 thấy dây căng; 3 ngả thân; 4 kéo cần bằng hai tay; 5 đỉnh kéo; 6 giữ thăng bằng; 7 nhìn sản phẩm bên phải; 8 về pose giữ cần thấp. Cá rời xuất hiện theo socket tại frame 5 nếu giao dịch thành công; không bake cá vào sheet.
-
-### 5.3. Windstrider — vườn cà rốt
-
-PROP: một bình tưới nhỏ; cung được cất ngoài hình. Giữ tai dài, trang phục xanh và nhận diện thỏ reference. Cây/cà rốt mọc trên trạm là lớp riêng.
-
-**garden-enter — one-shot, 8 fps:** 1 tay trống; 2 cúi tới socket bình đặt; 3 nắm quai; 4 nhấc bình; 5 đứng lên; 6 hướng vòi sang phải; 7 ổn định; 8 pose work. Ẩn prop bình đặt tại frame 4.
-
-**garden-work — loop, 8 fps:**
-```text
-1. Hold one watering can with the spout facing right.
-2. Tilt the can forward slightly.
-3. Lean gently toward the garden work socket.
-4. Hold the watering tilt, feet planted.
-5. Shift the can a little across the same small work area.
-6. Ease the torso back while keeping the grip.
-7. Bring the can close to the starting tilt.
-8. Flow smoothly back into frame 1.
-Do not draw water drops, soil, plants, carrots or a second can.
-```
-**garden-finish — one-shot, 8 fps:** 1 giữ bình; 2 cúi; 3 hạ bình tới socket; 4 thả quai; 5 đứng lên; 6 lau trán; 7 nhìn luống mỉm cười; 8 tay trống idle. Hiện prop bình đặt frame 4; thành phẩm thuộc runtime.
-
-### 5.4. Starcaller — chăm hoa và trang trí
-
-PROP: một kéo tỉa nhỏ thay vật cầm chiến đấu trong clip nghề; giữ mũ/áo tím và khuôn mặt lửng đúng reference. Không vẽ phép tấn công hoặc gắn buff Battle.
-
-**flowers-enter — one-shot, 8 fps:** 1 idle tay trống; 2 nhìn luống; 3 cúi nhẹ; 4 lấy kéo từ socket; 5 nâng kéo; 6 xoay cổ tay; 7 đưa tới vùng hoa; 8 pose work. Ẩn kéo đặt frame 5.
-
-**flowers-work — loop, 8 fps:**
-```text
-1. Hold one small pruning shear toward the flower socket on the right.
-2. Open the blades slightly, keeping a stable grip.
-3. Lean toward one imaginary stem.
-4. Close the shear in one small clean snip.
-5. Relax the wrist without changing tool shape.
-6. Inspect the result with a pleased expression.
-7. Reopen the blades into the starting position.
-8. Flow back into frame 1, feet still planted.
-Do not draw flowerbeds, cut flowers, sparkles, magic projectiles or text.
-```
-**flowers-finish — one-shot, 8 fps:** 1 work; 2 thu tay; 3 đóng kéo; 4 hạ kéo tới socket; 5 thả; 6 đứng thẳng; 7 ngắm thành quả; 8 idle. Hoa đổi lớp khi hoạt động thật hoàn tất; không tạo sản phẩm kinh tế mới.
-
-### 5.5. Ironclad — xưởng đồ chơi
-
-PROP: búa reference duy nhất, cố định grip. Giữ gấu nâu, mũ đen, áo trắng/dây đeo, dáng vững. Bàn, phôi và đồ chơi nằm ngoài sheet.
-
-**forge-enter — one-shot, 8 fps:** 1 búa nghỉ theo reference; 2 nhìn bàn; 3 đặt chân; 4 kéo búa về trước; 5 hai tay ổn định; 6 nâng nhẹ; 7 hướng đầu búa tới phôi; 8 pose work.
-
-**forge-work — loop, 8 fps:**
-```text
-1. Hold the single reference hammer above the work area on the right.
-2. Raise the rigid hammer slightly, hands fixed to its handle.
-3. Reach a small controlled anticipation pose.
-4. Bring the hammer down toward the declared work-contact socket.
-5. Hold the low contact pose with planted feet, no target painted in.
-6. Lift the hammer back with a small recoil.
-7. Recover the shoulders and grip.
-8. Return toward frame 1 for a seamless gentle crafting loop.
-No second hammer, anvil, wood block, toy, sparks or attack shockwave.
-```
-**forge-finish — one-shot, 8 fps:** 1 work; 2 thu búa; 3 nhìn sản phẩm; 4 nghiêng đầu; 5 gật hài lòng; 6 đưa búa về vị trí nghỉ; 7 thư giãn; 8 idle. Sự cố đồ chơi hù gấu là clip phụ sau, không cần để hoàn thiện nghề cơ bản.
-
-### 5.6. Swiftwing — giao hàng và thư
-
-PROP: một kiện hàng nhỏ không chữ, ôm trước thân; cung cất ngoài hình. Giữ cáo cam, tai/đuôi/trang phục reference, dáng Ranger gọn. Kiện dùng chung asset reference với prop đặt.
-
-**delivery-pickup — one-shot, 8 fps:**
-```text
-1. Stand empty-handed beside a parcel pickup socket on the right.
-2. Look down toward the parcel.
-3. Bend knees and lower both hands.
-4. Grip the single small parcel.
-5. Lift it close to the chest.
-6. Straighten the legs without changing parcel size.
-7. Settle both hands underneath the parcel.
-8. Hold the exact loaded-walk neutral pose.
-The parcel appears in the hands only from frame 4 onward; no second parcel.
-```
-**delivery-walk — loop, 8 fps:** 1 trái trước; 2 dồn trọng lượng; 3 chân qua giữa; 4 phải tiến; 5 phải trước; 6 dồn trọng lượng; 7 qua giữa; 8 trái tiến. Ôm kiện ổn định, bước tại chỗ, đuôi không xuyên kiện. Prop đặt ẩn tại pickup frame 4.
-
-**delivery-finish — one-shot, 8 fps:** 1 ôm kiện; 2 nhìn điểm giao; 3 cúi; 4 hạ kiện; 5 thả tay; 6 đứng lên tay trống; 7 vẫy chào; 8 idle. Chuyển kiện sang prop world tại frame 5, không sinh bản sao. Giao thư dùng cùng logic sau; chưa cần sinh riêng cả bộ clip thư trong đợt đầu.
-
+Bộ tối thiểu thực tế 28 clip trước reuse, thêm delivery-greet tùy chọn = 29 prompt. Tọa độ/timing trong prompt là target thiết kế; phải đo lại file thật. Bản `.txt` được xuất từ script, không sửa riêng để tránh lệch với tài liệu.
 ## 6. Asset công cụ và trạm cần chuẩn bị
 
 | Bộ | Có sẵn / phải giữ | Asset mới dự kiến | Bộ phận động |
@@ -228,9 +125,9 @@ The parcel appears in the hands only from frame 4 onward; no second parcel.
 | Tuần tra | Map/cổng/kho nếu đã có | Điểm kiểm tra nhỏ, chuông treo tùy chọn | Lưỡi chuông + dây, không cần xây cổng mới |
 | Câu cá | Bến owner/bến đã bake map | Cần đặt nghỉ, xô rỗng, xô có cá, phao | Phao nhấp nhô, ripple, dây; cần cầm trong clip |
 | Vườn | Garden owner | Bình đặt, luống rỗng/cây non/cây trưởng thành, giỏ rỗng/đầy | Nước tưới rời, lá rung nhẹ |
-| Chăm hoa | Dùng không gian chung hiện có | Bồn hoa nhỏ, kéo đặt, hoa gọn/gọn đẹp sau chăm | Hoa đung đưa, cánh rơi ít nếu cần |
+| Phụ vận chuyển | Giữ nhận diện Starcaller | Kiện chung với Swiftwing, giỏ/kệ điểm nhận | Pickup/loaded-walk/place; không vòng phép/fade |
 | Xưởng | Forge owner | Phôi gỗ, đồ chơi hoàn tất, vị trí búa nghỉ nếu cần | Phôi phản ứng nhẹ, bụi gỗ rời |
-| Giao hàng | Đường hiện có | Hộp thư hoặc điểm giao, kiện đặt, thư không chữ | Nắp hộp thư mở/đóng, cờ báo thư |
+| Vận chuyển chính | Đường làng hiện có | Kiện/giỏ-kệ chung cạnh nhà chung | Một owner hand/world; nhập Kho theo giao dịch |
 
 Phân biệt trạng thái hình ảnh cây/hoa với cơ chế tăng trưởng: chưa thêm thời gian mọc cây, thu hoạch chạm tay hoặc tài nguyên hoa. Xô/giỏ/đồ chơi là hiển thị, không nguồn cộng hàng thứ hai.
 
@@ -260,9 +157,9 @@ Không thêm độ bền, cháy máy, sửa hỏng, nhiên liệu hoặc mất c
 | Checkpoint tuần tra | Chuông nghỉ | Inspect; chuông chỉ rung khi có sự kiện được phát thật | Không hàng hóa; nod là hoàn tất lượt |
 | Bến cá | Xô rỗng, phao yên | Phao/ripple loop; kéo cần là one-shot | Xô cá overlay khi batch ready; không cho mỗi loop thêm cá |
 | Vườn | Luống + bình nghỉ | Nước theo cửa sổ tưới | Giỏ cà rốt khi batch ready, không xóa cây mỗi loop |
-| Hoa | Bồn hoa cơ bản | Hoa rung nhẹ tại vùng kéo | Bản chăm gọn; không cộng tài nguyên hoa |
+| Điểm nhận | Giỏ/kệ trống cạnh nhà chung | Người vận chuyển đi bộ mang hàng tới | Hàng world sau place, nhập Kho chỉ sau commit |
 | Xưởng | Bàn trống hoặc phôi đã trả phí | Phôi + bụi ở điểm búa chạm | Một đồ chơi ở socket; giữ nếu kho đầy |
-| Điểm giao | Không kiện, nắp đóng | Có kiện tới → nắp mở one-shot | Kiện đặt/nắp đóng; không đổi số kho nếu chỉ diễn hoạt cảnh |
+| Trạm canh | Chuông nghỉ, chỗ đứng Snowguard | Tuần tra/inspect, không phải lính đứng yên cả ngày | Báo động thuộc slice sau; giữ job/cargo khi ngắt |
 
 ## 7. Prompt asset và animation công cụ
 
@@ -333,7 +230,7 @@ Shadowclaw: idle, walk, fishing-enter/work/finish; cần nghỉ, xô empty/full,
 
 ### Đợt 3 — sinh hoạt của ba cư dân còn lại
 
-Snowguard: idle, walk, inspect; Starcaller: idle, walk, flowers-enter/work/finish, bồn hoa/kéo; Swiftwing: idle, walk không hàng, pickup, loaded-walk, finish, kiện/hộp thư. Greet và gag làm sau. Đợt tối thiểu gồm 29 clip nhân vật trước tái sử dụng (5+5+5+3+5+6); greet thêm 6, startle thêm 1 nếu cần. Không yêu cầu Attack/Skill/Hit/KO mới cho nghề làng.
+Snowguard: idle, walk, inspect; Starcaller và Swiftwing: idle, walk không hàng, delivery-pickup, loaded-walk, delivery-finish. Hai prop candidate riêng: trạm canh gần cổng, giỏ/kệ nhận hàng cạnh nhà chung; không vẽ trạm vào sheet nhân vật. Bộ tối thiểu 28 clip trước reuse, thêm delivery-greet Swiftwing tùy chọn = 29 prompt. Trạm/chuông và điểm nhận cần owner review vị trí/art.
 
 ### Đường dẫn dự kiến và metadata
 
@@ -358,3 +255,7 @@ Chỉ tạo thư mục khi có asset thật. Metadata đi kèm: assetId, beastId
 ## 11. Mẫu giao việc cho agent/công cụ
 
 > Chuẩn bị [cư dân / trạm] theo docs/VILLAGE-ANIMATION-ASSET-SPEC-2026-10-14.md. Đính kèm reference toàn thân owner và trạm đúng phiên bản. Dùng nguyên style lock + negative lock, prompt chung và đúng một chuỗi 8 frame mỗi sheet. Tạo bộ tối thiểu, ghép preview với trạm và đạo cụ trước khi mở rộng. Giữ source, đo file thật và khai báo pivot/socket/cue. Không thay Battle Run, không phát thưởng từ animation, không gán STYLE APPROVED/GAME READY khi chưa có bằng chứng.
+
+## Cập nhật chu kỳ vườn — 2026-10-14
+
+Owner đồng ý ví dụ 60 giây làm việc / 5 cà rốt / 1 Đồng cho lượt mới. Đã triển khai gieo/cây lớn/trưởng thành/thu hoạch/giỏ chờ lấy với job lưu lâu dài; legacy giữ 30s/3 củ đã trả. Prototype SVG cho luống; chưa clip gieo/thu hoạch thật. Panel có nhận giỏ thủ công tạm, vận chuyển vẫn chưa tích hợp. Nguồn runtime/checklist: [VILLAGE-GARDEN-CYCLE-2026-10-14.md](VILLAGE-GARDEN-CYCLE-2026-10-14.md). Các mô tả garden recipe cũ được supersede riêng cho lượt mới; câu cá/xưởng/Battle không đổi.

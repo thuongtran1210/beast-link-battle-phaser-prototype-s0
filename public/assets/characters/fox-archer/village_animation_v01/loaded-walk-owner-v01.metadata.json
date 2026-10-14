@@ -1,0 +1,123 @@
+{
+  "actualWidth": 1774,
+  "actualHeight": 887,
+  "transparentPixels": 880421,
+  "sourceSha256": "74c12d9ed9424e0b01c2c6ec4a94694336daea0bc1e3ea7ecd3457c1d9797ed1",
+  "neutralBodyHeight": 398,
+  "frames": [
+    {
+      "x": 58,
+      "y": 23,
+      "width": 323,
+      "height": 411,
+      "pivotX": 159.07,
+      "pivotY": 406,
+      "alphaBounds": {
+        "minX": 62,
+        "minY": 27,
+        "maxX": 376,
+        "maxY": 429
+      }
+    },
+    {
+      "x": 498,
+      "y": 34,
+      "width": 328,
+      "height": 400,
+      "pivotX": 162.55999999999995,
+      "pivotY": 395,
+      "alphaBounds": {
+        "minX": 502,
+        "minY": 38,
+        "maxX": 821,
+        "maxY": 429
+      }
+    },
+    {
+      "x": 937,
+      "y": 44,
+      "width": 332,
+      "height": 390,
+      "pivotX": 167.06999999999994,
+      "pivotY": 385,
+      "alphaBounds": {
+        "minX": 941,
+        "minY": 48,
+        "maxX": 1264,
+        "maxY": 429
+      }
+    },
+    {
+      "x": 1393,
+      "y": 45,
+      "width": 330,
+      "height": 389,
+      "pivotX": 154.55999999999995,
+      "pivotY": 384,
+      "alphaBounds": {
+        "minX": 1397,
+        "minY": 49,
+        "maxX": 1718,
+        "maxY": 429
+      }
+    },
+    {
+      "x": 60,
+      "y": 463,
+      "width": 329,
+      "height": 402,
+      "pivotX": 157.07,
+      "pivotY": 397,
+      "alphaBounds": {
+        "minX": 64,
+        "minY": 467,
+        "maxX": 384,
+        "maxY": 860
+      }
+    },
+    {
+      "x": 506,
+      "y": 462,
+      "width": 324,
+      "height": 403,
+      "pivotX": 154.55999999999995,
+      "pivotY": 398,
+      "alphaBounds": {
+        "minX": 510,
+        "minY": 466,
+        "maxX": 825,
+        "maxY": 860
+      }
+    },
+    {
+      "x": 941,
+      "y": 472,
+      "width": 341,
+      "height": 393,
+      "pivotX": 163.06999999999994,
+      "pivotY": 388,
+      "alphaBounds": {
+        "minX": 945,
+        "minY": 476,
+        "maxX": 1277,
+        "maxY": 860
+      }
+    },
+    {
+      "x": 1395,
+      "y": 464,
+      "width": 326,
+      "height": 401,
+      "pivotX": 152.55999999999995,
+      "pivotY": 396,
+      "alphaBounds": {
+        "minX": 1399,
+        "minY": 468,
+        "maxX": 1716,
+        "maxY": 860
+      }
+    }
+  ],
+  "registrationNote": "Shared pickup neutral scale; horizontal ground targets at 49% cell, baseline from alpha. Owner foot/parcel review pending.",
+  "status": "owner-supplied; preview registered; art review open"
+}

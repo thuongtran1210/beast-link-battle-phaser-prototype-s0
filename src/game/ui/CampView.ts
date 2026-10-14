@@ -1,28 +1,29 @@
 import { mountVillageRiverLayers } from './village/VillageRiverLayers';
 import { mountVillageCloudShader } from './village/VillageCloudShader';
-import { villageProfession } from '../run/VillageCatalog';
-import { VILLAGE_SCENE, villageWorkPercent } from '../run/VillageSceneLayout';
+import { VILLAGE_SCENE } from '../run/VillageSceneLayout';
 import { villageJourney } from '../run/VillageJourney';
-import { forgeGoal, commitCampDecor } from '../run/VillageGoal';
+import { forgeGoal } from '../run/VillageGoal';
 import { showVillageGoal } from './VillageGoalView';
 import { showFirstVillage } from './FirstJourneyView';
 import { transitionScreen } from './SceneTransition';
 import { showVillageInventory } from './VillageInventoryView';
 import { showVillageProduction } from './VillageProductionView';
 import { showVillageGarden } from './VillageGardenView';
-import { advanceVillageLife, villageWorkRate, beginProduction, advanceProduction, finishProduction, productionBlockReason, isProductionKind, VILLAGE_RECIPES } from '../run/VillageEconomy';
-import { parseCamp } from '../run/CampState';
-import { recordVillageStory } from '../run/CampState';
+import { isProductionKind, VILLAGE_RECIPES } from '../run/VillageEconomy';
+import { VillageApplication } from '../run/VillageApplication';
+import { paintVillageBoat,disposeVillageBoat } from './village/VillageBoatView';
+import { VillagePatrolView } from './village/VillagePatrolView';
+import { guardPost } from './village/VillageGuardPost';
+import { paintStationOutputs } from './village/VillageStationOutputs';
+import { gardenPrototypeLayers } from './village/VillageGardenLayers';
+import { VillageCarrierView,receivingPoint } from './village/VillageCarrierView';
 import { mountVillageCamera } from './village/VillageMapCamera';
 import { CampActivityController } from './village/CampActivityController';
 import { CAMP_DECOR, loadCamp, saveCamp } from '../run/CampState';
-import { BATTLE_CHARACTER_ART } from './art/BattleCharacterManifest';
-import { beastDisplayName, type BeastId } from './icons/UnitIconRegistry';
 import { CampBeastInteractionManager } from './village/CampBeastInteraction';
 import { showVillageResidentDialog } from './village/VillageResidentDialog';
 import { showVillageDiaryDialog } from './village/VillageDiaryDialog';
 import { renderVillageWorkshopPanel } from './village/VillageWorkshopPanel';
-import { rollVillageIncident, type IncidentKind } from '../run/VillageIncidents';
 import { bgmManager } from '../audio/BgmManager';
 const props:Record<string,string> = {
   bath:'<svg viewBox="0 0 120 90"><ellipse cx="60" cy="34" rx="49" ry="18" fill="#aad1cf" stroke="#293c30" stroke-width="5"/><path d="M11 34 Q15 77 60 77 Q105 77 109 34" fill="#e3d6b8" stroke="#293c30" stroke-width="5"/><circle cx="42" cy="25" r="7" fill="white"/><circle cx="78" cy="20" r="5" fill="white"/></svg>',
@@ -39,8 +40,6 @@ for(const [id,viewBox] of Object.entries(furnitureWindows)) {
 }
 
 props.anvil='<svg class="camp-furniture" viewBox="35 230 1202 849" aria-hidden="true"><image href="/assets/ui/camp/village-owner-v1/forge.png" width="1254" height="1254"/></svg>';
-const gardenProp='<svg viewBox="46 284 1160 759" aria-hidden="true"><image href="/assets/ui/camp/village-owner-v1/garden.png" width="1254" height="1254"/></svg>';
-const residentPositions=[[36,29],[52,40],[22,36],[60,27],[36,51],[56,55],[13,52],[60,73],[47,43],[54,68]];
 export function showCamp(back:()=>void,explore?:()=>void):void {
   bgmManager.playLobby();
   const state = loadCamp();
@@ -70,60 +69,68 @@ export function showCamp(back:()=>void,explore?:()=>void):void {
   const stopRiver=mountVillageRiverLayers(root.querySelector('.village-world')!);
   let activities:CampActivityController|undefined;
   let beastManager: CampBeastInteractionManager | undefined;
-  let productionSaveClock=0;
+  const village=new VillageApplication(state,{save:saveCamp});
+  const carrierView=new VillageCarrierView(root);
+  const patrolView=new VillagePatrolView(root);
+  let gardenKey='';
+  const refreshGarden=()=>{const element=root.querySelector<HTMLElement>('.village-garden');if(!element)return;const snapshot=village.garden(),carrier=village.carrier(),hidden=Boolean(carrier&&(carrier.kind??'garden')==='garden'&&carrier.jobId===snapshot.jobId&&carrier.picked&&carrier.phase!=='return'),key=`${snapshot.jobId}:${snapshot.stage}:${snapshot.quantity}:${hidden}`;if(key!==gardenKey){gardenKey=key;element.innerHTML=gardenPrototypeLayers(snapshot,hidden);element.dataset.gardenStage=snapshot.stage;}};
   const goalButton=document.createElement('button');goalButton.className='village-goal-button';
   root.querySelector('.deck-header')!.append(goalButton);
   const updateBalance=()=>{root.querySelector('.camp-wood')!.textContent=`Gỗ ${state.wood} · ${state.economy.wallet.toLocaleString('vi-VN',{maximumFractionDigits:2})} Đồng`;
     goalButton.textContent=state.trackedGoal==='forge'?(forgeGoal(state).complete?'Xưởng đã hoạt động':'Mục tiêu: Mở xưởng'):'Mục tiêu';};
   const render = () => {
+    carrierView.rebind();
+    patrolView.rebind();disposeVillageBoat(root);
+    beastManager?.dispose();
     activities?.rebind();
     activities??=new CampActivityController(kind=>{
-      if(isProductionKind(kind)){
-        const candidate=parseCamp(state);
-        if(!finishProduction(candidate,kind)||!saveCamp(candidate)){status.textContent=`${VILLAGE_RECIPES[kind].name} chờ giao · Kiểm tra chỗ kho hoặc lưu game`;return false;}
-        Object.assign(state,candidate);updateBalance();status.textContent=`${VILLAGE_RECIPES[kind].name} vừa giao +${VILLAGE_RECIPES[kind].quantity} ${VILLAGE_RECIPES[kind].output==='fish'?'cá':kind==='anvil'?'đồ chơi':'cà rốt'} vào kho`;
-        // Roll workplace incident (higher chance if hungry)
-        const isWorkerHungry = state.economy.life.hungry.some((hid) =>
-          kind === 'garden' ? hid === 'beast-c' : kind === 'fishing' ? hid === 'beast-b' : hid === 'beast-e',
-        );
-        const incident = rollVillageIncident(kind as IncidentKind, isWorkerHungry);
-        if (incident) {
-          if (!state.diary.includes(incident.diaryMeme)) {
-            state.diary.push(incident.diaryMeme);
-            saveCamp(state);
-          }
-          status.textContent = `${incident.icon} ${incident.title}: ${incident.dialogue}`;
-          // Show speech bubble over worker beast if visible
-          const workerBeast = root.querySelector<HTMLElement>(`[data-beast-id="${incident.beastId}"]`);
-          if (workerBeast) {
-            beastManager?.showIncidentNotification(workerBeast, incident.icon, incident.dialogue);
-          }
+      const result=village.completeActivity(kind);
+      if(!result.ok){status.textContent=result.block.message;return false;}
+      for(const event of result.events??[]){
+        if(event.type==='production-staged'){status.textContent=`${VILLAGE_RECIPES[event.kind].name} đã làm xong · Hàng tại trạm chờ Swiftwing`;paintStationOutputs(root,state);continue;}
+        if(event.type==='garden-harvested'){status.textContent=`Đã thu hoạch ${event.quantity} cà rốt · Giỏ chờ lấy tại vườn`;refreshGarden();continue;}
+        if(event.type!=='production-delivered')continue;
+        updateBalance();
+        status.textContent=`${VILLAGE_RECIPES[event.kind].name} vừa giao +${event.quantity} ${event.resource==='fish'?'cá':event.resource==='toy'?'đồ chơi':'cà rốt'} vào kho`;
+        if(event.incident){
+          const incident=event.incident;
+          status.textContent=`${incident.icon} ${incident.title}: ${incident.dialogue}`;
+          const workerBeast=root.querySelector<HTMLElement>(`[data-beast-id="${event.workerId}"]`);
+          if(workerBeast)beastManager?.showIncidentNotification(workerBeast,incident.icon,incident.dialogue);
         }
       }
-      const story=kind==='anvil'?'forge.toy-duck':kind==='garden'?'garden.carrot-bite':kind==='fishing'?'fishing.old-boot':undefined;
-      if(story&&recordVillageStory(state,story))saveCamp(state);
-      const decor=CAMP_DECOR.find(d=>d.id===kind);
-      if(decor && !state.diary.includes(decor.meme)) {state.diary.push(decor.meme);saveCamp(state);}
     },{
       begin:kind=>{
         if(!isProductionKind(kind))return 8;
-        const candidate=parseCamp(state),station=root.querySelector<HTMLElement>(kind==='garden'?'.village-garden':kind==='fishing'?'.village-fishing':'.camp-station[data-decor="anvil"]');
-        const reason=productionBlockReason(state,kind);
-        if(!beginProduction(candidate,kind)||!saveCamp(candidate)){if(station)station.dataset.blockReason=reason??'Chưa lưu được vật tư';return false;}
-        if(station)delete station.dataset.blockReason;Object.assign(state,candidate);updateBalance();return state.economy[kind]!.remaining;
+        const station=root.querySelector<HTMLElement>(kind==='garden'?'.village-garden':kind==='fishing'?'.village-fishing':'.camp-station[data-decor="anvil"]');
+        const result=village.begin(kind);
+        if(!result.ok){if(station)station.dataset.blockReason=result.block.message;return false;}
+        if(station)delete station.dataset.blockReason;updateBalance();return result.value;
       },
-      advance:(kind,seconds)=>{if(isProductionKind(kind))advanceProduction(state,kind,seconds);},
-      rate:id=>villageWorkRate(state,id),
+      advance:(kind,seconds)=>{if(isProductionKind(kind))village.advance(kind,seconds);},
+      rate:id=>village.workRate(id),
+      available:kind=>!isProductionKind(kind)||(!state.economy[kind]?.harvested&&!state.economy[kind]?.readyOutput),
+      progress:kind=>isProductionKind(kind)?village.production(kind):undefined,
     },seconds=>{
-      const days=advanceVillageLife(state,state.residents,seconds);
+      const sale=village.advanceBoat(seconds);
+      if(!sale.saved)status.textContent='Chuyến xuồng đang chờ lưu';
+      if(sale.revenue){updateBalance();status.textContent=`Starcaller đã bán hàng · +${sale.revenue} Đồng`;}
+      const delivery=village.advanceCarrier(seconds);
+      if(!delivery.saved)status.textContent='Swiftwing chờ giao · Kiểm tra chỗ Kho hoặc lưu game';
+      if(delivery.delivered){updateBalance();status.textContent=`Swiftwing đã giao ${delivery.delivered} ${delivery.kind==='fishing'?'cá':delivery.kind==='anvil'?'đồ chơi':'cà rốt'} vào Kho`;}
+      const {days,saved}=village.advanceLife(seconds);
       if(days){updateBalance();status.textContent=`Ngày ${Math.floor(state.economy.life.seconds/120)+1} · ${state.economy.life.hungry.length} cư dân thiếu ăn · Mở Kho để bổ sung thực phẩm`;}
-      productionSaveClock+=seconds;
-      if(productionSaveClock>=1){productionSaveClock=0;if(!saveCamp(state))status.textContent='Sinh hoạt làng chưa lưu được';}
+      if(!saved)status.textContent='Sinh hoạt làng chưa lưu được';
+      refreshGarden();
+      paintStationOutputs(root,state);
+      carrierView.paint(village.carrier());
+      paintVillageBoat(root,state.economy.boatSale);
+      patrolView.paint(seconds);
       for(const beast of root.querySelectorAll<HTMLElement>('[data-beast-id]')){
         const label=state.economy.life.hungry.includes(beast.dataset.beastId!)?'Thiếu ăn · Làm việc chậm 25%':'Đủ bữa';
         if(beast.dataset.food!==label){beast.dataset.food=label;beast.title=label;}
       }
-    });
+    },()=>{if(!village.checkpoint())status.textContent='Sinh hoạt làng chưa lưu được';});
     updateBalance();
     const ground = root.querySelector<HTMLElement>('.village-world')!; ground.replaceChildren();
     const house=document.createElement('button');house.className='village-house';house.setAttribute('aria-label','Nhà chung · Hành trình về quê');house.innerHTML='<img src="/assets/ui/camp/river-owner-v1/house.png" alt="" draggable="false">';ground.append(house);
@@ -146,8 +153,8 @@ export function showCamp(back:()=>void,explore?:()=>void):void {
       station.innerHTML=`<span>Vị trí ${i+1}</span>${state.slots[i] ? props[state.slots[i]!] : '<i>+</i>'}`;
       station.onclick=()=>{if(station.dataset.decor==='anvil'){showVillageProduction(root,state,'anvil',()=>{slot=i;render();openWorkshop(true);});return;}slot=i; render();openWorkshop(true);}; ground.append(station);
     }
-    const garden=document.createElement('button');garden.className='village-garden';garden.setAttribute('aria-label','Vườn cà rốt');garden.innerHTML=gardenProp;
-    garden.onclick=()=>showVillageGarden(root,state);ground.append(garden);
+    const garden=document.createElement('button');garden.className='village-garden';garden.setAttribute('aria-label','Vườn cà rốt');gardenKey='';ground.append(garden);refreshGarden();
+    garden.onclick=()=>showVillageGarden(root,state,village,()=>{updateBalance();refreshGarden();});
     Object.assign(garden.style,{left:`${VILLAGE_SCENE.garden.x}px`,top:`${VILLAGE_SCENE.garden.y}px`,width:`${VILLAGE_SCENE.garden.width}px`,height:`${VILLAGE_SCENE.garden.height}px`});
     const fishing=document.createElement('button');fishing.className='village-fishing';fishing.setAttribute('aria-label','Bến câu cá');fishing.innerHTML='<svg viewBox="45 203 1198 878" aria-hidden="true"><image href="/assets/ui/camp/village-owner-v1/dock.png" width="1254" height="1254"/></svg><span>Bến cá</span>';
     fishing.onclick=()=>showVillageProduction(root,state,'fishing');ground.append(fishing);
@@ -161,6 +168,9 @@ export function showCamp(back:()=>void,explore?:()=>void):void {
       onStatus: (msg) => { status.textContent = msg; },
     });
     beastManager.renderResidents();
+    ground.append(guardPost(()=>{status.textContent=state.residents.includes('beast-a')?(root.querySelector<HTMLElement>('[data-beast-id="beast-a"]')?.dataset.activity??'Snowguard phụ trách tuần tra'):'Trạm canh đang trống · Cần đón Snowguard từ chuyến thám hiểm';}));
+    paintStationOutputs(root,state);
+    const receiving=receivingPoint();receiving.onclick=()=>showVillageInventory(root,state,()=>render());ground.append(receiving);carrierView.paint(village.carrier());patrolView.paint();paintVillageBoat(root,state.economy.boatSale);
     renderVillageWorkshopPanel({
       workshop: root.querySelector('.camp-workshop')!,
       state,
@@ -175,13 +185,20 @@ export function showCamp(back:()=>void,explore?:()=>void):void {
   };
   const openWorkshop=(open:boolean)=>{root.querySelector<HTMLElement>('.camp-workshop')!.hidden=!open;root.querySelector('.village-build')!.setAttribute('aria-expanded',String(open));};
   const viewport=root.querySelector<HTMLElement>('.village-viewport')!;
-  viewport.addEventListener('village-camera-state',e=>{const overview=(e as CustomEvent<{overview:boolean}>).detail.overview;const button=root.querySelector('.village-overview-button')!;button.setAttribute('aria-label',overview?'Về cận cảnh':'Xem toàn cảnh làng');button.setAttribute('aria-pressed',String(overview));});
+  const cameraState=(e:Event)=>{const overview=(e as CustomEvent<{overview:boolean}>).detail.overview;const button=root.querySelector('.village-overview-button')!;button.setAttribute('aria-label',overview?'Về cận cảnh':'Xem toàn cảnh làng');button.setAttribute('aria-pressed',String(overview));};
+  viewport.addEventListener('village-camera-state',cameraState);
   root.querySelector<HTMLButtonElement>('.village-zoom-in')!.onclick=()=>viewport.dispatchEvent(new CustomEvent('village-zoom',{detail:1}));
   root.querySelector<HTMLButtonElement>('.village-zoom-out')!.onclick=()=>viewport.dispatchEvent(new CustomEvent('village-zoom',{detail:-1}));
   root.querySelector<HTMLButtonElement>('.village-build')!.onclick=()=>openWorkshop(root.querySelector<HTMLElement>('.camp-workshop')!.hidden);
   root.querySelector<HTMLButtonElement>('.village-overview-button')!.onclick=()=>root.querySelector('.village-viewport')!.dispatchEvent(new Event('village-overview'));
   root.querySelector<HTMLButtonElement>('.village-residents')!.onclick=()=>showVillageResidentDialog(root,state,viewport,status);
-  const leave=(next:()=>void)=>transitionScreen(root,()=>{saveCamp(state);window.clearTimeout(statusTimer);statusObserver.disconnect();activities?.dispose();stopRiver();stopClouds();stopCamera();root.remove();next();});
+  const leave=(next:()=>void)=>transitionScreen(root,()=>{
+    activities?.dispose();beastManager?.dispose();carrierView.dispose();patrolView.dispose();disposeVillageBoat(root);village.checkpoint();
+    for(const dialog of root.querySelectorAll<HTMLDialogElement>('dialog'))dialog.close();
+    window.clearTimeout(statusTimer);statusObserver.disconnect();
+    viewport.removeEventListener('village-camera-state',cameraState);
+    stopRiver();stopClouds();stopCamera();root.remove();next();
+  });
   root.querySelector<HTMLButtonElement>('.deck-back')!.onclick=()=>leave(back);
   goalButton.onclick=()=>showVillageGoal(root,state,render,explore?()=>leave(explore):undefined);
   root.querySelector<HTMLButtonElement>('.camp-diary-button')!.onclick=()=>showVillageDiaryDialog(root,state);

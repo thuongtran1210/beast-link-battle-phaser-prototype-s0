@@ -1,11 +1,13 @@
+import { parseGardenCarrier, type GardenCarrier } from './VillageCarrier';
 export const VILLAGE_RESOURCES={wood:{name:'Gỗ',buy:3,sell:1},carrot:{name:'Cà rốt',buy:2,sell:2},fish:{name:'Cá',buy:4,sell:4},toy:{name:'Đồ chơi',buy:10,sell:10}} as const;
 export type ResourceId=keyof typeof VILLAGE_RESOURCES;
 export interface ResourceLot {id:number;resource:Exclude<ResourceId,'wood'>;quantity:number;cost:number;expiresAt?:number}
 export interface LedgerEntry {id:number;type:'grant'|'buy'|'sell'|'build'|'run'|'production'|'meal'|'waste';text:string;money:number;resource:ResourceId;quantity:number;cost:number}
-export interface GardenProduction {id:number;remaining:number;cost:number}
+export interface GardenProduction {id:number;remaining:number;cost:number;totalSeconds?:number;quantity?:number;harvested?:boolean;readyOutput?:boolean}
 export interface DailyVillageReport {day:number;revenue:number;cogs:number;meals:number;waste:number}
 export interface VillageLife {reports:DailyVillageReport[];seconds:number;hungry:string[];mealCost:number;wasteCost:number}
-export interface VillageEconomy {life:VillageLife;wallet:number;woodCost:number;lots:ResourceLot[];ledger:LedgerEntry[];sequence:number;revenue:number;cogs:number;cashIn:number;cashOut:number;investment:number;garden?:GardenProduction;fishing?:GardenProduction;anvil?:GardenProduction}
+export interface BoatSale {remaining:number;cargo:{resource:Exclude<ResourceId,'wood'>;quantity:number;cost:number;expiresAt?:number}[]}
+export interface VillageEconomy {boatSale?:BoatSale;carrier?:GardenCarrier;life:VillageLife;wallet:number;woodCost:number;lots:ResourceLot[];ledger:LedgerEntry[];sequence:number;revenue:number;cogs:number;cashIn:number;cashOut:number;investment:number;garden?:GardenProduction;fishing?:GardenProduction;anvil?:GardenProduction}
 interface EconomyCamp {wood:number;economy:VillageEconomy}
 const nonnegative=(n:unknown,fallback=0)=>typeof n==='number'&&Number.isFinite(n)&&n>=0?n:fallback;
 export function parseVillageEconomy(value:unknown,wood:number,startup=true):VillageEconomy{
@@ -17,10 +19,39 @@ export function parseVillageEconomy(value:unknown,wood:number,startup=true):Vill
  if(Array.isArray(raw.lots))for(const l of raw.lots){if(l&&['carrot','fish','toy'].includes(l.resource)&&Number.isInteger(l.quantity)&&l.quantity>0&&Number.isInteger(l.id)&&l.id>0&&Number.isFinite(l.cost)&&l.cost>=0)lots.push({...l,...(l.resource==='carrot'||l.resource==='fish'?{expiresAt:nonnegative(l.expiresAt,life.seconds+(l.resource==='carrot'?240:120))}:{})});}
  const types=['grant','buy','sell','build','run','production','meal','waste'];
  const ledger=Array.isArray(raw.ledger)?raw.ledger.filter(e=>e&&types.includes(e.type)&&Object.hasOwn(VILLAGE_RESOURCES,e.resource)&&typeof e.text==='string'&&Number.isFinite(e.money)&&Number.isFinite(e.quantity)&&Number.isFinite(e.cost)&&e.cost>=0&&Number.isInteger(e.id)&&e.id>0).slice(-100).map(e=>({...e})):[];
- const garden=raw.garden&&Number.isInteger(raw.garden.id)&&raw.garden.id>0&&Number.isFinite(raw.garden.remaining)&&raw.garden.remaining>=0&&raw.garden.remaining<=30&&raw.garden.cost===1?{...raw.garden}:undefined;
+ const gardenRaw=raw.garden;
+ const gardenTotal=gardenRaw?.totalSeconds??30,gardenQuantity=gardenRaw?.quantity??3;
+ const garden=gardenRaw&&Number.isInteger(gardenRaw.id)&&gardenRaw.id>0&&Number.isFinite(gardenRaw.remaining)&&gardenRaw.remaining>=0
+  &&Number.isFinite(gardenTotal)&&gardenTotal>0&&gardenTotal<=3600&&gardenRaw.remaining<=gardenTotal
+  &&Number.isInteger(gardenQuantity)&&gardenQuantity>0&&gardenQuantity<=100&&gardenRaw.cost===1
+  ?{id:gardenRaw.id,remaining:gardenRaw.remaining,cost:gardenRaw.cost,totalSeconds:gardenTotal,quantity:gardenQuantity,...(gardenRaw.harvested===true&&gardenRaw.remaining===0?{harvested:true}:{})}:undefined;
  const jobs:Partial<Record<'fishing'|'anvil',GardenProduction>>={};
- for(const kind of ['fishing','anvil'] as const){const job=raw[kind];if(job&&Number.isInteger(job.id)&&job.id>0&&Number.isFinite(job.remaining)&&job.remaining>=0&&job.remaining<=VILLAGE_RECIPES[kind].seconds&&Number.isFinite(job.cost)&&job.cost>=0)jobs[kind]={...job};}
- return {...jobs,life,wallet:nonnegative(raw.wallet),woodCost:nonnegative(raw.woodCost,wood*2),lots,ledger,sequence:Math.max(Math.floor(nonnegative(raw.sequence)),garden?.id??0,...Object.values(jobs).map(j=>j.id),...lots.map(l=>l.id),...ledger.map(e=>e.id)),revenue:nonnegative(raw.revenue),cogs:nonnegative(raw.cogs),cashIn:nonnegative(raw.cashIn),cashOut:nonnegative(raw.cashOut),investment:nonnegative(raw.investment),...(garden?{garden}:{})};
+ for(const kind of ['fishing','anvil'] as const){const job=raw[kind];if(job&&Number.isInteger(job.id)&&job.id>0&&Number.isFinite(job.remaining)&&job.remaining>=0&&job.remaining<=VILLAGE_RECIPES[kind].seconds&&Number.isFinite(job.cost)&&job.cost>=0)jobs[kind]={id:job.id,remaining:job.remaining,cost:job.cost,...(job.readyOutput===true&&job.remaining===0?{readyOutput:true}:{})};}
+ const carrier=parseGardenCarrier(raw.carrier);
+ const carrierJob:GardenProduction|undefined=carrier?.kind==='fishing'?jobs.fishing:carrier?.kind==='anvil'?jobs.anvil:garden;
+ const b=raw.boatSale;
+ const boatSale=b&&Number.isFinite(b.remaining)&&b.remaining>=0&&b.remaining<=30&&Array.isArray(b.cargo)&&b.cargo.length>0&&b.cargo.length<=10&&b.cargo.every(c=>c&&typeof c==='object')&&b.cargo.every(c=>c&&['carrot','fish','toy'].includes(c.resource)&&Number.isInteger(c.quantity)&&c.quantity>0&&Number.isFinite(c.cost)&&c.cost>=0&&(c.expiresAt===undefined||(Number.isFinite(c.expiresAt)&&c.expiresAt>=0)))&&b.cargo.reduce((n,c)=>n+c.quantity,0)<=10?{remaining:b.remaining,cargo:b.cargo.map(c=>({...c}))}:undefined;
+ return {...jobs,...(boatSale?{boatSale}:{}),...(carrier&&(carrier.phase==='return'||(carrierJob?.id===carrier.jobId&&(carrierJob?.harvested||carrierJob?.readyOutput)))?{carrier}:{}),life,wallet:nonnegative(raw.wallet),woodCost:nonnegative(raw.woodCost,wood*2),lots,ledger,sequence:Math.max(Math.floor(nonnegative(raw.sequence)),garden?.id??0,...Object.values(jobs).map(j=>j.id),...lots.map(l=>l.id),...ledger.map(e=>e.id)),revenue:nonnegative(raw.revenue),cogs:nonnegative(raw.cogs),cashIn:nonnegative(raw.cashIn),cashOut:nonnegative(raw.cashOut),investment:nonnegative(raw.investment),...(garden?{garden}:{})};
+}
+/** Cargo leaves stock at departure; only completion books revenue. No wood sales. */
+export function beginBoatSale(s:EconomyCamp):boolean {
+ if(s.economy.boatSale||inventorySize(s)+reservedProductionSpace(s)<100)return false;
+ let space=10;const cargo:BoatSale['cargo']=[];
+ for(const lot of foodOrder(s.economy.lots)){
+  if(lot.expiresAt!==undefined&&lot.expiresAt<=s.economy.life.seconds)continue;
+  const quantity=Math.min(space,lot.quantity),cost=lot.cost*quantity/lot.quantity;
+  cargo.push({resource:lot.resource,quantity,cost,...(lot.expiresAt!==undefined?{expiresAt:lot.expiresAt}:{})});
+  lot.quantity-=quantity;lot.cost=Math.max(0,lot.cost-cost);space-=quantity;if(!space)break;
+ }
+ s.economy.lots=s.economy.lots.filter(l=>l.quantity>0);
+ if(!cargo.length)return false;
+ s.economy.boatSale={remaining:30,cargo};return true;
+}
+export function finishBoatSale(s:EconomyCamp):number {
+ const boat=s.economy.boatSale;if(!boat||boat.remaining>1e-6)return 0;
+ let revenue=0;
+ for(const c of boat.cargo){if(c.expiresAt!==undefined&&c.expiresAt<=s.economy.life.seconds){s.economy.life.wasteCost+=c.cost;record(s,{type:'waste',text:`Hàng trên xuồng hết hạn: ${c.quantity} ${VILLAGE_RESOURCES[c.resource].name}`,money:0,resource:c.resource,quantity:-c.quantity,cost:c.cost});continue;}const money=VILLAGE_RESOURCES[c.resource].sell*c.quantity;revenue+=money;s.economy.wallet+=money;s.economy.cashIn+=money;s.economy.revenue+=money;s.economy.cogs+=c.cost;record(s,{type:'sell',text:`Starcaller chèo xuồng bán ${c.quantity} ${VILLAGE_RESOURCES[c.resource].name}`,money,resource:c.resource,quantity:-c.quantity,cost:c.cost});}
+ delete s.economy.boatSale;return revenue;
 }
 export function resourceCount(s:EconomyCamp,id:ResourceId):number{return id==='wood'?s.wood:s.economy.lots.filter(l=>l.resource===id).reduce((n,l)=>n+l.quantity,0);}
 export function inventorySize(s:EconomyCamp):number{return s.wood+s.economy.lots.reduce((n,l)=>n+l.quantity,0);}
@@ -58,31 +89,33 @@ export function tradeResource(s:EconomyCamp,id:ResourceId,q:number,mode:'buy'|'s
 export function spendBuildingWood(s:EconomyCamp,q:number,name:string):void{const cost=consume(s,'wood',q);s.economy.investment+=cost;record(s,{type:'build',text:`Xây ${name}`,money:0,resource:'wood',quantity:-q,cost});}
 export function awardRunWood(s:EconomyCamp):void{s.wood+=15;s.economy.woodCost+=30;record(s,{type:'run',text:'Thám hiểm hoàn tất: +15 Gỗ',money:0,resource:'wood',quantity:15,cost:30});}
 export const VILLAGE_RECIPES={
- garden:{name:'Vườn cà rốt',worker:'beast-c',seconds:30,output:'carrot',quantity:3,money:1,input:'wood',inputQuantity:0},
+ garden:{name:'Vườn cà rốt',worker:'beast-c',seconds:60,output:'carrot',quantity:5,money:1,input:'wood',inputQuantity:0},
  fishing:{name:'Bến câu cá',worker:'beast-b',seconds:40,output:'fish',quantity:2,money:0,input:'carrot',inputQuantity:1},
  anvil:{name:'Xưởng đồ chơi',worker:'beast-e',seconds:50,output:'toy',quantity:1,money:1,input:'wood',inputQuantity:2},
 } as const;
 export type ProductionKind=keyof typeof VILLAGE_RECIPES;
 export function isProductionKind(kind:string):kind is ProductionKind{return Object.hasOwn(VILLAGE_RECIPES,kind);}
-export function reservedProductionSpace(s:EconomyCamp):number{return (Object.keys(VILLAGE_RECIPES) as ProductionKind[]).reduce((total,kind)=>total+(s.economy[kind]?VILLAGE_RECIPES[kind].quantity:0),0);}
-export function productionBlockReason(s:EconomyCamp,kind:ProductionKind):string|undefined{
+export function reservedProductionSpace(s:EconomyCamp):number{return (Object.keys(VILLAGE_RECIPES) as ProductionKind[]).reduce((total,kind)=>total+(s.economy[kind]?(kind==='garden'?(s.economy.garden!.quantity??3):VILLAGE_RECIPES[kind].quantity):0),0);}
+export function productionBlock(s:EconomyCamp,kind:ProductionKind):import('./VillageActivity').VillageBlock|undefined{
  if(s.economy[kind])return undefined;const recipe=VILLAGE_RECIPES[kind];
- if(s.economy.wallet<recipe.money)return `Thiếu ${recipe.money} Đồng vật tư`;
- if(resourceCount(s,recipe.input)<recipe.inputQuantity)return `Thiếu ${recipe.inputQuantity} ${VILLAGE_RESOURCES[recipe.input].name}`;
- if(inventorySize(s)-recipe.inputQuantity+reservedProductionSpace(s)+recipe.quantity>100)return `Kho đầy · Cần chỗ cho ${recipe.quantity} sản phẩm`;
+ if(s.economy.wallet<recipe.money)return {code:'missing-funds',message:`Thiếu ${recipe.money} Đồng vật tư`};
+ if(resourceCount(s,recipe.input)<recipe.inputQuantity)return {code:'missing-input',message:`Thiếu ${recipe.inputQuantity} ${VILLAGE_RESOURCES[recipe.input].name}`};
+ if(inventorySize(s)-recipe.inputQuantity+reservedProductionSpace(s)+recipe.quantity>100)return {code:'storage-full',message:`Kho đầy · Cần chỗ cho ${recipe.quantity} sản phẩm`};
  return undefined;
 }
+export function productionBlockReason(s:EconomyCamp,kind:ProductionKind):string|undefined{return productionBlock(s,kind)?.message;}
 export function beginProduction(s:EconomyCamp,kind:ProductionKind):boolean{
  if(s.economy[kind])return true;if(productionBlockReason(s,kind))return false;
  const r=VILLAGE_RECIPES[kind],cost=r.money+consume(s,r.input,r.inputQuantity);
- s.economy.wallet-=r.money;s.economy.cashOut+=r.money;s.economy[kind]={id:++s.economy.sequence,remaining:r.seconds,cost};
+ s.economy.wallet-=r.money;s.economy.cashOut+=r.money;s.economy[kind]={id:++s.economy.sequence,remaining:r.seconds,cost,...(kind==='garden'?{totalSeconds:r.seconds,quantity:r.quantity}:{})};
  record(s,{type:'production',text:`${r.name}: vật tư${r.inputQuantity?` · Dùng ${r.inputQuantity} ${VILLAGE_RESOURCES[r.input].name}`:''}`,money:-r.money,resource:r.inputQuantity?r.input:r.output,quantity:-r.inputQuantity,cost});return true;
 }
 export function advanceProduction(s:EconomyCamp,kind:ProductionKind,seconds:number):void{const job=s.economy[kind];if(job&&Number.isFinite(seconds)&&seconds>0)job.remaining=Math.max(0,job.remaining-seconds);}
 export function finishProduction(s:EconomyCamp,kind:ProductionKind):boolean{
  const job=s.economy[kind],r=VILLAGE_RECIPES[kind];if(!job||job.remaining>1e-6||inventorySize(s)+reservedProductionSpace(s)>100)return false;
- s.economy.lots.push({id:++s.economy.sequence,resource:r.output,quantity:r.quantity,cost:job.cost,...(r.output==='carrot'||r.output==='fish'?{expiresAt:s.economy.life.seconds+(r.output==='carrot'?240:120)}:{})});delete s.economy[kind];
- record(s,{type:'production',text:`${r.name}: giao ${r.quantity} ${VILLAGE_RESOURCES[r.output].name} · Lượt ${job.id}`,money:0,resource:r.output,quantity:r.quantity,cost:job.cost});return true;
+ const quantity=kind==='garden'?(job.quantity??3):r.quantity;
+ s.economy.lots.push({id:++s.economy.sequence,resource:r.output,quantity,cost:job.cost,...(r.output==='carrot'||r.output==='fish'?{expiresAt:s.economy.life.seconds+(r.output==='carrot'?240:120)}:{})});delete s.economy[kind];
+ record(s,{type:'production',text:`${r.name}: giao ${quantity} ${VILLAGE_RESOURCES[r.output].name} · Lượt ${job.id}`,money:0,resource:r.output,quantity,cost:job.cost});return true;
 }
 export function gardenBlockReason(s:EconomyCamp):string|undefined{return productionBlockReason(s,'garden');}
 export function beginGarden(s:EconomyCamp):boolean{return beginProduction(s,'garden');}

@@ -1,0 +1,122 @@
+{
+  "actualWidth": 1774,
+  "actualHeight": 887,
+  "neutralBodyHeight": 398,
+  "sourceSha256": "e4b59e01404b963e606712687cf35b8a18d7aacbf8b119ffee37cc7e61182e90",
+  "frames": [
+    {
+      "x": 53,
+      "y": 14,
+      "width": 320,
+      "height": 406,
+      "pivotX": 160.0,
+      "pivotY": 402,
+      "alphaBounds": {
+        "minX": 57,
+        "minY": 18,
+        "maxX": 368,
+        "maxY": 415
+      }
+    },
+    {
+      "x": 498,
+      "y": 14,
+      "width": 326,
+      "height": 404,
+      "pivotX": 163.0,
+      "pivotY": 400,
+      "alphaBounds": {
+        "minX": 502,
+        "minY": 18,
+        "maxX": 819,
+        "maxY": 413
+      }
+    },
+    {
+      "x": 944,
+      "y": 14,
+      "width": 318,
+      "height": 406,
+      "pivotX": 159.0,
+      "pivotY": 402,
+      "alphaBounds": {
+        "minX": 948,
+        "minY": 18,
+        "maxX": 1257,
+        "maxY": 415
+      }
+    },
+    {
+      "x": 1392,
+      "y": 14,
+      "width": 322,
+      "height": 404,
+      "pivotX": 161.0,
+      "pivotY": 400,
+      "alphaBounds": {
+        "minX": 1396,
+        "minY": 18,
+        "maxX": 1709,
+        "maxY": 413
+      }
+    },
+    {
+      "x": 53,
+      "y": 458,
+      "width": 321,
+      "height": 403,
+      "pivotX": 160.5,
+      "pivotY": 399,
+      "alphaBounds": {
+        "minX": 57,
+        "minY": 462,
+        "maxX": 369,
+        "maxY": 856
+      }
+    },
+    {
+      "x": 501,
+      "y": 458,
+      "width": 325,
+      "height": 403,
+      "pivotX": 162.5,
+      "pivotY": 399,
+      "alphaBounds": {
+        "minX": 505,
+        "minY": 462,
+        "maxX": 821,
+        "maxY": 856
+      }
+    },
+    {
+      "x": 944,
+      "y": 458,
+      "width": 318,
+      "height": 405,
+      "pivotX": 159.0,
+      "pivotY": 401,
+      "alphaBounds": {
+        "minX": 948,
+        "minY": 462,
+        "maxX": 1257,
+        "maxY": 858
+      }
+    },
+    {
+      "x": 1388,
+      "y": 458,
+      "width": 318,
+      "height": 405,
+      "pivotX": 159.0,
+      "pivotY": 401,
+      "alphaBounds": {
+        "minX": 1392,
+        "minY": 462,
+        "maxX": 1701,
+        "maxY": 858
+      }
+    }
+  ],
+  "status": "owner-supplied",
+  "pivotPolicy": "Alpha-bottom approximate foot baseline; manual owner review open"
+}

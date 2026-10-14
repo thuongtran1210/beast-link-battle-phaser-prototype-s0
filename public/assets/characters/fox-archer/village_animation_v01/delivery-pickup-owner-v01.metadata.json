@@ -1,0 +1,177 @@
+{
+  "actualWidth": 1774,
+  "actualHeight": 887,
+  "transparentPixels": 920929,
+  "sourceSha256": "0e63861912c2e12e4c8879dd9b97b67c76ba1f2fc82276fb408ccc3572e46543",
+  "neutralBodyHeight": 398,
+  "frames": [
+    {
+      "x": 73,
+      "y": 13,
+      "width": 281,
+      "height": 406,
+      "pivotX": 143,
+      "pivotY": 401,
+      "alphaBounds": {
+        "minX": 77,
+        "minY": 17,
+        "maxX": 349,
+        "maxY": 414
+      },
+      "shoeBand": {
+        "minX": 149,
+        "maxX": 283,
+        "groundY": 414
+      }
+    },
+    {
+      "x": 513,
+      "y": 21,
+      "width": 296,
+      "height": 401,
+      "pivotX": 148,
+      "pivotY": 396,
+      "alphaBounds": {
+        "minX": 517,
+        "minY": 25,
+        "maxX": 804,
+        "maxY": 417
+      },
+      "shoeBand": {
+        "minX": 595,
+        "maxX": 727,
+        "groundY": 417
+      }
+    },
+    {
+      "x": 953,
+      "y": 52,
+      "width": 330,
+      "height": 370,
+      "pivotX": 151,
+      "pivotY": 365,
+      "alphaBounds": {
+        "minX": 957,
+        "minY": 56,
+        "maxX": 1278,
+        "maxY": 417
+      },
+      "shoeBand": {
+        "minX": 1037,
+        "maxX": 1099,
+        "groundY": 417
+      },
+      "registrationOverride": {
+        "groundX": 1104,
+        "groundY": 417,
+        "reason": "Foot registration corrected visually: low parcel/partial shoe pixels must not set pivot; owner review pending"
+      }
+    },
+    {
+      "x": 1392,
+      "y": 52,
+      "width": 326,
+      "height": 374,
+      "pivotX": 156,
+      "pivotY": 365,
+      "alphaBounds": {
+        "minX": 1396,
+        "minY": 56,
+        "maxX": 1713,
+        "maxY": 421
+      },
+      "shoeBand": {
+        "minX": 1576,
+        "maxX": 1614,
+        "groundY": 420
+      },
+      "registrationOverride": {
+        "groundX": 1548,
+        "groundY": 417,
+        "reason": "Foot registration corrected visually: low parcel/partial shoe pixels must not set pivot; owner review pending"
+      }
+    },
+    {
+      "x": 74,
+      "y": 450,
+      "width": 305,
+      "height": 412,
+      "pivotX": 141.5,
+      "pivotY": 406,
+      "alphaBounds": {
+        "minX": 78,
+        "minY": 454,
+        "maxX": 374,
+        "maxY": 857
+      },
+      "shoeBand": {
+        "minX": 148,
+        "maxX": 283,
+        "groundY": 856
+      }
+    },
+    {
+      "x": 521,
+      "y": 444,
+      "width": 296,
+      "height": 417,
+      "pivotX": 138,
+      "pivotY": 411,
+      "alphaBounds": {
+        "minX": 525,
+        "minY": 448,
+        "maxX": 812,
+        "maxY": 856
+      },
+      "shoeBand": {
+        "minX": 591,
+        "maxX": 727,
+        "groundY": 855
+      }
+    },
+    {
+      "x": 965,
+      "y": 450,
+      "width": 293,
+      "height": 412,
+      "pivotX": 138,
+      "pivotY": 406,
+      "alphaBounds": {
+        "minX": 969,
+        "minY": 454,
+        "maxX": 1253,
+        "maxY": 857
+      },
+      "shoeBand": {
+        "minX": 1036,
+        "maxX": 1170,
+        "groundY": 856
+      }
+    },
+    {
+      "x": 1408,
+      "y": 450,
+      "width": 299,
+      "height": 412,
+      "pivotX": 142,
+      "pivotY": 406,
+      "alphaBounds": {
+        "minX": 1412,
+        "minY": 454,
+        "maxX": 1702,
+        "maxY": 857
+      },
+      "shoeBand": {
+        "minX": 1486,
+        "maxX": 1614,
+        "groundY": 856
+      }
+    }
+  ],
+  "ownershipCue": {
+    "oneBasedFrame": 4,
+    "zeroBasedFrame": 3,
+    "owner": "carried-parcel"
+  },
+  "status": "owner-supplied; preview registered; owner art review open"
+}

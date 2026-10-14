@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Village foundation — internal QA</title></head>
+<body>
+<main id="app"><section id="game-shell" aria-label="Kiểm thử nền dân làng"></section></main>
+<script type="module">
+  import './src/styles/prototype.css';
+  import { showCamp } from './src/game/ui/CampView.ts';
+  import { CAMP_SAVE_KEY, PREVIOUS_CAMP_SAVE_KEY, LEGACY_CAMP_SAVE_KEY, parseCamp, saveCamp } from './src/game/run/CampState.ts';
+  import { saveFirstJourney } from './src/game/run/FirstJourney.ts';
+  document.body.classList.add('player-app');
+  const shell = document.getElementById('game-shell');
+  const keys = [CAMP_SAVE_KEY, PREVIOUS_CAMP_SAVE_KEY, LEGACY_CAMP_SAVE_KEY];
+  // Development-only resource probe; no runtime instrumentation in GAME.
+  const frames = new Set(), intervals = new Set(), timeouts = new Set();
+  const requestFrame = window.requestAnimationFrame.bind(window), cancelFrame = window.cancelAnimationFrame.bind(window);
+  window.requestAnimationFrame = callback => {
+    const id = requestFrame(now => { frames.delete(id); callback(now); }); frames.add(id); return id;
+  };
+  window.cancelAnimationFrame = id => { frames.delete(id); cancelFrame(id); };
+  const setIntervalOriginal = window.setInterval.bind(window), clearIntervalOriginal = window.clearInterval.bind(window);
+  window.setInterval = (...args) => { const id = setIntervalOriginal(...args); intervals.add(id); return id; };
+  window.clearInterval = id => { intervals.delete(id); clearIntervalOriginal(id); };
+  const setTimeoutOriginal = window.setTimeout.bind(window), clearTimeoutOriginal = window.clearTimeout.bind(window);
+  window.setTimeout = (callback, delay, ...args) => {
+    const id = setTimeoutOriginal(() => { timeouts.delete(id); callback(...args); }, delay); timeouts.add(id); return id;
+  };
+  window.clearTimeout = id => { timeouts.delete(id); clearTimeoutOriginal(id); };
+  const probe = document.createElement('aside');
+  probe.style.cssText = 'position:fixed;bottom:0;left:0;z-index:9999;background:#fff8e7;color:#303a32;font-size:12px;padding:4px';
+  probe.innerHTML = '<button>Đọc tài nguyên QA</button><output></output>';
+  probe.querySelector('button').onclick = () => { probe.querySelector('output').textContent = ` RAF ${frames.size} · Interval ${intervals.size} · Timeout ${timeouts.size}`; };
+  document.body.append(probe);
+  function launcher() {
+    const panel = document.createElement('section');
+    panel.style.cssText = 'padding:24px;background:#fff8e7;color:#303a32;max-width:680px;margin:24px auto;border-radius:16px';
+    panel.innerHTML = '<h1>Kiểm thử nền dân làng</h1><p>TEST HARNESS — fixture sáu cư dân, không phải unlock của GAME. Chỉ tạo dữ liệu ở cổng 5180 và không ghi đè save có sẵn.</p><button class="seed-fixture">Tạo dữ liệu thử ở cổng 5180</button><button class="open-village">Mở làng</button><p role="status"></p>';
+    const seed = panel.querySelector('.seed-fixture');
+    const status = panel.querySelector('[role="status"]');
+    seed.disabled = !import.meta.env.DEV || location.port !== '5180' || keys.some(key => localStorage.getItem(key));
+    seed.onclick = () => {
+      if (location.port !== '5180' || keys.some(key => localStorage.getItem(key))) return;
+      const fixture = parseCamp({ version: 2, wood: 25, residents: ['beast-a','beast-b','beast-c','beast-d','beast-e','beast-f'], crafted: ['anvil','bath'], slots: ['anvil','bath',null] });
+      if (saveCamp(fixture)) { saveFirstJourney('done'); seed.disabled = true; status.textContent = 'Fixture đã lưu ở origin riêng. Có thể mở làng.'; }
+      else status.textContent = 'Không lưu được fixture.';
+    };
+    panel.querySelector('.open-village').onclick = () => { panel.remove(); showCamp(launcher); };
+    shell.append(panel);
+  }
+  if (import.meta.env.DEV) launcher();
+  else shell.textContent = 'Internal QA is available only in development.';
+</script>
+</body>
+</html>

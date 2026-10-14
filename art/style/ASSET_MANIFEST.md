@@ -106,3 +106,27 @@ OWNER-SUPPLIED / INTEGRATED; live visual review pending, not STYLE APPROVED or G
 | `public/assets/ui/camp/river-owner-v1/water.png` | 1536x1024 RGB | Slowly moving texture beneath shore, reduced-motion/hidden-tab support |
 
 Original bitmap files copied unchanged. Existing `village-owner-v1/dock.png` now supplies the separate river work prop through an SVG window. Props/residents remain above both map layers. No new character art or profession sheets generated; procedural work motion remains a prototype. Old map assets retained.
+
+## Windstrider village care trial — 2026-10-14
+
+Owner-supplied 1774×887 RGBA eight-pose garden-action-owner-v01.png preserved byte-for-byte under public/assets/characters/rabbit-archer/village_animation_v01, with measured metadata. Village one-shot care integration only; separate garden, no crop harvest rule change. OWNER-SUPPLIED / RUNTIME TRIAL / OWNER REVIEW OPEN, not STYLE APPROVED or GAME READY. See docs/WINDSTRIDER-VILLAGE-CARE-TRIAL-2026-10-14.md.
+
+## Swiftwing delivery-pickup — 2026-10-14
+
+Owner RGBA 1774×887 eight-frame source preserved at public/assets/characters/fox-archer/village_animation_v01/delivery-pickup-owner-v01.png with measured metadata/hash. Registered pickup player/preview only; not automatic transport. One-shot 8fps, visual handoff frame 4; loaded-walk/finish absent. OWNER-SUPPLIED / PLAYER REGISTERED / OWNER REVIEW OPEN, no STYLE APPROVED or GAME READY. Checklist: docs/SWIFTWING-DELIVERY-PICKUP-2026-10-14.md.
+
+## Swiftwing additional delivery sheets — 2026-10-14
+
+Three owner 1774×887 RGBA sources preserved under fox-archer/village_animation_v01. Loaded-walk loop and delivery-finish one-shot registered; labeled delivery-greet is visually loaded walking, retained review-only, not a greet. Neutral scale shared with pickup; owner registration/pose review OPEN. No carrier activation or STYLE APPROVED/GAME READY claim.
+
+## Snowguard Village patrol owner sheet — 2026-10-14
+Original RGBA 1774x887 source preserved at public/assets/characters/duck-guardian/village_animation_v01/patrol-walk-owner-v01.png. SHA256 and eight threshold-alpha crop windows/approximate foot pivots in adjacent metadata JSON. Village walk loops 8fps; standalone manual preview available. No changes to Battle animation assets. OWNER-SUPPLIED / VILLAGE INTEGRATED / OWNER VISUAL REVIEW OPEN; not STYLE APPROVED or GAME READY. Boat and receiving shelf remain SVG prototypes. Starcaller rowing prompt is documented, no rowing sheet generated or integrated.
+
+## Village guard post prototype — 2026-10-14
+Separate code-native SVG public/assets/ui/camp/guard-post-prototype.svg mounted near the fixed patrol start; wood canopy/stool/static bell, local observe anchor in VillageSceneLayout. PROTOTYPE / OWNER REVIEW OPEN, not STYLE APPROVED or GAME READY. Owner Snowguard source untouched. See docs/VILLAGE-GUARD-POST-2026-10-14.md.
+
+## Shadowclaw Village fishing — 2026-10-15
+Three owner RGBA 1774x887 enter/work/finish sheets preserved unchanged in public/assets/characters/raccoon-rogue/village_animation_v01, adjacent SHA256/alpha/crop/pivot metadata. Registered enter/finish one-shot and work loop 8fps, preview manual selection. Rod/line touches cell edges; approximate registration and owner visual QA OPEN. OWNER-SUPPLIED / VILLAGE INTEGRATED, not STYLE APPROVED or GAME READY. No fish reward driven by animation.
+
+## Starcaller Village boat-row — 2026-10-15
+Owner original RGBA 1774x887 preserved under badger-mage/village_animation_v01; eight whole-character connected windows and seated pivot estimates in metadata. Runtime loops 8fps during sale, paddle in sheet, boat/cargo separate. OWNER-SUPPLIED / INTEGRATED / OWNER VISUAL REVIEW OPEN. See docs/STARCALLER-BOAT-ROW-2026-10-15.md.

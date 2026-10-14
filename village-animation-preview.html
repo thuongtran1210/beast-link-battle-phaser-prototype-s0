@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Village animation player — internal QA</title>
+<style>
+body{font:16px system-ui;background:#fff8e7;color:#303a32;padding:24px}button,select{font:inherit;padding:10px;margin:4px;min-height:44px}.stage{height:200px;display:flex;align-items:center;justify-content:center;background:#d6e4c8;margin:20px 0}.actor{position:relative;width:92px;height:108px}.actor img{width:100%;height:100%;object-fit:contain}.stage .village-sprite-layer{outline:1px dashed #ac734b}output{display:block;margin:16px 0}
+</style></head>
+<body><h1>Player animation làng — kiểm thử</h1><p>Có sheet thỏ chăm vườn, Swiftwing nhặt kiện do owner gửi và lưới SVG chẩn đoán. Các sheet đang thử tích hợp, chưa duyệt art. Preview không đọc/ghi save và không phát sản phẩm.</p>
+<label>Clip <select id="clip"><option value="boat-row">Starcaller boat-row</option><option value="fish-enter">Shadowclaw fishing-enter</option><option value="fish-work">Shadowclaw fishing-work</option><option value="fish-finish">Shadowclaw fishing-finish</option><option value="patrol">Snowguard đi tuần — sheet owner</option><option value="swift" selected>Swiftwing delivery-pickup — sheet owner</option><option value="loaded-walk">Swiftwing loaded-walk</option><option value="swift-finish">Swiftwing delivery-finish</option><option value="greet-review">Ảnh 3 — review, đang đi ôm kiện</option><option value="owner">Thỏ chăm vườn — sheet owner</option><option value="work">Loop chẩn đoán</option><option value="finish">One-shot chẩn đoán</option><option value="idle">Thiếu sheet → cutout</option><option value="enter">Ảnh lỗi → cutout</option></select></label>
+<button id="step">Tiến 1 frame</button><button id="pause">Tạm dừng</button><button id="face">Đổi hướng</button><button id="restart">Chạy lại</button><button id="dispose">Dispose player</button>
+<div class="stage"><div class="actor"><img alt="Windstrider cutout fallback"></div></div><output role="status"></output>
+<script type="module">
+import { VillageSpritePlayer } from './src/game/ui/village/VillageSpritePlayer.ts';
+import { BATTLE_CHARACTER_ART } from './src/game/ui/art/BattleCharacterManifest.ts';
+import { VILLAGE_ANIMATIONS, SWIFTWING_GREET_REVIEW_CLIP } from './src/game/ui/village/VillageAnimation.ts';
+const host=document.querySelector('.actor'),fallback=host.querySelector('img'),status=document.querySelector('output');
+fallback.src=BATTLE_CHARACTER_ART['beast-c'].base;
+const frames=Array.from({length:8},(_,index)=>({x:index%4*256,y:Math.floor(index/4)*256,width:256,height:256,pivotX:128,pivotY:220}));
+const cells=frames.map((frame,index)=>`<g transform="translate(${frame.x},${frame.y})"><circle cx="${100+index*5}" cy="130" r="40" fill="${index%2?'#d58154':'#70a093'}"/><path d="M110 220h36m-18-18v36" stroke="#5b4435"/><text x="100" y="60" font-size="30">${index}</text></g>`).join('');
+const source='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="512">${cells}</svg>`);
+const loop={assetId:'diagnostic-grid',source,referencePaths:[],actualWidth:1024,actualHeight:512,neutralBodyHeight:180,fps:8,loop:true,frames,cues:[{frame:3,socket:'work-contact',x:128,y:180}],toolOwnership:'none',status:'test-only'};
+const clips={"boat-row":VILLAGE_ANIMATIONS['beast-d']['boat-row'],"fish-enter":VILLAGE_ANIMATIONS['beast-b'].enter,"fish-work":VILLAGE_ANIMATIONS['beast-b'].work,"fish-finish":VILLAGE_ANIMATIONS['beast-b'].finish,walk:VILLAGE_ANIMATIONS['beast-a'].walk,work:loop,finish:{...loop,assetId:'diagnostic-one-shot',loop:false},enter:{...loop,assetId:'diagnostic-error',source:'data:image/png;base64,invalid'},greet:VILLAGE_ANIMATIONS['beast-c'].work,pickup:VILLAGE_ANIMATIONS['beast-f'].pickup,'loaded-walk':VILLAGE_ANIMATIONS['beast-f']['loaded-walk'],inspect:VILLAGE_ANIMATIONS['beast-f'].finish,'loaded-review':SWIFTWING_GREET_REVIEW_CLIP};
+const player=new VillageSpritePlayer(host,fallback,clips);
+let selected='pickup',paused=false,facing=1;
+function report(result={completed:false,cues:[]}){status.textContent=`Frame ${host.dataset.animationFrame??'fallback'} · Source ${host.dataset.animationSource??'disposed'} · Facing ${facing} · ${paused?'Paused':'Ready'} · Completed ${result.completed} · Cues ${result.cues.length}`;}
+function play(restart=false){fallback.src=BATTLE_CHARACTER_ART[selected==='boat-row'?'beast-d':selected.startsWith('fish-')?'beast-b':selected==='walk'?'beast-a':['pickup','loaded-walk','inspect','loaded-review'].includes(selected)?'beast-f':'beast-c'].base;fallback.alt=selected==='boat-row'?'Starcaller cutout fallback':selected.startsWith('fish-')?'Shadowclaw cutout fallback':selected==='walk'?'Snowguard cutout fallback':['pickup','loaded-walk','inspect','loaded-review'].includes(selected)?'Swiftwing cutout fallback':'Windstrider cutout fallback';player.play(selected,facing,restart);report();}
+document.getElementById('clip').onchange=e=>{selected=e.target.value==='patrol'?'walk':e.target.value==='owner'?'greet':e.target.value==='swift'?'pickup':e.target.value==='swift-finish'?'inspect':e.target.value==='greet-review'?'loaded-review':e.target.value;play();};
+document.getElementById('step').onclick=()=>{const result=player.advance(1/(clips[selected]?.fps??8),paused);report(result);};
+document.getElementById('pause').onclick=()=>{paused=!paused;report();};
+document.getElementById('face').onclick=()=>{facing=-facing;play();};
+document.getElementById('restart').onclick=()=>play(true);
+document.getElementById('dispose').onclick=()=>{player.dispose();report();};
+window.addEventListener('pagehide',()=>player.dispose(),{once:true});
+if(import.meta.env.DEV)play();else{player.dispose();document.body.textContent='Internal QA is available only in development.';}
+</script></body></html>

@@ -3,6 +3,8 @@
   color: #f8fafc;
   background: #0b0f17;
 }
+.village-receiving .receiving-parcel { display:none; }
+.village-receiving[data-cargo="yes"] .receiving-parcel { display:block; }
 
 /* Mobile navigation and deck: flat illustrated camp palette, restrained outlines. */
 .main-menu { position:absolute; inset:0; z-index:20; display:flex; align-items:center; padding:clamp(20px,5vw,80px); overflow:hidden; color:#fff3d7; background:radial-gradient(ellipse at 75% 75%,#53644b 0%,#283e32 43%,#142620 85%); }
@@ -308,6 +310,10 @@ canvas {
 
 /* Reflect only the body; names and activity labels stay readable. */
 .camp-beast img { scale:var(--camp-facing,1) 1; }
+.camp-beast[data-tool-owner="sheet"][data-animation-source] .village-water-tool,
+.camp-beast[data-tool-owner="sheet"][data-animation-source] .village-rod,
+.camp-beast[data-tool-owner="none"][data-animation-source] .village-water-tool,
+.camp-beast[data-tool-owner="none"][data-animation-source] .village-rod { display:none; }
 
 /* Owner village: fixed world pixels, one camera for background and props. */
 .village-camp .village-viewport { background:#a0c85e; border-radius:14px; touch-action:none; cursor:grab; }

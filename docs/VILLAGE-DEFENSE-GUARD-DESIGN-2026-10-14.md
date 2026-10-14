@@ -2,6 +2,8 @@
 
 Ngày: 2026-10-14.  
 Trạng thái: **ĐỀ XUẤT THIẾT KẾ ĐÃ CẬP NHẬT THEO YÊU CẦU CHỦ DỰ ÁN (Pending Owner Review)**.  
+Cập nhật owner: **trạm gần cổng + Snowguard tuần tra + giao diện xếp đội hình trước; trộm/trận phòng thủ sau khi chốt luật. Cư dân trong đội hình vẫn làm nghề; báo động giữ job và cargo, kết thúc tiếp tục không mất/nhân hàng.** Xem [nguồn hiện hành transport/guard](VILLAGE-TRANSPORT-GUARD-UPDATE-2026-10-14.md). Các tọa độ/số liệu housing/raid phía dưới là đề xuất cũ, không tự triển khai hoặc coi đã duyệt. Vị trí trạm/tuyến phải đồng bộ bố trí map, chưa khóa theo bảng waypoint cũ.
+
 Tài liệu liên quan:
 - [BEAST-VILLAGE-DESIGN-2026-10-09.md](BEAST-VILLAGE-DESIGN-2026-10-09.md) — Thiết kế tổng quan Làng Thú.
 - [VILLAGE-LIFE-ECONOMY-DESIGN-2026-10-09.md](VILLAGE-LIFE-ECONOMY-DESIGN-2026-10-09.md) — Kinh tế sinh hoạt, kho và sổ thu chi.

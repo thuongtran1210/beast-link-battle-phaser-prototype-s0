@@ -1,0 +1,146 @@
+{
+  "actualWidth": 1774,
+  "actualHeight": 887,
+  "neutralBodyHeight": 320,
+  "frames": [
+    {
+      "x": 12,
+      "y": 100,
+      "width": 423,
+      "height": 340,
+      "pivotX": 233,
+      "pivotY": 337,
+      "alphaBounds": {
+        "minX": 15,
+        "minY": 103,
+        "maxX": 431,
+        "maxY": 436
+      }
+    },
+    {
+      "x": 444,
+      "y": 99,
+      "width": 424,
+      "height": 339,
+      "pivotX": 245,
+      "pivotY": 336,
+      "alphaBounds": {
+        "minX": 447,
+        "minY": 102,
+        "maxX": 864,
+        "maxY": 434
+      }
+    },
+    {
+      "x": 900,
+      "y": 79,
+      "width": 430,
+      "height": 361,
+      "pivotX": 232,
+      "pivotY": 358,
+      "alphaBounds": {
+        "minX": 903,
+        "minY": 82,
+        "maxX": 1329,
+        "maxY": 436
+      },
+      "excludeRects": [
+        {
+          "x": 420,
+          "y": 71,
+          "width": 10,
+          "height": 63
+        },
+        {
+          "x": 422,
+          "y": 248,
+          "width": 8,
+          "height": 17
+        }
+      ]
+    },
+    {
+      "x": 1330,
+      "y": 57,
+      "width": 427,
+      "height": 382,
+      "pivotX": 245,
+      "pivotY": 379,
+      "alphaBounds": {
+        "minX": 1330,
+        "minY": 60,
+        "maxX": 1753,
+        "maxY": 435
+      }
+    },
+    {
+      "x": 26,
+      "y": 462,
+      "width": 418,
+      "height": 379,
+      "pivotX": 219,
+      "pivotY": 376,
+      "alphaBounds": {
+        "minX": 29,
+        "minY": 465,
+        "maxX": 443,
+        "maxY": 837
+      },
+      "excludeRects": [
+        {
+          "x": 405,
+          "y": 250,
+          "width": 13,
+          "height": 61
+        }
+      ]
+    },
+    {
+      "x": 444,
+      "y": 500,
+      "width": 435,
+      "height": 341,
+      "pivotX": 245,
+      "pivotY": 338,
+      "alphaBounds": {
+        "minX": 444,
+        "minY": 503,
+        "maxX": 875,
+        "maxY": 837
+      }
+    },
+    {
+      "x": 895,
+      "y": 508,
+      "width": 419,
+      "height": 333,
+      "pivotX": 237,
+      "pivotY": 330,
+      "alphaBounds": {
+        "minX": 898,
+        "minY": 511,
+        "maxX": 1310,
+        "maxY": 837
+      }
+    },
+    {
+      "x": 1335,
+      "y": 509,
+      "width": 419,
+      "height": 332,
+      "pivotX": 240,
+      "pivotY": 329,
+      "alphaBounds": {
+        "minX": 1338,
+        "minY": 512,
+        "maxX": 1750,
+        "maxY": 837
+      }
+    }
+  ],
+  "sourceSha256": "263f6abbeb00696c971b069e88da870fb8bbc6d959bc25fd470ec1f739fd51bd",
+  "transparentPixels": 965131,
+  "status": "owner-supplied",
+  "pivotPolicy": "Approximate body root x=245 within each actual cell; alpha-bottom feet. Shared 320px character-only height excludes rod. Owner manual review open.",
+  "edgeWarnings": "Frame windows clamped to cell bounds; measured foreign rod/line components hidden by renderer exclusion rectangles. Original source unchanged; owner visual review open."
+}

@@ -1,0 +1,74 @@
+{
+  "actualWidth": 1774,
+  "actualHeight": 887,
+  "neutralBodyHeight": 350,
+  "frames": [
+    {
+      "x": 41,
+      "y": 45,
+      "width": 426,
+      "height": 375,
+      "pivotX": 189,
+      "pivotY": 340
+    },
+    {
+      "x": 488,
+      "y": 47,
+      "width": 434,
+      "height": 373,
+      "pivotX": 186,
+      "pivotY": 338
+    },
+    {
+      "x": 940,
+      "y": 46,
+      "width": 409,
+      "height": 391,
+      "pivotX": 177,
+      "pivotY": 339
+    },
+    {
+      "x": 1362,
+      "y": 44,
+      "width": 374,
+      "height": 376,
+      "pivotX": 198,
+      "pivotY": 341
+    },
+    {
+      "x": 21,
+      "y": 476,
+      "width": 317,
+      "height": 365,
+      "pivotX": 209,
+      "pivotY": 353
+    },
+    {
+      "x": 483,
+      "y": 476,
+      "width": 396,
+      "height": 357,
+      "pivotX": 191,
+      "pivotY": 353
+    },
+    {
+      "x": 927,
+      "y": 473,
+      "width": 409,
+      "height": 360,
+      "pivotX": 190,
+      "pivotY": 356
+    },
+    {
+      "x": 1350,
+      "y": 474,
+      "width": 402,
+      "height": 391,
+      "pivotX": 210,
+      "pivotY": 355
+    }
+  ],
+  "sourceSha256": "ed26d74bea6559c6396e0b9f7ea0cb91aef5ea388cc88a42de4eea2a0a7bf740",
+  "status": "owner-supplied",
+  "pivotPolicy": "Approximate seated root, excludes paddle extent; connected character windows may cross grid edge; owner review OPEN"
+}

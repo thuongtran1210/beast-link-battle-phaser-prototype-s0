@@ -1,12 +1,18 @@
+Cập nhật 2026-10-15: vận chuyển Swiftwing đã nối cả vườn/bến cá/xưởng; code implemented, owner UI review open. Xem [đa trạm và checklist](VILLAGE-MULTI-STATION-DELIVERY-2026-10-15.md).
+
+Cập nhật phạm vi owner: đã thêm trạm canh SVG thử và tuyến Snowguard quay về trạm; chỉ nghề tuần tra/quan sát. Bồn tắm chưa thêm job/state; đội hình/báo động để sau. Xem [trạm canh và checklist](VILLAGE-GUARD-POST-2026-10-14.md). Owner review OPEN.
+
+Cập nhật mới nhất 2026-10-14: Swiftwing vận chuyển vườn; Starcaller bỏ phụ vận chuyển, chèo xuồng bán hàng thành phẩm khi Kho đầy; Snowguard có sheet đi tuần và tuyến thử. Chi tiết trạng thái/code/checklist: [carrier/boat/patrol](VILLAGE-CARRIER-BOAT-PATROL-2026-10-14.md). Các đoạn “chưa triển khai” bên dưới là lịch sử nếu trùng phạm vi này; trạm canh/báo động vẫn chưa làm.
+
 # Làng Thú — Kế hoạch thực hiện tổng thể
 
-Ngày: 2026-10-14. Trạng thái: **PLAN DOCUMENTED / IMPLEMENTATION NOT STARTED UNDER THIS PLAN / LIVE NOT RECORDED**.
+Ngày: 2026-10-14. Trạng thái: **M0 CODE IMPLEMENTED / CHECK PASS / OWNER UI REVIEW OPEN**. V00 nền code và V01–V05 đã thực hiện; art reference/clip thật chưa được duyệt. Chi tiết: [Village foundation progress](VILLAGE-FOUNDATION-PROGRESS-2026-10-14.md). Owner tự kiểm theo [checklist M0](VILLAGE-M0-OWNER-CHECKLIST-2026-10-14.md); agent không chạy thêm browser automation.
 
 ## 1. Mục tiêu và phạm vi đã thống nhất
 
 Sáu cư dân Day 1: Snowguard, Shadowclaw, Windstrider, Starcaller, Ironclad, Swiftwing; được chọn cho Run và tham gia làng. Cư dân mới được giải cứu theo checkpoint khám phá, đồng thời mở quyền chọn Run và định cư. Map 3/10/15 là ví dụ, không phải lịch thưởng đã chốt. Mở đầu: Run → làng. Tay nghề làng riêng, lưu lâu dài và không tác động Battle Run.
 
-Nghề: Snowguard tuần tra; Shadowclaw câu cá; Windstrider trồng cà rốt; Starcaller chăm hoa/trang trí; Ironclad chế tác/sửa đồ; Swiftwing giao hàng/thư. Ba nghề vườn/cá/xưởng tiếp tục dùng kinh tế hiện có. Ba nghề sinh hoạt không tự thêm tài nguyên hoặc điều kiện khiến sản xuất tắc.
+Nghề hiện hành: Snowguard tuần tra/trạm canh; Shadowclaw câu cá; Windstrider trồng cà rốt; Ironclad chế tác; Swiftwing vận chuyển đi bộ chính; Starcaller chèo xuồng đi bán cà rốt/cá/đồ chơi khi Kho đầy, giữ Gỗ, giữ nhận diện pháp sư nhưng không dịch chuyển hàng. Hàng làm xong để tại trạm, người mang giao đến giỏ/kệ chung cạnh nhà chung, nhập Kho một lần sau commit. Trạm canh gần cổng; đội hình canh gác vẫn làm nghề thường ngày. Thiết kế mới chưa triển khai; xem VILLAGE-TRANSPORT-GUARD-UPDATE-2026-10-14.md.
 
 Nguồn đọc: `CURRENT_REPO_HANDOFF.md`, `../AI_INSTRUCTIONS.md`, `VILLAGE-STORY-DIRECTION-2026-10-09.md`, `VILLAGE-ANIMATION-ASSET-SPEC-2026-10-14.md`, `FRAME-ANIMATION-AGENT-WORKFLOW.md`, code/tests hiện hành. Không gọi Notion. Art theo routing repo và reference owner. Không tự gán trạng thái đã triển khai, STYLE APPROVED, GAME READY hoặc adopted.
 
@@ -26,7 +32,7 @@ Kế hoạch không tự mở rộng sang raid/phòng thủ làng, hàng hiếm,
 
 ## 3. Bảng kế hoạch chính
 
-Trạng thái ban đầu của mọi dòng: **CHƯA BẮT ĐẦU THEO KẾ HOẠCH**. Nền sẵn có không đồng nghĩa hoàn tất dòng. Vai trò là trách nhiệm công việc, chưa phải người đã được phân công; không tự tạo agent hoặc chat mới.
+Trạng thái ban đầu của mọi dòng: **CHƯA BẮT ĐẦU THEO KẾ HOẠCH**. Cập nhật 2026-10-14: V00 nền code, V01–V05 IMPLEMENTED / CHECK PASS; owner UI review OPEN; V06–V19 chưa bắt đầu. Nền sẵn có không đồng nghĩa hoàn tất dòng. Vai trò là trách nhiệm công việc, chưa phải người đã được phân công; không tự tạo agent hoặc chat mới.
 
 | ID | Giai đoạn / nhiệm vụ | Đầu ra cụ thể | Phụ thuộc | Vai trò | Điều kiện nghiệm thu |
 | --- | --- | --- | --- | --- | --- |
@@ -41,9 +47,9 @@ Trạng thái ban đầu của mọi dòng: **CHƯA BẮT ĐẦU THEO KẾ HOẠ
 | V08 | Tích hợp nghề mẫu và trạng thái công cụ | Vườn hoạt động với ready/working/blocked/pause/ready-output/completed | V02–V05, V07 | Code + art QA | Thiếu vật tư, đầy kho, save fail, reload đều đúng; output một lần; tool không nhân đôi |
 | V09 | Shadowclaw + bến cá | Enter/work/finish, cần nghỉ, xô, phao/ripple và socket | V08 | Art + code | Giữ bến owner, không vẽ bến chồng; fishing-work không tự sinh cá |
 | V10 | Ironclad + xưởng | Enter/work/finish, phôi/đồ chơi/bụi và điểm búa | V08 | Art + code | Một búa, phôi/đầu búa đúng contact; hàng chờ không biến mất khi kho đầy |
-| V11 | Snowguard tuần tra | Route/config điểm kiểm tra, inspect và prop tùy chọn | V08, V04 | Art + code | Không tự thêm raid/chiến đấu; đường không xuyên công trình; nghỉ/đi/inspect rõ |
-| V12 | Starcaller chăm hoa | Nghề/catalog mới, vị trí bồn hoa, enter/work/finish và layer hoa | V08, V04 | Art + code | Đồng bộ nhãn nhà thiên văn cũ; không thêm sản phẩm hoa hoặc buff Run |
-| V13 | Swiftwing giao hàng/thư | Pickup/loaded-walk/place, điểm giao/hộp thư và ownership kiện | V08, V04 | Art + code | Không double prop hoặc cộng kho lần hai; nghề khác không chờ người giao mới nhận output |
+| V11 | Snowguard/trạm canh/tuyến tuần tra | Trạm gần cổng, route/inspect; đặc tả đội hình canh gác riêng | V08, V04; vị trí được review | Art + code | Cư dân vẫn làm nghề; chưa thêm trộm/trận phòng thủ; giữ tiến độ/cargo khi báo động ở slice sau |
+| V12 | Starcaller chèo xuồng đi bán cà rốt/cá/đồ chơi khi Kho đầy, giữ Gỗ | Pickup/loaded-walk/place, route tới điểm nhận chung; cất trượng khi ôm kiện | V08, V04; transport rules được đặc tả | Art + code | Một cargo owner; save-before-commit; không teleport/grant từ cue; giữ hàng khi lỗi |
+| V13 | Swiftwing vận chuyển đi bộ chính | Pickup/loaded-walk/place, giỏ/kệ cạnh nhà chung, reservation/receipt | V08, V04; transport rules được đặc tả | Art + code | Không nhặt trùng; delivery nhập Kho một lần; reload/đổi cảnh/báo động không mất hoặc nhân hàng |
 | V14 | Tay nghề lâu dài | State/migration, progression service, UI bậc và nghề | V02, V04; ngưỡng được chốt | Code + design | Không đổi Battle; không tăng do đứng chờ; không nhận lặp do reload hoặc finish replay |
 | V15 | Quyền Beast và sáu cư dân Day 1 | Một nguồn unlock dùng cho làng/Deck, migration và legacy compatibility | V02; policy legacy được chốt | Code | Sáu cơ bản có quyền từ đầu; giữ unlock/tài sản cũ; roster Run vẫn theo luật tuyển hiện hành |
 | V16 | Checkpoint khám phá và giải cứu | Catalog mốc, trigger, receipt, unlock transaction, presentation sự kiện | V15; điều kiện/mốc được chốt | Code + design/art | Mở đồng thời Run+làng một lần; fail save retry được; không mặc định map ví dụ là final |
@@ -90,9 +96,9 @@ Hai nguồn remaining hiện có (simulation worker và production job) cần x�
 | Quyền đã có trong save cũ | Giữ cư dân, tài sản và quyền Beast đã mở hợp lệ; ghi receipt migration, không thu hồi | V15 |
 | Ngưỡng tay nghề | Ba bậc Mới làm/Quen việc/Lành nghề; 0/5/10% giảm thời gian cơ bản cho nghề sản xuất | V14 |
 | Đơn vị tăng tay nghề | Công việc thực hoàn tất, quy đổi theo lượng công việc; nghề sinh hoạt có tiêu chí hoàn tất riêng | V14 |
-| Giao hàng đợt đầu | Hoạt động sinh hoạt độc lập, không khóa giao sản phẩm kinh tế | V13 |
+| Chuỗi giao hàng mới | Output tại trạm → Swiftwing/Starcaller đi bộ mang → điểm nhận cạnh nhà chung → commit Kho; chốt capacity/expiry/vắng người/receipt trước code | V12/V13 |
 | Bữa cơm đầu | Mục tiêu onboarding sử dụng cơ chế ăn hiện có; không bắt mua/build mới hoặc thắng Run đầu | V17 |
-| Vị trí bồn hoa/điểm giao | Chọn trên map hiện có, kiểm tra đường/che khuất và camera | V12/V13 |
+| Vị trí công trình/điểm nhận | Đề xuất editor bố trí theo world coordinates + local anchors; review vị trí trước chốt tuyến | V11–V13 |
 
 Chỉ hỏi quyết định còn thiếu khi công việc phụ thuộc tới cổng đó; tiếp tục việc độc lập đã có phạm vi. Không suy ra owner duyệt ảnh từ việc duyệt prompt/kế hoạch.
 
@@ -106,10 +112,10 @@ Chỉ hỏi quyết định còn thiếu khi công việc phụ thuộc tới c�
 | Câu cá | Idle, walk, enter/work/finish | Cần, xô, phao/ripple | Grip, dây/phao, output một lần |
 | Xưởng | Idle, walk, enter/work/finish | Búa reference, phôi, toy, bụi | Contact búa/phôi và scale |
 | Tuần tra | Idle, walk, inspect | Điểm kiểm tra; chuông tùy chọn | Đường đi và readability |
-| Hoa | Idle, walk, enter/work/finish | Kéo, bồn hoa, hoa động | Đúng nhân vật, không giả buff |
-| Giao hàng | Idle, walk, pickup, loaded-walk, finish | Kiện, hộp thư/nắp | Ownership và chuyển hand↔world |
+| Phụ vận chuyển | Starcaller idle/walk/pickup/loaded-walk/finish | Một kiện; trượng cất ngoài hình, không FX phép | Ownership và giao dịch không phụ thuộc frame |
+| Vận chuyển chính | Swiftwing idle/walk/pickup/loaded-walk/finish | Kiện/giỏ-kệ nhận hàng chung | Route tránh vật cản; một owner, không nhận hai lần |
 
-Working cần layer động; paused giữ frame; missing input/no-worker dùng trạm nghỉ + UI; ready-output giữ prop chờ; completed chỉ phát khi nghiệp vụ xác nhận. Không cần sheet cho mỗi lỗi, mỗi bậc tay nghề hoặc tool hỏng chưa được thiết kế. Dự kiến 29 clip nhân vật trước reuse, không phải cam kết phải sinh mới 29 sheet.
+Working cần layer động; paused giữ frame; missing input/no-worker dùng trạm nghỉ + UI; ready-output giữ prop chờ; completed chỉ phát khi nghiệp vụ xác nhận. Không cần sheet cho mỗi lỗi, mỗi bậc tay nghề hoặc tool hỏng chưa được thiết kế. Bộ tối thiểu đếm theo file thật 28 clip trước reuse, thêm delivery-greet tùy chọn = 29 prompt; không phải cam kết sinh mới mọi sheet.
 
 ## 7. Ma trận nghiệm thu
 
@@ -162,3 +168,9 @@ Mỗi bước cập nhật: ID, trạng thái, file thay đổi, lệnh/check đ
 
 - 2026-10-14: Lập kế hoạch theo yêu cầu chủ dự án. Chỉ tạo tài liệu; chưa triển khai V00–V19. Review kiến trúc trước đó là đọc code, chưa chạy lại checks/build.
 - Bước đầu khi được thực hiện: V00 và V06, sau đó V01. Giữ các thay đổi đang có của owner và kiểm tra repo instructions hiện hành trước khi sửa runtime.
+- 2026-10-14: Owner yêu cầu bắt đầu cập nhật. Đã kiểm kê nền code V00, thêm contract block/snapshot V01, service production/life/storage và tích hợp UI V02, cleanup bubble manager V03. Các dòng này còn một phần; M0 chưa hoàn tất, V06 chưa audit art. Checks/build PASS; browser/device OPEN. Xem `VILLAGE-FOUNDATION-PROGRESS-2026-10-14.md` cho files, evidence và bước tiếp nối.
+- 2026-10-14: Tiếp tục V01–V05: contract/job/event ID, progress authoritative + retry riêng, diary/receipt commit cùng output, lifecycle visibility/pagehide, catalog và DOM animation player với diagnostic preview/fallback. Checks/build PASS. M0 CODE IMPLEMENTED; owner acceptance OPEN. Owner yêu cầu tự kiểm giao diện: dừng browser automation, bàn giao `VILLAGE-M0-OWNER-CHECKLIST-2026-10-14.md`. V06–V08 là bước asset thật tiếp theo, chưa art approval.
+
+## Cập nhật chu kỳ vườn — 2026-10-14
+
+Owner đồng ý ví dụ 60 giây làm việc / 5 cà rốt / 1 Đồng cho lượt mới. Đã triển khai gieo/cây lớn/trưởng thành/thu hoạch/giỏ chờ lấy với job lưu lâu dài; legacy giữ 30s/3 củ đã trả. Prototype SVG cho luống; chưa clip gieo/thu hoạch thật. Panel có nhận giỏ thủ công tạm, vận chuyển vẫn chưa tích hợp. Nguồn runtime/checklist: [VILLAGE-GARDEN-CYCLE-2026-10-14.md](VILLAGE-GARDEN-CYCLE-2026-10-14.md). Các mô tả garden recipe cũ được supersede riêng cho lượt mới; câu cá/xưởng/Battle không đổi.

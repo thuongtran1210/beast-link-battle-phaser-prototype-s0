@@ -1,0 +1,140 @@
+{
+  "actualWidth": 1774,
+  "actualHeight": 887,
+  "neutralBodyHeight": 320,
+  "frames": [
+    {
+      "x": 13,
+      "y": 75,
+      "width": 429,
+      "height": 350,
+      "pivotX": 232,
+      "pivotY": 347,
+      "alphaBounds": {
+        "minX": 16,
+        "minY": 78,
+        "maxX": 438,
+        "maxY": 421
+      }
+    },
+    {
+      "x": 450,
+      "y": 75,
+      "width": 426,
+      "height": 350,
+      "pivotX": 239,
+      "pivotY": 347,
+      "alphaBounds": {
+        "minX": 453,
+        "minY": 78,
+        "maxX": 872,
+        "maxY": 421
+      }
+    },
+    {
+      "x": 888,
+      "y": 73,
+      "width": 442,
+      "height": 352,
+      "pivotX": 244,
+      "pivotY": 349,
+      "alphaBounds": {
+        "minX": 891,
+        "minY": 76,
+        "maxX": 1329,
+        "maxY": 421
+      },
+      "excludeRects": [
+        {
+          "x": 426,
+          "y": 251,
+          "width": 16,
+          "height": 57
+        }
+      ]
+    },
+    {
+      "x": 1330,
+      "y": 75,
+      "width": 436,
+      "height": 350,
+      "pivotX": 245,
+      "pivotY": 347,
+      "alphaBounds": {
+        "minX": 1330,
+        "minY": 78,
+        "maxX": 1762,
+        "maxY": 421
+      }
+    },
+    {
+      "x": 13,
+      "y": 501,
+      "width": 431,
+      "height": 348,
+      "pivotX": 232,
+      "pivotY": 345,
+      "alphaBounds": {
+        "minX": 16,
+        "minY": 504,
+        "maxX": 443,
+        "maxY": 845
+      }
+    },
+    {
+      "x": 444,
+      "y": 501,
+      "width": 440,
+      "height": 348,
+      "pivotX": 245,
+      "pivotY": 345,
+      "alphaBounds": {
+        "minX": 444,
+        "minY": 504,
+        "maxX": 880,
+        "maxY": 845
+      }
+    },
+    {
+      "x": 889,
+      "y": 500,
+      "width": 441,
+      "height": 349,
+      "pivotX": 243,
+      "pivotY": 346,
+      "alphaBounds": {
+        "minX": 892,
+        "minY": 503,
+        "maxX": 1329,
+        "maxY": 845
+      },
+      "excludeRects": [
+        {
+          "x": 431,
+          "y": 247,
+          "width": 10,
+          "height": 43
+        }
+      ]
+    },
+    {
+      "x": 1330,
+      "y": 501,
+      "width": 423,
+      "height": 348,
+      "pivotX": 245,
+      "pivotY": 345,
+      "alphaBounds": {
+        "minX": 1330,
+        "minY": 504,
+        "maxX": 1749,
+        "maxY": 845
+      }
+    }
+  ],
+  "sourceSha256": "b98181b6c491878da0dccc33772f43a02efa8bcbe8bd2a3f7c68f496e0892355",
+  "transparentPixels": 947068,
+  "status": "owner-supplied",
+  "pivotPolicy": "Approximate body root x=245 within each actual cell; alpha-bottom feet. Shared 320px character-only height excludes rod. Owner manual review open.",
+  "edgeWarnings": "Frame windows clamped to cell bounds; measured foreign rod/line components hidden by renderer exclusion rectangles. Original source unchanged; owner visual review open."
+}

@@ -136,6 +136,20 @@ rushSfxChecks();
 
 import { villageSimulationChecks } from './run/VillageSimulationChecks';
 villageSimulationChecks();
+import { villageApplicationChecks } from './run/VillageApplicationChecks';
+villageApplicationChecks();
+import { villageGardenCycleChecks } from './run/VillageGardenCycleChecks';
+villageGardenCycleChecks();
+import {villageCarrierChecks} from './run/VillageCarrierChecks';
+import {villageMultiCarrierChecks} from './run/VillageMultiCarrierChecks';
+villageMultiCarrierChecks();
+import {villageBoatChecks} from './run/VillageBoatChecks';
+villageBoatChecks();
+villageCarrierChecks();
+import { villageActivityLoopChecks } from './ui/village/VillageActivityLoopChecks';
+villageActivityLoopChecks();
+import { villageAnimationChecks } from './ui/village/VillageAnimationChecks';
+villageAnimationChecks();
 
 import { villageEconomyChecks } from './run/VillageEconomyChecks';
 villageEconomyChecks();

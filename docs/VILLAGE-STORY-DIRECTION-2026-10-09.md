@@ -1,3 +1,5 @@
+Cập nhật mới nhất 2026-10-14: Swiftwing vận chuyển vườn; Starcaller bỏ phụ vận chuyển, chèo xuồng bán hàng thành phẩm khi Kho đầy; Snowguard có sheet đi tuần và tuyến thử. Chi tiết trạng thái/code/checklist: [carrier/boat/patrol](VILLAGE-CARRIER-BOAT-PATROL-2026-10-14.md). Các đoạn “chưa triển khai” bên dưới là lịch sử nếu trùng phạm vi này; trạm canh/báo động vẫn chưa làm.
+
 # Làng Thú — Câu chuyện làng quê (Village Life Stories)
 
 Ngày: 2026-10-14 (Cập nhật định hướng cốt truyện & cơ chế trải nghiệm theo phản hồi chủ dự án).  
@@ -8,6 +10,8 @@ Chủ đề chủ đạo: **CÂU CHUYỆN LÀNG QUÊ** (thay thế hoàn toàn �
 ---
 
 ## 1. Tiền đề & Không khí cốt truyện (Tone & Setting)
+
+Cập nhật owner 2026-10-14: cư dân làm xong đặt sản phẩm tại trạm; **Swiftwing vận chuyển đi bộ chính, Starcaller chèo xuồng đi bán cà rốt/cá/đồ chơi khi Kho đầy, giữ Gỗ** tới giỏ/kệ nhận hàng cạnh nhà chung. Bỏ dịch chuyển phép. Snowguard tuần tra/trạm canh gần cổng; đội hình canh gác vẫn làm nghề thường ngày, báo động giữ tiến độ và hàng đang mang. Chuỗi mới chưa triển khai. Nguồn hiện hành: [transport/guard](VILLAGE-TRANSPORT-GUARD-UPDATE-2026-10-14.md), [prompt sáu cư dân](VILLAGE-PROFESSION-ANIMATION-PROMPTS-2026-10-14.md).
 
 Ngôi làng là tổ ấm bình dị, yên bình nép mình bên dòng sông xanh. Đây không phải là thương trường kinh doanh hay câu chuyện khởi nghiệp kiếm lời, mà là **những lát cắt cuộc sống làng quê (Slice of Life)** mộc mạc, ấm cúng và đầy ắp tiếng cười của các bạn Thú.
 

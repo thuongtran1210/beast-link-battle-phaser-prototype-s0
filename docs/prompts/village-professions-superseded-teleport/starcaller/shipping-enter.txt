@@ -1,0 +1,72 @@
+BEAST LINK BATTLE — CUTE TACTICAL CHIBI STYLE LOCK:
+
+2D semi-chibi tactical creature game asset, Gen Z-friendly but not childish, clean readable silhouette, head approximately 35–40% of total character height, compact full body, soft colored medium-weight outlines with a slightly stronger outer contour, simple flat base colors, one to two steps of cel shading, minimal controlled highlights, low-to-medium intentional detail density, pastel fantasy palette with one strong controlled accent, clear role-driven shape language, only two to three primary character motifs, mobile/gameplay readability at small scale, expressive face with simple eyes, handcrafted designed feeling, consistent stylized materials, full-body 3/4 front presentation, no extreme perspective.
+
+AVOID:
+
+3D render, photorealism, painterly splash art, hyper-detailed fur, realistic material rendering, plastic glossy surfaces, complex fantasy armor filigree, random gold ornaments, random jewelry, excessive crystals, excessive bloom, rainbow lighting, multiple unrelated glow colors, giant baby eyes, oversized baby head proportions, generic anime human face, overcomplicated costume layers, unnecessary symbols, highly cinematic perspective, dramatic low-angle camera, busy background, decorative particles that reduce silhouette readability, random asymmetry with no design purpose, excessive symmetry decoration, AI detail spam.
+
+Create ONE village profession animation sheet for the exact attached owner character.
+Use Attachment A for identity. Use Attachment B only for station scale/camera if listed.
+An approved earlier sheet of this same village variant is Attachment C: match its body
+size, tool design, gripping hand, foot registration and entrance/exit pose exactly.
+Owner identity has priority over generic style wording: preserve the bold black outline,
+simple black eyes, flat graphic shapes and reference clothes. Do not make a realistic animal.
+
+OUTPUT: one true RGBA transparent PNG, exactly 2048 x 1024 pixels, four columns
+and two rows, exactly EIGHT frames, left-to-right across the top row then bottom row.
+Each cell is 512 x 512. No drawn grid, frame numbers, text, checkerboard or white background.
+Full body and complete tool inside every cell, at least 32 px clear padding around extremes.
+Fixed 3/4 reference camera, face RIGHT in ALL frames. Never flip an individual frame.
+Neutral body height target: 330 px from highest identity feature to foot baseline;
+lock this once from the accepted first sheet. Do not enlarge crouches or shrink extended poses.
+Fixed local ground anchor: (256,440). Standing clips keep both feet registered.
+Walking is IN PLACE; alternating contact stays around the same ground anchor.
+No camera movement, perspective change, body translation across cells, cropping or motion blur.
+
+Only draw this character and the specifically permitted carried prop. Do not draw the
+station, ground, river, crops, storage building, parked tools, dropped products or particles.
+Station and product references are for matching only, not objects to paste into the sheet.
+Physical products are SEPARATE layers: workers finish and leave output at their station;
+Swiftwing assists collection/transport; Starcaller, the honey-badger mage shipper,
+teleports it into the existing inventory. No shared warehouse building is assumed.
+Animation frames never grant items, spend money or determine production quantity.
+
+Keep each carried object rigid with constant dimensions and consistent grip.
+No extra fingers, limbs, tools or parcels. Preserve tail/ears and costume from frame to frame.
+For PICKUP/RELEASE, follow the declared ownership frame: the parked world prop and
+the carried prop must never be drawn simultaneously. The surrounding scene is composited later.
+The frame labels in this prompt are instructions; do not print them in the image.
+Use warm, modest village gestures. No combat attacks, threat beams, damage numbers or new armor.
+All coordinates are production targets, not measurements of an image that does not yet exist.
+For loops, frame 8 transitions to frame 1 without an extra held duplicate frame.
+For one-shots, use the stated final pose so the next clip can begin without a jump.
+
+ATTACHMENT A: public/assets/characters/badger-mage/base_v01.png
+Attach these actual images; filenames alone are not references.
+
+CHARACTER: Starcaller, the HONEY-BADGER MAGE in Attachment A. Preserve the
+dark head, pale cheek/muzzle patch, black oval eye and nose, large pointed purple
+wizard hat with its band and curved brim, purple cape/cloak, dark clothing and
+square gold buckle. Follow the attached stylized face, not a realistic honey badger.
+Keep ONE original brown staff with its purple orb and golden orb cradle.
+IDLE/WALK PROP: this same staff at rest on the reference side, held in the same hand.
+PROFESSION: magic shipper. Workers leave finished goods at their stations;
+Swiftwing assists collection, and Starcaller teleports the goods to shared inventory.
+No flower shears, gardening, delivery cart, combat projectile or warehouse building.
+Staff and hands belong to the character layer. Parcel, teleport ring, disappearing
+goods and magical particles are separate layers. Orb glow is an optional overlay,
+not a permanently baked halo. Empty receiving inventory has no visible building.
+
+CLIP: shipping-enter.png
+PLAYBACK: ONE-SHOT, 8 fps, prepares a parcel without moving it
+ACTION — exactly eight frames:
+1. Begin in staff-at-rest idle, both feet planted; the parcel is a separate world object on the right.
+2. Look down and right toward the parcel socket; lower the chin slightly under the unchanged hat brim.
+3. Move the staff forward a little, retaining the original grip and rigid orb cradle.
+4. Raise the empty hand toward the parcel area, palm open, without touching or drawing the parcel.
+5. Set the staff into the casting angle, orb aimed above the target socket rather than at an enemy.
+6. Make one small arranging gesture with the empty fingers/hand; cloak follows softly with no extra folds.
+7. Plant the feet more firmly and settle the shoulders into a calm focused stance.
+8. Match shipping-work frame 1 exactly; goods remain at their source and no teleport has completed.
+The target parcel is never baked into the character sheet. No magic circles are drawn here.

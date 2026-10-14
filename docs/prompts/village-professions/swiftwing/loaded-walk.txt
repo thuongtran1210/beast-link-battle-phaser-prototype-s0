@@ -1,0 +1,75 @@
+BEAST LINK BATTLE — CUTE TACTICAL CHIBI STYLE LOCK:
+
+2D semi-chibi tactical creature game asset, Gen Z-friendly but not childish, clean readable silhouette, head approximately 35–40% of total character height, compact full body, soft colored medium-weight outlines with a slightly stronger outer contour, simple flat base colors, one to two steps of cel shading, minimal controlled highlights, low-to-medium intentional detail density, pastel fantasy palette with one strong controlled accent, clear role-driven shape language, only two to three primary character motifs, mobile/gameplay readability at small scale, expressive face with simple eyes, handcrafted designed feeling, consistent stylized materials, full-body 3/4 front presentation, no extreme perspective.
+
+AVOID:
+
+3D render, photorealism, painterly splash art, hyper-detailed fur, realistic material rendering, plastic glossy surfaces, complex fantasy armor filigree, random gold ornaments, random jewelry, excessive crystals, excessive bloom, rainbow lighting, multiple unrelated glow colors, giant baby eyes, oversized baby head proportions, generic anime human face, overcomplicated costume layers, unnecessary symbols, highly cinematic perspective, dramatic low-angle camera, busy background, decorative particles that reduce silhouette readability, random asymmetry with no design purpose, excessive symmetry decoration, AI detail spam.
+
+Create ONE village profession animation sheet for the exact attached owner character.
+Use Attachment A for identity. Use Attachment B only for station scale/camera if listed.
+An approved earlier sheet of this same village variant is Attachment C: match its body
+size, tool design, gripping hand, foot registration and entrance/exit pose exactly.
+Owner identity has priority over generic style wording: preserve the bold black outline,
+simple black eyes, flat graphic shapes and reference clothes. Do not make a realistic animal.
+
+OUTPUT: one true RGBA transparent PNG, exactly 2048 x 1024 pixels, four columns
+and two rows, exactly EIGHT frames, left-to-right across the top row then bottom row.
+Each cell is 512 x 512. No drawn grid, frame numbers, text, checkerboard or white background.
+Full body and complete tool inside every cell, at least 32 px clear padding around extremes.
+Fixed 3/4 reference camera, face RIGHT in ALL frames. Never flip an individual frame.
+Neutral body height target: 330 px from highest identity feature to foot baseline;
+lock this once from the accepted first sheet. Do not enlarge crouches or shrink extended poses.
+Fixed local ground anchor: (256,440). Standing clips keep both feet registered.
+Walking is IN PLACE; alternating contact stays around the same ground anchor.
+No camera movement, perspective change, body translation across cells, cropping or motion blur.
+
+Only draw this character and the specifically permitted carried prop. Do not draw the
+station, ground, river, crops, storage building, parked tools, dropped products or particles.
+Station and product references are for matching only, not objects to paste into the sheet.
+Physical products are SEPARATE layers: workers finish and leave output at their station;
+Swiftwing is the walking carrier to the receiving shelf beside the common house.
+Starcaller is a BOAT TRADER, rowing finished goods to market when inventory is full. No teleportation
+or new warehouse building. Only a committed delivery may add stock to inventory.
+Animation frames never grant items, spend money or determine production quantity.
+
+Keep each carried object rigid with constant dimensions and consistent grip.
+No extra fingers, limbs, tools or parcels. Preserve tail/ears and costume from frame to frame.
+For PICKUP/RELEASE, follow the declared ownership frame: the parked world prop and
+the carried prop must never be drawn simultaneously. The surrounding scene is composited later.
+The frame labels in this prompt are instructions; do not print them in the image.
+Use warm, modest village gestures. No combat attacks, threat beams, damage numbers or new armor.
+All coordinates are production targets, not measurements of an image that does not yet exist.
+For loops, frame 8 transitions to frame 1 without an extra held duplicate frame.
+For one-shots, use the stated final pose so the next clip can begin without a jump.
+
+ATTACHMENT A: public/assets/beasts/swiftwing/base_owner_v01.png
+Attach these actual images; filenames alone are not references.
+
+CHARACTER: Swiftwing, the ORANGE FOX in Attachment A, not a bird.
+Keep the pointed orange ears with pale interiors, white muzzle/chest, black oval eye
+and nose, burgundy coat, gold square belt buckle, dark feet and orange tail with white tip.
+Preserve the reference rear quiver/arrow motif; stow the handheld bow outside this village sheet.
+IDLE/WALK PROP: empty hands. Profession: main walking carrier, Starcaller instead rows goods to market.
+Pick up one finished-goods parcel, follow village paths to the shared receiving point
+beside the common house, and set it down.
+Never teleport a parcel, cast spells, invent a warehouse or make a second parcel.
+PARCEL MASTER: one small kraft-brown rectangular box with a plain cream paper band,
+no lettering, label, arrows, logo or shiny trim. Width target 100 px at locked 330 px
+neutral character height; use the same approved parcel silhouette in every sheet.
+Only loaded-walk and the specified pickup/finish frames contain the carried parcel.
+World parcel, station and receiving basket/shelf are separate layers. Keep the box below the muzzle
+so it never obscures the eyes or clips through the tail.
+
+CLIP: loaded-walk.png
+PLAYBACK: LOOP, 8 fps, carrying in place
+ACTION — exactly eight frames:
+1. Left foot forward, right behind; hold ONE parcel just below the muzzle, both hands supporting bottom corners.
+2. Transfer weight onto the left foot; parcel stays upright with only a tiny shared body bob.
+3. Right foot passes under the body; coat and tail follow softly without intersecting the box.
+4. Right foot swings forward; elbows remain tucked and fingers/hand shapes do not crawl across the parcel.
+5. Right foot forward, left behind; preserve facing RIGHT and the exact cream-band placement.
+6. Transfer weight onto the right foot; box dimensions and corner angles remain unchanged.
+7. Left foot passes under the body, tail stays behind and clear of hands and box.
+8. Left foot swings forward into frame 1; fixed root and continuous gait, no dropped or teleported parcel.
+This is a separate loaded variant, not the empty-hand walk. Do not bake road, footprints, dust or a destination into the sheet.
