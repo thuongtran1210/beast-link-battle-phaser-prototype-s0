@@ -86,6 +86,8 @@ export class ValidationScene extends Phaser.Scene {
   private battleModel?: AutonomousBattleModel;
   private battleController?: IBattleController;
   private onlineFormationSubmitted = false;
+  private onlineBattleUnsubs: Array<() => void> = [];
+  private onlineCountdown?: import('../network/protocol/NetworkMessages').RoomUpdateMessage['battleCountdown'];
   private battleTickAccumulator = 0;
   private battleOutcome?: 'Win' | 'Lose';
   private readonly waveRun = isTestHarness() ? new WaveRunController() : new WaveRunController(wavesForRunLevel(selectedRunLevel().id), selectedRunLevel().id);
@@ -121,6 +123,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   preload(): void {
+    this.load.on('progress', (value: number) => window.dispatchEvent(new CustomEvent('beast-link-load-progress', { detail: value })));
+    this.events.once(Phaser.Scenes.Events.CREATE, () => window.dispatchEvent(new Event('beast-link-scene-ready')));
     preloadSnowguardAnimations(this);
     preloadIroncladAnimations(this);
     preloadWindstriderAnimations(this);
@@ -256,6 +260,26 @@ export class ValidationScene extends Phaser.Scene {
     if (online) {
       this.puzzleCoordinator.setSeed(online.matchInfo.seed);
       const unsubs = [
+        online.adapter.onMatchStart(message => {
+          online.matchInfo = message;
+          this.summary?.setVisible(false);
+          this.beastRushTimer.reset(); this.comboQuality.reset(); this.energyTimer.reset();
+          this.runRoster.reset(); this.shardPool.reset(); this.energyQueue.reset(); this.battleQueue.clear();
+          this.formation = undefined; this.battleOutcome = undefined; this.metrics.reset();
+          this.isShowingTransitionCue = false; this.isShowingBattleSetupCue = false;
+          this.battleController = undefined;
+          this.puzzleCoordinator.setSeed(message.seed);
+          this.phaseController.setPhase(GamePhase.BeastRush);
+        }),
+        online.adapter.onRoomUpdate(update => {
+          if (!update.battleCountdown || this.phaseController.phase !== GamePhase.BattleSetup) return;
+          this.onlineCountdown = update.battleCountdown;
+          this.renderBattleSetup();
+          this.transitionCue?.hide();
+          this.topHud?.update(this.phaseController.phase, 0, this.energyQueue.getTotalCharges(), {
+            primaryTitle: `BẮT ĐẦU SAU ${update.battleCountdown.remainingSeconds} GIÂY`, secondaryTitle: 'Đội hình đã khóa · Thú đối thủ sẽ hiện khi vào trận', waveLabel: 'ONLINE MATCH', linkShards: 0,
+          });
+        }),
         online.adapter.onPreparationPhase(phase => {
           this.isShowingTransitionCue = false;
           this.transitionCueTimer = 0;
@@ -264,7 +288,7 @@ export class ValidationScene extends Phaser.Scene {
         online.adapter.onOpponentFormationReady(update => {
           if (this.phaseController.phase === GamePhase.BattleSetup) {
             this.renderBattleSetup();
-            if (update.ready) this.transitionCue?.show('ĐỐI THỦ SẴN SÀNG', 'Hoàn tất đội hình để vào trận');
+            if (update.ready) FeedbackEffects.showToast(this, this.layout.leftCenter.x, 100, 'Đối thủ đã sẵn sàng', '#22c55e', 1500);
           }
         }),
         online.adapter.onOnlineBattleStart(() => {
@@ -276,7 +300,7 @@ export class ValidationScene extends Phaser.Scene {
           if (this.phaseController.phase === GamePhase.Battle) this.battleCoordinator.renderBattle();
         }),
         online.adapter.onError(error => {
-          if (['OPPONENT_LEFT', 'HOST_DISCONNECTED', 'HOST_BACKGROUND', 'CONNECTION_LOST'].includes(error.code)) {
+          if (['OPPONENT_LEFT', 'HOST_DISCONNECTED', 'HOST_BACKGROUND', 'CONNECTION_LOST', 'INVALID_BATTLE_RESULT'].includes(error.code)) {
             window.dispatchEvent(new CustomEvent('beast-link-online-abort', { detail: error.message }));
             return;
           }
@@ -287,7 +311,7 @@ export class ValidationScene extends Phaser.Scene {
           }
         }),
       ];
-      this.events.once('shutdown', () => unsubs.forEach(unsubscribe => unsubscribe()));
+      this.events.once('shutdown', () => { unsubs.forEach(unsubscribe => unsubscribe()); this.onlineBattleUnsubs.splice(0).forEach(unsubscribe => unsubscribe()); });
     }
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
@@ -391,12 +415,13 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private handleBattleEnded(status: 'Win' | 'Lose'): void {
+    if (getOnlineBattleSession() && !getOnlineBattleSession()!.adapter.roundResult) return;
     if (this.isConcludingBattle) return;
     this.isConcludingBattle = true;
     this.battleCoordinator.renderBattle();
 
-    // Allow 800ms for final attack/KO presentations and feedback to complete before transitioning
-    this.time.delayedCall(800, () => {
+    // KO clips/fades take up to 870ms; finish their presentation before the result.
+    this.time.delayedCall(1200, () => {
       this.isConcludingBattle = false;
       if (this.phaseController.phase !== GamePhase.Battle) return;
       const online = getOnlineBattleSession();
@@ -473,7 +498,7 @@ export class ValidationScene extends Phaser.Scene {
     const online = getOnlineBattleSession();
     if (online) {
       online.adapter.preparationReady('BeastRush');
-      this.transitionCue?.show('CHỜ ĐỐI THỦ', 'Cùng chuyển sang Energy Rush khi cả hai hoàn tất');
+      if (this.phaseController.phase === GamePhase.BeastRush) this.transitionCue?.show('CHỜ ĐỐI THỦ', 'Cùng chuyển sang Energy Rush khi cả hai hoàn tất');
       return;
     }
     this.phaseController.setPhase(GamePhase.EnergyRush);
@@ -484,7 +509,7 @@ export class ValidationScene extends Phaser.Scene {
     const online = getOnlineBattleSession();
     if (online) {
       online.adapter.preparationReady('EnergyRush');
-      this.transitionCue?.show('CHỜ ĐỐI THỦ', 'Cùng xếp đội hình khi cả hai hoàn tất');
+      if (this.phaseController.phase === GamePhase.EnergyRush) this.transitionCue?.show('CHỜ ĐỐI THỦ', 'Cùng xếp đội hình khi cả hai hoàn tất');
       return;
     }
     if (this.phaseController.setPhase(GamePhase.BattleSetup)) {
@@ -495,6 +520,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private onPhaseChanged(phase: GamePhase): void {
+    if (phase !== GamePhase.Battle) this.onlineBattleUnsubs.splice(0).forEach(unsubscribe => unsubscribe());
     this.puzzleCoordinator.clearPuzzlePresentation();
     this.phaseStatusPanel?.setVisible(false);
     this.transitionCue?.hide();
@@ -522,11 +548,15 @@ export class ValidationScene extends Phaser.Scene {
   private syncTopHud(): void {
     const onlineSession = getOnlineBattleSession();
     if (onlineSession) {
-      const modeLabel = onlineSession.matchInfo.mode === 'pvp' ? 'SOLO 1v1 PvP' : 'CO-OP ĐỒNG ĐỘI';
+      const modeLabel = onlineSession.matchInfo.mode === 'pvp' ? 'ĐỐI KHÁNG' : 'CO-OP ĐỒNG ĐỘI';
+      const hearts = onlineSession.adapter.roundResult?.hearts ?? onlineSession.matchInfo.hearts ?? { TeamA: 4, TeamB: 4 };
+      const own = onlineSession.adapter.teamId;
+      const other = own === 'TeamA' ? 'TeamB' : 'TeamA';
+      this.topHud?.setOnlineHearts(hearts[own], hearts[other]);
       this.topHud?.update(this.phaseController.phase, 0, this.energyQueue.getTotalCharges(), {
         primaryTitle: `⚔️ ĐẤU ONLINE · ${modeLabel}`,
-        secondaryTitle: `Phòng: ${onlineSession.matchInfo.seed ? 'Đã kết nối' : 'Đang đấu'}`,
-        waveLabel: 'ONLINE MATCH',
+        secondaryTitle: `VÒNG ${onlineSession.matchInfo.round ?? 1} · ${modeLabel}`,
+        waveLabel: `ONLINE · VÒNG ${onlineSession.matchInfo.round ?? 1}`,
         linkShards: 0,
       });
       this.topHud?.setVisible(true);
@@ -534,6 +564,7 @@ export class ValidationScene extends Phaser.Scene {
     }
 
     const beastCount = this.battleQueue.entries().reduce((s, e) => s + e.count, 0);
+    this.topHud?.setOnlineHearts();
     const energyCount = this.energyQueue.getTotalCharges();
     const wave = this.waveRun.currentWave;
     const setup = this.phaseController.phase === GamePhase.BattleSetup;
@@ -582,6 +613,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterBattleSetup(): void {
+    this.onlineCountdown = undefined;
     this.onlineFormationSubmitted = false;
     this.metrics.enterBattleSetup(this.battleQueue.entries());
     if (!this.formation) {
@@ -604,7 +636,7 @@ export class ValidationScene extends Phaser.Scene {
     this.fixtureManager.ensureBoard();
     const onlineSession = getOnlineBattleSession();
     const enemiesToDisplay = onlineSession
-      ? (onlineSession.adapter.opponentFormation?.units.map(unit => ({ ...unit, enemyId: unit.unitId, archetype: unit.role === 'Tanker' ? 'Frontliner' as const : unit.role === 'Assassin' ? 'Diver' as const : 'Ranged' as const })) ?? [])
+      ? ((this.onlineCountdown?.placements ?? onlineSession.adapter.opponentFormation?.placements)?.map((slot, index) => ({ ...slot, enemyId: `hidden-${index}`, maxHp: 0, damage: 0 })) ?? [])
       : (this.captureEnemyFixtures ?? this.fixtureManager.board?.fixtures ?? this.waveRun.currentWave.enemyFixtures);
 
     this.battleSetupView = new BattleSetupView(
@@ -633,6 +665,7 @@ export class ValidationScene extends Phaser.Scene {
         this.metrics.recordLinkShardsSpent(2);
         this.renderBattleSetup();
       },
+      Boolean(onlineSession),
     );
     this.battleSetupView.render();
     if (this.onlineFormationSubmitted) this.battleSetupView.lock();
@@ -689,7 +722,7 @@ export class ValidationScene extends Phaser.Scene {
           this.handleBattleEnded(status);
         }
       });
-      this.events.once('shutdown', () => { unsubscribeSnapshot(); unsubscribeStatus(); });
+      this.onlineBattleUnsubs.push(unsubscribeSnapshot, unsubscribeStatus);
 
       this.battleCoordinator.renderBattle();
       this.syncTopHud();
@@ -763,6 +796,7 @@ export class ValidationScene extends Phaser.Scene {
       });
 
       this.onlineFormationSubmitted = true;
+      this.transitionCue?.hide();
       this.battleSetupView?.lock();
       onlineSession.adapter.deployFormation(deployedUnits, true, this.energyQueue.getAll());
 
@@ -775,8 +809,8 @@ export class ValidationScene extends Phaser.Scene {
         3000,
       );
 
-      this.topHud?.update(this.phaseController.phase, 0, this.energyQueue.getTotalCharges(), {
-        primaryTitle: '⚔️ ĐẤU ONLINE · CHỜ ĐỐI THỦ',
+      if (!this.onlineCountdown) this.topHud?.update(this.phaseController.phase, 0, this.energyQueue.getTotalCharges(), {
+        primaryTitle: 'ĐÃ SẴN SÀNG · CHỜ ĐỐI THỦ',
         secondaryTitle: 'Đã gửi đội hình lên máy chủ',
         waveLabel: 'ONLINE MATCH',
         linkShards: 0,

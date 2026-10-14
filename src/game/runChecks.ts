@@ -1,4 +1,6 @@
 import './config/CheckCharacterDefaults';
+import { runBattleResultPresentationChecks } from './network/BattleResultPresentationChecks';
+runBattleResultPresentationChecks();
 import { runBattleBoardExhaustionChecks } from './battle/BattleBoardExhaustionChecks';
 import { runP1S2Checks } from './battle/P1S2Checks';
 import { runP1S3Checks } from './battle/P1S3Checks';
@@ -177,3 +179,6 @@ import { runServerRoomChecks } from '../server/ServerRoomChecks';
 runServerRoomChecks();
 console.log('Game Server & Room Networking checks passed.');
 
+
+import { onlineMatchRulesChecks } from '../network/room/OnlineMatchRulesChecks';
+onlineMatchRulesChecks();

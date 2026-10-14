@@ -171,6 +171,11 @@ export class GameServer {
         binding?.room.preparationReady(binding.playerId, msg.phase);
         break;
       }
+      case 'NEXT_ROUND_READY': {
+        const binding = this.clientRooms.get(ws);
+        binding?.room.nextRoundReady(binding.playerId);
+        break;
+      }
 
       case 'LEAVE_ROOM': {
         const binding = this.clientRooms.get(ws);

@@ -64,6 +64,21 @@ export function showMainMenu(
     root.querySelector<HTMLButtonElement>('.menu-play')!.onclick = camp.onclick;
     camp.remove();
   }
+  const describe = (button: HTMLButtonElement, title: string, description: string, character: number) => {
+    const heading = document.createElement('strong'); heading.textContent = title;
+    const detail = document.createElement('small'); detail.textContent = description;
+    button.replaceChildren(heading, detail);
+    button.setAttribute('aria-label', `${title}. ${description}`);
+    button.onpointerenter = () => parallax.setActiveCharacter(character);
+    button.onpointerleave = () => parallax.setActiveCharacter();
+    button.onfocus = () => parallax.setActiveCharacter(character);
+    button.onblur = () => parallax.setActiveCharacter();
+  };
+  describe(camp, 'Về làng', 'Gặp gỡ thú · Xây dựng làng', 0);
+  describe(root.querySelector<HTMLButtonElement>('.menu-play')!,
+    onboarding === 'expedition' ? 'Chuyến đi đầu tiên' : onboarding === 'village' ? 'Khám phá làng' : 'Đi thám hiểm',
+    onboarding === 'village' ? 'Gặp gỡ thú · Bắt đầu xây làng' : 'Tuyển thú · Vượt 3 đợt · Nhận Gỗ', 1);
+  describe(onlineBtn, 'Đấu bạn bè', 'Đấu 1v1 · Mỗi bên 4 tim', 2);
   root.querySelector<HTMLButtonElement>('.menu-help')!.onclick = () => {
     const dialog = document.createElement('dialog');
     dialog.className = 'game-dialog';

@@ -78,7 +78,7 @@ export class SessionSummaryView {
       .setStrokeStyle(1.5, isWin ? HudTokens.colors.gold : HudTokens.colors.red);
 
     const resultTitle = this.scene.add
-      .text(0, bannerY - 10, isWin ? '★ VICTORY ★' : '☠ DEFEAT ☠', {
+      .text(0, bannerY - 10, getOnlineBattleSession() ? (getOnlineBattleSession()!.adapter.roundResult?.matchFinished === false ? (isWin ? 'THẮNG VÒNG' : 'THUA VÒNG') : (isWin ? 'THẮNG TRẬN' : 'THUA TRẬN')) : isWin ? '★ VICTORY ★' : '☠ DEFEAT ☠', {
         fontFamily: HudTokens.fonts.family,
         fontSize: '28px',
         color: isWin ? HudTokens.colors.textGold : HudTokens.colors.textRed,
@@ -352,7 +352,7 @@ export class SessionSummaryView {
       .setInteractive({ useHandCursor: true });
 
     const restartLabel = this.scene.add
-      .text(panelW / 4, btnRowY, getOnlineBattleSession() ? 'Trở về sảnh' : this.retryVillageSave?'Lưu thưởng trước khi chơi lại':'↺ RESTART RUN', {
+      .text(panelW / 4, btnRowY, getOnlineBattleSession() ? (getOnlineBattleSession()!.adapter.roundResult?.matchFinished === false ? 'Sẵn sàng vòng tiếp theo' : 'Trở về sảnh') : this.retryVillageSave?'Lưu thưởng trước khi chơi lại':'↺ RESTART RUN', {
         fontFamily: HudTokens.fonts.family,
         fontSize: '14px',
         color: '#ffffff',
@@ -364,6 +364,7 @@ export class SessionSummaryView {
     const triggerRestart = () => {
       if (!this.restartArmed || this.retryVillageSave) return;
       this.restartArmed = false;
+      if (getOnlineBattleSession()?.adapter.roundResult?.matchFinished === false) restartLabel.setText('Đã sẵn sàng · Chờ đối thủ');
       if(this.villageReport&&firstJourneyStage()==='village'){window.dispatchEvent(new Event('beast-link-return-village'));return;}
       this.onRestart();
     };

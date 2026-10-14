@@ -6,6 +6,7 @@ import type { AutonomousBattleSnapshot } from '../battle/BattleTypes';
 import type { BattleCommand } from '../battle/commands/BattleCommand';
 import type { BattleEvent } from '../battle/events/BattleEvents';
 import { onlinePerspective } from './OnlinePerspective';
+import { validBattleResult } from './BattleResultValidation';
 import type { TeamSide } from '../battle/entities/CombatEntity';
 import { BattleRoom, type RoomScheduler } from '../../network/room/BattleRoom';
 import {
@@ -15,6 +16,7 @@ import {
   type RoomJoinedMessage,
   type RoomUpdateMessage,
   type MatchStartMessage,
+  type MatchEndMessage,
   type ErrorMessage,
   type GameMode,
   type DeployedFormationUnit,
@@ -57,6 +59,11 @@ function getDefaultPeerConfig(): PeerOptions | undefined {
 }
 
 export class PeerSessionAdapter implements OnlineSessionAdapter {
+  roundResult?: MatchEndMessage;
+  nextRoundReady(): void {
+    if (this.isHost) this.room?.nextRoundReady(this.playerId);
+    else this.hostConnection?.send({ type: 'NEXT_ROUND_READY' });
+  }
   playerId = '';
   teamId: TeamSide = 'TeamA';
   preparationPhase: PreparationPhase = 'BeastRush';
@@ -411,6 +418,9 @@ export class PeerSessionAdapter implements OnlineSessionAdapter {
         if (!guestPlayerId || !this.room) return;
 
         switch (msg.type) {
+          case 'NEXT_ROUND_READY':
+            this.room.nextRoundReady(guestPlayerId);
+            break;
           case 'PING':
             conn.send({ type: 'PONG', timestamp: msg.timestamp });
             break;
@@ -524,6 +534,8 @@ export class PeerSessionAdapter implements OnlineSessionAdapter {
         break;
 
       case 'MATCH_START':
+        this.roundResult = undefined;
+        this.opponentFormation = undefined;
         this.matchId = msg.matchId ?? '';
         this.preparationPhase = 'BeastRush';
         this.lastReceivedTick = -1;
@@ -561,8 +573,12 @@ export class PeerSessionAdapter implements OnlineSessionAdapter {
 
       case 'MATCH_END':
         if (this.matchId && msg.matchId !== this.matchId) break;
-        this.monitors.forEach(timer => clearInterval(timer));
-        this.monitors.clear();
+        if (!validBattleResult(msg)) {
+          this.handleErrorMessage({ type: 'ERROR', code: 'INVALID_BATTLE_RESULT', message: 'Kết quả không khớp HP cuối vòng. Hãy tạo phòng mới.' });
+          return;
+        }
+        this.roundResult = msg;
+        if (msg.matchFinished !== false) { this.monitors.forEach(timer => clearInterval(timer)); this.monitors.clear(); }
         if (msg.snapshot) this.snapshotListeners.forEach(listener => listener(onlinePerspective(msg.snapshot!, this.teamId)));
         this.statusListeners.forEach((l) =>
           l(msg.winnerTeamId === this.teamId ? 'Win' : 'Lose'),

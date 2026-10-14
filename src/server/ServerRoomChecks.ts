@@ -9,7 +9,8 @@ function expect(condition: boolean, message: string): void {
 }
 
 export function runServerRoomChecks(): void {
-  const manager = new RoomManager();
+  let revealCallback = () => {};
+  const manager = new RoomManager({ setTimeout: fn => { revealCallback = fn; return 1; }, clearTimeout: () => {}, setInterval: (fn, ms) => setInterval(fn, ms), clearInterval: id => clearInterval(id) });
   const room = manager.createRoom('pvp');
   const messagesA: ServerMessage[] = [];
   const messagesB: ServerMessage[] = [];
@@ -49,12 +50,19 @@ export function runServerRoomChecks(): void {
   room.deployFormation('bob', [beastB], false);
   expect(String(room.state) === 'BattleSetup', 'Two previews must not start combat');
   const preview = messagesB.find(message => message.type === 'OPPONENT_FORMATION_READY');
-  expect(preview?.type === 'OPPONENT_FORMATION_READY' && preview.units[0].beastId === 'beast-a' && preview.units[0].slotId === 'front-1' && !preview.ready, 'Opponent receives actual beast and placement');
+  expect(preview?.type === 'OPPONENT_FORMATION_READY' && preview.units.length === 0 && preview.placements?.[0].slotId === 'front-1' && !preview.ready, 'Opponent receives shadow position without Beast identity before readiness');
   room.deployFormation('alice', [beastA], true, [{ energyId: 'energy-a', charges: 1 }]);
   expect(String(room.state) === 'BattleSetup', 'One committed formation waits');
   room.deployFormation('alice', [{ ...beastA, beastId: 'beast-d' }], true);
   room.deployFormation('bob', [beastB], true, [{ energyId: 'energy-a', charges: 1 }]);
-  expect(String(room.state) === 'BATTLE', 'Two commits start real combat');
+  expect(String(room.state) === 'BattleCountdown', 'Two ready players enter countdown, not combat');
+  expect(room.step() === null, 'No combat during countdown');
+  const shadows = messagesB.filter(message => message.type === 'ROOM_UPDATE' && message.battleCountdown);
+  expect(shadows.length === 1 && shadows[0].type === 'ROOM_UPDATE' && shadows[0].battleCountdown!.remainingSeconds === 5, 'Countdown starts at five');
+  expect(shadows[0].type === 'ROOM_UPDATE' && !JSON.stringify(shadows[0].battleCountdown).includes('beast'), 'Only generic positions transmitted during countdown');
+  for (let i = 0; i < 4; i++) { revealCallback(); expect(String(room.state) === 'BattleCountdown', 'Identity stays hidden until countdown ends'); }
+  revealCallback();
+  expect(String(room.state) === 'BATTLE', 'Combat starts only after five countdown seconds');
   room.stopTicking();
   const battleA = messagesA.find(message => message.type === 'ONLINE_BATTLE_START');
   const battleB = messagesB.find(message => message.type === 'ONLINE_BATTLE_START');

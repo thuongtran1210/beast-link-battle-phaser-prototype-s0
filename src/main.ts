@@ -1,6 +1,7 @@
 import { rushSfx } from './game/ui/feedback/RushSfx';
 import { bgmManager } from './game/audio/BgmManager';
 import { transitionScreen } from './game/ui/SceneTransition';
+import { showRunLoadingScreen } from './game/ui/RunLoadingScreen';
 import Phaser from 'phaser';
 import { showDeckPicker } from './game/ui/DeckPicker';
 import { showMainMenu } from './game/ui/MainMenu';
@@ -64,6 +65,7 @@ else {
     lockRunDeck(deck);
     const shell = document.getElementById('game-shell')!;
     shell.classList.add('run-active');
+    const disposeLoading = showRunLoadingScreen(shell);
     const game = new Phaser.Game({ ...config, width: compact ? Math.max(1280, Math.round(720 * window.innerWidth / window.innerHeight)) : 1280 });
     const rotate = document.createElement('div'); rotate.className = 'rotate-notice';
     rotate.innerHTML = `
@@ -103,6 +105,7 @@ else {
       notice.onclose = () => notice.remove(); notice.showModal();
     };
     const returnMenu = () => {
+      disposeLoading();
       clearOnlineBattleSession();
       change.remove(); rotate.remove(); shell.classList.remove('run-active');
       window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);
@@ -112,6 +115,7 @@ else {
       game.destroy(true); bgmManager.playLobby(); openMenu();
     };
     const returnVillage=()=>{
+      disposeLoading();
       clearOnlineBattleSession();
       change.remove();rotate.remove();shell.classList.remove('run-active');
       window.removeEventListener('orientationchange',orientation);window.removeEventListener('resize',orientation);
@@ -134,6 +138,7 @@ else {
       dialog.querySelector<HTMLButtonElement>('.resume-run')!.onclick = () => dialog.close();
       dialog.onclose = () => { scenes.forEach(scene => scene.scene.resume()); dialog.remove(); orientation(); };
       dialog.querySelector<HTMLButtonElement>('.return-menu')!.onclick = () => transitionScreen(dialog,()=>{
+        disposeLoading();
         clearOnlineBattleSession();
         dialog.onclose = null; dialog.remove(); change.remove(); rotate.remove(); shell.classList.remove('run-active');
         window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);

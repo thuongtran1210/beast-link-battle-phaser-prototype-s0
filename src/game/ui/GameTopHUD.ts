@@ -22,9 +22,17 @@ export class GameTopHUD {
   private beasts!: Phaser.GameObjects.Text;
   private energy!: Phaser.GameObjects.Text;
   private link!: Phaser.GameObjects.Text;
+  private readonly ownHearts: Phaser.GameObjects.Text;
+  private readonly opponentHearts: Phaser.GameObjects.Text;
+  private onlineHeartsVisible = false;
 
   constructor(private readonly scene: Phaser.Scene) {
     const w = scene.scale.width;
+    const compact = isCompactLandscape();
+    const heartStyle = { fontFamily: HudTokens.fonts.family, fontSize: compact ? '16px' : '14px', fontStyle: 'bold', color: '#ff9cae' };
+    this.ownHearts = scene.add.text(compact ? w - 570 : w / 2 - 150, compact ? 3 : 13, '', heartStyle).setDepth(2);
+    this.opponentHearts = scene.add.text(compact ? w - 570 : w / 2 + 35, compact ? 23 : 13, '', { ...heartStyle, color: '#f6d675' }).setDepth(2);
+    this.objects.push(this.ownHearts, this.opponentHearts);
 
     if (isCompactLandscape()) {
       const bg = scene.add.rectangle(w / 2, 22, w, 44, HudTokens.colors.bgSurfaceDark, .98);
@@ -132,6 +140,23 @@ export class GameTopHUD {
     this.objects.forEach((object) =>
       (object as unknown as Phaser.GameObjects.Components.Visible).setVisible(visible),
     );
+    if (visible && this.onlineHeartsVisible) {
+      this.phases.forEach(text => text.setVisible(false));
+      this.phaseMarkers.forEach(marker => marker.setVisible(false));
+    }
+  }
+
+  /** Dedicated score survives phase/countdown title updates, including compact HUD. */
+  setOnlineHearts(own?: number, opponent?: number): void {
+    this.onlineHeartsVisible = own !== undefined && opponent !== undefined;
+    const hearts = (value: number) => {
+      const count = Math.max(0, Math.min(4, Math.trunc(value)));
+      return `${'♥'.repeat(count)}${'♡'.repeat(4 - count)} ${count}/4`;
+    };
+    this.ownHearts.setText(this.onlineHeartsVisible ? `Bạn  ${hearts(own!)}` : '');
+    this.opponentHearts.setText(this.onlineHeartsVisible ? `Đối thủ  ${hearts(opponent!)}` : '');
+    this.phases.forEach(text => text.setVisible(!this.onlineHeartsVisible));
+    this.phaseMarkers.forEach(marker => marker.setVisible(!this.onlineHeartsVisible));
   }
 
   destroy(): void {

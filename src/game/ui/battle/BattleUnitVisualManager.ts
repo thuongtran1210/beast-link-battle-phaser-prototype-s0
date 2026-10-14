@@ -53,6 +53,7 @@ export function formatNumber(value: number): string {
 }
 
 export class BattleUnitVisualManager {
+  private readonly defeated = new Set<string>();
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly layout: BattleFieldLayout,
@@ -88,6 +89,12 @@ export class BattleUnitVisualManager {
 
     const ratio = unit.maxHp > 0 ? clamp01(unit.currentHp / unit.maxHp) : 0;
     this.updateHpBar(visual, ratio, unit.currentHp <= 0);
+    if (unit.currentHp <= 0 && !this.defeated.has(`unit:${unit.unitId}`)) {
+      this.defeated.add(`unit:${unit.unitId}`);
+      this.scene.tweens.killTweensOf(visual.container);
+      visual.characterView.setMoving(false);
+      visual.characterView.setAlive(false);
+    }
 
     if (showcaseMode) {
       visual.label.setText(`${beastDisplayName(unit.beastId)}\n${'★'.repeat(unit.star)}`);
@@ -146,6 +153,11 @@ export class BattleUnitVisualManager {
 
     const ratio = enemy.maxHp > 0 ? clamp01(enemy.currentHp / enemy.maxHp) : 0;
     this.updateHpBar(visual, ratio, enemy.currentHp <= 0);
+    if (enemy.currentHp <= 0 && !this.defeated.has(`enemy:${enemy.enemyId}`)) {
+      this.defeated.add(`enemy:${enemy.enemyId}`);
+      this.scene.tweens.killTweensOf(visual.container);
+      visual.characterView.playKo();
+    }
 
     const archetypeBadge = enemy.archetype
       ? enemy.archetype === 'Frontliner'
@@ -196,29 +208,29 @@ export class BattleUnitVisualManager {
     isDead: boolean,
   ): void {
     if (isDead) {
-      visual.hpFill.width = 0;
-      visual.ghostFill.width = 0;
+      this.scene.tweens.killTweensOf(visual.ghostFill);
+      visual.hpFill.setScale(0, 1);
+      visual.ghostFill.setScale(0, 1);
       visual.hpBarContainer.setAlpha(0);
       visual.currentHpRatio = 0;
       return;
     }
 
     visual.hpBarContainer.setAlpha(1);
-    const targetWidth = 48 * ratio;
+    visual.hpFill.setScale(ratio, 1);
 
     if (ratio < visual.currentHpRatio) {
-      visual.hpFill.width = targetWidth;
       this.scene.tweens.killTweensOf(visual.ghostFill);
       this.scene.tweens.add({
         targets: visual.ghostFill,
-        width: targetWidth,
+        scaleX: ratio,
         duration: 320,
         ease: 'Quad.Out',
         delay: 80,
       });
     } else if (ratio > visual.currentHpRatio) {
-      visual.hpFill.width = targetWidth;
-      visual.ghostFill.width = targetWidth;
+      this.scene.tweens.killTweensOf(visual.ghostFill);
+      visual.ghostFill.setScale(ratio, 1);
     }
     visual.currentHpRatio = ratio;
   }
@@ -256,6 +268,8 @@ export class BattleUnitVisualManager {
     const hpBorder = this.scene.add.rectangle(0, 0, 52, 7, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
     const ghostFill = this.scene.add.rectangle(-24, 0, 48, 5, 0xfca5a5, 0.9).setOrigin(0, 0.5);
     const hpFill = this.scene.add.rectangle(-24, 0, 48, 5, 0x22c55e, 1.0).setOrigin(0, 0.5);
+    const initialRatio = unit.maxHp > 0 ? clamp01(unit.currentHp / unit.maxHp) : 0;
+    hpFill.setScale(initialRatio, 1); ghostFill.setScale(initialRatio, 1);
     hpBarContainer.add([hpBorder, ghostFill, hpFill]);
 
     const container = this.scene.add.container(
@@ -315,6 +329,8 @@ export class BattleUnitVisualManager {
     const hpBorder = this.scene.add.rectangle(0, 0, 52, 7, 0x090d16, 0.95).setStrokeStyle(1, 0x334155);
     const ghostFill = this.scene.add.rectangle(-24, 0, 48, 5, 0xfef08a, 0.95).setOrigin(0, 0.5);
     const hpFill = this.scene.add.rectangle(-24, 0, 48, 5, 0xef4444, 1.0).setOrigin(0, 0.5);
+    const initialRatio = enemy.maxHp > 0 ? clamp01(enemy.currentHp / enemy.maxHp) : 0;
+    hpFill.setScale(initialRatio, 1); ghostFill.setScale(initialRatio, 1);
     hpBarContainer.add([hpBorder, ghostFill, hpFill]);
 
     const container = this.scene.add.container(

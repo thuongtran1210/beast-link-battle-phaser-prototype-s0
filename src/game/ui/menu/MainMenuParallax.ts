@@ -33,6 +33,11 @@ export class MainMenuParallax {
   private characters: CharacterAnimationData[] = [];
   private scrollX = 0;
   private lastTime = 0;
+  private activeCharacter?: number;
+
+  public setActiveCharacter(index?: number): void {
+    this.activeCharacter = index;
+  }
 
   // Floating ambient leaves & petals
   private leaves: Array<{
@@ -879,7 +884,9 @@ export class MainMenuParallax {
 
     this.characters.forEach((char, index) => {
       const charX = startX + index * spacing;
-      const charY = groundY;
+      const selected = index === this.activeCharacter;
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const charY = groundY - (selected && !reduced ? 5 + Math.sin(now * .008) * 3 : 0);
 
       // 1. Bóng đổ dưới chân (Soft Chibi Drop Shadow)
       const shadowAnim = Math.sin(now * 0.001 * FPS * Math.PI + char.phaseOffset * Math.PI);
@@ -901,7 +908,7 @@ export class MainMenuParallax {
 
       // Tính tỷ lệ hiển thị dựa trên bodyHeight chuẩn
       const baseHeight = char.frames[0]?.bodyHeight || 350;
-      const scale = char.targetHeight / baseHeight;
+      const scale = char.targetHeight / baseHeight * (selected ? 1.06 : 1);
 
       const destW = f.width * scale;
       const destH = f.height * scale;

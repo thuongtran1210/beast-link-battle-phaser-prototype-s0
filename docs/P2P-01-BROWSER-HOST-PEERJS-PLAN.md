@@ -146,3 +146,7 @@ Xem Corrective implementation tại docs/P2P-01-REVIEW-2026-10-14.md. Các log r
 Public online is COMING SOON, hidden from domain builds. Owner requests localhost-only experimentation. OnlineAvailability permits localhost, 127.0.0.1 and IPv6 loopback, including preview builds served locally. Main menu hides Online on other hosts; room/p2p query links do not open lobby on domain, and the lobby entry point returns before creating any adapter. No public Coming Soon button/banner is shown. A query parameter cannot enable online on a public host. Releasing publicly requires a separate owner request. Cross-network/domain/TURN live gate is deferred by owner scope, not passed. This gate only controls exposure of the prototype, not authentication/security.
 
 Progress: source gate and production build prepared; this does not itself upload files to the owner's live hosting. Deploy target/credentials have not been provided in this chat.
+
+## Owner gameplay update — 2026-10-14
+
+See docs/ONLINE-PVP-RULES-2026-10-14.md: Sẵn sàng CTA, concealed opposing roster during Setup, positions-only gray countdown markers for five seconds, then reveal/combat. Four-heart match replaces single-round final result, with both players ready before fresh recruitment each subsequent round. Earlier preview/one-round acceptance rows are historical and superseded. Protocol v5. Localhost-only gate unchanged. Core/mock/WebSocket checks implemented; owner browser/device QA open.

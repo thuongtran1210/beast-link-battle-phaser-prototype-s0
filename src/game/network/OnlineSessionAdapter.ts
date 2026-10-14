@@ -5,6 +5,7 @@ import type {
   RoomJoinedMessage,
   RoomUpdateMessage,
   MatchStartMessage,
+  MatchEndMessage,
   OnlineBattleStartMessage,
   OpponentFormationReadyMessage,
   EnergyInventoryMessage,
@@ -20,6 +21,8 @@ import type { BattleCommand } from '../battle/commands/BattleCommand';
  * (WebSocket client adapter, PeerJS host/guest adapter, etc.)
  */
 export interface OnlineSessionAdapter extends NetworkTransportAdapter {
+  readonly roundResult?: MatchEndMessage;
+  nextRoundReady(): void;
   readonly playerId: string;
   readonly teamId: TeamSide;
   readonly preparationPhase: PreparationPhase;

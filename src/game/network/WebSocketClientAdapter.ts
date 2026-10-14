@@ -5,8 +5,10 @@ import type { AutonomousBattleSnapshot } from '../battle/BattleTypes';
 import type { BattleCommand } from '../battle/commands/BattleCommand';
 import type { BattleEvent } from '../battle/events/BattleEvents';
 import { onlinePerspective } from './OnlinePerspective';
+import { validBattleResult } from './BattleResultValidation';
 import type { TeamSide } from '../battle/entities/CombatEntity';
 import type { PreparationPhase, EnergyInventoryMessage } from '../../network/protocol/NetworkMessages';
+import type { MatchEndMessage } from '../../network/protocol/NetworkMessages';
 import { ONLINE_PROTOCOL_VERSION } from '../../network/protocol/NetworkMessages';
 import type {
   ClientMessage,
@@ -22,6 +24,8 @@ import type {
 } from '../../network/protocol/NetworkMessages';
 
 export class WebSocketClientAdapter implements OnlineSessionAdapter {
+  roundResult?: MatchEndMessage;
+  nextRoundReady(): void { this.send({ type: 'NEXT_ROUND_READY' }); }
   playerId = '';
   private commandSequence = 0;
   private matchId = '';
@@ -240,6 +244,8 @@ export class WebSocketClientAdapter implements OnlineSessionAdapter {
       }
 
       case 'MATCH_START': {
+        this.roundResult = undefined;
+        this.opponentFormation = undefined;
         this.matchId = msg.matchId ?? '';
         this.matchStartListeners.forEach((l) => l(msg));
         break;
@@ -266,6 +272,8 @@ export class WebSocketClientAdapter implements OnlineSessionAdapter {
       }
 
       case 'MATCH_END': {
+        if (!validBattleResult(msg)) { this.errorListeners.forEach(listener => listener({ type: 'ERROR', code: 'INVALID_BATTLE_RESULT', message: 'Kết quả không khớp HP cuối vòng.' })); break; }
+        this.roundResult = msg;
         if (msg.snapshot) this.snapshotListeners.forEach(listener => listener(onlinePerspective(msg.snapshot!, this.teamId)));
         this.statusListeners.forEach((l) => l(msg.winnerTeamId === this.teamId ? 'Win' : 'Lose'));
         break;

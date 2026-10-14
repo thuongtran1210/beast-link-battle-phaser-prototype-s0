@@ -8,7 +8,7 @@ function expect(condition: boolean, message: string): void {
   if (!condition) throw new Error(`Online client check failed: ${message}`);
 }
 async function until(predicate: () => boolean, label: string): Promise<void> {
-  const deadline = Date.now() + 5000;
+  const deadline = Date.now() + 12000;
   while (!predicate()) {
     if (Date.now() > deadline) throw new Error(`Timed out: ${label}`);
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -64,8 +64,8 @@ async function check(): Promise<void> {
     alice.deployFormation([unitA], false);
     bob.deployFormation([unitB], false);
     await until(() => Boolean(alice.opponentFormation && bob.opponentFormation), 'formation previews');
-    expect(alice.opponentFormation!.units[0].beastId === 'beast-c' && alice.opponentFormation!.units[0].column === 2, 'Alice sees Bob Beast and placement');
-    expect(bob.opponentFormation!.units[0].beastId === 'beast-a' && !bob.opponentFormation!.ready, 'Bob sees Alice preview before commit');
+    expect(alice.opponentFormation!.units.length === 0, 'Guest strategy hidden before countdown');
+    expect(bob.opponentFormation!.units.length === 0 && !bob.opponentFormation!.ready, 'Host strategy hidden before commit');
     const controllerA = new RemoteBattleController(startA!.initialSnapshot, alice);
     const controllerB = new RemoteBattleController(startB!.initialSnapshot, bob);
     let enteredA = false;

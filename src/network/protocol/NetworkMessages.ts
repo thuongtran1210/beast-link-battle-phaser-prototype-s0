@@ -3,11 +3,11 @@ import type { BeastRole } from '../../game/battle/BeastRoles';
 import type { BattleCommand } from '../../game/battle/commands/BattleCommand';
 import type { BattleEvent } from '../../game/battle/events/BattleEvents';
 import type { TeamSide } from '../../game/battle/entities/CombatEntity';
-export const ONLINE_PROTOCOL_VERSION = 3;
+export const ONLINE_PROTOCOL_VERSION = 6;
 
 export type GameMode = 'pvp' | 'coop';
 export type PreparationPhase = 'BeastRush' | 'EnergyRush' | 'BattleSetup';
-export type RoomState = 'WAITING' | 'COUNTDOWN' | PreparationPhase | 'BATTLE' | 'ENDED';
+export type RoomState = 'WAITING' | 'COUNTDOWN' | PreparationPhase | 'BattleCountdown' | 'RoundResult' | 'BATTLE' | 'ENDED';
 
 export interface RoomPlayerInfo {
   playerId: string;
@@ -77,6 +77,7 @@ export interface PreparationPhaseMessage { type: 'PREPARATION_PHASE'; phase: Pre
 export interface EnergyInventoryMessage { type: 'ENERGY_INVENTORY'; entries: Array<{ energyId: string; charges: number }>; }
 
 export type ClientMessage =
+  | { type: 'NEXT_ROUND_READY' }
   | PreparationReadyMessage
   | CreateRoomMessage
   | JoinRoomMessage
@@ -99,6 +100,7 @@ export interface RoomJoinedMessage {
 }
 
 export interface RoomUpdateMessage {
+  battleCountdown?: { remainingSeconds: number; placements: Array<{ slotId: string; row: BattleRow; column: number }> };
   type: 'ROOM_UPDATE';
   roomCode: string;
   mode: GameMode;
@@ -108,6 +110,8 @@ export interface RoomUpdateMessage {
 }
 
 export interface MatchStartMessage {
+  round?: number;
+  hearts?: Record<TeamSide, number>;
   matchId?: string;
   type: 'MATCH_START';
   seed: number;
@@ -126,6 +130,10 @@ export interface BattleTickMessage {
 }
 
 export interface MatchEndMessage {
+  endReason?: 'elimination' | 'surrender' | 'disconnect';
+  round?: number;
+  hearts?: Record<TeamSide, number>;
+  matchFinished?: boolean;
   matchId?: string;
   snapshot?: AutonomousBattleSnapshot;
   type: 'MATCH_END';
@@ -152,6 +160,7 @@ export interface OnlineBattleStartMessage {
 }
 
 export interface OpponentFormationReadyMessage {
+  placements?: Array<{ slotId: string; row: BattleRow; column: number }>;
   type: 'OPPONENT_FORMATION_READY';
   opponentPlayerId: string;
   opponentUnitCount: number;

@@ -23,6 +23,7 @@ export class BattleSetupRightCTARenderer {
     private readonly shardPool?: RunLinkShardPool,
     private readonly getLimit: () => number = () => ACTIVE_SQUAD_LIMIT,
     private readonly buySlot?: () => void,
+    private readonly online = false,
   ) {}
 
   render(
@@ -107,7 +108,7 @@ export class BattleSetupRightCTARenderer {
     const btnLabel = this.addText(
       btnX,
       allPlaced ? btnY - 7 : btnY - 8,
-      allPlaced ? 'START BATTLE ⚔' : 'START BATTLE',
+      this.online ? 'Sẵn sàng' : allPlaced ? 'START BATTLE ⚔' : 'START BATTLE',
       14,
       allPlaced ? '#ffffff' : '#64748b',
       'bold',
@@ -170,7 +171,7 @@ export class BattleSetupRightCTARenderer {
     };
     button(y,buy?0xb8c79b:0x314536,expanded?'Đội hình 5 thú':'Mở vị trí thứ 5',expanded?'Đã mở trong lượt này':`◆ ${this.shardPool?.count??0}/2 · Mảnh Liên Kết`,buy,()=>this.buySlot?.());
     let started=false;
-    button(y+105,ready?0xedc478:0x314536,'Xuất trận',ready?`${squad.activeCount}/${this.getLimit()} thú đã sẵn sàng`:'Đặt ít nhất 1 thú',ready,()=>{if(!started){started=true;this.startBattle();}});
+    button(y+105,ready?0xedc478:0x314536,this.online?'Sẵn sàng':'Xuất trận',ready?`${squad.activeCount}/${this.getLimit()} thú đã sẵn sàng`:'Đặt ít nhất 1 thú',ready,()=>{if(!started){started=true;this.startBattle();}});
   }
 
   private addText(

@@ -19,6 +19,7 @@ import type { AutonomousBattleSnapshot, EnemyFixture } from '../../game/battle/B
 import { EnergyQueue } from '../../game/energy/EnergyQueue';
 import { tacticalEnergyDefinition } from '../../game/energy/TacticalEnergyCatalog';
 import { roleForBeast } from '../../game/battle/BeastRoles';
+import { validBattleResult } from '../../game/network/BattleResultValidation';
 
 export interface RoomScheduler {
   now?: () => number;
@@ -60,6 +61,12 @@ export class BattleRoom {
   private simulationInterval?: any;
   private processedCommands = new Set<string>();
   private matchId = "";
+  private revealCountdown = 0;
+  private revealTimer?: any;
+  private hearts = { TeamA: 4, TeamB: 4 };
+  private round = 0;
+  private nextRoundPlayers = new Set<string>();
+  private surrenderedTeam?: 'TeamA' | 'TeamB';
 
   constructor(
     roomId: string,
@@ -133,11 +140,14 @@ export class BattleRoom {
       const remainingConnected = [...this.players.values()].find((p) => p.info.connected);
       if (remainingConnected) {
         this.battleModel?.executeCommand({ type: 'Surrender', tick: this.battleModel.snapshot.elapsedTicks, teamId: player.info.teamId });
+        this.hearts[player.info.teamId] = 0;
         this.state = 'ENDED';
         this.broadcast({
           type: 'MATCH_END',
+          endReason: 'disconnect',
           matchId: this.matchId,
           snapshot: this.battleModel?.snapshot,
+          hearts: { ...this.hearts }, round: this.round, matchFinished: true,
           winnerTeamId: remainingConnected.info.teamId,
           reason: `Đối thủ (${player.info.playerName}) đã ngắt kết nối.`,
         });
@@ -148,6 +158,7 @@ export class BattleRoom {
     }
 
     this.players.delete(playerId);
+    if (this.state === 'BattleCountdown' && this.revealTimer !== undefined) this.scheduler.clearTimeout(this.revealTimer);
     this.playerFormations.delete(playerId);
     this.deployedPlayers.delete(playerId);
     this.phaseReadyPlayers.delete(playerId);
@@ -198,6 +209,7 @@ export class BattleRoom {
     command.teamId = player.info.teamId;
     const queue = this.energyByPlayer.get(playerId);
     const accepted = this.battleModel.executeCommand(command, queue);
+    if (accepted && command.type === 'Surrender') this.surrenderedTeam = player.info.teamId;
     if (accepted) {
       this.processedCommands.add(cmdKey);
     }
@@ -249,8 +261,9 @@ export class BattleRoom {
         player.send({
           type: 'OPPONENT_FORMATION_READY',
           opponentPlayerId: playerId,
-          opponentUnitCount: units.length,
-          units: canonical,
+          opponentUnitCount: canonical.length,
+          units: [],
+          placements: canonical.map(unit => ({ slotId: unit.slotId, row: unit.row, column: unit.column })),
           ready,
         });
       }
@@ -258,12 +271,14 @@ export class BattleRoom {
 
     // When both players have deployed, launch the real PvP battle!
     if (this.players.size === 2 && this.deployedPlayers.size === 2) {
-      this.startOnlineBattle();
+      this.state = 'BattleCountdown';
+      this.revealCountdown = 5;
+      this.advanceRevealCountdown();
     }
   }
 
   startOnlineBattle(): void {
-    if (this.state !== 'BattleSetup' || this.deployedPlayers.size !== 2) return;
+    if (this.state !== 'BattleCountdown' || this.revealCountdown !== 0 || this.deployedPlayers.size !== 2) return;
     this.state = 'BATTLE';
 
     const playerList = Array.from(this.players.values());
@@ -341,6 +356,10 @@ export class BattleRoom {
       this.countdownTimeout = undefined;
     }
     this.state = 'BeastRush';
+    this.round++;
+    this.playerFormations.clear(); this.deployedPlayers.clear(); this.phaseReadyPlayers.clear(); this.energyByPlayer.clear(); this.nextRoundPlayers.clear();
+    this.surrenderedTeam = undefined;
+    this.battleModel = undefined;
     this.matchId = `${this.roomId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     this.processedCommands.clear();
     this.matchSeed = Math.floor(Math.random() * 1000000);
@@ -353,6 +372,7 @@ export class BattleRoom {
     // Broadcast MATCH_START with the common seed and initial snapshot
     this.broadcast({
       type: 'MATCH_START',
+      round: this.round, hearts: { ...this.hearts },
       seed: this.matchSeed,
       mode: this.mode,
       teamAPlayerId: teamA.info.playerId,
@@ -381,11 +401,22 @@ export class BattleRoom {
     });
 
     if (snapshot.status !== 'Running') {
-      this.state = 'ENDED';
+      const reason = this.surrenderedTeam ? 'surrender' as const : 'elimination' as const;
+      if (!validBattleResult({ type: 'MATCH_END', snapshot, winnerTeamId: snapshot.status === 'Win' ? 'TeamA' : 'TeamB', reason, endReason: reason })) {
+        this.stopTicking(); this.state = 'ENDED';
+        this.broadcast({ type: 'ERROR', code: 'INVALID_BATTLE_RESULT', message: 'Kết quả không khớp HP cuối vòng. Phiên đã dừng để tránh tính sai tim.' });
+        return { snapshot, events };
+      }
+      const loser = snapshot.status === 'Win' ? 'TeamB' : 'TeamA';
+      this.hearts[loser] = this.surrenderedTeam ? 0 : Math.max(0, this.hearts[loser] - 1);
+      const finished = this.hearts[loser] === 0;
+      this.state = finished ? 'ENDED' : 'RoundResult';
       this.broadcast({
         type: 'MATCH_END',
+        endReason: reason,
         matchId: this.matchId,
         snapshot: this.battleModel?.snapshot,
+        round: this.round, hearts: { ...this.hearts }, matchFinished: finished,
         winnerTeamId: snapshot.status === 'Win' ? 'TeamA' : 'TeamB',
         reason: `Combat concluded with status ${snapshot.status}`,
       });
@@ -394,6 +425,14 @@ export class BattleRoom {
     }
 
     return { snapshot, events };
+  }
+
+  nextRoundReady(playerId: string): void {
+    if (this.state !== 'RoundResult' || !this.players.has(playerId)) return;
+    this.nextRoundPlayers.add(playerId);
+    if (this.nextRoundPlayers.size !== 2) return;
+    this.state = 'COUNTDOWN';
+    this.startMatch();
   }
 
   startTicking(tickRateMs = Math.round(SIMULATION_STEP * 1000)): void {
@@ -432,17 +471,36 @@ export class BattleRoom {
   }
 
   broadcastUpdate(): void {
-    this.broadcast({
+    for (const player of this.players.values()) {
+      if (!player.info.connected) continue;
+      const opponent = [...this.players.values()].find(candidate => candidate.info.playerId !== player.info.playerId);
+      player.send({
       type: 'ROOM_UPDATE',
       roomCode: this.roomCode,
       mode: this.mode,
       state: this.state,
       players: this.getPlayerInfos(),
       allReady: this.allReady,
+      ...(this.state === 'BattleCountdown' ? { battleCountdown: {
+        remainingSeconds: this.revealCountdown,
+        placements: (this.playerFormations.get(opponent?.info.playerId ?? '') ?? []).map(unit => ({ slotId: unit.slotId, row: unit.row, column: unit.column })),
+      } } : {}),
     });
+    }
+  }
+
+  private advanceRevealCountdown(): void {
+    if (this.state !== 'BattleCountdown') return;
+    if (this.revealCountdown === 0) { this.startOnlineBattle(); return; }
+    this.broadcastUpdate();
+    this.revealTimer = this.scheduler.setTimeout(() => {
+      this.revealCountdown--;
+      this.advanceRevealCountdown();
+    }, 1000);
   }
 
   dispose(): void {
+    if (this.revealTimer !== undefined) this.scheduler.clearTimeout(this.revealTimer);
     if (this.countdownTimeout !== undefined) {
       this.scheduler.clearTimeout(this.countdownTimeout);
       this.countdownTimeout = undefined;

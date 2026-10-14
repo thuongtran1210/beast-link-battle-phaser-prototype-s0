@@ -1,7 +1,8 @@
-import { BattleRoom } from './BattleRoom';
+import { BattleRoom, type RoomScheduler } from './BattleRoom';
 import type { GameMode, RoomPlayerInfo, ServerMessage } from '../network/protocol/NetworkMessages';
 
 export class RoomManager {
+  constructor(private readonly scheduler?: RoomScheduler) {}
   private roomsById = new Map<string, BattleRoom>();
   private roomsByCode = new Map<string, BattleRoom>();
   private nextRoomId = 1;
@@ -10,7 +11,7 @@ export class RoomManager {
     const roomId = `room-${this.nextRoomId++}`;
     const roomCode = this.generateRoomCode();
 
-    const room = new BattleRoom(roomId, roomCode, mode);
+    const room = new BattleRoom(roomId, roomCode, mode, this.scheduler);
     this.roomsById.set(roomId, room);
     this.roomsByCode.set(roomCode, room);
 

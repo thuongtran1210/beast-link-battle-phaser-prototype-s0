@@ -54,6 +54,7 @@ export class BattleSetupView {
     if (this.pointerUpHandler) this.scene.input.off('pointerup', this.pointerUpHandler);
     this.objects.forEach(object => {
       if ('disableInteractive' in object) (object as Phaser.GameObjects.GameObject & { disableInteractive(): void }).disableInteractive();
+      if (this.online && 'text' in object && object.text === 'Sẵn sàng' && 'setText' in object) (object as Phaser.GameObjects.Text).setText('Đã sẵn sàng');
     });
   }
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -89,6 +90,7 @@ export class BattleSetupView {
     private readonly onConsolidate?: (selectedUnitId: string) => string | undefined,
     private readonly shardPool?: import('../run/RunLinkShardPool').RunLinkShardPool,
     private readonly onBuySlot?: () => void,
+    private readonly online = false,
   ) {
     if (isCompactLandscape() && !onEnemyBoardEdit) { this.trayBounds.y = 500; this.trayBounds.height = 205; }
     this.controller = new BattleSetupInteractionController(this.formation, (unitId) => this.runRoster?.canDeploy(unitId) ?? true, () => this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT);
@@ -107,6 +109,7 @@ export class BattleSetupView {
       this.shardPool,
       () => this.runRoster?.squadLimit ?? ACTIVE_SQUAD_LIMIT,
       this.onBuySlot,
+      this.online,
     );
     this.deploymentTrayRenderer = new BattleDeploymentTrayRenderer(
       this.scene,
@@ -370,6 +373,7 @@ export class BattleSetupView {
     this.enemies.forEach((enemy) => {
       const rowX = enemy.row === 'Front' ? enemyFrontX : enemy.row === 'Mid' ? enemyMidX : enemyBackX;
       const posY = topLaneY + (enemy.column - 1) * laneGap;
+      if (this.online) { this.renderHiddenOpponent(rowX, posY); return; }
       if (enemy.beastId) {
         const character = new BattleCharacterView(this.scene, enemy.beastId, true);
         character.setFacing('left');
@@ -450,6 +454,7 @@ export class BattleSetupView {
     }
     this.enemies.forEach(enemy=>{
       const pos=enemySlotPosition(layout,enemy.row,enemy.column);
+      if (this.online) { this.renderHiddenOpponent(pos.x, pos.y); return; }
       const character = enemy.beastId ? new BattleCharacterView(this.scene, enemy.beastId, true) : new EnemyCharacterView(this.scene,enemy.archetype??'Frontliner',true);
       if (character instanceof BattleCharacterView) { character.setFacing('left'); this.setupCharacters.push(character); }
       character.root.setPosition(pos.x,pos.y).setDepth(100+pos.y/10);
@@ -457,6 +462,14 @@ export class BattleSetupView {
       const hp=this.scene.add.rectangle(pos.x,pos.y+character.hpAnchorY,46,4,0xf17383).setDepth(200);
       this.objects.push(hp);
     });
+  }
+
+  private renderHiddenOpponent(x: number, y: number): void {
+    const body = this.scene.add.ellipse(x, y - 12, 42, 60, 0x59626b, .65).setDepth(100);
+    const head = this.scene.add.circle(x, y - 48, 18, 0x59626b, .65).setDepth(100);
+    const shadow = this.scene.add.ellipse(x, y + 20, 54, 13, 0x273039, .3);
+    const label = this.text(x, y - 12, '?', 24, '#d5d9db', 'bold').setOrigin(.5).setDepth(101);
+    this.objects.push(body, head, shadow, label);
   }
 
   private renderPlayerSlot(

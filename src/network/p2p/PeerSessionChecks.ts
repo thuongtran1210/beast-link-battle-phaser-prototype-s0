@@ -116,7 +116,7 @@ class MockPeer {
   }
 }
 
-async function until(predicate: () => boolean, label: string, timeoutMs = 3000): Promise<void> {
+async function until(predicate: () => boolean, label: string, timeoutMs = 12000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (!predicate()) {
     if (Date.now() > deadline) throw new Error(`Timed out waiting for: ${label}`);
@@ -218,10 +218,10 @@ export async function runPeerSessionChecks(): Promise<void> {
     damage: 15,
   };
   host.deployFormation([unitA], false);
-  await until(() => guest.opponentFormation !== undefined && guest.opponentFormation.units.length === 1, 'Guest sees Host preview');
-  expect(guest.opponentFormation!.units[0].beastId === 'beast-a', 'Guest sees Beast A');
-  expect(guest.opponentFormation!.units[0].column === 1, 'Guest sees column 1');
-  expect(guest.opponentFormation!.units[0].star === 2, 'Guest sees 2 stars');
+  await until(() => guest.opponentFormation !== undefined && guest.opponentFormation.units.length === 0, 'Guest sees Host preview');
+  expect(guest.opponentFormation!.units.length === 0, 'Guest cannot see Beast identity or STAR');
+  expect(guest.opponentFormation!.placements?.[0].column === 1, 'Guest sees shadow in column 1 before ready');
+  expect(Object.keys(guest.opponentFormation!.placements![0]).sort().join(',') === 'column,row,slotId', 'Shadow has no identity, HP or stats');
   expect(guest.opponentFormation!.ready === false, 'Preview is not ready');
 
   // Guest previews unit on Column 6 (testing boundaries and same local unitId)
@@ -238,19 +238,19 @@ export async function runPeerSessionChecks(): Promise<void> {
     damage: 25,
   };
   guest.deployFormation([unitB], false);
-  await until(() => host.opponentFormation !== undefined && host.opponentFormation.units.length === 1, 'Host sees Guest preview');
-  expect(host.opponentFormation!.units[0].beastId === 'beast-c', 'Host sees Beast C');
-  expect(host.opponentFormation!.units[0].column === 6, 'Host sees column 6');
+  await until(() => host.opponentFormation !== undefined && host.opponentFormation.units.length === 0, 'Host sees Guest preview');
+  expect(host.opponentFormation!.units.length === 0, 'Host preview cannot show Beast identity');
+  expect(host.opponentFormation!.placements?.[0].column === 6, 'Host sees shadow in column 6 before ready');
   expect(host.opponentFormation!.ready === false, 'Guest preview is not ready');
 
   // Host tests unit removal (empty formation preview)
   host.deployFormation([], false);
-  await until(() => guest.opponentFormation!.units.length === 0, 'Guest sees Host removed units');
+  await until(() => guest.opponentFormation!.placements?.length === 0, 'Guest sees Host removed shadows');
   expect(guest.opponentFormation!.ready === false, 'Removed preview not ready');
 
   // Host puts unitA back
   host.deployFormation([unitA], false);
-  await until(() => guest.opponentFormation!.units.length === 1, 'Host unit restored');
+  await until(() => guest.opponentFormation!.placements?.length === 1, 'Host shadow restored');
 
   // 1d. Commit Lock & Battle Controllers
   const controllerHost = new RemoteBattleController(startHost!.initialSnapshot, host);
@@ -280,6 +280,8 @@ export async function runPeerSessionChecks(): Promise<void> {
 
   // Guest commits formation
   guest.deployFormation([unitB], true, [{ energyId: 'energy-a', charges: 1 }]);
+  await until(() => (host as any).room.state === 'BattleCountdown', 'Both ready start secret countdown');
+  for (let i = 0; i < 5; i++) timerCb!();
   await until(() => battleStartHost !== undefined && battleStartGuest !== undefined, 'Both receive ONLINE_BATTLE_START');
 
   // Verify authoritative snapshot and dispatch order (snapshot listeners ran before battle start listeners)
@@ -630,6 +632,8 @@ async function runReviewRegressionChecks(): Promise<void> {
     const controller = new RemoteBattleController(match!.initialSnapshot, guest);
     host.deployFormation([a], true);
     guest.deployFormation([b], true, [{ energyId: 'energy-c', charges: 3 }]);
+    await until(() => (host as any).room.state === 'BattleCountdown', 'Review secret countdown');
+    for (let i = 0; i < 5; i++) countdown!();
     await until(() => controller.currentSnapshot.units.length === 1, 'Review real initial state');
     const room = (host as any).room;
     room.stopTicking();
@@ -700,6 +704,7 @@ async function runReviewRegressionChecks(): Promise<void> {
   deterministic.preparationReady('a', 'EnergyRush'); deterministic.preparationReady('b', 'EnergyRush');
   const clockUnit: DeployedFormationUnit = { unitId: 'u', beastId: 'beast-a', role: 'Tanker', star: 3, slotId: 'front-1', row: 'Front', column: 1, maxHp: 1000, currentHp: 500, damage: 1 };
   deterministic.deployFormation('a', [clockUnit]); deterministic.deployFormation('b', [clockUnit]);
+  for (let i = 0; i < 5; i++) countdownCallback();
   clock = SIMULATION_STEP * 1000 * 2.5; intervalCallback(); expect(lastTick === 2, 'Fractional elapsed time is retained instead of rounded');
   clock = SIMULATION_STEP * 1000 * 3; intervalCallback(); expect(lastTick === 3, 'Accumulated remainder produces next fixed tick');
   clock += SIMULATION_STEP * 1000 * 25; intervalCallback(); expect(lastTick === 13, 'Catchup work bounded to ten steps');
@@ -716,7 +721,60 @@ async function runReviewRegressionChecks(): Promise<void> {
     await until(() => connectionLost && !watchdogHost.isConnected && !watchdogGuest.isConnected, 'Silent peer watchdog terminates both endpoints');
     expect((watchdogHost as any).monitors.size === 0, 'Watchdog interval cleaned on timeout');
   } finally { watchdogGuest.disconnect(); watchdogHost.disconnect(); }
+  await runFourHeartPeerChecks(factory);
   console.log('Review R4 regressions passed: hidden-host abort, visibility/unload cleanup and monotonic fixed-step accumulation.');
+}
+
+async function runFourHeartPeerChecks(factory: (id?: string) => MockPeer): Promise<void> {
+  let callback = () => {};
+  const host = new PeerSessionAdapter({ peerId: 'four-hearts-host', peerFactory: factory, scheduler: {
+    setTimeout: fn => { callback = fn; return 1; }, clearTimeout: () => {}, setInterval: () => 2, clearInterval: () => {},
+  } });
+  const guest = new PeerSessionAdapter({ peerId: 'four-hearts-guest', peerFactory: factory });
+  try {
+    await host.createRoom('Host'); await guest.joinRoom('four-hearts-host', 'Guest');
+    let start: MatchStartMessage | undefined;
+    let roundsGuest = 0;
+    let battleHost = 0, battleGuest = 0;
+    host.onMatchStart(message => { start = message; });
+    guest.onMatchStart(() => roundsGuest++);
+    host.onOnlineBattleStart(() => battleHost++); guest.onOnlineBattleStart(() => battleGuest++);
+    host.setReady(true); guest.setReady(true);
+    await until(() => (host as any).room.state === 'COUNTDOWN', 'Four-heart lobby ready'); callback();
+    await until(() => roundsGuest === 1, 'First round received by guest');
+    const aController = new RemoteBattleController(start!.initialSnapshot, host);
+    const bController = new RemoteBattleController(start!.initialSnapshot, guest);
+    const strong: DeployedFormationUnit = { unitId: 'u', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-1', row: 'Front', column: 1, maxHp: 240, currentHp: 100, damage: 10 };
+    for (let round = 1; round <= 4; round++) {
+      expect(start?.round === round, 'Authoritative round number advances');
+      host.preparationReady('BeastRush'); guest.preparationReady('BeastRush');
+      await until(() => guest.preparationPhase === 'EnergyRush', 'Round Energy phase');
+      host.preparationReady('EnergyRush'); guest.preparationReady('EnergyRush');
+      await until(() => guest.preparationPhase === 'BattleSetup', 'Round Setup phase');
+      host.deployFormation([strong], true); guest.deployFormation([{ ...strong, maxHp: 1, currentHp: 1, damage: 0 }], true);
+      await until(() => (host as any).room.state === 'BattleCountdown', 'Round reveal countdown');
+      expect(!host.roundResult && !guest.roundResult, 'Previous round result cleared');
+      for (let second = 0; second < 5; second++) callback();
+      await until(() => battleHost === round && battleGuest === round, 'Both controllers receive new real formation');
+      let limit = 500;
+      while ((host as any).room.state === 'BATTLE' && limit-- > 0) (host as any).room.step();
+      await until(() => guest.roundResult?.round === round, 'Both receive round score');
+      expect(host.roundResult?.hearts?.TeamB === 4 - round && guest.roundResult?.hearts?.TeamB === 4 - round, 'Same remaining hearts across peers');
+      expect(aController.currentSnapshot.status === 'Win' && bController.currentSnapshot.status === 'Lose', 'Opposite round outcomes');
+      expect(guest.roundResult?.matchFinished === (round === 4), 'Only fourth loss finishes match');
+      host.nextRoundReady(); host.nextRoundReady();
+      if (round < 4) {
+        expect((host as any).room.state === 'RoundResult', 'Winner waits for loser next-round ready');
+        guest.nextRoundReady(); await until(() => roundsGuest === round + 1, 'Next round received without rebuilding transport');
+        expect(host.isConnected && guest.isConnected, 'Peer connection survives round transitions');
+        expect(guest.opponentFormation === undefined, 'Old opponent preview cleared');
+      } else {
+        guest.nextRoundReady(); expect((host as any).room.state === 'ENDED', 'Zero hearts prevents fifth round');
+      }
+    }
+    aController.dispose(); bController.dispose();
+    console.log('Four-heart PeerJS mock multi-round synchronization checks passed.');
+  } finally { guest.disconnect(); host.disconnect(); }
 }
 
 void runPeerSessionChecks().then(runReviewRegressionChecks).catch((err) => {

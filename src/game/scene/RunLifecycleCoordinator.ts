@@ -65,8 +65,15 @@ export class RunLifecycleCoordinator {
   constructor(private readonly ctx: RunLifecycleContext) {}
 
   enterResult(): void {
-    if (getOnlineBattleSession()) {
-      this.ctx.getSummaryView()?.render(this.ctx.metrics.snapshot, this.ctx.getBattleOutcome(), undefined, undefined, undefined, undefined, 'ĐẤU ONLINE · TRẬN ĐẤU KẾT THÚC');
+    const online = getOnlineBattleSession();
+    if (online) {
+      const result = online.adapter.roundResult;
+      const own = online.adapter.teamId;
+      const other = own === 'TeamA' ? 'TeamB' : 'TeamA';
+      const hearts = result?.hearts ?? { TeamA: 4, TeamB: 4 };
+      const cause = result?.endReason === 'disconnect' ? 'Đối thủ ngắt kết nối' : result?.endReason === 'surrender' ? 'Bỏ cuộc' : 'Một đội đã hết thú sống';
+      const label = `${result?.matchFinished === false ? `KẾT THÚC VÒNG ${result.round ?? 1}` : 'KẾT THÚC TRẬN'} · Bạn ${hearts[own]}/4 tim · Đối thủ ${hearts[other]}/4 tim\n${cause}`;
+      this.ctx.getSummaryView()?.render(this.ctx.metrics.snapshot, this.ctx.getBattleOutcome(), undefined, undefined, undefined, undefined, label);
       this.ctx.getSummaryView()?.setVisible(true);
       this.ctx.syncTopHud();
       return;
@@ -142,6 +149,11 @@ export class RunLifecycleCoordinator {
   restartRun(): void {
     if (this.ctx.phaseController.phase !== GamePhase.Result) return;
     if (getOnlineBattleSession()) {
+      const online = getOnlineBattleSession()!;
+      if (online.adapter.roundResult?.matchFinished === false) {
+        online.adapter.nextRoundReady();
+        return;
+      }
       window.dispatchEvent(new Event('beast-link-return-menu'));
       return;
     }
