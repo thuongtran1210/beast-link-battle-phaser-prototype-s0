@@ -12,42 +12,42 @@ export interface ComicBadgeStyle {
 
 const BADGE_STYLES: Record<EmotionBadgeKind, ComicBadgeStyle> = {
   BONK: {
-    text: '💥 BONK!',
+    text: 'BONK',
     bgColor: 0xf59e0b,
     textColor: '#ffffff',
     strokeColor: 0x78350f,
     scale: 1.2,
   },
   CLANG: {
-    text: '🛡️ CLANG!',
+    text: 'KHIÊN',
     bgColor: 0x0284c7,
     textColor: '#ffffff',
     strokeColor: 0x075985,
     scale: 1.1,
   },
   COZY: {
-    text: '♥ COZY!',
+    text: 'HỒI PHỤC',
     bgColor: 0xec4899,
     textColor: '#ffffff',
     strokeColor: 0x831843,
     scale: 1.15,
   },
   POOF: {
-    text: '💨 POOF!',
+    text: 'KO',
     bgColor: 0x64748b,
     textColor: '#ffffff',
     strokeColor: 0x1e293b,
     scale: 1.1,
   },
   DIZZY: {
-    text: '💫 DIZZY!',
+    text: 'CHOÁNG',
     bgColor: 0x8b5cf6,
     textColor: '#ffffff',
     strokeColor: 0x4c1d95,
     scale: 1.15,
   },
   OUCH: {
-    text: '💢 OUCH!',
+    text: 'OUCH',
     bgColor: 0xef4444,
     textColor: '#ffffff',
     strokeColor: 0x7f1d1d,
@@ -60,6 +60,7 @@ const BADGE_STYLES: Record<EmotionBadgeKind, ComicBadgeStyle> = {
  * Renders playful cartoon emotion badges, dizzy stars, and slapstick reactions.
  */
 export class StatusEmotionOverlay {
+  private static readonly recent = new WeakMap<Phaser.Scene, Map<string, number>>();
   /**
    * Spawn a bouncy comic speech badge above a unit's position.
    */
@@ -71,32 +72,39 @@ export class StatusEmotionOverlay {
     kind: EmotionBadgeKind,
     customText?: string,
   ): void {
+    const recent = this.recent.get(scene) ?? new Map<string, number>();
+    this.recent.set(scene, recent);
+    const now = scene.time.now;
+    for (const [key, time] of recent) if (now - time > 600) recent.delete(key);
+    const cell = `${Math.round(x / 96)}:${Math.round(y / 80)}`;
+    if (recent.has(cell)) return;
+    recent.set(cell, now);
     const style = BADGE_STYLES[kind];
     const textContent = customText ?? style.text;
-    const badgeY = y - 48;
+    const badgeY = y - 98;
 
     const container = scene.add.container(x, badgeY).setDepth(240);
     managedObjects.push(container);
 
     // Comic pill bubble
-    const paddingX = 14;
-    const paddingY = 6;
+    const paddingX = 10;
+    const paddingY = 4;
     const label = scene.add.text(0, 0, textContent, {
-      fontFamily: 'Impact, "Arial Black", sans-serif',
-      fontSize: '13px',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '10px',
       color: style.textColor,
       fontStyle: 'bold',
       stroke: '#0f172a',
-      strokeThickness: 3,
+      strokeThickness: 1,
     }).setOrigin(0.5);
 
     const bubbleWidth = Math.max(54, label.width + paddingX);
-    const bubbleHeight = Math.max(24, label.height + paddingY);
+    const bubbleHeight = Math.max(18, label.height + paddingY);
 
     const bg = scene.add.graphics();
     bg.fillStyle(style.bgColor, 0.95);
     bg.fillRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 10);
-    bg.lineStyle(2.5, style.strokeColor, 1.0);
+    bg.lineStyle(1, style.strokeColor, 1.0);
     bg.strokeRoundedRect(-bubbleWidth / 2, -bubbleHeight / 2, bubbleWidth, bubbleHeight, 10);
 
     container.add([bg, label]);
@@ -105,8 +113,8 @@ export class StatusEmotionOverlay {
     // Comic punch pop animation: elastic burst, float up, fade out
     scene.tweens.add({
       targets: container,
-      scaleX: style.scale ?? 1.15,
-      scaleY: style.scale ?? 1.15,
+      scaleX: 0.9,
+      scaleY: 0.9,
       duration: 160,
       ease: 'Back.Out',
       onComplete: () => {
@@ -114,9 +122,9 @@ export class StatusEmotionOverlay {
           targets: container,
           y: badgeY - 24,
           alpha: 0,
-          scaleX: (style.scale ?? 1.15) * 0.9,
-          scaleY: (style.scale ?? 1.15) * 0.9,
-          delay: 450,
+          scaleX: (0.9) * 0.9,
+          scaleY: (0.9) * 0.9,
+          delay: 180,
           duration: 250,
           ease: 'Cubic.In',
           onComplete: () => {

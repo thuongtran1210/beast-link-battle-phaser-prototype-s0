@@ -9,6 +9,7 @@ import { BattleCharacterView } from '../art/BattleCharacterView';
 import { EnemyCharacterView } from '../art/EnemyCharacterView';
 import { beastDisplayName, getIconDefinition } from '../icons/UnitIconRegistry';
 import { battleModelPosition, type BattleFieldLayout } from '../BattleFieldLayout';
+import { battleSkillReadiness } from './BattleSkillReadiness';
 
 export interface UnitVisual {
   container: Phaser.GameObjects.Container;
@@ -22,6 +23,9 @@ export interface UnitVisual {
   ghostFill: Phaser.GameObjects.Rectangle;
   hpFill: Phaser.GameObjects.Rectangle;
   currentHpRatio: number;
+  skillTrack: Phaser.GameObjects.Rectangle;
+  skillFill: Phaser.GameObjects.Rectangle;
+  skillLabel: Phaser.GameObjects.Text;
 }
 
 export interface EnemyVisual {
@@ -89,6 +93,12 @@ export class BattleUnitVisualManager {
 
     const ratio = unit.maxHp > 0 ? clamp01(unit.currentHp / unit.maxHp) : 0;
     this.updateHpBar(visual, ratio, unit.currentHp <= 0);
+    const skill = battleSkillReadiness(unit, this.facingSnapshot?.elapsedTime ?? 0);
+    visual.skillTrack.setVisible(!!skill);
+    visual.skillFill.setVisible(!!skill).setScale(skill?.ratio ?? 0, 1);
+    visual.skillFill.setFillStyle(skill?.ready ? 0xf5cd75 : 0x79b9db);
+    visual.skillLabel.setVisible(!!skill).setText(skill?.label ?? '');
+    visual.skillLabel.setColor(skill?.ready ? '#ffe7ac' : '#d8e8ee');
     if (unit.currentHp <= 0 && !this.defeated.has(`unit:${unit.unitId}`)) {
       this.defeated.add(`unit:${unit.unitId}`);
       this.scene.tweens.killTweensOf(visual.container);
@@ -271,6 +281,13 @@ export class BattleUnitVisualManager {
     const initialRatio = unit.maxHp > 0 ? clamp01(unit.currentHp / unit.maxHp) : 0;
     hpFill.setScale(initialRatio, 1); ghostFill.setScale(initialRatio, 1);
     hpBarContainer.add([hpBorder, ghostFill, hpFill]);
+    const skillTrack = this.scene.add.rectangle(0, 8, 52, 3, 0x18252f, .95);
+    const skillFill = this.scene.add.rectangle(-24, 8, 48, 2, 0x79b9db).setOrigin(0, .5);
+    const skillLabel = this.scene.add.text(0, 17, '', {
+      fontFamily: 'Arial, sans-serif', fontSize: '7px', color: '#d8e8ee',
+      stroke: '#14232b', strokeThickness: 2,
+    }).setOrigin(.5);
+    hpBarContainer.add([skillTrack, skillFill, skillLabel]);
 
     const container = this.scene.add.container(
       position.x,
@@ -292,6 +309,9 @@ export class BattleUnitVisualManager {
       icon,
       label,
       signatureRing,
+      skillTrack,
+      skillFill,
+      skillLabel,
       hpBarContainer,
       hpBorder,
       ghostFill,

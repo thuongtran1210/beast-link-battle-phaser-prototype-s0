@@ -204,11 +204,7 @@ export class BattleActionView {
       });
 
       // Impact ring burst
-      FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 20);
-
-      if (isSignatureHit || damageEvent.damage >= 45) {
-        StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'BONK');
-      }
+      FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xf97316, 12);
 
       // Floating combat text
       this.floatCombatText(
@@ -241,11 +237,7 @@ export class BattleActionView {
         });
 
         // Impact ring burst
-        FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
-
-        if (unitDamage.damage >= 45) {
-          StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'OUCH');
-        }
+        FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 12);
 
         // Floating combat text
         this.floatCombatText(
@@ -265,7 +257,7 @@ export class BattleActionView {
         this.flash(visual.body, 0xffffff, 70, () => {
           this.flash(visual.body, 0xef4444, 50);
         });
-        FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 20);
+        FeedbackEffects.pulseRing(this.scene, visual.container.x, visual.container.y, 0xef4444, 12);
 
         this.floatCombatText(
           visual.container.x,
@@ -286,10 +278,9 @@ export class BattleActionView {
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
       const killer=event.enemyAttackers?.slice().reverse().find(action=>action.targetUnitId===unitId&&action.defeated);
-      if(killer)this.floatCombatText(visual.container.x,visual.container.y,`KO ← ${ killer.archetype==='Ranged'?'Xạ thủ':killer.archetype==='Diver'?'Đột kích':'Tiền tuyến'}`,'#ffbc9c',unitId+'-ko');
+      if(killer)this.floatCombatText(visual.container.x,visual.container.y,'KO','#ffbc9c',unitId+'-ko');
       visual.characterView.setAlive(false);
       this.scene.tweens.killTweensOf(visual.container);
-      StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'DIZZY');
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
         targets: visual.container,
@@ -306,10 +297,9 @@ export class BattleActionView {
       if (!visual) return;
       visual.hpBarContainer.setAlpha(0);
       const killer=event.attackers.slice().reverse().find(action=>action.targetEnemyIds.includes(enemyId));
-      if(killer){const source=this.units.get(killer.unitId);if(source)this.floatCombatText(visual.container.x,visual.container.y,`KO ← ${beastDisplayName(source.characterView.beastId)}`,'#efd093',enemyId+'-ko');}
+      if(killer)this.floatCombatText(visual.container.x,visual.container.y,'KO','#efd093',enemyId+'-ko');
       visual.characterView.playKo();
       this.scene.tweens.killTweensOf(visual.container);
-      StatusEmotionOverlay.spawnComicBadge(this.scene, this.objects, visual.container.x, visual.container.y, 'POOF');
       this.flash(visual.body, 0xffffff, 80);
       this.scene.tweens.add({
         targets: visual.container,

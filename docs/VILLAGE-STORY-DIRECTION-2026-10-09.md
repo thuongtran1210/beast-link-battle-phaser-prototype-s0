@@ -3,6 +3,8 @@
 Ngày: 2026-10-14 (Cập nhật định hướng cốt truyện & cơ chế trải nghiệm theo phản hồi chủ dự án).  
 Chủ đề chủ đạo: **CÂU CHUYỆN LÀNG QUÊ** (thay thế hoàn toàn định hướng "về quê khởi nghiệp").
 
+Đặc tả chuẩn bị hình ảnh cư dân, công cụ và trạng thái trạm: [VILLAGE-ANIMATION-ASSET-SPEC-2026-10-14.md](VILLAGE-ANIMATION-ASSET-SPEC-2026-10-14.md). Chủ dự án đồng ý hướng nghề và tay nghề riêng; chương mở đầu Run → vào làng. Giải cứu theo checkpoint khám phá (map 3/10/15 là ví dụ, chưa cố định phân bổ cư dân). Chi tiết hình ảnh không phải xác nhận đã triển khai gameplay.
+
 ---
 
 ## 1. Tiền đề & Không khí cốt truyện (Tone & Setting)
@@ -17,29 +19,30 @@ Ngôi làng là tổ ấm bình dị, yên bình nép mình bên dòng sông xan
 
 ---
 
-## 2. Tiến Trình Phát Triển Dân Làng: Từ "Bộ Ba Khởi Đầu" đến "Mở Rộng Thám Hiểm"
+## 2. Sáu cư dân cơ bản và giải cứu bạn mới
 
-Nhằm đảm bảo cốt truyện **lôi cuốn, gần gũi và không làm người chơi bị ngợp/khó hiểu**, danh sách 10 Thú được mở khóa theo tiến trình tự nhiên:
+### 2.1. Sáu cư dân Day 1 — chủ dự án đã chốt ngày 2026-10-14
 
-### 2.1. Bộ Ba Khởi Đầu (The Founding Trio)
-Làng bắt đầu với 3 người bạn gắn bó thân thiết nhất (3 Beast MVP đã có sẵn trạm):
-- 🦆 **Snowguard (Vịt Bảo Vệ):** Nghiêm túc, trách nhiệm, hay lo xa $\rightarrow$ Lo việc an ninh, tuần tra xóm làng.
-- 🐰 **Windstrider (Thỏ Nông Dân):** Nhanh nhẹn, mê ăn, đáng yêu $\rightarrow$ Lo việc đồng áng, đảm bảo bữa ăn cho cả làng.
-- 🐻 **Ironclad (Gấu Thợ Mộc):** To xác, hiền lành, khéo tay nhưng nhát gan $\rightarrow$ Lo việc dựng nhà, sửa cầu ao, gia công đồ chơi.
+Thay thế hoàn toàn định hướng “Bộ ba khởi đầu”. Sáu cư dân cơ bản gồm **Snowguard, Shadowclaw, Windstrider, Starcaller, Ironclad và Swiftwing** theo lựa chọn của chủ dự án.
 
-👉 *Người chơi hiểu ngay quy luật sinh tồn của làng:* **Ăn (Thỏ) $\rightarrow$ Ở (Gấu) $\rightarrow$ An toàn (Vịt).**
+Cả sáu có sẵn từ Day 1, được chọn vào đội thú cho Run và là cư dân tham gia các hoạt động trong làng. Shadowclaw không còn là cư dân phải giải cứu; không khóa Bến Câu Cá sau sự kiện giải cứu Shadowclaw.
 
-### 2.2. Cơ Chế Giải Cứu & Đón Bạn Mới Qua Từng Vùng Thám Hiểm (Run Rescue)
-Các bạn Thú còn lại không xuất hiện ồ ạt mà đang lưu lạc ở các vùng rừng quanh làng. Mỗi vùng đất chiến đấu gắn liền với **một cuộc giải cứu hài hước**:
-- **Đoạn Sông Bóng Tối (Shadow Crossing):** 
-  - *Sự kiện Wave Boss:* Phát hiện 🐱 **Shadowclaw (Mèo)** đang bị cá to kéo tụt xuống mép nước và quái rừng vây quanh.
-  - *Chiến thắng giải cứu:* Đưa Shadowclaw về làng $\rightarrow$ Mở **Bến Câu Cá** (nguồn cá tươi cho bữa ăn).
-- **Rừng Rậm Gai Ốc (Thorn Thicket):**
-  - *Sự kiện Wave Boss:* 🐑 **Woolkeeper (Cừu)** mải đan khăn bị cuộn len lăn xuống dốc quấn vào bụi gai.
-  - *Chiến thắng giải cứu:* Đưa Woolkeeper về làng $\rightarrow$ Mở **Tiệm May Đan Len** (dệt đệm ấm cho nhà riêng, hồi máu cho đội phòng thủ).
-- **Pháo Đài Bỏ Hoang (Beast Stronghold):**
-  - *Sự kiện Wave Boss:* 🐗 **Boomhog (Heo)** loay hoay nấu nồi súp rau củ cay nồng bị quái rừng bao vây.
-  - *Chiến thắng giải cứu:* Đưa Boomhog về làng $\rightarrow$ Mở **Bếp Lò Làng Quê** (chế biến đặc sản tăng lực).
+Quyền chọn Beast vào Run không đồng nghĩa tự động có bản thể chiến đấu hoặc STAR; các bước tuyển quân và chuẩn bị trong Run theo luật gameplay hiện hành.
+
+### 2.2. Giải cứu mở quyền chọn Run và kết nạp vào làng — đã chốt
+
+Các cư dân ngoài nhóm sáu cơ bản là **Woolkeeper, Hophex, Gadgetduck và Boomhog**. Giải cứu thành công một cư dân sẽ đồng thời:
+
+1. Mở quyền chọn Beast đó vào đội thú cho Run.
+2. Kết nạp cư dân đó vào làng để tham gia các hoạt động trong làng.
+
+Tuyển bản thể trong Run không thay thế điều kiện giải cứu cư dân mới. Điều kiện hoàn tất giải cứu, vùng tương ứng và cách ghi nhận một lần còn cần chốt; chưa mặc định thắng Wave Boss hoặc thắng trọn Run là điều kiện chung.
+
+Gợi ý truyện chưa chốt: Woolkeeper bị cuộn len quấn vào bụi gai; Boomhog đang nấu súp thì bị quái rừng bao vây. Tình huống cho Hophex/Gadgetduck và phần thưởng nghề của từng cư dân cần thiết kế tiếp.
+
+### 2.3. Trạng thái áp dụng
+
+Các quyết định trên là định hướng đã chốt, chưa xác nhận triển khai hoặc live PASS. Cần kế hoạch đồng bộ onboarding, quyền chọn Run, cư dân và save cũ; không tự thu hồi tài sản hoặc cư dân đã có.
 
 ---
 
@@ -47,35 +50,28 @@ Các bạn Thú còn lại không xuất hiện ồ ạt mà đang lưu lạc �
 
 Run là những chuyến **Thám hiểm thiên nhiên & Rừng sâu** quanh làng:
 1. **Tìm kiếm nguyên liệu:** Nhặt nhạnh từng khúc Gỗ Rừng mang về dựng nhà riêng, đóng bàn ghế cho làng.
-2. **Giải cứu bạn bè:** Đưa những người bạn gặp nạn về làng định cư, mở thêm ngành nghề mới.
+2. **Giải cứu bạn bè:** Mở quyền chọn bạn mới vào Run, đồng thời đưa bạn về làng định cư và tham gia hoạt động làng.
 3. **Bảo vệ ranh giới:** Dọn dẹp bầy quái rừng quấy phá để giữ an toàn cho lối đi lại của dân làng.
 - Thắng lợi trong Run là niềm vui mang quà rừng về cho làng; thất bại là bài học kinh nghiệm để cả làng cùng nhau rèn luyện.
 
 ---
 
-## 4. Nguyên Lý Phân Định Năng Suất: "Công Cụ" hay "Dân Làng"?
+## 4. Tay nghề làng độc lập với Battle Run
 
-Để vừa giữ được **linh hồn, tình cảm của nhân vật**, vừa tạo được **động lực nâng cấp cơ sở vật chất**, năng suất khai thác được quy định theo mô hình kết hợp:
+### 4.1. Ranh giới đã chốt ngày 2026-10-14
 
-$$\text{Năng suất thực tế} = \text{Sản lượng cơ bản (Công cụ / Trạm)} \times \text{Tốc độ & May mắn (Dân làng)}$$
+- **Tay nghề làng là tiến trình riêng, được lưu lâu dài.**
+- Tay nghề chỉ phục vụ hoạt động làng, **không ảnh hưởng Battle Run**: không thay đổi HP, damage, STAR, Signature hoặc luật chiến đấu Run.
+- STAR của bản thể trong Run không phải cấp tay nghề làng. Kết thúc hoặc reset Run không xóa tay nghề làng.
+- Giải cứu mở quyền chọn Run và tư cách cư dân; không tự chuyển STAR/sức mạnh chiến đấu thành tay nghề.
 
-```
-┌───────────────────────────────────────┐      ┌───────────────────────────────────────┐
-│        CÔNG CỤ / TRẠM LÀM VIỆC        │      │               DÂN LÀNG                │
-│       (Cơ sở vật chất - Phần cứng)    │      │         (Tay nghề - Phần hồn)         │
-├───────────────────────────────────────┤      ├───────────────────────────────────────┤
-│ • Quyết định: SẢN LƯỢNG CƠ BẢN        │      │ • Quyết định: TỐC ĐỘ LÀM VIỆC         │
-│ • Nâng cấp bằng Gỗ & Tiền:            │   X  │ • Quyết định: TỶ LỆ MAY MẮN (CRIT)    │
-│   - Vườn Lv1: 3 Cà rốt / mẻ           │      │ • Theo Cấp Sao (STAR) & Đời sống:     │
-│   - Vườn Lv2: 5 Cà rốt / mẻ           │      │   - Thú 1★: 30s / lượt                │
-│   - Bến cá mở rộng: Câu được cá lớn   │      │   - Thú 2★: 22s / lượt (Thuần thục)   │
-│                                       │      │   - Thú 3★: 15% ra Cà rốt vàng / Cá to│
-│                                       │      │   - Ăn no / Có nhà: Tinh thần hăng hái│
-└───────────────────────────────────────┘      └───────────────────────────────────────┘
-```
+### 4.2. Hướng năng suất còn cần chốt
 
-- **Công cụ / Trạm làm việc:** Người chơi dùng Gỗ thám hiểm để mở rộng luống đất, nối dài bến cá $\rightarrow$ Tăng số lượng thu hoạch mỗi mẻ.
-- **Dân làng:** Khi được dẫn đi thám hiểm nâng lên 2★/3★, được xây nhà riêng và ăn no đủ $\rightarrow$ Thao tác nhanh hơn, ít bị sự cố đập trúng chân hay ăn vụng, có cơ hội thu hoạch được nông sản đột biến quý hiếm.
+- **Công cụ / Trạm:** Định hướng quyết định công thức và sản lượng mỗi mẻ.
+- **Tay nghề:** Tiến trình chuyên môn trong làng; cách tích lũy, cấp và tác động cụ thể chưa chốt.
+- **Đời sống:** Bữa ăn theo quy tắc sinh hoạt hiện hành; lợi ích cơ học của nhà riêng chưa chốt.
+
+Nâng cấp trạm, giảm thời gian làm và hàng hiếm cần thiết kế/cân bằng riêng. Các ví dụ cũ gắn 2★/3★ với 22 giây hoặc 15% hàng hiếm không còn là quy tắc của tài liệu này. Chưa xác nhận tay nghề lâu dài đã triển khai.
 
 ---
 
@@ -87,3 +83,4 @@ $$\text{Năng suất thực tế} = \text{Sản lượng cơ bản (Công cụ /
 - **Sổ sách & Nhật ký:**
   - Sổ sách ghi chép giản dị về thu hoạch mùa màng và xuất nhập vật tư.
   - Nhật ký lưu giữ kỷ niệm, những sự kiện hài hước và chiến tích giải cứu bạn bè của dân làng.
+

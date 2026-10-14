@@ -30,17 +30,17 @@ export class BattleFloatingTextSystem {
     const offsetY = hitInfo.count * -8;
 
     // Landscape bounds safety (1280x720)
-    const spawnX = Math.max(50, Math.min(960, x + offsetX));
-    const spawnY = Math.max(75, Math.min(640, y - 36 + offsetY));
+    const spawnX = Math.max(50, Math.min(this.scene.scale.width - 30, x + offsetX));
+    const spawnY = Math.max(75, Math.min(this.scene.scale.height - 24, y - 60 + offsetY));
 
     const txt = this.scene.add
       .text(spawnX, spawnY, text, {
         fontFamily: 'Arial, sans-serif',
-        fontSize: isCrit ? '18px' : '14px',
+        fontSize: isCrit ? '15px' : '12px',
         color: isCrit ? '#fef08a' : color,
         fontStyle: 'bold',
         stroke: '#0f172a',
-        strokeThickness: isCrit ? 4 : 3,
+        strokeThickness: 2,
       })
       .setOrigin(0.5)
       .setDepth(150);
@@ -49,8 +49,8 @@ export class BattleFloatingTextSystem {
       txt.setScale(0.7);
       this.scene.tweens.add({
         targets: txt,
-        scaleX: 1.25,
-        scaleY: 1.25,
+        scaleX: 1.08,
+        scaleY: 1.08,
         duration: 140,
         ease: 'Back.Out',
       });
@@ -61,7 +61,7 @@ export class BattleFloatingTextSystem {
       targets: txt,
       y: spawnY - (isCrit ? 36 : 26),
       alpha: 0,
-      duration: isCrit ? 800 : 650,
+      duration: isCrit ? 620 : 500,
       ease: 'Cubic.Out',
       onComplete: () => {
         const index = this.managedObjects.indexOf(txt);

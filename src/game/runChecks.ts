@@ -182,3 +182,5 @@ console.log('Game Server & Room Networking checks passed.');
 
 import { onlineMatchRulesChecks } from '../network/room/OnlineMatchRulesChecks';
 onlineMatchRulesChecks();
+import { battleSkillReadinessChecks } from './ui/battle/BattleSkillReadinessChecks';
+battleSkillReadinessChecks();
