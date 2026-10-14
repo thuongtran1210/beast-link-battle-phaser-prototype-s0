@@ -137,6 +137,7 @@ export class BattleUnitVisualManager {
       visual = this.createEnemy(enemy, showcaseMode);
       this.enemies.set(enemy.enemyId, visual);
     }
+    if (visual.characterView instanceof BattleCharacterView) visual.characterView.setMoving(enemy.actionState === 'Moving');
 
     const target=this.facingSnapshot?.units.find(u=>u.unitId===(enemy.engagedTargetId??enemy.targetUnitId) && u.currentHp>0);
     const sourceX=battleModelPosition(this.layout,enemy.positionX,enemy.positionLane).x+(this.enemyPresentationOffsets.get(enemy.enemyId)?.x??0);

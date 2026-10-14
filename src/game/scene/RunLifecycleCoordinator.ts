@@ -21,6 +21,7 @@ import { markRunLevelComplete } from '../run/RunLevels';
 import { loadCamp, rewardCampWin } from '../run/CampState';
 import { forgeGoal } from '../run/VillageGoal';
 import { finishFirstExpedition } from '../run/FirstJourney';
+import { getOnlineBattleSession } from '../network/OnlineBattleSession';
 
 export interface RunLifecycleContext {
   waveRun: WaveRunController;
@@ -64,6 +65,12 @@ export class RunLifecycleCoordinator {
   constructor(private readonly ctx: RunLifecycleContext) {}
 
   enterResult(): void {
+    if (getOnlineBattleSession()) {
+      this.ctx.getSummaryView()?.render(this.ctx.metrics.snapshot, this.ctx.getBattleOutcome(), undefined, undefined, undefined, undefined, 'ĐẤU ONLINE · TRẬN ĐẤU KẾT THÚC');
+      this.ctx.getSummaryView()?.setVisible(true);
+      this.ctx.syncTopHud();
+      return;
+    }
     const battleModel = this.ctx.getBattleModel();
     const validationMetrics = battleModel?.getValidationMetrics();
     const { comparison, history } = this.ctx.fixtureManager.recordMetrics(validationMetrics);
@@ -134,6 +141,10 @@ export class RunLifecycleCoordinator {
 
   restartRun(): void {
     if (this.ctx.phaseController.phase !== GamePhase.Result) return;
+    if (getOnlineBattleSession()) {
+      window.dispatchEvent(new Event('beast-link-return-menu'));
+      return;
+    }
     this.campRewardGranted=false;
     this.campReport=undefined;
     this.campRunId=`run-${Date.now()}-${Math.random().toString(36).slice(2)}`;

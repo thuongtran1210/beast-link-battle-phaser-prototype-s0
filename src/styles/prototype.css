@@ -848,3 +848,120 @@ canvas {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
+
+/* Online lobby: independent sizing and controls, warm village palette. */
+.game-dialog.online-lobby-dialog{box-sizing:border-box;width:min(720px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:0;overflow:hidden;border:1px solid #bbaa88;border-radius:24px;background:#faf5e8;color:#304635;box-shadow:0 24px 80px #18271c55}
+.online-lobby-dialog::backdrop{background:#15291f80;backdrop-filter:blur(4px)}
+.online-lobby-dialog *{box-sizing:border-box}
+.online-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:24px 28px 20px;border-bottom:1px solid #ddd6bf;background:#f1eddb}
+.online-eyebrow{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;color:#6b795b}
+.online-lobby-dialog h2{font-size:28px;line-height:1.2;margin:8px 0 6px;color:#304635}
+.online-lobby-dialog p{color:#6a735f;font-size:14px;line-height:1.5;margin:0}
+.online-lobby-dialog button{width:auto;margin:0;min-height:48px;border-radius:12px;font-size:15px;transition:background .15s,box-shadow .15s}
+.online-lobby-dialog .online-close{flex:0 0 44px;width:44px;height:44px;min-height:44px;padding:0;font-size:26px;border:1px solid #d5cfb9;background:#faf5e8;color:#53644b}
+.online-body{padding:24px 28px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;max-height:calc(100dvh - 180px);overscroll-behavior:contain}
+.online-identity{display:grid;grid-template-columns:100px minmax(0,1fr);gap:16px;align-items:center}
+.online-lobby-dialog label{font-size:13px;font-weight:750;color:#53644b}
+.online-lobby-dialog input,.online-lobby-dialog select{width:100%;min-width:0;min-height:48px;padding:11px 14px;border:1px solid #c9cdb9;border-radius:10px;background:#fffdf7;color:#304635;font:inherit;font-size:16px}
+.online-lobby-dialog :is(button,input,select):focus-visible{outline:3px solid #568d79;outline-offset:3px}
+.online-lobby-dialog button:disabled{opacity:.55;cursor:wait}
+.online-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.online-card{display:flex;flex-direction:column;gap:12px;min-width:0;margin:0;padding:20px;border:1px solid #dad7c4;border-radius:18px;background:#fffdf6}
+.online-card-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#f5e8bd;font-size:23px}
+.online-card:nth-child(2) .online-card-icon{background:#e2ede3}
+.online-lobby-dialog h3{font-size:18px;margin:0;color:#304635}
+.online-card p{min-height:42px}
+.online-card label{margin-top:4px}
+.online-card button{width:100%;margin-top:auto}
+.online-lobby-dialog .online-primary{background:#efd38b;border-color:#cbb070;color:#473b22;box-shadow:0 3px 0 #c6ac74}
+.online-lobby-dialog .online-secondary{background:#e2eddf;border-color:#aebfa8;color:#304d39;box-shadow:0 3px 0 #b7c6af}
+.online-lobby-dialog .online-primary:hover{background:#f5dc9a}
+.online-lobby-dialog .online-secondary:hover{background:#d4e4cf}
+.online-status{min-height:21px;text-align:center;overflow-wrap:anywhere}
+.online-lobby-dialog .online-status.is-error{color:#a33e32}
+.online-tabs{display:none}
+.online-room-ticket{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;border:1px dashed #c9b780;border-radius:16px;background:#f8edcc}
+.online-room-ticket strong{display:block;font-size:32px;letter-spacing:.12em;margin:8px 0;color:#3d5036;user-select:text}
+.online-room-ticket span:last-child{font-size:13px}
+.online-roster h3{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}
+.online-roster h3 span{font-size:12px;color:#79816b;font-weight:500}
+#online-players{display:flex;flex-direction:column;gap:10px}
+.online-player{display:flex;align-items:center;gap:12px;min-height:72px;padding:12px 16px;background:#fffdf6;border:1px solid #dad7c4;border-radius:14px}
+.online-avatar{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;background:#edf0e3;border-radius:12px;font-size:22px}
+.online-player strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:15px}
+.online-player-state{font-size:12px;color:#846932;flex-shrink:0}
+.online-player-state.is-ready{color:#367348}
+.online-player-empty{justify-content:center;border-style:dashed;background:transparent;color:#79816b;font-size:14px}
+.online-lobby-dialog .online-countdown{text-align:center;color:#536b49}
+.online-lobby-dialog .online-ready{width:100%;min-height:52px}
+.online-lobby-dialog .online-ready.is-ready{background:#e2eddf;border-color:#aebfa8;color:#304d39;box-shadow:none}
+@media(max-width:600px){
+ .game-dialog.online-lobby-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:20px}
+ .online-header{padding:18px 18px 16px;gap:10px}
+ .online-lobby-dialog h2{font-size:24px}
+ .online-header p{font-size:13px}
+ .online-body{padding:18px;padding-bottom:max(18px,env(safe-area-inset-bottom));max-height:calc(100dvh - 158px);gap:16px}
+ .online-identity{grid-template-columns:1fr;gap:8px}
+ .online-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:#e9e8d8;border-radius:14px}
+ .online-tabs button{border:none;background:transparent;color:#657359;min-width:0}
+ .online-tabs button[aria-selected=true]{background:#fffdf6;color:#304635;box-shadow:0 2px 5px #30463518}
+ .online-panels{grid-template-columns:minmax(0,1fr)}
+ .online-panels[data-active=create] #online-join-panel,.online-panels[data-active=join] #online-create-panel{display:none}
+ .online-card{padding:18px;gap:10px}
+ .online-card-icon{display:none}
+ .online-card p{min-height:0}
+ .online-room-ticket{flex-wrap:wrap;padding:16px}
+ .online-room-ticket strong{font-size:28px}
+ .online-player{padding:12px;gap:8px;flex-wrap:wrap}
+ .online-player-state{margin-left:auto}
+}
+@media(max-height:500px) and (min-width:601px){
+ .online-header{padding:12px 20px}
+ .online-header p,.online-header .online-eyebrow{display:none}
+ .online-lobby-dialog h2{font-size:22px;margin:6px 0}
+ .online-body{max-height:calc(100dvh - 108px);padding:16px 20px;gap:14px}
+ .online-card{padding:14px;gap:8px}
+ .online-card-icon{display:none}
+ .online-card p{min-height:0}
+}
+@media(prefers-reduced-motion:reduce){.online-lobby-dialog button{transition:none}}
+
+/* Owner mobile refinement: compact sheet, plain action labels. */
+.game-dialog.online-lobby-dialog[open]{display:flex;flex-direction:column}
+.online-header{flex-shrink:0}
+.online-lobby-dialog .online-body{flex:1 1 auto;min-height:0;max-height:none}
+@media(max-width:600px){
+ .game-dialog.online-lobby-dialog{width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:16px}
+ .online-header{padding:12px 14px;align-items:center}
+ .online-header .online-eyebrow,.online-header p{display:none}
+ .online-lobby-dialog h2{font-size:20px;margin:0}
+ .online-lobby-dialog .online-body{padding:14px;padding-bottom:max(14px,env(safe-area-inset-bottom));gap:12px}
+ .online-identity{gap:6px}
+ .online-tabs{padding:3px;border-radius:10px}
+ .online-lobby-dialog button{min-height:44px;padding:8px 12px;font-size:14px;border-radius:10px}
+ .online-lobby-dialog input,.online-lobby-dialog select{min-height:44px;padding:9px 11px}
+ .online-card{padding:14px;gap:8px;border-radius:12px}
+ .online-lobby-dialog h3{font-size:16px}
+ .online-card p{font-size:12px}
+ .online-status:empty{display:none}
+ .online-room-ticket{padding:12px;gap:10px}
+ .online-player{min-height:60px}
+}
+@media(orientation:landscape) and (max-height:500px){
+ .game-dialog.online-lobby-dialog{width:min(560px,calc(100vw - 40px));max-height:calc(100dvh - 24px);border-radius:16px}
+ .online-header{padding:10px 16px;align-items:center}
+ .online-header .online-eyebrow,.online-header p{display:none}
+ .online-lobby-dialog h2{font-size:20px;margin:0}
+ .online-lobby-dialog .online-body{padding:12px 16px;gap:10px}
+ .online-identity{grid-template-columns:90px minmax(0,1fr);gap:10px}
+ .online-panels{gap:12px}
+ .online-card{padding:12px;gap:6px;border-radius:12px}
+ .online-lobby-dialog h3{font-size:16px}
+ .online-card p{font-size:12px;min-height:0}
+ .online-lobby-dialog button{min-height:44px;padding:8px 12px;font-size:14px;border-radius:10px}
+ .online-lobby-dialog input,.online-lobby-dialog select{min-height:44px;padding:8px 10px}
+ .online-status:empty{display:none}
+ .online-room-ticket{padding:12px}
+ .online-room-ticket strong{font-size:24px;margin:4px 0}
+ .online-player{min-height:56px;padding:8px 12px}
+}

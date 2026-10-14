@@ -120,3 +120,7 @@ Read:
 `docs/P1-V14G5-TACTICAL-ENERGY-REVIEW-ADOPTION-GATE.md`
 
 V14G remains Experimental / not adopted until explicit owner decision.
+
+## Online P2P task routing — 2026-10-14
+
+For browser-host / PeerJS / WebRTC work, read `docs/P2P-01-BROWSER-HOST-PEERJS-PLAN.md` after the handoff and AI instructions. It is the task plan, acceptance checklist, progress log and next-Agent guide. Current status: IMPLEMENTED THROUGH STAGE 5 / MOCK CHECK PASS / BROWSER-DEVICE LIVE OPEN. Read the Corrective implementation section in docs/P2P-01-REVIEW-2026-10-14.md; R1–R5 code fixes are implemented, next validate stage 6 in real browsers. This networking task does not replace gameplay/art adoption gates. Preserve existing WebSocket and offline behavior; do not equate its baseline checks with P2P evidence.

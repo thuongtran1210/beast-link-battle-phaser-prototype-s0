@@ -4,6 +4,7 @@ import type { FormationValidationMetrics, FormationRunDelta } from '../battle/Fo
 import { HudTokens, drawCard } from './layout/HudTokens';
 import { createIconImage } from './icons/IconFactory';
 import { firstJourneyStage } from '../run/FirstJourney';
+import { getOnlineBattleSession } from '../network/OnlineBattleSession';
 
 /**
  * Landscape Game Result Screen:
@@ -351,7 +352,7 @@ export class SessionSummaryView {
       .setInteractive({ useHandCursor: true });
 
     const restartLabel = this.scene.add
-      .text(panelW / 4, btnRowY, this.retryVillageSave?'Lưu thưởng trước khi chơi lại':'↺ RESTART RUN', {
+      .text(panelW / 4, btnRowY, getOnlineBattleSession() ? 'Trở về sảnh' : this.retryVillageSave?'Lưu thưởng trước khi chơi lại':'↺ RESTART RUN', {
         fontFamily: HudTokens.fonts.family,
         fontSize: '14px',
         color: '#ffffff',

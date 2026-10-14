@@ -19,6 +19,8 @@ export interface ActionTimingProfile {
 }
 
 export interface CombatUnit {
+  funControlUntil?: number;
+  funControlKind?: 'Duck' | 'Carrot' | 'Bubble' | 'Disrupt';
   guardUntil?: number;
   supportReadyAt?: number;
   supportTargetIds?: string[];
@@ -68,6 +70,7 @@ export interface SignatureMetrics { signatureActivationsByUnit: Record<string, n
 export type EnemyArchetype = 'Frontliner' | 'Diver' | 'Ranged';
 
 export interface EnemyFixture {
+  currentHp?: number;
   enemyId: string;
   slotId: string;
   row: BattleRow;
@@ -81,6 +84,10 @@ export interface EnemyFixture {
 }
 
 export interface EnemyCombatUnit extends EnemyFixture {
+  temporaryShieldHp?: number;
+  temporaryShieldExpiresAt?: number;
+  temporaryShieldSourceSignatureId?: BeastSignatureId;
+  guardUntil?: number;
   funControlUntil?: number;
   funControlKind?: 'Duck' | 'Carrot' | 'Bubble' | 'Disrupt';
   funControlStar?: 2 | 3;

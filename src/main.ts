@@ -16,7 +16,9 @@ import { isCompactLandscape } from './game/ui/layout/MobilePresentation';
 import { installVietnamese } from './game/ui/Vietnamese';
 import { requestLandscapeFullscreen } from './game/ui/layout/MobileDisplayManager';
 import { setOnlineBattleSession, clearOnlineBattleSession } from './game/network/OnlineBattleSession';
-import type { WebSocketClientAdapter } from './game/network/WebSocketClientAdapter';
+import { isOnlineExperimentAvailable } from './game/config/OnlineAvailability';
+import { showOnlineLobbyDialog } from './game/ui/network/OnlineLobbyDialog';
+import type { OnlineSessionAdapter } from './game/network/OnlineSessionAdapter';
 import type { MatchStartMessage } from './network/protocol/NetworkMessages';
 
 const compact = isCompactLandscape();
@@ -44,7 +46,7 @@ const config: Phaser.Types.Core.GameConfig = {
 
 if (isTestHarness()) new Phaser.Game(config);
 else {
-  const startOnlineMatch = (adapter: WebSocketClientAdapter, matchInfo: MatchStartMessage) => {
+  const startOnlineMatch = (adapter: OnlineSessionAdapter, matchInfo: MatchStartMessage) => {
     setOnlineBattleSession(adapter, matchInfo);
     startRun(['beast-a', 'beast-b', 'beast-c', 'beast-d', 'beast-e', 'beast-f']);
   };
@@ -89,14 +91,38 @@ else {
     window.addEventListener('orientationchange', orientation);
     window.addEventListener('resize', orientation);
     const change = document.createElement('button');
+    const abortOnline = (event: Event) => {
+      const message = (event as CustomEvent<string>).detail;
+      returnMenu();
+      const notice = document.createElement('dialog');
+      notice.className = 'game-dialog';
+      const title = document.createElement('h2'); title.textContent = 'Phiên đấu đã kết thúc';
+      const text = document.createElement('p'); text.textContent = message;
+      const button = document.createElement('button'); button.textContent = 'Đã hiểu'; button.onclick = () => notice.close();
+      notice.append(title, text, button); document.body.append(notice);
+      notice.onclose = () => notice.remove(); notice.showModal();
+    };
+    const returnMenu = () => {
+      clearOnlineBattleSession();
+      change.remove(); rotate.remove(); shell.classList.remove('run-active');
+      window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);
+      window.removeEventListener('beast-link-return-village', returnVillage);
+      window.removeEventListener('beast-link-return-menu', returnMenu);
+      window.removeEventListener('beast-link-online-abort', abortOnline);
+      game.destroy(true); bgmManager.playLobby(); openMenu();
+    };
     const returnVillage=()=>{
       clearOnlineBattleSession();
       change.remove();rotate.remove();shell.classList.remove('run-active');
       window.removeEventListener('orientationchange',orientation);window.removeEventListener('resize',orientation);
       window.removeEventListener('beast-link-return-village',returnVillage);
+      window.removeEventListener('beast-link-return-menu',returnMenu);
+      window.removeEventListener('beast-link-online-abort',abortOnline);
       game.destroy(true);bgmManager.playLobby();showCamp(openMenu,openLevels);
     };
     window.addEventListener('beast-link-return-village',returnVillage);
+    window.addEventListener('beast-link-return-menu',returnMenu);
+    window.addEventListener('beast-link-online-abort',abortOnline);
     change.className = 'deck-new-run'; change.textContent = '☰'; change.setAttribute('aria-label', 'Pause and open menu');
     change.onclick = () => {
       const scenes = game.scene.getScenes(true); scenes.forEach(scene => scene.scene.pause());
@@ -112,6 +138,8 @@ else {
         dialog.onclose = null; dialog.remove(); change.remove(); rotate.remove(); shell.classList.remove('run-active');
         window.removeEventListener('orientationchange', orientation); window.removeEventListener('resize', orientation);
         window.removeEventListener('beast-link-return-village',returnVillage);
+        window.removeEventListener('beast-link-return-menu',returnMenu);
+        window.removeEventListener('beast-link-online-abort',abortOnline);
         game.destroy(true);bgmManager.playLobby();openMenu();
       });
     };
@@ -119,4 +147,14 @@ else {
   };
   const openPicker = () => showDeckPicker(startRun, openLevels, selectedRunLevel().name);
   openMenu();
+
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const inviteCode = urlParams?.get('room') || urlParams?.get('p2p');
+  if (inviteCode && isOnlineExperimentAvailable()) {
+    showOnlineLobbyDialog({
+      initialRoomCode: inviteCode,
+      transport: 'p2p',
+      onMatchStart: startOnlineMatch,
+    });
+  }
 }

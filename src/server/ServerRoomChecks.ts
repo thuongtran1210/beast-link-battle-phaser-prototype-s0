@@ -1,6 +1,8 @@
 import { RoomManager } from './RoomManager';
+import { BattleRoom, type RoomScheduler } from './BattleRoom';
 import { SIMULATION_STEP } from '../game/battle/BattleConfig';
-import type { ServerMessage } from '../network/protocol/NetworkMessages';
+import type { DeployedFormationUnit, ServerMessage } from '../network/protocol/NetworkMessages';
+import { onlinePerspective } from '../game/network/OnlinePerspective';
 
 function expect(condition: boolean, message: string): void {
   if (!condition) throw new Error(`ServerRoom Check Failed: ${message}`);
@@ -8,106 +10,103 @@ function expect(condition: boolean, message: string): void {
 
 export function runServerRoomChecks(): void {
   const manager = new RoomManager();
-
-  // Test 1: Room creation & code generation
   const room = manager.createRoom('pvp');
-  expect(Boolean(room.roomId), 'roomId must be non-empty');
-  expect(room.roomCode.startsWith('B-'), 'roomCode must start with B-');
-  expect(manager.getRoomByCode(room.roomCode) === room, 'getRoomByCode must locate the room');
-
-  // Test 2: Player joining & Team assignment
-  const p1Messages: ServerMessage[] = [];
-  const p2Messages: ServerMessage[] = [];
-
-  const p1 = room.addPlayer('p-1', 'Player One', (msg) => p1Messages.push(msg));
-  expect(p1.teamId === 'TeamA', 'First player must be assigned to TeamA');
-  expect(room.playerCount === 1, 'Player count must be 1');
-  expect(!room.isFull, 'Room must not be full with 1 player');
-
-  const p2 = room.addPlayer('p-2', 'Player Two', (msg) => p2Messages.push(msg));
-  expect(p2.teamId === 'TeamB', 'Second player must be assigned to TeamB');
-  expect(room.playerCount === 2, 'Player count must be 2');
-  expect(room.isFull, 'Room must be full with 2 players');
-
-  // Check 3rd player rejected
-  let thirdPlayerError = false;
-  try {
-    room.addPlayer('p-3', 'Player Three', () => {});
-  } catch {
-    thirdPlayerError = true;
-  }
-  expect(thirdPlayerError, 'Third player must be rejected when room is full');
-
-  // Test 3: Ready state & Match Start
-  expect(!room.allReady, 'allReady must be false before players set ready');
-  room.setPlayerReady('p-1', true);
-  expect(!room.allReady, 'allReady must be false when only p-1 is ready');
-
-  room.setPlayerReady('p-2', true);
-  expect(room.allReady, 'allReady must be true when both players are ready');
-
-  // Start match immediately
+  const messagesA: ServerMessage[] = [];
+  const messagesB: ServerMessage[] = [];
+  const a = room.addPlayer('alice', 'Alice', message => messagesA.push(message));
+  const b = room.addPlayer('bob', 'Bob', message => messagesB.push(message));
+  expect(a.teamId === 'TeamA' && b.teamId === 'TeamB', 'Distinct team ownership');
+  expect(manager.getRoomByCode(room.roomCode) === room && room.isFull, 'Room lookup and capacity');
+  let rejected = false;
+  try { room.addPlayer('third', 'Third', () => {}); } catch { rejected = true; }
+  expect(rejected, 'Third player rejected');
+  room.setPlayerReady('alice', true);
+  room.setPlayerReady('bob', true);
+  expect(room.state === 'COUNTDOWN', 'Both ready trigger countdown');
+  room.setPlayerReady('bob', false);
+  expect(String(room.state) === 'WAITING', 'Unready cancels countdown');
+  room.setPlayerReady('bob', true);
   room.startMatch();
-  expect(room.state === 'BATTLE', 'Room state must be BATTLE');
-
-  // Check MATCH_START message was broadcasted
-  const matchStartA = p1Messages.find((m) => m.type === 'MATCH_START');
-  const matchStartB = p2Messages.find((m) => m.type === 'MATCH_START');
-  expect(Boolean(matchStartA && matchStartB), 'Both players must receive MATCH_START');
-  if (matchStartA && matchStartA.type === 'MATCH_START') {
-    expect(matchStartA.seed > 0, 'Match seed must be positive');
-  }
-
-  // Test 4: Authoritative Ticking & Command Processing
-  const tickRes = room.step(SIMULATION_STEP);
-  expect(Boolean(tickRes), 'step() must return snapshot during BATTLE');
-  expect(tickRes!.snapshot.elapsedTicks === 1, 'Elapsed ticks must advance to 1');
-
-  // Check BATTLE_TICK was broadcasted
-  const tickMsgA = p1Messages.filter((m) => m.type === 'BATTLE_TICK');
-  expect(tickMsgA.length === 1, 'Player One must receive BATTLE_TICK packet');
-
-  // Test 5: Surrender and Match End broadcast
-  room.receiveCommand('p-2', {
-    type: 'Surrender',
-    tick: 2,
-    teamId: 'TeamB',
-  });
-
-  room.step(SIMULATION_STEP);
-  expect(room.state === 'ENDED', 'Room state must transition to ENDED upon surrender');
-
-  const matchEndMsg = p1Messages.find((m) => m.type === 'MATCH_END');
-  expect(Boolean(matchEndMsg), 'MATCH_END must be broadcasted on terminal state');
-  if (matchEndMsg && matchEndMsg.type === 'MATCH_END') {
-    expect(matchEndMsg.winnerTeamId === 'TeamA', 'TeamA must be winner when TeamB surrenders');
-  }
-
-  // Test 6: Room disposal
+  expect(String(room.state) === 'BeastRush', 'Match enters preparation, never placeholder combat');
+  expect(room.step() === null, 'No combat ticks during preparation');
+  const startA = messagesA.find(message => message.type === 'MATCH_START');
+  const startB = messagesB.find(message => message.type === 'MATCH_START');
+  expect(startA?.type === 'MATCH_START' && startB?.type === 'MATCH_START' && startA.seed === startB.seed, 'Both receive same seed');
+  room.preparationReady('alice', 'BeastRush');
+  room.preparationReady('alice', 'BeastRush');
+  room.preparationReady('intruder', 'BeastRush');
+  room.preparationReady('bob', 'EnergyRush');
+  expect(String(room.state) === 'BeastRush', 'Duplicates, nonmembers and wrong phase cannot release barrier');
+  room.preparationReady('bob', 'BeastRush');
+  expect(String(room.state) === 'EnergyRush', 'Both finish BeastRush together');
+  room.preparationReady('alice', 'EnergyRush');
+  expect(String(room.state) === 'EnergyRush', 'Fast player waits for peer');
+  room.preparationReady('bob', 'EnergyRush');
+  expect(String(room.state) === 'BattleSetup', 'Both enter Setup together');
+  const beastA: DeployedFormationUnit = { unitId: 'run-unit-1', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-1', row: 'Front', column: 1, maxHp: 100, currentHp: 75, damage: 10 };
+  const beastB: DeployedFormationUnit = { ...beastA, beastId: 'beast-b', role: 'Assassin', currentHp: 50 };
+  room.deployFormation('alice', [beastA], false);
+  room.deployFormation('bob', [beastB], false);
+  expect(String(room.state) === 'BattleSetup', 'Two previews must not start combat');
+  const preview = messagesB.find(message => message.type === 'OPPONENT_FORMATION_READY');
+  expect(preview?.type === 'OPPONENT_FORMATION_READY' && preview.units[0].beastId === 'beast-a' && preview.units[0].slotId === 'front-1' && !preview.ready, 'Opponent receives actual beast and placement');
+  room.deployFormation('alice', [beastA], true, [{ energyId: 'energy-a', charges: 1 }]);
+  expect(String(room.state) === 'BattleSetup', 'One committed formation waits');
+  room.deployFormation('alice', [{ ...beastA, beastId: 'beast-d' }], true);
+  room.deployFormation('bob', [beastB], true, [{ energyId: 'energy-a', charges: 1 }]);
+  expect(String(room.state) === 'BATTLE', 'Two commits start real combat');
+  room.stopTicking();
+  const battleA = messagesA.find(message => message.type === 'ONLINE_BATTLE_START');
+  const battleB = messagesB.find(message => message.type === 'ONLINE_BATTLE_START');
+  expect(battleA?.type === 'ONLINE_BATTLE_START' && battleB?.type === 'ONLINE_BATTLE_START', 'Both clients receive battle start');
+  if (!battleA || battleA.type !== 'ONLINE_BATTLE_START') throw new Error('Missing start');
+  const canonical = battleA.snapshot;
+  expect(canonical.units[0].beastId === 'beast-a', 'Committed formation cannot be overwritten');
+  expect(canonical.enemies[0].currentHp === 50, 'TeamB persistent HP preserved');
+  expect(canonical.units[0].unitId !== canonical.enemies[0].enemyId, 'Same local IDs are namespaced by owner');
+  const bobView = onlinePerspective(canonical, 'TeamB');
+  expect(bobView.units[0].beastId === 'beast-b' && bobView.enemies[0].beastId === 'beast-a', 'Bob sees himself left and Alice right');
+  expect(bobView.units[0].positionX === -canonical.enemies[0].positionX, 'Bob view mirrors positions');
+  const roundTrip = onlinePerspective(bobView, 'TeamB');
+  expect(roundTrip.units[0].unitId === canonical.units[0].unitId && roundTrip.enemies[0].enemyId === canonical.enemies[0].enemyId, 'Perspective round-trip retains canonical IDs');
+  expect(room.receiveCommand('bob', { type: 'CastTacticalEnergy', energyId: 'energy-a', tick: 0, teamId: 'TeamA' }), 'Bob can spend his authoritative Energy');
+  const result = room.step(SIMULATION_STEP)!;
+  expect(result.snapshot.enemies[0].currentHp > 50, 'Bob heal targets Bob, even with spoofed command team');
+  expect(result.snapshot.units[0].currentHp === canonical.units[0].currentHp, 'Bob heal cannot heal Alice');
+  expect(!room.receiveCommand('bob', { type: 'CastTacticalEnergy', energyId: 'energy-a', tick: 1 }), 'Consumed charge cannot replay');
+  expect(messagesB.some(message => message.type === 'ENERGY_INVENTORY' && message.entries.length === 0), 'Server confirms remaining Energy');
+  room.receiveCommand('bob', { type: 'Surrender', tick: 2, teamId: 'TeamA' });
+  const ended = room.step(SIMULATION_STEP)!;
+  expect(String(room.state) === 'ENDED', 'Surrender ends match');
+  expect(onlinePerspective(ended.snapshot, 'TeamA').status === 'Win' && onlinePerspective(ended.snapshot, 'TeamB').status === 'Lose', 'Opposite relative results');
+  expect(messagesA.some(message => message.type === 'MATCH_END' && message.winnerTeamId === 'TeamA'), 'Winner broadcast authoritative');
+  const count = messagesA.filter(message => message.type === 'ONLINE_BATTLE_START').length;
+  room.deployFormation('alice', [beastA]);
+  expect(messagesA.filter(message => message.type === 'ONLINE_BATTLE_START').length === count, 'Late deploy cannot restart battle');
   manager.removeRoom(room.roomId);
-  expect(manager.getRoom(room.roomId) === undefined, 'Room must be removed from RoomManager');
+  expect(manager.getRoom(room.roomId) === undefined, 'Room disposal');
 
-  // Test 7: Formation Deployment & Authoritative PvP Battle Start
-  const pvpRoom = manager.createRoom('pvp');
-  const p1PvpMsgs: ServerMessage[] = [];
-  const p2PvpMsgs: ServerMessage[] = [];
-  pvpRoom.addPlayer('pvp-1', 'Alice', (m) => p1PvpMsgs.push(m));
-  pvpRoom.addPlayer('pvp-2', 'Bob', (m) => p2PvpMsgs.push(m));
-
-  pvpRoom.deployFormation('pvp-1', [
-    { unitId: 'u-1', beastId: 'beast-a', role: 'Tanker', star: 1, slotId: 'front-1', row: 'Front', column: 1, maxHp: 100, currentHp: 100, damage: 10 },
-  ]);
-  const opponentReadyMsg = p2PvpMsgs.find((m) => m.type === 'OPPONENT_FORMATION_READY');
-  expect(Boolean(opponentReadyMsg), 'Player 2 should receive OPPONENT_FORMATION_READY when Player 1 deploys');
-
-  pvpRoom.deployFormation('pvp-2', [
-    { unitId: 'u-2', beastId: 'beast-b', role: 'Assassin', star: 1, slotId: 'mid-1', row: 'Mid', column: 1, maxHp: 80, currentHp: 80, damage: 15 },
-  ]);
-  const onlineBattleStart = p1PvpMsgs.find((m) => m.type === 'ONLINE_BATTLE_START');
-  expect(Boolean(onlineBattleStart), 'Both players should receive ONLINE_BATTLE_START after both deploy');
-  if (onlineBattleStart && onlineBattleStart.type === 'ONLINE_BATTLE_START') {
-    expect(onlineBattleStart.snapshot.enemies.length === 1, 'Enemy team should have Bob deployed beast');
-    expect(onlineBattleStart.snapshot.enemies[0].beastId === 'beast-b', 'Enemy beastId must match Bob deployed unit');
-  }
-  manager.removeRoom(pvpRoom.roomId);
+  // Verify injectable scheduler for P2P-01.1
+  let timerCb: (() => void) | undefined;
+  let intervalCb: (() => void) | undefined;
+  let clearedTimeout = false;
+  let clearedInterval = false;
+  const mockScheduler: RoomScheduler = {
+    setTimeout: (fn) => { timerCb = fn; return 101; },
+    clearTimeout: (id) => { if (id === 101) clearedTimeout = true; },
+    setInterval: (fn) => { intervalCb = fn; return 202; },
+    clearInterval: (id) => { if (id === 202) clearedInterval = true; },
+  };
+  const scheduledRoom = new BattleRoom('room-mock', 'B-9999', 'pvp', mockScheduler);
+  scheduledRoom.addPlayer('p1', 'Player 1', () => {});
+  scheduledRoom.addPlayer('p2', 'Player 2', () => {});
+  scheduledRoom.setPlayerReady('p1', true);
+  scheduledRoom.setPlayerReady('p2', true);
+  expect(scheduledRoom.state === 'COUNTDOWN' && timerCb !== undefined, 'Injectable scheduler captures countdown timer');
+  timerCb!();
+  expect(scheduledRoom.state === 'BeastRush', 'Mock scheduler callback advances countdown');
+  scheduledRoom.startTicking();
+  expect(intervalCb !== undefined, 'Mock scheduler captures interval ticking');
+  scheduledRoom.dispose();
+  expect(clearedInterval, 'Room disposal cleans up mock scheduler interval');
 }

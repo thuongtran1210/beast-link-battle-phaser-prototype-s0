@@ -4,6 +4,7 @@ import { unitBaseStats } from '../config/UnitOverrides';
 import { signatureForBeast, type BeastRole, type BeastSignatureId } from './BeastRoles';
 import type { EnergyQueue } from '../energy/EnergyQueue';
 import { BattleEnergySystem } from './systems/BattleEnergySystem';
+import { onlinePerspective } from '../network/OnlinePerspective';
 import { createInitialConsequenceMetrics, cloneConsequenceMetrics, computeValidationMetrics } from './systems/BattleMetricsCalculator';
 import { SignatureCombatDispatcher } from './signatures/SignatureCombatDispatcher';
 import type { SignatureContext } from './signatures/SignatureContext';
@@ -66,7 +67,7 @@ export class AutonomousBattleModel {
       return {
         ...fixture,
         archetype,
-        currentHp: fixture.maxHp,
+        currentHp: Math.max(0, Math.min(fixture.maxHp, fixture.currentHp ?? fixture.maxHp)),
         positionX: ENEMY_SPAWN_X[fixture.row],
         positionLane: fixture.column,
         formationAnchor: {
@@ -267,6 +268,33 @@ export class AutonomousBattleModel {
   executeCommand(command: BattleCommand, energyQueue?: EnergyQueue): boolean {
     if (command.type === 'CastTacticalEnergy') {
       if (!energyQueue) return false;
+      if (command.teamId === 'TeamB') {
+        const view = onlinePerspective(this.snapshot, 'TeamB');
+        const first = () => BattleTargetingSystem.target(view.units, this.combatRules);
+        const energy = new BattleEnergySystem({
+          state: view, target: first, frontmostAliveUnit: first,
+          applyDamage: (enemy, amount) => {
+            const applied = Math.min(enemy.currentHp, amount);
+            enemy.currentHp -= applied;
+            return applied;
+          },
+          syncEnemyAggregates: () => { view.enemyHp = view.enemies.reduce((sum, enemy) => sum + enemy.currentHp, 0); },
+          freezeOnTerminal: () => {},
+        });
+        const result = energy.castTacticalEnergy(command.energyId, energyQueue);
+        if (result.success) {
+          const canonical = onlinePerspective(view, 'TeamB');
+          this.state.units.forEach(unit => Object.assign(unit, canonical.units.find(candidate => candidate.unitId === unit.unitId)));
+          this.state.enemies.forEach(enemy => Object.assign(enemy, canonical.enemies.find(candidate => candidate.enemyId === enemy.enemyId)));
+          this.state.status = canonical.status;
+          this.syncEnemyAggregates();
+          if (this.state.status !== 'Running') this.freezeOnTerminal();
+        }
+        this.eventBuffer.push({ type: 'TacticalEnergyCast', tick: this.state.elapsedTicks, time: this.state.elapsedTime ?? 0,
+          energyId: command.energyId, kind: result.kind ?? 'Unknown', targetEntityId: result.targetUnitId ?? result.targetEnemyId,
+          amount: result.amount, success: result.success, reason: result.reason });
+        return result.success;
+      }
       const res = this.castTacticalEnergy(command.energyId, energyQueue);
       return res.success;
     }
@@ -365,7 +393,13 @@ export class AutonomousBattleModel {
 
   private applyDamage(enemy: EnemyCombatUnit, requestedDamage: number): number {
     if (enemy.currentHp <= 0 || requestedDamage <= 0) return 0;
-    const applied = Math.min(enemy.currentHp, requestedDamage);
+    if ((enemy.temporaryShieldExpiresAt ?? Infinity) <= (this.state.elapsedTime ?? 0)) enemy.temporaryShieldHp = 0;
+    const absorbed = Math.min(enemy.temporaryShieldHp ?? 0, requestedDamage);
+    if (absorbed > 0) {
+      enemy.temporaryShieldHp = (enemy.temporaryShieldHp ?? 0) - absorbed;
+      this.signatureEvents.push({ type: 'ShieldAbsorbed', unitId: enemy.enemyId, signatureId: 'GuardianBrace', amount: absorbed, time: this.state.elapsedTime ?? 0 });
+    }
+    const applied = Math.min(enemy.currentHp, requestedDamage - absorbed);
     enemy.currentHp = Math.max(0, enemy.currentHp - applied);
     return applied;
   }

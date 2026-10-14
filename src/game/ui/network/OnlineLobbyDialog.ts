@@ -1,188 +1,232 @@
 import { WebSocketClientAdapter } from '../../network/WebSocketClientAdapter';
+import { PeerSessionAdapter } from '../../network/PeerSessionAdapter';
+import { isOnlineExperimentAvailable } from '../../config/OnlineAvailability';
+import type { OnlineSessionAdapter } from '../../network/OnlineSessionAdapter';
 import type { GameMode, RoomPlayerInfo, MatchStartMessage } from '../../../network/protocol/NetworkMessages';
 
 export interface OnlineLobbyOptions {
   serverUrl?: string;
   defaultPlayerName?: string;
-  onMatchStart?: (adapter: WebSocketClientAdapter, matchInfo: MatchStartMessage) => void;
+  transport?: 'p2p' | 'websocket';
+  initialRoomCode?: string;
+  adapter?: OnlineSessionAdapter;
+  onMatchStart?: (adapter: OnlineSessionAdapter, matchInfo: MatchStartMessage) => void;
   onClose?: () => void;
 }
 
 export function showOnlineLobbyDialog(options: OnlineLobbyOptions = {}): void {
+  if (!isOnlineExperimentAvailable()) return;
   const dialog = document.createElement('dialog');
   dialog.className = 'game-dialog online-lobby-dialog';
   dialog.setAttribute('aria-labelledby', 'online-lobby-title');
-
-  const adapter = new WebSocketClientAdapter(options.serverUrl ?? 'ws://localhost:3000');
-
-  const container = document.createElement('div');
-  container.className = 'online-lobby-container';
-  dialog.append(container);
-
-  let currentRoomCode: string | null = null;
-  let isReadyState = false;
-
-  const renderInitialView = () => {
-    container.innerHTML = `
-      <header class="diary-panel-header">
-        <h2 id="online-lobby-title">⚔️ Đấu Trực Tuyến (Online Match)</h2>
-        <button class="diary-panel-close" aria-label="Đóng">×</button>
-      </header>
-      <div class="lobby-content" style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
-        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px;">
-          <label style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 6px;">Tên của bạn:</label>
-          <input type="text" id="online-player-name" value="${options.defaultPlayerName ?? 'Chiến Binh'}" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #71717a; background: #27272a; color: #fff; font-size: 14px;" />
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-          <!-- Tạo phòng -->
-          <div style="background: rgba(39, 39, 42, 0.6); padding: 14px; border-radius: 8px; border: 1px solid #3f3f46; display: flex; flex-direction: column; gap: 10px;">
-            <strong style="color: #f6d675; font-size: 15px;">Tạo Phòng Mới</strong>
-            <p style="font-size: 12px; color: #a1a1aa; margin: 0;">Lấy mã phòng để mời bạn bè tham gia</p>
-            <label style="font-size: 12px;">Chế độ:</label>
-            <select id="online-mode-select" style="padding: 6px 10px; border-radius: 6px; background: #18181b; color: #fff; border: 1px solid #52525b;">
-              <option value="pvp">Solo 1v1 PvP (Đối kháng)</option>
-              <option value="coop">Đồng Đội Co-op (Diệt Boss)</option>
-            </select>
-            <button id="btn-create-room" style="margin-top: auto; padding: 10px; background: #eab308; color: #000; font-weight: bold; border: none; border-radius: 6px; cursor: pointer;">Tạo Phòng</button>
-          </div>
-
-          <!-- Vào phòng -->
-          <div style="background: rgba(39, 39, 42, 0.6); padding: 14px; border-radius: 8px; border: 1px solid #3f3f46; display: flex; flex-direction: column; gap: 10px;">
-            <strong style="color: #60a5fa; font-size: 15px;">Vào Phòng Có Sẵn</strong>
-            <p style="font-size: 12px; color: #a1a1aa; margin: 0;">Nhập mã phòng bạn bè đã gửi</p>
-            <input type="text" id="online-room-code-input" placeholder="Ví dụ: B-1234" style="text-transform: uppercase; padding: 8px 10px; border-radius: 6px; background: #18181b; color: #fff; border: 1px solid #52525b; font-size: 14px;" />
-            <button id="btn-join-room" style="margin-top: auto; padding: 10px; background: #3b82f6; color: #fff; font-weight: bold; border: none; border-radius: 6px; cursor: pointer;">Tham Gia</button>
-          </div>
-        </div>
-
-        <div id="lobby-status-msg" style="color: #ef4444; font-size: 13px; text-align: center; min-height: 20px;"></div>
-      </div>
-    `;
-
-    container.querySelector('.diary-panel-close')?.addEventListener('click', () => {
+  const transport = options.transport ?? (options.serverUrl ? 'websocket' : 'p2p');
+  const adapter: OnlineSessionAdapter = options.adapter ?? (
+    transport === 'websocket'
+      ? new WebSocketClientAdapter(options.serverUrl ?? 'ws://localhost:3000')
+      : new PeerSessionAdapter()
+  );
+  let disposed = false;
+  let transferred = false;
+  let busy = false;
+  let ready = false;
+  let selfId = '';
+  let latestPlayers: RoomPlayerInfo[] = [];
+  const subscriptions: Array<() => void> = [];
+  const close = () => dialog.close();
+  dialog.addEventListener('close', () => {
+    disposed = true;
+    subscriptions.forEach(unsubscribe => unsubscribe());
+    if (!transferred) {
       adapter.disconnect();
-      dialog.close();
       options.onClose?.();
-    });
-
-    const nameInput = container.querySelector('#online-player-name') as HTMLInputElement;
-    const modeSelect = container.querySelector('#online-mode-select') as HTMLSelectElement;
-    const statusDiv = container.querySelector('#lobby-status-msg') as HTMLElement;
-
-    container.querySelector('#btn-create-room')?.addEventListener('click', async () => {
-      const name = nameInput.value.trim() || 'Người chơi 1';
-      const mode = modeSelect.value as GameMode;
-      statusDiv.textContent = 'Đang kết nối server...';
-      try {
-        const joined = await adapter.createRoom(name, mode);
-        currentRoomCode = joined.roomCode;
-        renderWaitingRoomView(joined.roomCode, mode, name);
-      } catch (err: unknown) {
-        statusDiv.textContent = err instanceof Error ? err.message : String(err);
-      }
-    });
-
-    const codeInput = container.querySelector('#online-room-code-input') as HTMLInputElement;
-    container.querySelector('#btn-join-room')?.addEventListener('click', async () => {
-      const name = nameInput.value.trim() || 'Người chơi 2';
-      const code = codeInput.value.trim();
-      if (!code) {
-        statusDiv.textContent = 'Vui lòng nhập mã phòng!';
-        return;
-      }
-      statusDiv.textContent = 'Đang tham gia...';
-      try {
-        const joined = await adapter.joinRoom(code, name);
-        currentRoomCode = joined.roomCode;
-        renderWaitingRoomView(joined.roomCode, joined.mode, name);
-      } catch (err: unknown) {
-        statusDiv.textContent = err instanceof Error ? err.message : String(err);
-      }
-    });
+    }
+    dialog.remove();
+  });
+  const header = (title: string, subtitle: string) => `
+    <header class="online-header">
+      <div><span class="online-eyebrow">LÀNG THÚ · SẢNH ĐẤU</span><h2 id="online-lobby-title">${title}</h2><p>${subtitle}</p></div>
+      <button type="button" class="online-close" aria-label="Đóng sảnh đấu">×</button>
+    </header>`;
+  const bindClose = () => dialog.querySelector('.online-close')?.addEventListener('click', close);
+  const status = (message: string, error = false) => {
+    const element = dialog.querySelector<HTMLElement>('#lobby-status-msg');
+    if (element) {
+      element.textContent = message;
+      element.classList.toggle('is-error', error);
+    }
   };
 
-  const renderWaitingRoomView = (roomCode: string, mode: GameMode, playerName: string) => {
-    container.innerHTML = `
-      <header class="diary-panel-header">
-        <h2>Phòng Đấu: <span style="color: #f6d675; letter-spacing: 1px;">${roomCode}</span></h2>
-        <button class="diary-panel-close" aria-label="Rời phòng">×</button>
-      </header>
-      <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px;">
-          <span>Chế độ: <strong>${mode === 'pvp' ? 'Solo 1v1 Đối Kháng' : 'Đồng Đội Co-op'}</strong></span>
-          <button id="btn-copy-code" style="padding: 4px 10px; background: #4b5563; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">📋 Sao chép mã</button>
-        </div>
-
-        <div style="background: rgba(24, 24, 27, 0.8); border: 1px solid #3f3f46; border-radius: 8px; padding: 12px;">
-          <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #a1a1aa;">Danh Sách Người Chơi (2 Tối đa)</h4>
-          <div id="player-list-container" style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="padding: 8px; background: #27272a; border-radius: 6px; display: flex; justify-content: space-between;">
-              <span>${playerName} (Bạn)</span>
-              <span style="color: #eab308;">Chưa sẵn sàng</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="countdown-banner" style="text-align: center; color: #22c55e; font-weight: bold; font-size: 16px; min-height: 24px;"></div>
-
-        <button id="btn-toggle-ready" style="padding: 12px; background: #22c55e; color: #000; font-weight: bold; font-size: 15px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;">SẴN SÀNG (READY)</button>
-      </div>
-    `;
-
-    container.querySelector('.diary-panel-close')?.addEventListener('click', () => {
-      adapter.disconnect();
-      dialog.close();
-      options.onClose?.();
-    });
-
-    container.querySelector('#btn-copy-code')?.addEventListener('click', () => {
-      navigator.clipboard?.writeText(roomCode);
-      const btn = container.querySelector('#btn-copy-code') as HTMLElement;
-      btn.textContent = '✓ Đã sao chép!';
-      setTimeout(() => { btn.textContent = '📋 Sao chép mã'; }, 2000);
-    });
-
-    const readyBtn = container.querySelector('#btn-toggle-ready') as HTMLButtonElement;
-    readyBtn.addEventListener('click', () => {
-      isReadyState = !isReadyState;
-      adapter.setReady(isReadyState);
-      readyBtn.textContent = isReadyState ? 'HỦY SẴN SÀNG' : 'SẴN SÀNG (READY)';
-      readyBtn.style.background = isReadyState ? '#ef4444' : '#22c55e';
-      readyBtn.style.color = isReadyState ? '#fff' : '#000';
-    });
-
-    // Listen for room updates
-    adapter.onRoomUpdate((update) => {
-      const listDiv = container.querySelector('#player-list-container');
-      if (listDiv) {
-        listDiv.innerHTML = update.players.map((p) => `
-          <div style="padding: 8px 12px; background: #27272a; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <strong>${p.playerName}</strong>
-              <span style="font-size: 11px; color: #a1a1aa; margin-left: 6px;">[${p.teamId}]</span>
-            </div>
-            <span style="font-size: 12px; font-weight: bold; color: ${p.isReady ? '#22c55e' : '#f59e0b'};">
-              ${p.isReady ? '✓ Sẵn sàng' : 'Chưa sẵn sàng'}
-            </span>
-          </div>
-        `).join('');
-      }
-
-      const banner = container.querySelector('#countdown-banner');
-      if (banner && update.state === 'COUNTDOWN') {
-        banner.textContent = '⏳ Cả 2 đã sẵn sàng! Chuẩn bị vào trận...';
-      }
-    });
-
-    // Listen for match start
-    adapter.onMatchStart((matchInfo) => {
-      dialog.close();
-      options.onMatchStart?.(adapter, matchInfo);
-    });
+  const renderPlayers = (players: RoomPlayerInfo[]) => {
+    const list = dialog.querySelector('#online-players');
+    if (!list) return;
+    list.replaceChildren();
+    for (const player of players) {
+      const row = document.createElement('div');
+      row.className = 'online-player';
+      const avatar = document.createElement('span');
+      avatar.className = 'online-avatar';
+      avatar.textContent = player.teamId === 'TeamA' ? '🛡️' : '⚔️';
+      avatar.setAttribute('aria-hidden', 'true');
+      const name = document.createElement('strong');
+      name.textContent = player.playerName + (player.playerId === selfId ? ' (Bạn)' : '');
+      const badge = document.createElement('span');
+      badge.className = `online-player-state${player.isReady ? ' is-ready' : ''}`;
+      badge.textContent = player.isReady ? '✓ Sẵn sàng' : 'Chưa sẵn sàng';
+      row.append(avatar, name, badge);
+      list.append(row);
+    }
+    if (players.length < 2) {
+      const empty = document.createElement('div');
+      empty.className = 'online-player online-player-empty';
+      empty.textContent = '＋ Đang chờ bạn vào phòng…';
+      list.append(empty);
+    }
   };
 
-  renderInitialView();
+  const waiting = (roomCode: string, mode: GameMode, playerName: string, teamId: RoomPlayerInfo['teamId']) => {
+    dialog.innerHTML = header('Phòng chờ', 'Mời một người bạn và cùng chuẩn bị vào trận.') + `
+      <div class="online-body">
+        <section class="online-room-ticket" aria-label="Mã mời bạn">
+          <div><span class="online-eyebrow">MÃ PHÒNG</span><strong id="online-room-code"></strong><span>${mode === 'pvp' ? 'Đối kháng 1v1' : 'Đồng đội Co-op'}</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button type="button" class="online-secondary" id="btn-copy-code">Sao chép mã</button>
+            <button type="button" class="online-secondary" id="btn-copy-link">Sao chép link mời</button>
+          </div>
+        </section>
+        <section class="online-roster"><h3>Người chơi <span>2 vị trí</span></h3><div id="online-players"></div></section>
+        <p class="online-countdown" id="countdown-banner" role="status">Trận đấu bắt đầu khi cả hai đã sẵn sàng.</p>
+        <button type="button" class="online-primary online-ready" id="btn-toggle-ready">Sẵn sàng</button>
+        <p id="lobby-status-msg" class="online-status" role="status" aria-live="polite"></p>
+      </div>`;
+    bindClose();
+    dialog.querySelector('#online-room-code')!.textContent = roomCode;
+    renderPlayers(latestPlayers.length ? latestPlayers : [{ playerId: selfId, playerName, teamId, isReady: false, connected: true }]);
+    dialog.querySelector('#btn-copy-code')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(roomCode);
+        if (!disposed) status('✓ Đã sao chép mã phòng. Gửi mã này cho bạn của bạn.');
+      } catch {
+        if (!disposed) status('Không thể sao chép tự động. Bạn có thể chọn và sao chép mã phía trên.', true);
+      }
+    });
+    dialog.querySelector('#btn-copy-link')?.addEventListener('click', async () => {
+      try {
+        const link = adapter instanceof PeerSessionAdapter
+          ? adapter.getInviteLink()
+          : `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomCode)}`;
+        await navigator.clipboard.writeText(link);
+        if (!disposed) status('✓ Đã sao chép link mời! Gửi link này cho bạn để vào thẳng phòng.');
+      } catch {
+        if (!disposed) status('Không thể sao chép tự động link mời.', true);
+      }
+    });
+    const button = dialog.querySelector<HTMLButtonElement>('#btn-toggle-ready')!;
+    button.addEventListener('click', () => {
+      if (!adapter.isConnected) { status('Mất kết nối. Hãy rời phòng và kết nối lại.', true); return; }
+      ready = !ready;
+      adapter.setReady(ready);
+      button.textContent = ready ? 'Hủy sẵn sàng' : 'Sẵn sàng';
+      button.classList.toggle('is-ready', ready);
+    });
+    button.focus();
+  };
+
+  subscriptions.push(adapter.onRoomUpdate(update => {
+    if (disposed) return;
+    latestPlayers = update.players;
+    renderPlayers(update.players);
+    const banner = dialog.querySelector('#countdown-banner');
+    if (banner) banner.textContent = update.state === 'COUNTDOWN'
+      ? '✓ Cả hai đã sẵn sàng! Chuẩn bị vào trận…'
+      : 'Trận đấu bắt đầu khi cả hai đã sẵn sàng.';
+  }));
+  subscriptions.push(adapter.onMatchStart(matchInfo => {
+    if (disposed) return;
+    transferred = true;
+    dialog.close();
+    options.onMatchStart?.(adapter, matchInfo);
+  }));
+  subscriptions.push(adapter.onError(error => { if (!disposed) status(error.message, true); }));
+  subscriptions.push(adapter.onStatus(() => {
+    if (!disposed) {
+      status('Kết nối đã đóng. Hãy rời sảnh và thử lại.', true);
+      const button = dialog.querySelector<HTMLButtonElement>('#btn-toggle-ready');
+      if (button) button.disabled = true;
+    }
+  }));
+
+  dialog.innerHTML = header('Đấu Online', 'Tạo phòng mời bạn hoặc nhập mã để cùng vào trận.') + `
+    <div class="online-body">
+      <div class="online-identity"><label for="online-player-name">Tên của bạn</label><input id="online-player-name" type="text" autocomplete="nickname" maxlength="40" placeholder="Nhập tên người chơi"></div>
+      <div class="online-tabs" role="tablist" aria-label="Cách vào trận">
+        <button type="button" id="online-create-tab" role="tab" aria-selected="true" aria-controls="online-create-panel" tabindex="0">Tạo phòng</button>
+        <button type="button" id="online-join-tab" role="tab" aria-selected="false" aria-controls="online-join-panel" tabindex="-1">Vào phòng</button>
+      </div>
+      <div class="online-panels" data-active="create">
+        <form class="online-card" id="online-create-panel" aria-labelledby="online-create-heading">
+          <h3 id="online-create-heading">Tạo phòng mới</h3><p>Chọn chế độ, lấy mã và mời bạn.</p>
+          <label for="online-mode-select">Chế độ chơi</label><select id="online-mode-select"><option value="pvp">Đối kháng 1v1</option><option value="coop">Đồng đội Co-op</option></select>
+          <button type="submit" class="online-primary" id="btn-create-room">Tạo phòng</button>
+        </form>
+        <form class="online-card" id="online-join-panel" aria-labelledby="online-join-heading">
+          <h3 id="online-join-heading">Vào phòng của bạn</h3><p>Nhập mã phòng bạn đã nhận được.</p>
+          <label for="online-room-code-input">Mã phòng</label><input id="online-room-code-input" type="text" placeholder="B-1234" autocapitalize="characters" autocomplete="off" spellcheck="false" required>
+          <button type="submit" class="online-secondary" id="btn-join-room">Tham gia</button>
+        </form>
+      </div>
+      <p id="lobby-status-msg" class="online-status" role="status" aria-live="polite"></p>
+    </div>`;
+  bindClose();
+  const nameInput = dialog.querySelector<HTMLInputElement>('#online-player-name')!;
+  nameInput.value = options.defaultPlayerName ?? 'Chiến Binh';
+  const tabs = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const activate = (index: number) => {
+    tabs.forEach((tab, i) => { tab.setAttribute('aria-selected', String(i === index)); tab.tabIndex = i === index ? 0 : -1; });
+    dialog.querySelector<HTMLElement>('.online-panels')!.dataset.active = index === 0 ? 'create' : 'join';
+  };
+  if (options.initialRoomCode) {
+    const codeInput = dialog.querySelector<HTMLInputElement>('#online-room-code-input');
+    if (codeInput) codeInput.value = options.initialRoomCode;
+    activate(1);
+  }
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activate(index));
+    tab.addEventListener('keydown', event => {
+      if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+        activate(next); tabs[next].focus();
+      }
+    });
+  });
+  const submit = async (create: boolean) => {
+    if (busy || disposed) return;
+    busy = true;
+    dialog.querySelectorAll<HTMLButtonElement>('.online-card button').forEach(button => { button.disabled = true; });
+    dialog.querySelector('.online-body')?.setAttribute('aria-busy', 'true');
+    status(create ? 'Đang tạo phòng…' : 'Đang tham gia phòng…');
+    try {
+      const name = nameInput.value.trim() || 'Chiến Binh';
+      const rawCode = dialog.querySelector<HTMLInputElement>('#online-room-code-input')!.value.trim();
+      const code = /^b-\d+$/i.test(rawCode) ? rawCode.toUpperCase() : rawCode;
+      const joined = create
+        ? await adapter.createRoom(name, dialog.querySelector<HTMLSelectElement>('#online-mode-select')!.value as GameMode)
+        : await adapter.joinRoom(code, name);
+      if (disposed) { adapter.disconnect(); return; }
+      selfId = joined.playerId;
+      waiting(joined.roomCode, joined.mode, name, joined.teamId);
+    } catch (error) {
+      if (!disposed) status(error instanceof Error ? error.message : String(error), true);
+    } finally {
+      busy = false;
+      if (!disposed) {
+        dialog.querySelector('.online-body')?.removeAttribute('aria-busy');
+        dialog.querySelectorAll<HTMLButtonElement>('.online-card button').forEach(button => { button.disabled = false; });
+      }
+    }
+  };
+  dialog.querySelector('#online-create-panel')?.addEventListener('submit', event => { event.preventDefault(); void submit(true); });
+  dialog.querySelector('#online-join-panel')?.addEventListener('submit', event => { event.preventDefault(); void submit(false); });
   document.body.append(dialog);
   dialog.showModal();
 }

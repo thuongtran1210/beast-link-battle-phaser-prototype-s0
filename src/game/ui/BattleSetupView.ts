@@ -49,6 +49,13 @@ interface SlotVisualTarget {
  * - Bottom: Player Beast Deployment Tray (YOUR BEASTS — DRAG TO DEPLOY) & Start Battle CTA
  */
 export class BattleSetupView {
+  lock(): void {
+    if (this.pointerMoveHandler) this.scene.input.off('pointermove', this.pointerMoveHandler);
+    if (this.pointerUpHandler) this.scene.input.off('pointerup', this.pointerUpHandler);
+    this.objects.forEach(object => {
+      if ('disableInteractive' in object) (object as Phaser.GameObjects.GameObject & { disableInteractive(): void }).disableInteractive();
+    });
+  }
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private readonly setupCharacters: BattleCharacterView[] = [];
   private readonly controller: BattleSetupInteractionController;
@@ -363,6 +370,15 @@ export class BattleSetupView {
     this.enemies.forEach((enemy) => {
       const rowX = enemy.row === 'Front' ? enemyFrontX : enemy.row === 'Mid' ? enemyMidX : enemyBackX;
       const posY = topLaneY + (enemy.column - 1) * laneGap;
+      if (enemy.beastId) {
+        const character = new BattleCharacterView(this.scene, enemy.beastId, true);
+        character.setFacing('left');
+        character.root.setPosition(rowX, posY).setScale(.48);
+        this.setupCharacters.push(character);
+        this.objects.push(character.root);
+        this.objects.push(this.text(rowX, posY + 34, `${beastDisplayName(enemy.beastId)} ${'★'.repeat(enemy.star ?? 1)}`, 9, '#fff4f2', 'bold').setOrigin(.5));
+        return;
+      }
       const archetype = enemy.archetype ?? 'Frontliner';
       const strokeColor = archetype === 'Diver' ? 0x776d7b : archetype === 'Ranged' ? 0x627b79 : 0x856d68;
 
@@ -434,7 +450,8 @@ export class BattleSetupView {
     }
     this.enemies.forEach(enemy=>{
       const pos=enemySlotPosition(layout,enemy.row,enemy.column);
-      const character=new EnemyCharacterView(this.scene,enemy.archetype??'Frontliner',true);
+      const character = enemy.beastId ? new BattleCharacterView(this.scene, enemy.beastId, true) : new EnemyCharacterView(this.scene,enemy.archetype??'Frontliner',true);
+      if (character instanceof BattleCharacterView) { character.setFacing('left'); this.setupCharacters.push(character); }
       character.root.setPosition(pos.x,pos.y).setDepth(100+pos.y/10);
       this.objects.push(character.root);
       const hp=this.scene.add.rectangle(pos.x,pos.y+character.hpAnchorY,46,4,0xf17383).setDepth(200);

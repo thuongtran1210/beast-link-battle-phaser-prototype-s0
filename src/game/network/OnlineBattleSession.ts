@@ -1,9 +1,10 @@
-import type { WebSocketClientAdapter } from './WebSocketClientAdapter';
+import type { OnlineSessionAdapter } from './OnlineSessionAdapter';
 import type { MatchStartMessage } from '../../network/protocol/NetworkMessages';
 import { RemoteBattleController } from '../battle/controller/RemoteBattleController';
+import { onlinePerspective } from './OnlinePerspective';
 
 export interface ActiveOnlineSession {
-  adapter: WebSocketClientAdapter;
+  adapter: OnlineSessionAdapter;
   matchInfo: MatchStartMessage;
   controller: RemoteBattleController;
 }
@@ -11,7 +12,7 @@ export interface ActiveOnlineSession {
 let activeSession: ActiveOnlineSession | null = null;
 
 export function setOnlineBattleSession(
-  adapter: WebSocketClientAdapter,
+  adapter: OnlineSessionAdapter,
   matchInfo: MatchStartMessage,
 ): ActiveOnlineSession {
   // Dispose any stale session
@@ -19,7 +20,7 @@ export function setOnlineBattleSession(
     activeSession.controller.dispose();
   }
 
-  const controller = new RemoteBattleController(matchInfo.initialSnapshot, adapter);
+  const controller = new RemoteBattleController(onlinePerspective(matchInfo.initialSnapshot, adapter.teamId), adapter);
   activeSession = {
     adapter,
     matchInfo,

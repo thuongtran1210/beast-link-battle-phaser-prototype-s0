@@ -1,8 +1,13 @@
 import type { NetworkTransportAdapter } from '../battle/controller/RemoteBattleController';
+import type { OnlineSessionAdapter } from './OnlineSessionAdapter';
 import type { UnsubscribeFn } from '../battle/controller/IBattleController';
 import type { AutonomousBattleSnapshot } from '../battle/BattleTypes';
 import type { BattleCommand } from '../battle/commands/BattleCommand';
 import type { BattleEvent } from '../battle/events/BattleEvents';
+import { onlinePerspective } from './OnlinePerspective';
+import type { TeamSide } from '../battle/entities/CombatEntity';
+import type { PreparationPhase, EnergyInventoryMessage } from '../../network/protocol/NetworkMessages';
+import { ONLINE_PROTOCOL_VERSION } from '../../network/protocol/NetworkMessages';
 import type {
   ClientMessage,
   ServerMessage,
@@ -16,7 +21,15 @@ import type {
   OpponentFormationReadyMessage,
 } from '../../network/protocol/NetworkMessages';
 
-export class WebSocketClientAdapter implements NetworkTransportAdapter {
+export class WebSocketClientAdapter implements OnlineSessionAdapter {
+  playerId = '';
+  private commandSequence = 0;
+  private matchId = '';
+  teamId: TeamSide = 'TeamA';
+  preparationPhase: PreparationPhase = 'BeastRush';
+  opponentFormation?: OpponentFormationReadyMessage;
+  private preparationListeners = new Set<(phase: PreparationPhase) => void>();
+  private energyListeners = new Set<(msg: EnergyInventoryMessage) => void>();
   private ws?: WebSocket;
   private serverUrl: string;
 
@@ -107,14 +120,27 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
     });
   }
 
-  deployFormation(units: DeployedFormationUnit[]): void {
+  deployFormation(units: DeployedFormationUnit[], ready = true, energy: Array<{ energyId: string; charges: number }> = []): void {
     this.send({
       type: 'DEPLOY_FORMATION',
       units,
+      ready,
+      energy,
     });
   }
 
+  preparationReady(phase: PreparationPhase): void { this.send({ type: 'PREPARATION_READY', phase }); }
+  onPreparationPhase(handler: (phase: PreparationPhase) => void): UnsubscribeFn {
+    this.preparationListeners.add(handler);
+    return () => this.preparationListeners.delete(handler);
+  }
+  onEnergyInventory(handler: (msg: EnergyInventoryMessage) => void): UnsubscribeFn {
+    this.energyListeners.add(handler);
+    return () => this.energyListeners.delete(handler);
+  }
+
   sendCommand(command: BattleCommand): void {
+    command = { ...command, commandId: command.commandId ?? `${this.playerId}-${++this.commandSequence}`, matchId: this.matchId };
     this.send({
       type: 'BATTLE_COMMAND',
       command,
@@ -172,6 +198,10 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
     this.roomUpdateListeners.clear();
     this.matchStartListeners.clear();
     this.errorListeners.clear();
+    this.onlineBattleStartListeners.clear();
+    this.opponentReadyListeners.clear();
+    this.preparationListeners.clear();
+    this.energyListeners.clear();
   }
 
   private send(msg: ClientMessage): void {
@@ -189,6 +219,15 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
   private handleServerMessage(msg: ServerMessage): void {
     switch (msg.type) {
       case 'ROOM_JOINED': {
+        if (msg.protocolVersion !== ONLINE_PROTOCOL_VERSION) {
+          this.joinPromiseRejecter?.(new Error('Server đang dùng phiên bản cũ. Khởi động lại npm run server, rồi tạo phòng mới.'));
+          this.joinPromiseResolver = undefined;
+          this.joinPromiseRejecter = undefined;
+          this.ws?.close();
+          return;
+        }
+        this.playerId = msg.playerId;
+        this.teamId = msg.teamId;
         this.joinPromiseResolver?.(msg);
         this.joinPromiseResolver = undefined;
         this.joinPromiseRejecter = undefined;
@@ -201,23 +240,25 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
       }
 
       case 'MATCH_START': {
+        this.matchId = msg.matchId ?? '';
         this.matchStartListeners.forEach((l) => l(msg));
         break;
       }
 
       case 'ONLINE_BATTLE_START': {
+        this.snapshotListeners.forEach((l) => l(onlinePerspective(msg.snapshot, this.teamId)));
         this.onlineBattleStartListeners.forEach((l) => l(msg));
-        this.snapshotListeners.forEach((l) => l(msg.snapshot));
         break;
       }
 
       case 'OPPONENT_FORMATION_READY': {
+        this.opponentFormation = msg;
         this.opponentReadyListeners.forEach((l) => l(msg));
         break;
       }
 
       case 'BATTLE_TICK': {
-        this.snapshotListeners.forEach((l) => l(msg.snapshot));
+        this.snapshotListeners.forEach((l) => l(onlinePerspective(msg.snapshot, this.teamId)));
         if (msg.events.length > 0) {
           this.eventsListeners.forEach((l) => l(msg.events));
         }
@@ -225,7 +266,17 @@ export class WebSocketClientAdapter implements NetworkTransportAdapter {
       }
 
       case 'MATCH_END': {
-        this.statusListeners.forEach((l) => l(msg.winnerTeamId === 'TeamA' ? 'Win' : 'Lose'));
+        if (msg.snapshot) this.snapshotListeners.forEach(listener => listener(onlinePerspective(msg.snapshot!, this.teamId)));
+        this.statusListeners.forEach((l) => l(msg.winnerTeamId === this.teamId ? 'Win' : 'Lose'));
+        break;
+      }
+      case 'PREPARATION_PHASE': {
+        this.preparationPhase = msg.phase;
+        this.preparationListeners.forEach(listener => listener(msg.phase));
+        break;
+      }
+      case 'ENERGY_INVENTORY': {
+        this.energyListeners.forEach(listener => listener(msg));
         break;
       }
 

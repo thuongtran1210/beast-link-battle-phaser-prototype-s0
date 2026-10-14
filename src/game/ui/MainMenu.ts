@@ -7,13 +7,14 @@ import { bgmManager } from '../audio/BgmManager';
 import { MainMenuParallax } from './menu/MainMenuParallax';
 
 import { showOnlineLobbyDialog } from './network/OnlineLobbyDialog';
-import type { WebSocketClientAdapter } from '../network/WebSocketClientAdapter';
+import { isOnlineExperimentAvailable } from '../config/OnlineAvailability';
+import type { OnlineSessionAdapter } from '../network/OnlineSessionAdapter';
 import type { MatchStartMessage } from '../../network/protocol/NetworkMessages';
 
 /** DOM navigation stays separate from the pre-run deck and gameplay scene. */
 export function showMainMenu(
   play: () => void,
-  onStartOnlineMatch?: (adapter: WebSocketClientAdapter, matchInfo: MatchStartMessage) => void,
+  onStartOnlineMatch?: (adapter: OnlineSessionAdapter, matchInfo: MatchStartMessage) => void,
 ): void {
   bgmManager.playLobby();
   const root = document.createElement('section');
@@ -40,7 +41,7 @@ export function showMainMenu(
 
   const onlineBtn = document.createElement('button');
   onlineBtn.className = 'menu-online';
-  onlineBtn.textContent = '⚔️ Đấu Online';
+  onlineBtn.textContent = 'Đấu Online';
   onlineBtn.onclick = () => {
     showOnlineLobbyDialog({
       onMatchStart: (adapter, matchInfo) => {
@@ -50,7 +51,7 @@ export function showMainMenu(
       },
     });
   };
-  root.querySelector('.menu-actions')!.append(onlineBtn);
+  if (isOnlineExperimentAvailable()) root.querySelector('.menu-actions')!.append(onlineBtn);
 
   const onboarding = firstJourneyStage();
   if (onboarding === 'expedition') {

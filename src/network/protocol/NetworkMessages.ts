@@ -3,9 +3,11 @@ import type { BeastRole } from '../../game/battle/BeastRoles';
 import type { BattleCommand } from '../../game/battle/commands/BattleCommand';
 import type { BattleEvent } from '../../game/battle/events/BattleEvents';
 import type { TeamSide } from '../../game/battle/entities/CombatEntity';
+export const ONLINE_PROTOCOL_VERSION = 3;
 
 export type GameMode = 'pvp' | 'coop';
-export type RoomState = 'WAITING' | 'COUNTDOWN' | 'BATTLE' | 'ENDED';
+export type PreparationPhase = 'BeastRush' | 'EnergyRush' | 'BattleSetup';
+export type RoomState = 'WAITING' | 'COUNTDOWN' | PreparationPhase | 'BATTLE' | 'ENDED';
 
 export interface RoomPlayerInfo {
   playerId: string;
@@ -21,12 +23,14 @@ export interface CreateRoomMessage {
   type: 'CREATE_ROOM';
   playerName: string;
   mode: GameMode;
+  protocolVersion?: number;
 }
 
 export interface JoinRoomMessage {
   type: 'JOIN_ROOM';
   roomCode: string;
   playerName: string;
+  protocolVersion?: number;
 }
 
 export interface SetReadyMessage {
@@ -64,9 +68,16 @@ export interface LeaveRoomMessage {
 export interface DeployFormationMessage {
   type: 'DEPLOY_FORMATION';
   units: DeployedFormationUnit[];
+  ready?: boolean;
+  energy?: Array<{ energyId: string; charges: number }>;
 }
 
+export interface PreparationReadyMessage { type: 'PREPARATION_READY'; phase: PreparationPhase; }
+export interface PreparationPhaseMessage { type: 'PREPARATION_PHASE'; phase: PreparationPhase; }
+export interface EnergyInventoryMessage { type: 'ENERGY_INVENTORY'; entries: Array<{ energyId: string; charges: number }>; }
+
 export type ClientMessage =
+  | PreparationReadyMessage
   | CreateRoomMessage
   | JoinRoomMessage
   | SetReadyMessage
@@ -78,6 +89,7 @@ export type ClientMessage =
 /* ---------------- Server -> Client Messages ---------------- */
 
 export interface RoomJoinedMessage {
+  protocolVersion: number;
   type: 'ROOM_JOINED';
   roomId: string;
   roomCode: string;
@@ -96,6 +108,7 @@ export interface RoomUpdateMessage {
 }
 
 export interface MatchStartMessage {
+  matchId?: string;
   type: 'MATCH_START';
   seed: number;
   mode: GameMode;
@@ -105,6 +118,7 @@ export interface MatchStartMessage {
 }
 
 export interface BattleTickMessage {
+  matchId?: string;
   type: 'BATTLE_TICK';
   tick: number;
   snapshot: AutonomousBattleSnapshot;
@@ -112,6 +126,8 @@ export interface BattleTickMessage {
 }
 
 export interface MatchEndMessage {
+  matchId?: string;
+  snapshot?: AutonomousBattleSnapshot;
   type: 'MATCH_END';
   winnerTeamId: string;
   reason: string;
@@ -139,9 +155,13 @@ export interface OpponentFormationReadyMessage {
   type: 'OPPONENT_FORMATION_READY';
   opponentPlayerId: string;
   opponentUnitCount: number;
+  units: DeployedFormationUnit[];
+  ready: boolean;
 }
 
 export type ServerMessage =
+  | PreparationPhaseMessage
+  | EnergyInventoryMessage
   | RoomJoinedMessage
   | RoomUpdateMessage
   | MatchStartMessage

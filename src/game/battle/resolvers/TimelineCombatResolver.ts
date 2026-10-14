@@ -32,6 +32,11 @@ export class TimelineCombatResolver {
 
     for (const unit of attackers) {
       ctx.expireShield(unit);
+      if ((unit.funControlUntil ?? 0) > (ctx.state.elapsedTime ?? 0)) {
+        unit.actionState = 'Idle';
+        unit.movementPolicyState = 'Idle';
+        continue;
+      }
       if (ctx.state.enemies.every((enemy) => enemy.currentHp <= 0)) {
         unit.actionState = 'Idle';
         unit.movementPolicyState = 'Idle';

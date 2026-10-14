@@ -85,6 +85,7 @@ export class ValidationScene extends Phaser.Scene {
   private formation?: BattleFormation;
   private battleModel?: AutonomousBattleModel;
   private battleController?: IBattleController;
+  private onlineFormationSubmitted = false;
   private battleTickAccumulator = 0;
   private battleOutcome?: 'Win' | 'Lose';
   private readonly waveRun = isTestHarness() ? new WaveRunController() : new WaveRunController(wavesForRunLevel(selectedRunLevel().id), selectedRunLevel().id);
@@ -251,6 +252,43 @@ export class ValidationScene extends Phaser.Scene {
       syncTopHud: () => this.syncTopHud(),
     });
 
+    const online = getOnlineBattleSession();
+    if (online) {
+      this.puzzleCoordinator.setSeed(online.matchInfo.seed);
+      const unsubs = [
+        online.adapter.onPreparationPhase(phase => {
+          this.isShowingTransitionCue = false;
+          this.transitionCueTimer = 0;
+          this.phaseController.setPhase(phase === 'EnergyRush' ? GamePhase.EnergyRush : GamePhase.BattleSetup);
+        }),
+        online.adapter.onOpponentFormationReady(update => {
+          if (this.phaseController.phase === GamePhase.BattleSetup) {
+            this.renderBattleSetup();
+            if (update.ready) this.transitionCue?.show('ĐỐI THỦ SẴN SÀNG', 'Hoàn tất đội hình để vào trận');
+          }
+        }),
+        online.adapter.onOnlineBattleStart(() => {
+          this.phaseController.setPhase(GamePhase.Battle);
+        }),
+        online.adapter.onEnergyInventory(message => {
+          this.energyQueue.reset();
+          message.entries.forEach(entry => this.energyQueue.addCharge(entry.energyId, entry.charges));
+          if (this.phaseController.phase === GamePhase.Battle) this.battleCoordinator.renderBattle();
+        }),
+        online.adapter.onError(error => {
+          if (['OPPONENT_LEFT', 'HOST_DISCONNECTED', 'HOST_BACKGROUND', 'CONNECTION_LOST'].includes(error.code)) {
+            window.dispatchEvent(new CustomEvent('beast-link-online-abort', { detail: error.message }));
+            return;
+          }
+          FeedbackEffects.showToast(this, this.layout.leftCenter.x, this.layout.leftCenter.y, error.message, '#ef7777', 3000);
+          if (error.code === 'INVALID_FORMATION') {
+            this.onlineFormationSubmitted = false;
+            this.renderBattleSetup();
+          }
+        }),
+      ];
+      this.events.once('shutdown', () => unsubs.forEach(unsubscribe => unsubscribe()));
+    }
     this.phaseController.subscribe((phase) => this.onPhaseChanged(phase));
 
     // Keyboard shortcuts
@@ -361,10 +399,12 @@ export class ValidationScene extends Phaser.Scene {
     this.time.delayedCall(800, () => {
       this.isConcludingBattle = false;
       if (this.phaseController.phase !== GamePhase.Battle) return;
-      this.runRoster.reconcile(this.battleModel?.snapshot.units ?? []);
+      const online = getOnlineBattleSession();
+      const units = this.battleController?.currentSnapshot.units ?? this.battleModel?.snapshot.units ?? [];
+      this.runRoster.reconcile(online ? units.map(unit => ({ ...unit, unitId: unit.unitId.replace(`${online.adapter.playerId}:`, '') })) : units);
       this.metrics.result(status, this.energyQueue.getAll());
       this.battleOutcome = status;
-      this.phaseController.setPhase(status === 'Win' && !this.waveRun.isFinalWave ? GamePhase.WaveResult : GamePhase.Result);
+      this.phaseController.setPhase(!online && status === 'Win' && !this.waveRun.isFinalWave ? GamePhase.WaveResult : GamePhase.Result);
     });
   }
 
@@ -430,11 +470,23 @@ export class ValidationScene extends Phaser.Scene {
     this.isShowingBattleSetupCue = false;
     this.battleSetupCueTimer = 0;
     this.transitionCue?.hide();
+    const online = getOnlineBattleSession();
+    if (online) {
+      online.adapter.preparationReady('BeastRush');
+      this.transitionCue?.show('CHỜ ĐỐI THỦ', 'Cùng chuyển sang Energy Rush khi cả hai hoàn tất');
+      return;
+    }
     this.phaseController.setPhase(GamePhase.EnergyRush);
   }
 
   private handleEnergyRushEnded(): void {
     this.puzzleCoordinator.disableInput();
+    const online = getOnlineBattleSession();
+    if (online) {
+      online.adapter.preparationReady('EnergyRush');
+      this.transitionCue?.show('CHỜ ĐỐI THỦ', 'Cùng xếp đội hình khi cả hai hoàn tất');
+      return;
+    }
     if (this.phaseController.setPhase(GamePhase.BattleSetup)) {
       this.isShowingBattleSetupCue = true;
       this.battleSetupCueTimer = 0.8;
@@ -464,7 +516,7 @@ export class ValidationScene extends Phaser.Scene {
     else if (phase === GamePhase.Battle) this.enterBattle();
     else if (phase === GamePhase.WaveResult) this.lifecycleCoordinator.enterWaveResult();
     else this.lifecycleCoordinator.enterResult();
-    if(!isTestHarness()&&this.waveRun.levelId==='woodland')showFirstJourneyPhase(this,phase);
+    if(!getOnlineBattleSession()&&!isTestHarness()&&this.waveRun.levelId==='woodland')showFirstJourneyPhase(this,phase);
   }
 
   private syncTopHud(): void {
@@ -511,6 +563,8 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterEnergyRush(): void {
+    const online = getOnlineBattleSession();
+    if (online) this.puzzleCoordinator.setSeed(online.matchInfo.seed ^ 0x45e);
     this.energyTimer.reset();
     this.energyCarryIn = this.energyQueue.getTotalCharges();
     this.metrics.recordEnergyCarryIn(this.energyCarryIn);
@@ -528,6 +582,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private enterBattleSetup(): void {
+    this.onlineFormationSubmitted = false;
     this.metrics.enterBattleSetup(this.battleQueue.entries());
     if (!this.formation) {
       const converted: DeployedUnit[] = [];
@@ -537,7 +592,7 @@ export class ValidationScene extends Phaser.Scene {
         this.battleQueue.consume(entry.contentId, entry.count);
       }
       this.runRoster.recruit(converted);
-      if (!isTestHarness()) discoverCampBeasts(converted.map(unit => unit.contentId));
+      if (!isTestHarness() && !getOnlineBattleSession()) discoverCampBeasts(converted.map(unit => unit.contentId));
       this.formation = new BattleFormation(this.runRoster.formationUnits());
     }
     this.renderBattleSetup();
@@ -549,7 +604,7 @@ export class ValidationScene extends Phaser.Scene {
     this.fixtureManager.ensureBoard();
     const onlineSession = getOnlineBattleSession();
     const enemiesToDisplay = onlineSession
-      ? []
+      ? (onlineSession.adapter.opponentFormation?.units.map(unit => ({ ...unit, enemyId: unit.unitId, archetype: unit.role === 'Tanker' ? 'Frontliner' as const : unit.role === 'Assassin' ? 'Diver' as const : 'Ranged' as const })) ?? [])
       : (this.captureEnemyFixtures ?? this.fixtureManager.board?.fixtures ?? this.waveRun.currentWave.enemyFixtures);
 
     this.battleSetupView = new BattleSetupView(
@@ -561,6 +616,7 @@ export class ValidationScene extends Phaser.Scene {
       () => {
         this.fixtureManager.clearActiveKey();
         this.metrics.arrangementChanged();
+        this.publishOnlineFormation();
       },
       onlineSession ? '⚔️ ĐẤU ONLINE · CHUẨN BỊ ĐỘI HÌNH' : `WAVE ${this.waveRun.currentWaveIndex + 1} / ${this.waveRun.totalWaves} · ${this.waveRun.currentWave.name}${isTestHarness() && this.fixtureManager.board?.isCustomized ? ' [CUSTOMIZED]' : ''}`,
       isTestHarness() && !this.showcaseController.isShowcaseMode ? () => this.cycleEnemyFixture() : undefined,
@@ -579,6 +635,7 @@ export class ValidationScene extends Phaser.Scene {
       },
     );
     this.battleSetupView.render();
+    if (this.onlineFormationSubmitted) this.battleSetupView.lock();
     this.syncTopHud();
   }
 
@@ -619,16 +676,20 @@ export class ValidationScene extends Phaser.Scene {
       this.battleActionView.setShowcaseMode(false);
       this.battleActionView.render(onlineSession.controller.currentSnapshot);
 
-      onlineSession.controller.onSnapshot((snapshot) => {
+      let previousSnapshot = onlineSession.controller.currentSnapshot;
+      const unsubscribeSnapshot = onlineSession.controller.onSnapshot((snapshot) => {
         this.battleActionView?.render(snapshot);
+        this.battleActionView?.playTick(deriveBattleTickPresentation(previousSnapshot, snapshot));
+        previousSnapshot = snapshot;
         this.battleCoordinator.renderBattle();
       });
 
-      onlineSession.controller.onStatus((status) => {
+      const unsubscribeStatus = onlineSession.controller.onStatus((status) => {
         if (status !== 'Running') {
           this.handleBattleEnded(status);
         }
       });
+      this.events.once('shutdown', () => { unsubscribeSnapshot(); unsubscribeStatus(); });
 
       this.battleCoordinator.renderBattle();
       this.syncTopHud();
@@ -669,6 +730,7 @@ export class ValidationScene extends Phaser.Scene {
   }
 
   private startBattle(): void {
+    if (this.onlineFormationSubmitted) return;
     if (this.phaseController.phase !== GamePhase.BattleSetup || !this.formation) return;
     const active = this.formation.units.filter((unit) => unit.slotId !== null && this.runRoster.canDeploy(unit.unitId));
     if (active.length < 1 || active.length > this.runRoster.squadLimit) return;
@@ -700,7 +762,9 @@ export class ValidationScene extends Phaser.Scene {
         };
       });
 
-      onlineSession.adapter.deployFormation(deployedUnits);
+      this.onlineFormationSubmitted = true;
+      this.battleSetupView?.lock();
+      onlineSession.adapter.deployFormation(deployedUnits, true, this.energyQueue.getAll());
 
       FeedbackEffects.showToast(
         this,
@@ -718,24 +782,24 @@ export class ValidationScene extends Phaser.Scene {
         linkShards: 0,
       });
 
-      onlineSession.adapter.onOpponentFormationReady(() => {
-        FeedbackEffects.showToast(
-          this,
-          this.layout.leftCenter.x,
-          this.layout.leftCenter.y - 40,
-          'ĐỐI THỦ ĐÃ SẴN SÀNG!',
-          '#22c55e',
-          1500,
-        );
-      });
-
-      onlineSession.adapter.onOnlineBattleStart(() => {
-        this.phaseController.setPhase(GamePhase.Battle);
-      });
       return;
     }
 
     this.phaseController.setPhase(GamePhase.Battle);
+  }
+
+  private publishOnlineFormation(): void {
+    const online = getOnlineBattleSession();
+    if (!online || !this.formation || this.onlineFormationSubmitted || this.phaseController.phase !== GamePhase.BattleSetup) return;
+    const units = this.formation.units.filter(unit => unit.slotId !== null && this.runRoster.canDeploy(unit.unitId)).map(unit => {
+      const slot = this.formation!.slots.find(candidate => candidate.unitId === unit.unitId)!;
+      const base = unitBaseStats(unit.beastId, baseStats[unit.role]);
+      const mult = starStatMultiplier(unit.star);
+      return { unitId: unit.unitId, beastId: unit.beastId, role: unit.role, star: unit.star, slotId: unit.slotId!,
+        row: slot.row, column: slot.column, maxHp: base.hp * mult, damage: base.damage * mult,
+        currentHp: this.runRoster.units.find(candidate => candidate.instanceId === unit.unitId)?.currentHp ?? base.hp * mult };
+    });
+    online.adapter.deployFormation(units, false);
   }
 
 }

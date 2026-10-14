@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { RoomManager } from './RoomManager';
+import { ONLINE_PROTOCOL_VERSION } from '../network/protocol/NetworkMessages';
 import type { BattleRoom } from './BattleRoom';
 import type {
   ClientMessage,
@@ -15,9 +16,13 @@ export class GameServer {
   readonly roomManager = new RoomManager();
   private wss?: WebSocketServer;
   private clientRooms = new Map<WebSocket, { room: BattleRoom; playerId: string }>();
+  get port(): number | undefined {
+    const address = this.wss?.address();
+    return address && typeof address !== 'string' ? address.port : undefined;
+  }
 
   async start(port = 3000): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.wss = new WebSocketServer({ port }, () => {
         resolve();
       });
@@ -25,6 +30,7 @@ export class GameServer {
       this.wss.on('connection', (ws: WebSocket) => {
         this.handleConnection(ws);
       });
+      this.wss.once('error', reject);
     });
   }
 
@@ -34,6 +40,9 @@ export class GameServer {
         resolve();
         return;
       }
+      for (const binding of this.clientRooms.values()) this.roomManager.removeRoom(binding.room.roomId);
+      this.clientRooms.clear();
+      this.wss.clients.forEach(client => client.terminate());
       this.wss.close(() => {
         resolve();
       });
@@ -89,6 +98,7 @@ export class GameServer {
         this.clientRooms.set(ws, { room, playerId });
 
         const joinedMsg: RoomJoinedMessage = {
+          protocolVersion: ONLINE_PROTOCOL_VERSION,
           type: 'ROOM_JOINED',
           roomId: room.roomId,
           roomCode: room.roomCode,
@@ -113,6 +123,7 @@ export class GameServer {
           this.clientRooms.set(ws, { room, playerId });
 
           const joinedMsg: RoomJoinedMessage = {
+            protocolVersion: ONLINE_PROTOCOL_VERSION,
             type: 'ROOM_JOINED',
             roomId: room.roomId,
             roomCode: room.roomCode,
@@ -151,8 +162,13 @@ export class GameServer {
       case 'DEPLOY_FORMATION': {
         const binding = this.clientRooms.get(ws);
         if (binding) {
-          binding.room.deployFormation(binding.playerId, msg.units);
+          binding.room.deployFormation(binding.playerId, msg.units, msg.ready, msg.energy);
         }
+        break;
+      }
+      case 'PREPARATION_READY': {
+        const binding = this.clientRooms.get(ws);
+        binding?.room.preparationReady(binding.playerId, msg.phase);
         break;
       }
 

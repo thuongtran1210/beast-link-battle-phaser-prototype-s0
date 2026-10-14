@@ -9,6 +9,8 @@ export type BattleCommandKind =
   | 'Surrender';
 
 export interface BaseBattleCommand {
+  commandId?: string;
+  matchId?: string;
   type: BattleCommandKind;
   /** Simulation tick when command was issued */
   tick: number;
